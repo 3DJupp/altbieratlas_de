@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Altbieratlas — Die interaktive Karte des Altbiers</title>
+<meta name="description" content="Der Altbieratlas: Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="page">
+  <div id="shell-header"></div>
+
+  <!-- ============ HERO + MAP ============ -->
+  <section class="hero-wrap">
+    <div class="hero-overlay">
+      <div class="ticker">
+        <div class="pulse"></div>
+        <div>
+          <div class="ticker-label eyebrow" data-i18n="hero.avgPriceLabel">Aktuelles 0,25 l Alt im Schnitt</div>
+          <div class="ticker-value mono" id="avg-price">—</div>
+          <div class="ticker-meta mono">
+            <span id="data-points">—</span> <span data-i18n="hero.dataPoints">Preismeldungen</span>
+            · <span id="brewery-count">—</span> <span data-i18n="hero.breweries">Brauereien</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-copy">
+        <div class="eyebrow">Altbieratlas</div>
+        <h1 class="hero-title">
+          Der interaktive<br />
+          <em>Atlas</em> des Altbiers.
+        </h1>
+        <p class="hero-sub" data-i18n="hero.subtitle">Der Altbieratlas sammelt Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="beitragen.html?typ=preis" data-i18n="hero.cta">Preis melden</a>
+          <a class="btn" href="#map-section" data-i18n="hero.ctaSecondary">Karte erkunden</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="map" class="map-canvas"></div>
+
+    <div class="map-filters">
+      <button class="filter-btn active" data-filter="all" data-i18n="map.filter.all">Alle</button>
+      <button class="filter-btn" data-filter="hausbrauerei" data-i18n="map.filter.hausbrauerei">Hausbrauerei</button>
+      <button class="filter-btn" data-filter="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</button>
+      <button class="filter-btn" data-filter="shop" data-i18n="map.filter.shop">Handel</button>
+      <div class="map-search-wrap">
+        <input type="search" id="map-search" class="filter-search" placeholder="Stadt, Brauerei, Ort…" data-i18n-placeholder="map.search" autocomplete="off" />
+        <div class="map-search-suggest" id="map-search-suggest"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUICK RANKINGS ============ -->
+  <section id="map-section" class="container" style="padding: 60px 24px 32px">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Schnellübersicht</div>
+        <h2>Preise im Überblick</h2>
+      </div>
+      <a class="btn btn-ghost" href="ranglisten.html" data-i18n="common.more">Mehr erfahren →</a>
+    </div>
+
+    <div class="rank-grid">
+      <div class="card rank-card">
+        <div class="rank-head"><h3 data-i18n="rank.cheapest">Günstigstes Alt</h3><span class="tag">0,25 l</span></div>
+        <ol id="rank-cheapest" class="rank-list"></ol>
+      </div>
+      <div class="card rank-card">
+        <div class="rank-head"><h3 data-i18n="rank.priciest">Teuerstes Alt</h3><span class="tag">0,25 l</span></div>
+        <ol id="rank-priciest" class="rank-list"></ol>
+      </div>
+      <div class="card rank-card">
+        <div class="rank-head"><h3 data-i18n="rank.newest">Neu auf dem Atlas</h3><span class="tag">30 Tage</span></div>
+        <ol id="rank-newest" class="rank-list"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NEXT EVENTS ============ -->
+  <section class="container" style="padding: 24px 24px 60px">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Kalender</div>
+        <h2>Kommende Termine</h2>
+      </div>
+      <a class="btn btn-ghost" href="beitragen.html?typ=event" data-i18n="contrib.type.event">Event melden →</a>
+    </div>
+    <div class="event-grid" id="event-grid"></div>
+  </section>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<style>
+/* ============ Landing-specific ============ */
+.hero-wrap {
+  position: relative;
+  height: calc(100vh - 64px);
+  min-height: 600px;
+  max-height: 880px;
+  width: 100%;
+  overflow: hidden;
+  background: #0d0b09;
+}
+.map-canvas { position: absolute; inset: 0; z-index: 1; }
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: minmax(380px, 520px) 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  padding: 28px 28px 120px;
+  gap: 20px;
+}
+.hero-overlay > * { pointer-events: auto; }
+.hero-copy {
+  grid-column: 1; grid-row: 2; align-self: end;
+  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 32px 34px;
+  max-width: 520px;
+}
+.hero-title { font-weight: 500; margin: 10px 0 18px; }
+.hero-title em { font-style: italic; color: var(--copper); font-weight: 400; }
+.hero-sub { color: var(--ink-soft); font-size: 16px; line-height: 1.55; margin-bottom: 22px; max-width: 44ch; }
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.ticker {
+  grid-column: 1; grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 14px 22px 16px;
+  justify-self: start;
+  box-shadow: var(--shadow);
+}
+.ticker-label { color: var(--ink-muted); }
+.ticker-value {
+  font-family: var(--font-display);
+  font-size: 36px; font-weight: 500;
+  color: var(--copper);
+  letter-spacing: -0.02em;
+  line-height: 1; margin-top: 4px;
+}
+.ticker-meta { font-size: 11px; color: var(--ink-muted); margin-top: 6px; letter-spacing: 0.04em; }
+.pulse {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--copper);
+  box-shadow: 0 0 0 0 rgba(217, 163, 91, 0.6);
+  animation: pulse 2s ease-out infinite;
+  align-self: center; flex-shrink: 0;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(217, 163, 91, 0.6); }
+  70%  { box-shadow: 0 0 0 14px rgba(217, 163, 91, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(217, 163, 91, 0); }
+}
+
+.map-filters {
+  position: absolute;
+  left: 28px; bottom: 28px;
+  z-index: 6;
+  display: flex; gap: 6px; padding: 8px;
+  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+  max-width: calc(100% - 56px);
+}
+.filter-btn {
+  background: transparent; border: none;
+  color: var(--ink-soft);
+  font-family: var(--font-ui); font-size: 13px;
+  padding: 8px 16px; border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.filter-btn:hover { color: var(--ink); background: var(--bg-elev); }
+.filter-btn.active { background: var(--accent); color: var(--accent-ink); }
+.filter-search {
+  background: transparent; border: none;
+  color: var(--ink);
+  font-family: var(--font-ui); font-size: 13px;
+  padding: 8px 14px;
+  min-width: 220px; outline: none;
+  border-left: 1px solid var(--rule);
+  margin-left: 4px;
+}
+.filter-search::placeholder { color: var(--ink-muted); }
+
+.section-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 20px; }
+.rank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.rank-card { padding: 24px; }
+.rank-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.rank-list { list-style: none; padding: 0; margin: 0; }
+.rank-list li {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 12px; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.rank-list li:last-child { border-bottom: none; }
+.rank-list .pos { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); }
+.rank-list .name a { border: none; font-weight: 500; }
+.rank-list .city { font-size: 12px; color: var(--ink-muted); display: block; }
+.rank-list .price { font-family: var(--font-mono); color: var(--copper); font-weight: 500; }
+
+.event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.event-card { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.event-date { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--copper); }
+.event-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
+.event-desc { color: var(--ink-soft); font-size: 14px; }
+.event-loc { font-size: 12px; color: var(--ink-muted); font-family: var(--font-mono); margin-top: auto; }
+
+@media (max-width: 900px) {
+  .hero-overlay { grid-template-columns: 1fr; padding: 16px 16px 140px; }
+  .hero-copy { padding: 22px; }
+  .hero-title { font-size: clamp(1.8rem, 6vw, 2.6rem); }
+  .ticker-value { font-size: 28px; }
+  .rank-grid, .event-grid { grid-template-columns: 1fr; }
+  .section-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+</style>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="api-client.js"></script>
+<script src="shell.js"></script>
+<script>
+renderShell({ activeNav: "map" });
+
+// ============ Map ============
+const cfg = window.ATLAS_CONFIG;
+
+const map = L.map("map", {
+  center: cfg.map.defaultCenter,
+  zoom: cfg.map.defaultZoom,
+  minZoom: cfg.map.minZoom,
+  maxZoom: cfg.map.maxZoom,
+  zoomControl: false,
+  worldCopyJump: true,
+});
+L.control.zoom({ position: "bottomright" }).addTo(map);
+L.tileLayer(cfg.map.tileUrl, { attribution: cfg.map.tileAttribution }).addTo(map);
+
+function pinIcon(type, pending) {
+  return L.divIcon({
+    className: "",
+    html: `<div class="atlas-pin ${type} ${pending ? "pending" : ""}"></div>`,
+    iconSize: [22, 22], iconAnchor: [11, 11],
+  });
+}
+
+// ============ State ============
+let allBreweries = [];
+let priceByBrewery = new Map();   // id → latest 0,25l
+const markerMap = new Map();
+let geoMarker = null;             // Geocode-Treffer (temporärer Pin)
+
+// ============ Marker-Rendering ============
+function renderMarkers(filter = "all", search = "") {
+  markerMap.forEach((m) => map.removeLayer(m));
+  markerMap.clear();
+  const q = search.trim().toLowerCase();
+
+  allBreweries.forEach((b) => {
+    if (filter !== "all" && b.type !== filter) return;
+    if (q && !((b.name + " " + b.city).toLowerCase().includes(q))) return;
+
+    const marker = L.marker(b.coords, { icon: pinIcon(b.type, b.pending) }).addTo(map);
+    const latest = priceByBrewery.get(b.id);
+    const priceText = latest
+      ? `<div class="pop-price">€ ${latest.price.toFixed(2).replace(".", ",")} <span style="font-size:11px;opacity:.6">/ ${latest.size}</span></div>`
+      : `<div style="font-size:12px;opacity:.6;margin-top:6px">Noch keine Preismeldung</div>`;
+    marker.bindPopup(`
+      <h4>${b.name}</h4>
+      <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · seit " + b.founded : ""}</div>
+      ${priceText}
+      <div style="margin-top:10px"><a href="brauerei.html?id=${b.id}">Details →</a></div>
+    `);
+    markerMap.set(b.id, marker);
+  });
+}
+
+// ============ Geocode-Helper ============
+function clearGeoMarker() {
+  if (geoMarker) { map.removeLayer(geoMarker); geoMarker = null; }
+}
+function flyToGeo(result) {
+  clearGeoMarker();
+  const latlng = [result.lat, result.lng];
+  geoMarker = L.marker(latlng, {
+    icon: L.divIcon({
+      className: "",
+      html: `<div class="atlas-pin geo"></div>`,
+      iconSize: [22, 22], iconAnchor: [11, 11],
+    }),
+  }).addTo(map);
+  geoMarker.bindPopup(`
+    <h4>${result.name.split(",")[0]}</h4>
+    <div style="font-size:12px;opacity:.75">${result.name}</div>
+    <div style="font-size:12px;opacity:.6;margin-top:10px">${window.t("map.geocode.empty")}</div>
+    <div style="margin-top:10px"><a href="beitragen.html?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>
+  `).openPopup();
+  map.flyTo(latlng, cfg.map.geocodeZoom || 13, { duration: 0.8 });
+}
+
+// ============ Search-Suggest ============
+const searchEl = document.getElementById("map-search");
+const suggestEl = document.getElementById("map-search-suggest");
+
+function debounce(fn, ms) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function localMatches(q) {
+  if (!q) return [];
+  const n = q.toLowerCase();
+  return allBreweries
+    .filter((b) => (b.name + " " + b.city).toLowerCase().includes(n))
+    .slice(0, 8);
+}
+
+function renderSuggest(query, local, geo) {
+  if (!query) { suggestEl.classList.remove("visible"); suggestEl.innerHTML = ""; return; }
+  const parts = [];
+  if (local.length) {
+    parts.push(`<div class="group-head">${window.t("hero.breweries")}</div>`);
+    parts.push(local.map((b) => `
+      <div class="sugg-row" data-type="local" data-id="${b.id}">
+        <span class="dot"></span>
+        <div>
+          <div>${b.name}</div>
+          <div class="meta">${b.type} · ${b.city}</div>
+        </div>
+        <span class="meta">${window.t("map.goto")} →</span>
+      </div>
+    `).join(""));
+  }
+  if (geo && geo.length) {
+    parts.push(`<div class="group-head">Orte</div>`);
+    parts.push(geo.map((g, i) => `
+      <div class="sugg-row" data-type="geo" data-idx="${i}">
+        <span class="dot geo"></span>
+        <div>
+          <div>${g.name.split(",").slice(0, 2).join(",")}</div>
+          <div class="meta">${g.name}</div>
+        </div>
+        <span class="meta">${window.t("map.goto")} →</span>
+      </div>
+    `).join(""));
+  }
+  if (!parts.length) {
+    parts.push(`<div class="sugg-empty">${window.t("map.geocode.empty")} <br><br><a href="beitragen.html?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>`);
+  }
+  suggestEl.innerHTML = parts.join("");
+  suggestEl.classList.add("visible");
+
+  // Wire row clicks
+  let geoResults = geo || [];
+  suggestEl.querySelectorAll(".sugg-row").forEach((row) => {
+    row.addEventListener("click", () => {
+      if (row.dataset.type === "local") {
+        const id = row.dataset.id;
+        const b = allBreweries.find((x) => x.id === id);
+        if (!b) return;
+        clearGeoMarker();
+        map.flyTo(b.coords, 16, { duration: 0.8 });
+        const m = markerMap.get(id);
+        if (m) setTimeout(() => m.openPopup(), 850);
+        atlasTrack("map_search_local", { id });
+      } else {
+        const g = geoResults[parseInt(row.dataset.idx, 10)];
+        if (g) { flyToGeo(g); atlasTrack("map_search_geo", { q: searchEl.value }); }
+      }
+      suggestEl.classList.remove("visible");
+    });
+  });
+}
+
+const runSuggest = debounce(async (q) => {
+  if (!q || q.length < 2) { suggestEl.classList.remove("visible"); return; }
+  const local = localMatches(q);
+  // Wenn wir lokal genug haben → keinen Geocoder-Call
+  if (local.length >= 3) return renderSuggest(q, local, []);
+  let geo = [];
+  if (cfg.map.geocodeEnabled) {
+    try {
+      const r = await window.AtlasAPI.geocode(q);
+      geo = r.results || [];
+    } catch (e) { /* still */ }
+  }
+  renderSuggest(q, local, geo);
+}, 280);
+
+searchEl.addEventListener("input", (e) => {
+  const v = e.target.value;
+  const active = document.querySelector(".filter-btn.active").dataset.filter;
+  renderMarkers(active, v);
+  runSuggest(v);
+});
+searchEl.addEventListener("focus", () => {
+  if (searchEl.value) runSuggest(searchEl.value);
+});
+// Close on outside click
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".map-search-wrap")) suggestEl.classList.remove("visible");
+});
+// Enter → erste Option nehmen
+searchEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const first = suggestEl.querySelector(".sugg-row");
+    if (first) first.click();
+  } else if (e.key === "Escape") {
+    suggestEl.classList.remove("visible");
+    searchEl.blur();
+  }
+});
+
+// Filter-Buttons
+document.querySelectorAll(".filter-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderMarkers(btn.dataset.filter, searchEl.value);
+    atlasTrack("map_filter", { filter: btn.dataset.filter });
+  });
+});
+
+// ============ Daten laden ============
+(async () => {
+  try {
+    const [brews, prices, stats, events] = await Promise.all([
+      window.AtlasAPI.listBreweries(),
+      window.AtlasAPI.listPrices(),
+      window.AtlasAPI.getStats(),
+      window.AtlasAPI.listEvents(),
+    ]);
+    allBreweries = brews.breweries || [];
+
+    // Preis-Index aufbauen (neuester Preis pro Brauerei & 0,25l bevorzugt)
+    const byId = new Map();
+    (prices.prices || []).forEach((p) => {
+      const cur = byId.get(p.breweryId);
+      // Bevorzugt 0,25l; andernfalls neuestes Datum
+      const score = (p.size === "0,25l" ? 1000 : 0) + new Date(p.date).getTime() / 1e10;
+      const curScore = cur ? (cur.size === "0,25l" ? 1000 : 0) + new Date(cur.date).getTime() / 1e10 : -1;
+      if (!cur || score > curScore) byId.set(p.breweryId, p);
+    });
+    priceByBrewery = byId;
+
+    // Ticker
+    document.getElementById("avg-price").textContent = stats.avgPrice025
+      ? "€ " + stats.avgPrice025.toFixed(2).replace(".", ",") : "—";
+    document.getElementById("data-points").textContent = stats.priceCount ?? "—";
+    document.getElementById("brewery-count").textContent = stats.breweryCount ?? "—";
+
+    renderMarkers();
+    renderRankings(prices.prices || []);
+    renderEvents(events.events || []);
+  } catch (e) {
+    console.error("[atlas] Daten konnten nicht geladen werden:", e);
+  }
+})();
+
+// ============ Rankings ============
+function renderRankings(prices) {
+  const alt025 = prices
+    .filter((p) => p.size === "0,25l")
+    .map((p) => {
+      const b = allBreweries.find((x) => x.id === p.breweryId);
+      return b ? { ...b, price: p.price, date: p.date } : null;
+    })
+    .filter(Boolean);
+
+  const uniqueLatest = {};
+  alt025.slice().sort((a, b) => b.date.localeCompare(a.date)).forEach((x) => {
+    if (!uniqueLatest[x.id]) uniqueLatest[x.id] = x;
+  });
+  const uniq = Object.values(uniqueLatest);
+
+  function fill(id, items) {
+    document.getElementById(id).innerHTML = items.map((it, i) => `
+      <li>
+        <span class="pos">${String(i + 1).padStart(2, "0")}</span>
+        <span class="name">
+          <a href="brauerei.html?id=${it.id}">${it.short || it.name}</a>
+          <span class="city">${it.city}</span>
+        </span>
+        <span class="price">${it.priceText}</span>
+      </li>
+    `).join("");
+  }
+
+  fill("rank-cheapest",
+    [...uniq].sort((a, b) => a.price - b.price).slice(0, 5).map((b) => ({
+      id: b.id, name: b.name, short: b.short, city: b.city,
+      priceText: "€ " + b.price.toFixed(2).replace(".", ","),
+    })));
+  fill("rank-priciest",
+    [...uniq].sort((a, b) => b.price - a.price).slice(0, 5).map((b) => ({
+      id: b.id, name: b.name, short: b.short, city: b.city,
+      priceText: "€ " + b.price.toFixed(2).replace(".", ","),
+    })));
+
+  const seen = new Set();
+  const newest = [];
+  prices.slice().sort((a, b) => b.date.localeCompare(a.date)).forEach((p) => {
+    if (seen.has(p.breweryId)) return;
+    seen.add(p.breweryId);
+    const b = allBreweries.find((x) => x.id === p.breweryId);
+    if (!b) return;
+    newest.push({
+      id: b.id, name: b.name, short: b.short, city: b.city,
+      priceText: new Date(p.date).toLocaleDateString("de-DE", { day: "2-digit", month: "short" }),
+    });
+  });
+  fill("rank-newest", newest.slice(0, 5));
+}
+
+// ============ Events ============
+function renderEvents(events) {
+  const grid = document.getElementById("event-grid");
+  const now = new Date();
+  const upcoming = events.filter((e) => new Date(e.date) >= now)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  function paint() {
+    const lang = window.__atlasLang;
+    grid.innerHTML = upcoming.map((ev) => {
+      const b = ev.breweryId ? allBreweries.find((x) => x.id === ev.breweryId) : null;
+      const d = new Date(ev.date);
+      const dateText = d.toLocaleDateString(lang === "en" ? "en-US" : "de-DE", {
+        weekday: "short", day: "2-digit", month: "long", year: "numeric",
+      });
+      return `
+        <article class="card event-card">
+          <div class="event-date">${dateText}</div>
+          <div class="event-title">${ev.title[lang] || ev.title.de}</div>
+          <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
+          <div class="event-loc">${b ? "@ " + b.name + " · " + b.city : "— Düsseldorf Altstadt —"}</div>
+        </article>`;
+    }).join("") || `<p style="color:var(--ink-muted)">Keine anstehenden Termine.</p>`;
+  }
+  paint();
+  document.addEventListener("atlas:lang-changed", paint);
+}
+</script>
+</body>
+</html>

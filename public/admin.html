@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin · Altbieratlas</title>
+<meta name="robots" content="noindex,nofollow" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css" />
+<style>
+.field { margin-bottom: 14px; }
+.field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+.field input, .field select, .field textarea {
+  width: 100%; padding: 11px 14px;
+  background: var(--bg); border: 1px solid var(--rule-strong);
+  border-radius: var(--radius); color: var(--ink);
+  font-family: var(--font-ui); font-size: 14px;
+}
+.field input:focus { outline: none; border-color: var(--copper); }
+
+.admin-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule);
+  margin-bottom: 4px; gap: 10px; flex-wrap: wrap;
+}
+.admin-header .who {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted);
+}
+.admin-header .who strong { color: var(--copper); }
+
+.brewery-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.brewery-table th, .brewery-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px; text-align: left;
+}
+.brewery-table th {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-muted);
+  background: var(--bg-elev);
+}
+.brewery-table tr:last-child td { border-bottom: none; }
+.brewery-table .status-approved { color: #2d7a2d; }
+.brewery-table .status-pending  { color: #a07a20; }
+.brewery-table .status-rejected { color: #9b1f1f; }
+.brewery-table .actions { display: flex; gap: 6px; }
+.brewery-table .actions button {
+  font-size: 11px; padding: 5px 10px;
+}
+
+.subtab-bar {
+  display: flex; gap: 10px; margin: 16px 0 20px;
+  font-family: var(--font-mono); font-size: 12px;
+}
+.subtab-bar button {
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  color: var(--ink-soft);
+  padding: 6px 14px; border-radius: 999px;
+  cursor: pointer;
+}
+.subtab-bar button.active { background: var(--copper); color: var(--accent-ink); border-color: var(--copper); }
+
+.reject-dialog {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.reject-dialog.visible { display: flex; }
+.reject-dialog .box {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  max-width: 440px; width: 100%;
+}
+.reject-dialog h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; margin-bottom: 12px; }
+.reject-dialog .actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  margin-top: 16px;
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-header"></div>
+
+  <!-- ============ LOGIN ============ -->
+  <section id="login-section" class="admin-login" style="display:none">
+    <h1 data-i18n="admin.title">Administration</h1>
+    <p class="hint">Anmeldung erforderlich.</p>
+
+    <form id="login-form">
+      <div class="field">
+        <label data-i18n="admin.username">Benutzername</label>
+        <input name="username" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label data-i18n="admin.password">Passwort</label>
+        <input name="password" type="password" required autocomplete="current-password" />
+      </div>
+      <div class="admin-error" id="login-error" data-i18n="admin.loginFailed">Anmeldung fehlgeschlagen.</div>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:8px" data-i18n="admin.login">Anmelden</button>
+    </form>
+    <p style="color:var(--ink-muted);font-size:12px;margin-top:18px">
+      Die Admin-Funktionen sind nur im Live-Modus (Worker + D1) verfügbar.
+    </p>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <main id="admin-section" class="admin-wrap" style="display:none">
+    <div class="container">
+      <div class="admin-header">
+        <div>
+          <div class="eyebrow">Redaktion</div>
+          <h1 data-i18n="admin.title">Administration</h1>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="who">angemeldet als <strong id="admin-username">—</strong></div>
+          <button class="btn btn-ghost" id="btn-logout" data-i18n="admin.logout">Abmelden</button>
+        </div>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="active" data-tab="dashboard" data-i18n="admin.dashboard">Übersicht</button>
+        <button data-tab="contribs" data-i18n="admin.pending">Offene Beiträge</button>
+        <button data-tab="breweries" data-i18n="admin.breweries">Brauereien</button>
+      </div>
+
+      <div class="admin-tab-content">
+        <!-- Dashboard -->
+        <section id="tab-dashboard" class="active">
+          <div class="admin-stat-grid">
+            <div class="admin-stat"><div class="n" id="s-pending">—</div><div class="lbl" data-i18n="admin.pending">Offen</div></div>
+            <div class="admin-stat"><div class="n" id="s-approved">—</div><div class="lbl" data-i18n="admin.approved">Freigegeben</div></div>
+            <div class="admin-stat"><div class="n" id="s-rejected">—</div><div class="lbl" data-i18n="admin.rejected">Abgelehnt</div></div>
+            <div class="admin-stat"><div class="n" id="s-breweries">—</div><div class="lbl" data-i18n="admin.breweries">Brauereien</div></div>
+            <div class="admin-stat"><div class="n" id="s-prices">—</div><div class="lbl">Preismeldungen</div></div>
+          </div>
+
+          <h2 style="font-family:var(--font-display);font-weight:500;margin:30px 0 10px" data-i18n="admin.pending">Offene Beiträge</h2>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px">Die neuesten offenen Einreichungen im Schnellzugriff:</p>
+          <div id="dashboard-pending"></div>
+        </section>
+
+        <!-- Contributions -->
+        <section id="tab-contribs">
+          <div class="subtab-bar">
+            <button class="active" data-status="pending" data-i18n="admin.pending">Offen</button>
+            <button data-status="approved" data-i18n="admin.approved">Freigegeben</button>
+            <button data-status="rejected" data-i18n="admin.rejected">Abgelehnt</button>
+          </div>
+          <div id="contrib-list"></div>
+        </section>
+
+        <!-- Breweries -->
+        <section id="tab-breweries">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px">Alle Brauereien-Einträge (inkl. offener).</p>
+          <div style="overflow:auto">
+            <table class="brewery-table">
+              <thead>
+                <tr>
+                  <th>Name</th><th>Stadt</th><th>Typ</th><th>Status</th><th>Verif.</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="brewery-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- Reject-Dialog -->
+  <div class="reject-dialog" id="reject-dialog">
+    <div class="box">
+      <h3>Beitrag ablehnen</h3>
+      <div class="field">
+        <label data-i18n="admin.rejectReason">Grund (optional)</label>
+        <textarea id="reject-notes" rows="3" placeholder="Kurzer Grund — wird intern gespeichert."></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost" id="reject-cancel" data-i18n="common.cancel">Abbrechen</button>
+        <button class="btn btn-reject" id="reject-confirm" data-i18n="admin.reject">Ablehnen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="api-client.js"></script>
+<script src="shell.js"></script>
+<script>
+renderShell({ activeNav: "" });
+
+const loginSection = document.getElementById("login-section");
+const adminSection = document.getElementById("admin-section");
+const loginErr = document.getElementById("login-error");
+let me = null;
+
+// ============ Auth: Initialprüfung ============
+(async () => {
+  // Auf die API-Mode-Erkennung warten
+  await window.AtlasAPI.ready();
+  if (window.AtlasAPI.mode() !== "live") {
+    loginSection.style.display = "block";
+    loginErr.textContent = "Admin-Bereich benötigt Live-API (Mock-Modus erkannt).";
+    loginErr.classList.add("visible");
+    return;
+  }
+  try {
+    const r = await window.AtlasAPI.admin.me();
+    me = r;
+    showAdmin();
+  } catch (e) {
+    loginSection.style.display = "block";
+  }
+})();
+
+// ============ Login ============
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  loginErr.classList.remove("visible");
+  const fd = new FormData(e.target);
+  try {
+    const r = await window.AtlasAPI.admin.login(fd.get("username"), fd.get("password"));
+    me = r;
+    showAdmin();
+  } catch (err) {
+    loginErr.textContent = err.status === 429
+      ? "Zu viele Fehlversuche. Bitte kurz warten."
+      : window.t("admin.loginFailed");
+    loginErr.classList.add("visible");
+  }
+});
+
+document.getElementById("btn-logout").addEventListener("click", async () => {
+  try { await window.AtlasAPI.admin.logout(); } catch {}
+  location.reload();
+});
+
+// ============ Tabs ============
+document.querySelectorAll(".admin-tabs button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".admin-tabs button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll(".admin-tab-content > section").forEach((s) => s.classList.remove("active"));
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "contribs") loadContributions(currentStatus);
+    if (btn.dataset.tab === "breweries") loadBreweriesTable();
+    if (btn.dataset.tab === "dashboard") loadDashboard();
+  });
+});
+
+// ============ Show Admin ============
+async function showAdmin() {
+  loginSection.style.display = "none";
+  adminSection.style.display = "block";
+  document.getElementById("admin-username").textContent = me.username;
+  await loadDashboard();
+}
+
+// ============ Dashboard ============
+async function loadDashboard() {
+  try {
+    const [stats, pending] = await Promise.all([
+      window.AtlasAPI.admin.stats(),
+      window.AtlasAPI.admin.listContribs("pending"),
+    ]);
+    document.getElementById("s-pending").textContent   = stats.pending;
+    document.getElementById("s-approved").textContent  = stats.approved;
+    document.getElementById("s-rejected").textContent  = stats.rejected;
+    document.getElementById("s-breweries").textContent = stats.breweries;
+    document.getElementById("s-prices").textContent    = stats.prices;
+
+    const host = document.getElementById("dashboard-pending");
+    renderContribCards(pending.contributions.slice(0, 5), host, "pending");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ============ Contributions ============
+let currentStatus = "pending";
+document.querySelectorAll(".subtab-bar button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".subtab-bar button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentStatus = btn.dataset.status;
+    loadContributions(currentStatus);
+  });
+});
+async function loadContributions(status) {
+  const host = document.getElementById("contrib-list");
+  host.innerHTML = `<p style="color:var(--ink-muted)" data-i18n="common.loading">Lade…</p>`;
+  try {
+    const r = await window.AtlasAPI.admin.listContribs(status);
+    renderContribCards(r.contributions, host, status);
+  } catch (e) {
+    host.innerHTML = `<div class="admin-error visible">${e.message}</div>`;
+  }
+}
+
+function renderContribCards(items, host, status) {
+  if (!items.length) {
+    host.innerHTML = `<div class="admin-empty" data-i18n="admin.noPending">Keine offenen Beiträge.</div>`;
+    window.setLang(window.__atlasLang);
+    return;
+  }
+  host.innerHTML = items.map((c) => {
+    const d = new Date(c.createdAt).toLocaleString("de-DE");
+    const payload = JSON.stringify(c.payload, null, 2);
+    return `
+      <div class="contrib-card" data-id="${c.id}">
+        <div>
+          <div class="meta">
+            <span class="type-tag">${c.type}</span>
+            <span>${d}</span>
+            ${c.submitterEmail ? `<span>${c.submitterEmail}</span>` : ""}
+            ${c.adminNotes ? `<span>· Note: ${c.adminNotes}</span>` : ""}
+          </div>
+          <div class="payload">${payload}</div>
+        </div>
+        ${status === "pending" ? `
+          <div class="contrib-actions">
+            <button class="btn btn-approve" data-action="approve" data-i18n="admin.approve">Freigeben</button>
+            <button class="btn btn-reject"  data-action="reject"  data-i18n="admin.reject">Ablehnen</button>
+          </div>` : ""}
+      </div>
+    `;
+  }).join("");
+  window.setLang(window.__atlasLang);
+
+  host.querySelectorAll(".contrib-card").forEach((card) => {
+    const id = card.dataset.id;
+    card.querySelectorAll("button[data-action]").forEach((b) => {
+      b.addEventListener("click", () => handleAction(id, b.dataset.action, card));
+    });
+  });
+}
+
+async function handleAction(id, action, cardEl) {
+  if (action === "approve") {
+    try {
+      await window.AtlasAPI.admin.approve(id);
+      cardEl.remove();
+      loadDashboard();
+    } catch (e) {
+      alert("Freigabe fehlgeschlagen: " + (e.detail?.detail || e.message));
+    }
+  } else if (action === "reject") {
+    openReject(id, cardEl);
+  }
+}
+
+// Reject-Dialog
+const rejectDialog = document.getElementById("reject-dialog");
+let pendingReject = null;
+function openReject(id, cardEl) {
+  pendingReject = { id, cardEl };
+  document.getElementById("reject-notes").value = "";
+  rejectDialog.classList.add("visible");
+}
+document.getElementById("reject-cancel").addEventListener("click", () => {
+  rejectDialog.classList.remove("visible"); pendingReject = null;
+});
+document.getElementById("reject-confirm").addEventListener("click", async () => {
+  if (!pendingReject) return;
+  const notes = document.getElementById("reject-notes").value.trim() || null;
+  try {
+    await window.AtlasAPI.admin.reject(pendingReject.id, notes);
+    pendingReject.cardEl.remove();
+    pendingReject = null;
+    rejectDialog.classList.remove("visible");
+    loadDashboard();
+  } catch (e) {
+    alert("Ablehnung fehlgeschlagen: " + (e.detail?.detail || e.message));
+  }
+});
+rejectDialog.addEventListener("click", (e) => {
+  if (e.target === rejectDialog) rejectDialog.classList.remove("visible");
+});
+
+// ============ Breweries Table ============
+async function loadBreweriesTable() {
+  const tbody = document.getElementById("brewery-tbody");
+  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px" data-i18n="common.loading">Lade…</td></tr>`;
+  try {
+    const r = await window.AtlasAPI.admin.listBreweries();
+    tbody.innerHTML = (r.breweries || []).map((b) => `
+      <tr data-id="${b.id}">
+        <td><a href="brauerei.html?id=${b.id}" target="_blank">${b.name}</a></td>
+        <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
+        <td>${b.type}</td>
+        <td><span class="status-${b.status}">${b.status}</span></td>
+        <td>${b.verified ? "✓" : "—"}</td>
+        <td class="actions">
+          <button class="btn" data-act="toggle-verified">${b.verified ? "Un-Verif." : "Verifizieren"}</button>
+          <button class="btn btn-reject" data-act="delete">Löschen</button>
+        </td>
+      </tr>
+    `).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Einträge.</td></tr>`;
+
+    tbody.querySelectorAll("tr[data-id]").forEach((row) => {
+      const id = row.dataset.id;
+      row.querySelectorAll("button[data-act]").forEach((b) => {
+        b.addEventListener("click", () => handleBreweryAction(id, b.dataset.act, row));
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+async function handleBreweryAction(id, act, rowEl) {
+  if (act === "delete") {
+    if (!confirm("Brauerei wirklich löschen? Alle zugehörigen Preise werden mitgelöscht.")) return;
+    try {
+      await window.AtlasAPI.admin.deleteBrewery(id);
+      rowEl.remove();
+      loadDashboard();
+    } catch (e) { alert("Fehler: " + e.message); }
+  } else if (act === "toggle-verified") {
+    const currentBadge = rowEl.querySelector("td:nth-child(5)").textContent.trim();
+    const nowVerified = currentBadge === "✓" ? 0 : 1;
+    try {
+      await window.AtlasAPI.admin.updateBrewery(id, { verified: nowVerified });
+      rowEl.querySelector("td:nth-child(5)").textContent = nowVerified ? "✓" : "—";
+      rowEl.querySelector("button[data-act='toggle-verified']").textContent = nowVerified ? "Un-Verif." : "Verifizieren";
+    } catch (e) { alert("Fehler: " + e.message); }
+  }
+}
+</script>
+</body>
+</html>

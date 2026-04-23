@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wissen · Altbieratlas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css" />
+<style>
+.know-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); }
+.know-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; }
+.know-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
+.know-hero .lede em { font-style: italic; color: var(--copper); }
+
+.know-nav {
+  display: flex; gap: 4px; margin: 40px 0 0;
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto; position: sticky; top: 64px;
+  background: var(--bg); z-index: 10;
+}
+.know-nav a {
+  border: none; padding: 14px 18px;
+  color: var(--ink-soft); font-size: 14px;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.know-nav a:hover { color: var(--ink); }
+.know-nav a.active { color: var(--ink); border-bottom-color: var(--copper); }
+
+.know-section { padding: 60px 0; border-bottom: 1px solid var(--rule); }
+.know-section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 500; max-width: 20ch; margin-bottom: 26px; }
+.know-section .eyebrow { margin-bottom: 8px; }
+
+.prose {
+  font-family: var(--font-display);
+  font-size: 19px; line-height: 1.7;
+  color: var(--ink); max-width: 68ch;
+}
+.prose p { margin: 0 0 20px; }
+.prose p:first-letter {
+  font-size: 3.6em; float: left; line-height: 0.85;
+  padding: 6px 10px 0 0; color: var(--copper); font-weight: 500;
+}
+.prose p + p:first-letter { font-size: 1em; float: none; padding: 0; color: inherit; }
+.prose em { font-style: italic; color: var(--copper); }
+
+.glossary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
+.gloss-item {
+  padding: 22px 24px;
+  border-top: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+}
+.gloss-item:nth-child(2n) { border-right: none; }
+.gloss-item h3 {
+  font-family: var(--font-display); font-size: 1.35rem; font-weight: 500;
+  color: var(--copper); margin-bottom: 8px;
+}
+.gloss-item p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
+
+.style-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px; margin-top: 20px;
+}
+.spec-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); overflow: hidden; }
+.spec-head {
+  height: 80px; position: relative;
+  padding: 18px 20px;
+  display: flex; align-items: flex-end;
+}
+.spec-head h3 { color: #f3ead8; font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; }
+.spec-body { padding: 16px 20px 20px; }
+.spec-row {
+  display: flex; justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 12px;
+}
+.spec-row:last-child { border: none; }
+.spec-row .k { color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.spec-row .v { color: var(--copper); font-weight: 500; }
+.spec-tasting { font-size: 13px; color: var(--ink-soft); padding-top: 12px; line-height: 1.55; }
+
+.koebes-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 18px; margin-top: 28px;
+}
+.koebes-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 24px; }
+.koebes-card .num { font-family: var(--font-display); font-size: 44px; color: var(--copper); font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
+.koebes-card h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; margin: 14px 0 8px; }
+.koebes-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
+
+@media (max-width: 800px) {
+  .glossary-grid { grid-template-columns: 1fr; }
+  .gloss-item { border-right: none; }
+  .koebes-cards { grid-template-columns: 1fr; }
+  .know-nav { top: 64px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-header"></div>
+
+  <section class="know-hero">
+    <div class="container">
+      <div class="eyebrow">Altbier-Wissen</div>
+      <h1>Ein obergäriges Bier, eine Stadt, eine <em>Kultur</em>.</h1>
+      <p class="lede">Altbier ist nicht nur eine Biersorte. Es ist ein Getränk, eine Bedienart und eine Selbstverständlichkeit. Wer es zum ersten Mal trinkt, versteht die Runde erst beim dritten Glas.</p>
+    </div>
+  </section>
+
+  <nav class="know-nav">
+    <div class="container" style="display:flex;gap:4px">
+      <a href="#geschichte" class="active">Geschichte</a>
+      <a href="#sorten">Sorten</a>
+      <a href="#koebes">Köbes-Kultur</a>
+      <a href="#glossar">Glossar</a>
+    </div>
+  </nav>
+
+  <section class="know-section" id="geschichte">
+    <div class="container">
+      <div class="eyebrow">Geschichte</div>
+      <h2>Warum „Alt"?</h2>
+      <div class="prose">
+        <p>Die Bezeichnung <em>Altbier</em> meint nicht das Alter des Bieres, sondern die Art, es zu brauen: obergärig, mit Hefe, die bei wärmeren Temperaturen oben auf dem Sud arbeitet. Das ist die <em>alte</em> Brauart — im Gegensatz zu den später aufgekommenen, untergärigen Lagerbieren.</p>
+        <p>Im Rheinland, besonders in Düsseldorf und am Niederrhein, hat sich diese Tradition gehalten. Während der Rest Deutschlands im 19. Jahrhundert auf Pils und Export umstellte, hielten die Düsseldorfer an ihrem dunkel-bernsteinfarbenen, würzig-herben Alt fest. Vier klassische Hausbrauereien bestehen bis heute in der Altstadt: <em>Uerige</em>, <em>Füchschen</em>, <em>Schumacher</em> und <em>Schlüssel</em>. Dazu kam 2010 die jüngere <em>Kürzer</em>.</p>
+        <p>Außerhalb des Rheinlands ist Altbier eine Rarität. In den USA haben Craft-Brauer wie Alaskan Brewing die Sorte nach alter Düsseldorfer Vorlage wieder aufleben lassen. Auch in den Niederlanden, Japan und einzelnen europäischen Ländern gibt es heute Altbier-Interpretationen — oft mit Respekt für das Original, manchmal mit eigener Handschrift.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="know-section" id="sorten">
+    <div class="container">
+      <div class="eyebrow">Sorten</div>
+      <h2>Was im Glas sein kann</h2>
+      <p style="color:var(--ink-soft);max-width:60ch;margin-bottom:10px">Nicht jedes Alt schmeckt gleich. Von der milden Schumacher-Runde bis zur fast portweinartigen Uerige Doppelsticke ist viel Spielraum.</p>
+      <div class="style-spec-grid" id="style-grid">
+        <p style="color:var(--ink-muted);grid-column:1/-1" data-i18n="common.loading">Lade…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="know-section" id="koebes">
+    <div class="container">
+      <div class="eyebrow">Köbes-Kultur</div>
+      <h2>Drei Dinge, die du beim ersten Besuch wissen solltest</h2>
+      <p style="color:var(--ink-soft);max-width:60ch">Der Köbes ist keine Bedienung im modernen Sinn. Er ist Teil des Rituals — wortkarg, direkt, oft mit trockenem Humor. Wer das kennt, freut sich drauf.</p>
+
+      <div class="koebes-cards">
+        <div class="koebes-card">
+          <div class="num">01</div>
+          <h3>Das Glas wird nachgestellt</h3>
+          <p>Solange ein Bierdeckel auf dem leeren Glas liegt, bleibt es leer. Wer weiter trinken will, stellt den Deckel zur Seite. Wer fertig ist, legt ihn oben drauf.</p>
+        </div>
+        <div class="koebes-card">
+          <div class="num">02</div>
+          <h3>Die Strichliste zählt</h3>
+          <p>Jedes neue Alt wird als Strich auf deinem Bierdeckel notiert. Am Ende wird addiert. Kontrolliert wird nicht — hier herrscht Vertrauen. Rheinisches Ehrenwort.</p>
+        </div>
+        <div class="koebes-card">
+          <div class="num">03</div>
+          <h3>Gesprächigkeit ist optional</h3>
+          <p>Der Köbes sagt selten „Hallo". Er zählt, er stellt hin, er nimmt ab. Ein trockener Kommentar kommt gelegentlich — aber Smalltalk erwartet dich nicht. Das ist keine Unhöflichkeit, das ist Tradition.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="know-section" id="glossar">
+    <div class="container">
+      <div class="eyebrow">Glossar</div>
+      <h2>Worte, die du im Uerige hörst</h2>
+      <div class="glossary-grid" id="gloss-grid" style="margin-top:28px">
+        <p style="color:var(--ink-muted);grid-column:1/-1" data-i18n="common.loading">Lade…</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="api-client.js"></script>
+<script src="shell.js"></script>
+<script>
+renderShell({ activeNav: "knowledge" });
+
+(async () => {
+  const lang = window.__atlasLang;
+  try {
+    const [styleRes, glossRes] = await Promise.all([
+      window.AtlasAPI.listStyles(),
+      window.AtlasAPI.listGlossary(),
+    ]);
+
+    const grid = document.getElementById("style-grid");
+    grid.innerHTML = (styleRes.styles || []).map((s) => `
+      <article class="spec-card">
+        <div class="spec-head" style="background: linear-gradient(135deg, ${s.color || "#8b4513"}, ${(s.color || "#8b4513")}cc)">
+          <h3>${s.name}</h3>
+        </div>
+        <div class="spec-body">
+          ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${s.abv} %</span></div>` : ""}
+          ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
+          <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
+        </div>
+      </article>
+    `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
+
+    const gg = document.getElementById("gloss-grid");
+    gg.innerHTML = (glossRes.glossary || []).map((g) => `
+      <div class="gloss-item">
+        <h3>${g.term}</h3>
+        <p>${(g.definition && (g.definition[lang] || g.definition.de)) || ""}</p>
+      </div>
+    `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
+  } catch (e) {
+    console.error("[wissen]", e);
+    document.getElementById("style-grid").innerHTML = `<p style="color:#9b1f1f;grid-column:1/-1">Fehler beim Laden.</p>`;
+  }
+})();
+
+// Sticky nav highlight
+const sections = ["geschichte", "sorten", "koebes", "glossar"];
+const navLinks = document.querySelectorAll(".know-nav a");
+function updateActive() {
+  const y = window.scrollY + 150;
+  let active = sections[0];
+  sections.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= y) active = id;
+  });
+  navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + active));
+}
+window.addEventListener("scroll", updateActive, { passive: true });
+
+// Re-render on language change
+document.addEventListener("atlas:lang-changed", () => location.reload());
+</script>
+</body>
+</html>

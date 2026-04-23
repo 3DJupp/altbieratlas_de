@@ -1,0 +1,49 @@
+# ============================================================
+# Altbieratlas — Cloudflare Workers Konfiguration
+# ============================================================
+
+name = "altbieratlas"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# --- Statische Dateien (Worker Sites / Assets) ----------------
+# Der Worker beantwortet /api/* selbst und delegiert alles andere
+# ans ASSETS-Binding.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# Falls mal eine SPA daraus wird — für PoC nicht relevant:
+# not_found_handling = "single-page-application"
+
+# --- D1-Datenbank ---------------------------------------------
+# Nach dem Anlegen via `wrangler d1 create altbieratlas` die ID unten einsetzen.
+[[d1_databases]]
+binding       = "DB"
+database_name = "altbieratlas"
+database_id   = "REPLACE_WITH_YOUR_D1_ID"
+# migrations_dir = "migrations"   # für `wrangler d1 migrations apply`
+
+# --- (optional) KV für Cache o.ä. — derzeit ungenutzt ---------
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "xxxxxxxx"
+
+# --- Umgebungsvariablen (plain, nicht sensitiv) ---------------
+[vars]
+CONTACT_EMAIL = "kontakt@altbieratlas.example"
+
+# --- Secrets (per CLI setzen, nicht committen!) ---------------
+# wrangler secret put TURNSTILE_SECRET_KEY
+# wrangler secret put TURNSTILE_SITE_KEY          # kann auch als [vars] stehen, ist öffentlich
+# wrangler secret put INITIAL_ADMIN_PASSWORD      # einmalig für Seed
+#
+# Hinweis: Der Site-Key ist per Definition öffentlich und darf im Frontend
+# auftauchen. Er wird trotzdem vom Worker ausgeliefert, damit keine Hardcodes
+# im Bundle nötig sind.
+
+# --- (optional) Environments ----------------------------------
+# [env.production]
+# route = "altbieratlas.de/*"
+# [env.staging]
+# route = "staging.altbieratlas.de/*"

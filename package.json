@@ -1,0 +1,22 @@
+{
+  "name": "altbieratlas",
+  "version": "0.2.0",
+  "description": "Die interaktive Karte des Altbiers — Cloudflare Workers + D1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create altbieratlas",
+    "db:schema:local": "wrangler d1 execute altbieratlas --local --file=./migrations/0001_schema.sql",
+    "db:schema:remote": "wrangler d1 execute altbieratlas --remote --file=./migrations/0001_schema.sql",
+    "db:seed:local": "wrangler d1 execute altbieratlas --local --file=./migrations/0002_seed.sql",
+    "db:seed:remote": "wrangler d1 execute altbieratlas --remote --file=./migrations/0002_seed.sql",
+    "db:setup:local": "npm run db:schema:local && npm run db:seed:local",
+    "db:setup:remote": "npm run db:schema:remote && npm run db:seed:remote",
+    "admin:create": "node scripts/create-admin.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
