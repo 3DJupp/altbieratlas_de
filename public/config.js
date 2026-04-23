@@ -24,14 +24,14 @@ window.ATLAS_CONFIG = {
 
   // --- Analytics (Google Analytics 4) ---
   // Platzhalter — vor dem Deploy durch echte Measurement-ID ersetzen.
-  ga4MeasurementId: "G-XXXXXXXXXX",
-  analyticsEnabled: false, // wird nach Cookie-Consent auf true gesetzt
+  ga4MeasurementId: "G-QLZ3NS6FNN",
+  analyticsEnabled: true, // wird nach Cookie-Consent auf true gesetzt
 
   // --- Spam/Bot-Schutz (Cloudflare Turnstile) ---
   // Der Site-Key ist öffentlich. Der Secret-Key liegt als Worker-Secret.
   // Wird zur Laufzeit auch aus /api/config geladen (Server ist die Quelle
   // der Wahrheit) — dieser Wert ist ein Fallback für Mock-/Dev-Modus.
-  turnstileSiteKey: "0x4AAAAAAA_TESTKEY_PLACEHOLDER",
+  turnstileSiteKey: "0x4AAAAAADANKhOfPfuzPK0H",
   turnstileEnabled: true,
 
   // --- Karte ---
@@ -68,7 +68,7 @@ window.ATLAS_CONFIG = {
   // --- Autor / Social ---
   // Werden im Footer verlinkt. Leerlassen = kein Link.
   author: {
-    name: "Max Mustermann",
+    name: "Dominic Spatz",
     github: "https://github.com/DEIN_USER",
     linkedin: "https://www.linkedin.com/in/DEIN_PROFIL/",
     website: "",
@@ -76,8 +76,8 @@ window.ATLAS_CONFIG = {
 
   // --- Legal ---
   impressum: {
-    owner: "Max Mustermann",
-    address: "Musterstraße 1, 40213 Düsseldorf",
-    email: "kontakt@altbieratlas.example",
+    owner: "Dominic Spatz",
+    address: "Max Schmeling Str. 2, 40597 Düsseldorf",
+    email: "kontakt@altbieratlas.de",
   },
 };
