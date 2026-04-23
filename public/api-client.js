@@ -19,12 +19,39 @@
   // ---- Mode detection ----
   const modeHint = cfg.apiMode || "auto";
   let resolvedMode = modeHint === "auto" ? null : modeHint; // wird per probe gesetzt
+  let configReady = false;
+
+  // Merged die Server-Config in window.ATLAS_CONFIG (nur nicht-null Werte).
+  // Ermöglicht, Werte per wrangler.toml [vars] bzw. Dashboard-Override zu
+  // pflegen, statt sie im Frontend-Bundle zu hinterlegen.
+  function mergeServerConfig(srv) {
+    if (!srv || typeof srv !== "object") return;
+    if (srv.turnstileSiteKey)              cfg.turnstileSiteKey   = srv.turnstileSiteKey;
+    if (typeof srv.turnstileEnabled === "boolean") cfg.turnstileEnabled = srv.turnstileEnabled;
+    if (srv.ga4MeasurementId)              cfg.ga4MeasurementId   = srv.ga4MeasurementId;
+    if (srv.author && typeof srv.author === "object") {
+      cfg.author = cfg.author || {};
+      for (const k of ["name", "github", "linkedin", "website"]) {
+        if (srv.author[k]) cfg.author[k] = srv.author[k];
+      }
+    }
+    if (srv.impressum && typeof srv.impressum === "object") {
+      cfg.impressum = cfg.impressum || {};
+      for (const k of ["owner", "address", "email"]) {
+        if (srv.impressum[k]) cfg.impressum[k] = srv.impressum[k];
+      }
+    }
+  }
 
   async function probe() {
-    if (resolvedMode) return resolvedMode;
+    if (resolvedMode && configReady) return resolvedMode;
     try {
-      const r = await fetch(`${base}/stats`, { method: "GET" });
+      // /api/config liefert sowohl einen Lebens-Ping (→ live) als auch
+      // die komplette Site-Config.
+      const r = await fetch(`${base}/config`, { method: "GET" });
       if (r.ok) {
+        const srv = await r.json();
+        mergeServerConfig(srv);
         resolvedMode = "live";
         console.info("[atlas] API live.");
       } else {
@@ -35,8 +62,10 @@
       resolvedMode = "mock";
       console.info("[atlas] API nicht erreichbar — Mock-Fallback.");
     }
+    configReady = true;
     window.ATLAS_MODE = resolvedMode;
     document.dispatchEvent(new CustomEvent("atlas:mode-ready", { detail: resolvedMode }));
+    document.dispatchEvent(new CustomEvent("atlas:config-ready", { detail: cfg }));
     return resolvedMode;
   }
 

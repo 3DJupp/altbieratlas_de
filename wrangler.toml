@@ -7,43 +7,55 @@ main = "src/worker.js"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Werte, die im Cloudflare-Dashboard unter
+# "Settings → Variables and Secrets" editiert werden, bleiben
+# beim nächsten Deploy erhalten. Ohne dieses Flag würde
+# `wrangler deploy` die Dashboard-Werte mit den Datei-Werten
+# überschreiben.
+keep_vars = true
+
 # --- Statische Dateien (Worker Sites / Assets) ----------------
 # Der Worker beantwortet /api/* selbst und delegiert alles andere
 # ans ASSETS-Binding.
 [assets]
 directory = "./public"
 binding = "ASSETS"
-# Falls mal eine SPA daraus wird — für PoC nicht relevant:
-# not_found_handling = "single-page-application"
 
 # --- D1-Datenbank ---------------------------------------------
-# Nach dem Anlegen via `wrangler d1 create altbieratlas` die ID unten einsetzen.
+# Nach dem Anlegen via `wrangler d1 create altbieratlas` die ID
+# unten einsetzen.
 [[d1_databases]]
 binding       = "DB"
-database_name = "d1-altbieratlas"
-database_id   = "4a711f24-24f0-4d1c-9c64-8e6297a6343b"
-# migrations_dir = "migrations"   # für `wrangler d1 migrations apply`
+database_name = "altbieratlas"
+database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
-# --- (optional) KV für Cache o.ä. — derzeit ungenutzt ---------
-# [[kv_namespaces]]
-# binding = "CACHE"
-# id = "xxxxxxxx"
-
-# --- Umgebungsvariablen (plain, nicht sensitiv) ---------------
+# --- Umgebungsvariablen ---------------------------------------
+# Alles hier Definierte kann im Cloudflare-Dashboard überschrieben
+# werden ("Workers → altbieratlas → Settings → Variables and Secrets").
+# Diese Datei-Werte sind daher nur Defaults/Platzhalter.
 [vars]
-CONTACT_EMAIL = "kontakt@altbieratlas.de"
+# Technisch
+CONTACT_EMAIL       = "kontakt@altbieratlas.example"
+
+# Analytics — leer lassen, um GA4 komplett zu deaktivieren.
+# Echte ID hat das Format G-XXXXXXXXXX.
+GA4_MEASUREMENT_ID  = ""
+
+# Autor / Social (leer = wird im Footer nicht angezeigt)
+AUTHOR_NAME         = ""
+AUTHOR_GITHUB       = ""
+AUTHOR_LINKEDIN     = ""
+AUTHOR_WEBSITE      = ""
+
+# Impressum
+IMPRESSUM_OWNER     = ""
+IMPRESSUM_ADDRESS   = ""
+IMPRESSUM_EMAIL     = ""
+
+# Turnstile Site-Key ist öffentlich und darf hier stehen.
+# Wenn leer, erscheint auf dem Beitrags-Formular ein Platzhalter
+# und der Worker überspringt die serverseitige Verifikation.
+TURNSTILE_SITE_KEY  = ""
 
 # --- Secrets (per CLI setzen, nicht committen!) ---------------
 # wrangler secret put TURNSTILE_SECRET_KEY
-# wrangler secret put TURNSTILE_SITE_KEY          # kann auch als [vars] stehen, ist öffentlich
-# wrangler secret put INITIAL_ADMIN_PASSWORD      # einmalig für Seed
-#
-# Hinweis: Der Site-Key ist per Definition öffentlich und darf im Frontend
-# auftauchen. Er wird trotzdem vom Worker ausgeliefert, damit keine Hardcodes
-# im Bundle nötig sind.
-
-# --- (optional) Environments ----------------------------------
-# [env.production]
-# route = "altbieratlas.de/*"
-# [env.staging]
-# route = "staging.altbieratlas.de/*"

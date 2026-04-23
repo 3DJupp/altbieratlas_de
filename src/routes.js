@@ -29,10 +29,32 @@ async function requireAdmin(req, env) {
 // ============================================================
 
 // GET /api/config
+// Liefert alle nicht-sensitiven Werte, die das Frontend zur Laufzeit benötigt.
+// Quelle der Wahrheit sind die [vars] aus wrangler.toml bzw. Dashboard-Overrides.
 export async function getPublicConfig(req, env) {
+  const v = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : null);
+  const siteKey = v(env.TURNSTILE_SITE_KEY);
+  const ga = v(env.GA4_MEASUREMENT_ID);
   return json({
-    turnstileSiteKey: env.TURNSTILE_SITE_KEY || null,
-    turnstileEnabled: !!(env.TURNSTILE_SITE_KEY && !env.TURNSTILE_SITE_KEY.includes("PLACEHOLDER")),
+    // Turnstile
+    turnstileSiteKey: siteKey,
+    turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
+    // Analytics
+    ga4MeasurementId: ga && !ga.startsWith("G-X") ? ga : null,
+    // Author / Social
+    author: {
+      name:     v(env.AUTHOR_NAME),
+      github:   v(env.AUTHOR_GITHUB),
+      linkedin: v(env.AUTHOR_LINKEDIN),
+      website:  v(env.AUTHOR_WEBSITE),
+    },
+    // Impressum
+    impressum: {
+      owner:   v(env.IMPRESSUM_OWNER),
+      address: v(env.IMPRESSUM_ADDRESS),
+      email:   v(env.IMPRESSUM_EMAIL),
+    },
+    //
     requireModeration: true,
   });
 }

@@ -82,14 +82,19 @@
 <script>
 renderShell({ activeNav: "" });
 
-// Impressum-Daten aus Config übernehmen
-const imp = window.ATLAS_CONFIG.impressum || {};
-const owner = imp.owner || "Betreiber nicht konfiguriert";
-document.getElementById("impressum-owner").innerHTML =
-  `<strong>${owner}</strong>${imp.address ? "<br>" + imp.address.replace(/, /g, "<br>") : ""}<br>Deutschland`;
-document.getElementById("impressum-contact").innerHTML =
-  `<strong>Kontakt:</strong><br>E-Mail: <span class="kbd">${imp.email || "kontakt@altbieratlas.example"}</span>`;
-document.getElementById("impressum-responsible").textContent = owner;
+// Impressum-Daten aus Config übernehmen — rendert einmal jetzt (aus config.js-
+// Defaults bzw. bereits gemergten Werten) und erneut, sobald /api/config geladen ist.
+function paintImpressum() {
+  const imp = window.ATLAS_CONFIG.impressum || {};
+  const owner = imp.owner || "Betreiber nicht konfiguriert";
+  document.getElementById("impressum-owner").innerHTML =
+    `<strong>${owner}</strong>${imp.address ? "<br>" + imp.address.replace(/, /g, "<br>") : ""}<br>Deutschland`;
+  document.getElementById("impressum-contact").innerHTML =
+    `<strong>Kontakt:</strong><br>E-Mail: <span class="kbd">${imp.email || "kontakt@altbieratlas.example"}</span>`;
+  document.getElementById("impressum-responsible").textContent = owner;
+}
+paintImpressum();
+document.addEventListener("atlas:config-ready", paintImpressum);
 </script>
 </body>
 </html>

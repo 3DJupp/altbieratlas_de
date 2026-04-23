@@ -1,9 +1,10 @@
 // ============================================================
 // Altbieratlas — Statische Konfiguration
 // ============================================================
-// Diese Datei kann per Deployment/Build-Step überschrieben werden.
-// Sensible Werte (Turnstile-Secret, Admin-Passwörter) gehören NICHT
-// hierher — die laufen als Worker-Secrets (siehe wrangler.toml).
+// Die meisten Werte hier sind **nur Fallback** für den Mock-Modus
+// (lokales Testen ohne Backend). Im Live-Betrieb überschreibt
+// der Worker sie mit den Werten aus wrangler.toml [vars] bzw.
+// aus dem Cloudflare-Dashboard — siehe api-client.js.
 // ============================================================
 
 window.ATLAS_CONFIG = {
@@ -16,23 +17,8 @@ window.ATLAS_CONFIG = {
   defaultLang: "de", // "de" | "en"
 
   // --- Backend ---
-  // "auto": versucht zuerst die Live-API (/api/stats), fällt bei 404 auf Mock zurück.
-  // "mock": zwingt Mock (LocalStorage + Seed aus data.js).
-  // "live": zwingt Live (schlägt fehl, wenn keine API erreichbar ist).
-  apiMode: "auto",
+  apiMode: "auto", // "auto" | "live" | "mock"
   apiBaseUrl: "/api",
-
-  // --- Analytics (Google Analytics 4) ---
-  // Platzhalter — vor dem Deploy durch echte Measurement-ID ersetzen.
-  ga4MeasurementId: "G-QLZ3NS6FNN",
-  analyticsEnabled: true, // wird nach Cookie-Consent auf true gesetzt
-
-  // --- Spam/Bot-Schutz (Cloudflare Turnstile) ---
-  // Der Site-Key ist öffentlich. Der Secret-Key liegt als Worker-Secret.
-  // Wird zur Laufzeit auch aus /api/config geladen (Server ist die Quelle
-  // der Wahrheit) — dieser Wert ist ein Fallback für Mock-/Dev-Modus.
-  turnstileSiteKey: "0x4AAAAAADANKhOfPfuzPK0H",
-  turnstileEnabled: true,
 
   // --- Karte ---
   map: {
@@ -43,10 +29,8 @@ window.ATLAS_CONFIG = {
     tileUrl: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     tileAttribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    // Wenn keine Brauerei zur Sucheingabe passt, werden Städte/Orte über
-    // den Geocoder nachgeschlagen (Proxy-Endpoint /api/geocode → Nominatim).
     geocodeEnabled: true,
-    geocodeZoom: 13, // Zoomstufe nach Treffer
+    geocodeZoom: 13,
   },
 
   // --- Feature-Flags ---
@@ -55,29 +39,39 @@ window.ATLAS_CONFIG = {
     reviews: false,
     events: true,
     priceHistory: true,
-    admin: true, // zeigt Admin-Link im Footer, wenn eingeloggt
+    admin: true,
   },
 
   // --- Währung ---
   currency: "EUR",
   priceSizes: ["0,2l", "0,25l", "0,33l", "0,4l", "0,5l"],
-
-  // --- Moderation ---
   requireModeration: true,
 
-  // --- Autor / Social ---
-  // Werden im Footer verlinkt. Leerlassen = kein Link.
+  // ============================================================
+  // Ab hier: Werte, die der Server via /api/config überschreibt.
+  // Diese Datei-Defaults greifen nur im Mock-Modus.
+  // ============================================================
+
+  // Analytics (Google Analytics 4)
+  ga4MeasurementId: null,
+  analyticsEnabled: false,
+
+  // Cloudflare Turnstile (Site-Key ist öffentlich)
+  turnstileSiteKey: null,
+  turnstileEnabled: false,
+
+  // Autor / Social
   author: {
-    name: "Dominic Spatz",
-    github: "https://github.com/DEIN_USER",
-    linkedin: "https://www.linkedin.com/in/DEIN_PROFIL/",
-    website: "",
+    name: null,
+    github: null,
+    linkedin: null,
+    website: null,
   },
 
-  // --- Legal ---
+  // Legal
   impressum: {
-    owner: "Dominic Spatz",
-    address: "Max Schmeling Str. 2, 40597 Düsseldorf",
-    email: "kontakt@altbieratlas.de",
+    owner: "Altbieratlas",
+    address: "",
+    email: "kontakt@altbieratlas.example",
   },
 };

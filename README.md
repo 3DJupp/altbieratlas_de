@@ -109,31 +109,48 @@ Fertig. Die URL steht in der Wrangler-Ausgabe.
 
 ## 2 · Konfiguration
 
+Site-Konfiguration wird über **Worker-Umgebungsvariablen** gepflegt — in `wrangler.toml` unter `[vars]` oder im Cloudflare-Dashboard unter **Workers → altbieratlas → Settings → Variables and Secrets**.
+
+Der Worker liefert diese Werte über `/api/config` ans Frontend, das sie zur Laufzeit in `window.ATLAS_CONFIG` merged. Dashboard-Änderungen bleiben beim nächsten `wrangler deploy` erhalten, weil in der `wrangler.toml` `keep_vars = true` gesetzt ist.
+
+### Verfügbare Variablen
+
+| Variable | Zweck | Sensibel? |
+|---|---|---|
+| `GA4_MEASUREMENT_ID` | GA4-Measurement-ID (`G-XXXXXXXXXX`). Leer = GA4 deaktiviert. | nein |
+| `AUTHOR_NAME` | Name im Footer („Entwickelt von …") | nein |
+| `AUTHOR_GITHUB` | Vollständige URL zum GitHub-Profil | nein |
+| `AUTHOR_LINKEDIN` | Vollständige URL zum LinkedIn-Profil | nein |
+| `AUTHOR_WEBSITE` | Persönliche Website (optional) | nein |
+| `IMPRESSUM_OWNER` | Name des Betreibers für § 5 TMG | nein |
+| `IMPRESSUM_ADDRESS` | Postanschrift (Komma-getrennt → wird im Impressum zeilenweise umgebrochen) | nein |
+| `IMPRESSUM_EMAIL` | Kontakt-E-Mail im Impressum | nein |
+| `TURNSTILE_SITE_KEY` | Öffentlicher Cloudflare-Turnstile-Key. Leer = Bot-Schutz-Platzhalter. | nein |
+| `CONTACT_EMAIL` | User-Agent-String für Nominatim-Proxy | nein |
+| `TURNSTILE_SECRET_KEY` | Serverseitiger Turnstile-Key. **Nur als Secret setzen** (`wrangler secret put`)! | **JA** |
+
+### Im Dashboard pflegen (empfohlen)
+
+1. **Workers & Pages → altbieratlas → Settings → Variables and Secrets**
+2. Unter *Variables* die gewünschten Werte als Plaintext eintragen (z. B. `AUTHOR_NAME` = „Max Mustermann")
+3. „Deploy" klicken
+
+Das Frontend zieht den neuen Wert beim nächsten Seitenaufruf automatisch über `/api/config` — kein Rebuild nötig.
+
+### Per `wrangler.toml` + Git (alternativ)
+
+Werte direkt im Repo in der `wrangler.toml` unter `[vars]` setzen, committen, pushen → Workers Builds deployed. Für Dinge wie `CONTACT_EMAIL` oder Deploy-Defaults sinnvoll.
+
 ### `public/config.js`
 
-Alle nicht-geheimen Laufzeit-Optionen. Wichtige Felder:
+Enthält nur noch **Fallback-Werte für den Mock-Modus** (lokales UI-Testen ohne Backend). Im Live-Betrieb werden die Werte aus `/api/config` priorisiert. Ausnahmen, die hier direkt gesetzt werden können/müssen:
 
 | Feld | Zweck |
 |---|---|
-| `ga4MeasurementId` | GA4-ID (`G-XXXXXXXXXX`). Setzen → nach Cookie-Consent wird GA4 geladen. |
-| `turnstileSiteKey` | Fallback für den Site-Key. Der Server liefert den Wert aus `TURNSTILE_SITE_KEY` bevorzugt. |
-| `author.github` | Link im Footer (leer = kein Icon) |
-| `author.linkedin` | Link im Footer (leer = kein Icon) |
-| `author.name` | Name im Footer |
-| `impressum.owner` / `.address` / `.email` | Wird auf der Impressums-Seite gerendert |
-| `apiMode` | `"auto"` (default, mit Mock-Fallback), `"live"` (hart), `"mock"` (nur Seed) |
-
-### `wrangler.toml`
-
-Neben `database_id` und `[vars]` muss nichts angepasst werden.
-
-### Secrets vs. Vars
-
-| Name | Wo | Sensibel? |
-|---|---|---|
-| `TURNSTILE_SECRET_KEY` | Secret (`wrangler secret put`) | **JA** |
-| `TURNSTILE_SITE_KEY` | Secret oder `[vars]` | nein (öffentlich) |
-| `CONTACT_EMAIL` | `[vars]` (für Nominatim-UA) | nein |
+| `apiMode` | `"auto"` (default), `"live"` oder `"mock"` |
+| `map.*` | Kartenzentrum, Zoomstufen, Tile-URL |
+| `features.*` | Feature-Flags (Admin-Link, Events …) |
+| `priceSizes` | Verfügbare Mengen-Dropdown-Werte |
 
 ---
 

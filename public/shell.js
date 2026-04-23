@@ -4,7 +4,6 @@
 window.renderShell = function ({ activeNav }) {
   const cfg = window.ATLAS_CONFIG;
   const consent = localStorage.getItem("atlas-consent");
-  const author = cfg.author || {};
 
   // ---- Header ----
   const header = `
@@ -28,22 +27,36 @@ window.renderShell = function ({ activeNav }) {
     </header>
   `;
 
-  // ---- Social-Links im Footer ----
-  const socialLinks = [];
-  if (author.github) {
-    socialLinks.push(`<a href="${author.github}" target="_blank" rel="noopener" class="social-link" aria-label="GitHub">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-      <span>GitHub</span></a>`);
-  }
-  if (author.linkedin) {
-    socialLinks.push(`<a href="${author.linkedin}" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M13.632 13.635h-2.37V9.922c0-.886-.018-2.025-1.235-2.025-1.235 0-1.424.964-1.424 1.961v3.777h-2.37V6H8.51v1.04h.03c.318-.6 1.093-1.233 2.25-1.233 2.4 0 2.843 1.581 2.843 3.637v4.19ZM3.558 4.96a1.374 1.374 0 1 1 0-2.748 1.374 1.374 0 0 1 0 2.748ZM4.747 13.635H2.368V6h2.379v7.635ZM14.816 0H1.18C.528 0 0 .516 0 1.153v13.694C0 15.484.528 16 1.18 16h13.635c.652 0 1.185-.516 1.185-1.153V1.153C16 .516 15.467 0 14.816 0Z"/></svg>
-      <span>LinkedIn</span></a>`);
-  }
-  if (author.website) {
-    socialLinks.push(`<a href="${author.website}" target="_blank" rel="noopener" class="social-link" aria-label="Website">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.5 8c0-.86.14-1.69.4-2.46l3.68 3.68v.78c0 .55.45 1 1 1h.57v2.9A6.5 6.5 0 0 1 1.5 8Zm11.67 4.34A6.48 6.48 0 0 1 9 14.4v-.7a1 1 0 0 0-1-1h-.57v-2.15l3.4-3.4A6.5 6.5 0 0 1 13.17 12.34ZM8 6.5h.5v-.43a1 1 0 0 0-1-1h-.5V3.93c.83-.5 1.83-.75 2.87-.68l-.87 1.72L10.43 6.5H8Z"/></svg>
-      <span>Website</span></a>`);
+  // ---- Social-Links im Footer (werden bei atlas:config-ready neu gerendert) ----
+  function renderSocialRow() {
+    const author = cfg.author || {};
+    const socialLinks = [];
+    if (author.github) {
+      socialLinks.push(`<a href="${author.github}" target="_blank" rel="noopener" class="social-link" aria-label="GitHub">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        <span>GitHub</span></a>`);
+    }
+    if (author.linkedin) {
+      socialLinks.push(`<a href="${author.linkedin}" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M13.632 13.635h-2.37V9.922c0-.886-.018-2.025-1.235-2.025-1.235 0-1.424.964-1.424 1.961v3.777h-2.37V6H8.51v1.04h.03c.318-.6 1.093-1.233 2.25-1.233 2.4 0 2.843 1.581 2.843 3.637v4.19ZM3.558 4.96a1.374 1.374 0 1 1 0-2.748 1.374 1.374 0 0 1 0 2.748ZM4.747 13.635H2.368V6h2.379v7.635ZM14.816 0H1.18C.528 0 0 .516 0 1.153v13.694C0 15.484.528 16 1.18 16h13.635c.652 0 1.185-.516 1.185-1.153V1.153C16 .516 15.467 0 14.816 0Z"/></svg>
+        <span>LinkedIn</span></a>`);
+    }
+    if (author.website) {
+      socialLinks.push(`<a href="${author.website}" target="_blank" rel="noopener" class="social-link" aria-label="Website">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.5 8c0-.86.14-1.69.4-2.46l3.68 3.68v.78c0 .55.45 1 1 1h.57v2.9A6.5 6.5 0 0 1 1.5 8Zm11.67 4.34A6.48 6.48 0 0 1 9 14.4v-.7a1 1 0 0 0-1-1h-.57v-2.15l3.4-3.4A6.5 6.5 0 0 1 13.17 12.34ZM8 6.5h.5v-.43a1 1 0 0 0-1-1h-.5V3.93c.83-.5 1.83-.75 2.87-.68l-.87 1.72L10.43 6.5H8Z"/></svg>
+        <span>Website</span></a>`);
+    }
+    const host = document.getElementById("shell-social");
+    if (!host) return;
+    if (!socialLinks.length) { host.innerHTML = ""; return; }
+    host.innerHTML = `
+      <div class="social-row">
+        <span class="social-label" data-i18n="footer.author">Entwickelt von</span>
+        ${author.name ? `<span class="social-name">${author.name}</span>` : ""}
+        <div class="social-icons">${socialLinks.join("")}</div>
+      </div>`;
+    // i18n für das neu eingefügte Label
+    if (window.setLang) window.setLang(window.__atlasLang);
   }
 
   // ---- Footer ----
@@ -56,12 +69,7 @@ window.renderShell = function ({ activeNav }) {
               <span class="brand"><span class="mark">A</span><span class="wordmark">Altbieratlas</span></span>
             </div>
             <p data-i18n="footer.madeWith">Mit Liebe für das rheinische Bier gebaut. Gemeinschaftlich gepflegt.</p>
-            ${socialLinks.length ? `
-              <div class="social-row">
-                <span class="social-label" data-i18n="footer.author">Entwickelt von</span>
-                ${author.name ? `<span class="social-name">${author.name}</span>` : ""}
-                <div class="social-icons">${socialLinks.join("")}</div>
-              </div>` : ""}
+            <div id="shell-social"></div>
           </div>
           <div>
             <h4 data-i18n="footer.contribute">Mitmachen</h4>
@@ -112,6 +120,11 @@ window.renderShell = function ({ activeNav }) {
   document.getElementById("shell-footer").innerHTML = footer;
   document.getElementById("shell-cookie").innerHTML = cookieBanner;
 
+  // Social-Row initial (mit ggf. leeren Defaults) + neu rendern, sobald die
+  // Server-Config nachgeladen ist.
+  renderSocialRow();
+  document.addEventListener("atlas:config-ready", renderSocialRow);
+
   // Mode-Badge im Footer (wird von api-client gesetzt)
   function paintMode() {
     const el = document.getElementById("atlas-mode");
@@ -155,7 +168,7 @@ window.renderShell = function ({ activeNav }) {
   if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
   paintTheme();
 
-  // ---- Cookie handlers ----
+  // Cookie handlers
   const banner = document.getElementById("cookie-banner");
   document.getElementById("cookie-accept").addEventListener("click", () => {
     localStorage.setItem("atlas-consent", "all");
@@ -179,7 +192,9 @@ window.renderShell = function ({ activeNav }) {
 
   if (consent === "all") {
     window.ATLAS_CONFIG.analyticsEnabled = true;
+    // GA4-ID kommt evtl. erst vom Server; dann neu laden
     loadAnalytics();
+    document.addEventListener("atlas:config-ready", () => loadAnalytics());
   }
 };
 
