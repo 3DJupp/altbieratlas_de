@@ -62,6 +62,11 @@ CREATE TABLE IF NOT EXISTS prices (
 CREATE INDEX IF NOT EXISTS idx_prices_brewery ON prices(brewery_id);
 CREATE INDEX IF NOT EXISTS idx_prices_date    ON prices(date DESC);
 CREATE INDEX IF NOT EXISTS idx_prices_status  ON prices(status);
+-- Dedup für idempotentes Seeding (gleicher Preis am gleichen Tag von der
+-- gleichen Quelle wird nicht doppelt eingetragen; User-Beiträge sind selten
+-- exakt identisch und haben i.d.R. eine eigene „source").
+CREATE UNIQUE INDEX IF NOT EXISTS uq_prices_seed
+  ON prices(brewery_id, date, size, price, COALESCE(source, ''));
 
 -- Events
 CREATE TABLE IF NOT EXISTS events (

@@ -1,7 +1,6 @@
 -- Seed-Daten für Altbieratlas
 -- Automatisch generiert aus data.js
 
-BEGIN TRANSACTION;
 
 -- Stile
 INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en) VALUES ('uerige-alt', 'Uerige Alt', 4.7, 52, '#7b3a13', 'Kräftig herb, würzig, trockener Abgang. Eine der bitteren unter den Düsseldorfer Alts.', 'Firmly bitter, spicy, dry finish. One of the more bitter Düsseldorf Alts.');
@@ -46,27 +45,27 @@ INSERT OR IGNORE INTO breweries (id, name, short_name, type, city, country, addr
 INSERT OR IGNORE INTO breweries (id, name, short_name, type, city, country, address, lat, lng, founded, website, description_de, description_en, verified, status) VALUES ('tokyo-alt', 'Ushitora Brewery', 'Ushitora', 'hausbrauerei', 'Tokyo', 'JP', '2-9-3 Sangenjaya, Setagaya, Tokyo', 35.6434, 139.6713, 2014, NULL, 'Tokioter Craft-Brauerei, die immer wieder ein Altbier ins Sortiment nimmt.', 'Tokyo craft brewery that regularly puts an Altbier on the lineup.', 0, 'approved');
 
 -- Preise
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2026-04-15', '0,25l', 2.7, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2026-04-10', '0,25l', 2.7, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2026-03-28', '0,25l', 2.7, 'Website', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2025-11-05', '0,25l', 2.5, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2025-06-20', '0,25l', 2.5, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('fuechschen', '2026-04-12', '0,25l', 2.6, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('fuechschen', '2026-02-14', '0,25l', 2.6, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('fuechschen', '2025-09-01', '0,25l', 2.4, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('schumacher', '2026-04-08', '0,25l', 2.5, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('schumacher', '2026-01-20', '0,25l', 2.5, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('schluessel', '2026-04-14', '0,25l', 2.6, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('schluessel', '2025-12-01', '0,25l', 2.5, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('kuerzer', '2026-04-16', '0,25l', 2.8, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('kuerzer', '2026-03-01', '0,25l', 2.7, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('koenigshof', '2026-04-02', '0,5l', 3.4, 'Handel', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('hannen', '2026-03-15', '0,5l', 2.9, 'Handel', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('alaskan-brewing', '2026-03-22', '0,5l', 5.2, 'Brewery', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('long-trail', '2026-03-18', '0,5l', 4.8, 'Brewery', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('tokyo-alt', '2026-04-01', '0,33l', 6.5, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('zum-schlueffken', '2026-04-12', '0,25l', 2.7, 'vor Ort', 'approved');
-INSERT INTO prices (brewery_id, date, size, price, source, status) VALUES ('malzmuehle-alt', '2026-03-05', '0,25l', 3.0, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2026-04-15', '0,25l', 2.7, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2026-04-10', '0,25l', 2.7, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2026-03-28', '0,25l', 2.7, 'Website', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2025-11-05', '0,25l', 2.5, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('uerige', '2025-06-20', '0,25l', 2.5, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('fuechschen', '2026-04-12', '0,25l', 2.6, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('fuechschen', '2026-02-14', '0,25l', 2.6, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('fuechschen', '2025-09-01', '0,25l', 2.4, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('schumacher', '2026-04-08', '0,25l', 2.5, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('schumacher', '2026-01-20', '0,25l', 2.5, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('schluessel', '2026-04-14', '0,25l', 2.6, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('schluessel', '2025-12-01', '0,25l', 2.5, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('kuerzer', '2026-04-16', '0,25l', 2.8, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('kuerzer', '2026-03-01', '0,25l', 2.7, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('koenigshof', '2026-04-02', '0,5l', 3.4, 'Handel', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('hannen', '2026-03-15', '0,5l', 2.9, 'Handel', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('alaskan-brewing', '2026-03-22', '0,5l', 5.2, 'Brewery', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('long-trail', '2026-03-18', '0,5l', 4.8, 'Brewery', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('tokyo-alt', '2026-04-01', '0,33l', 6.5, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('zum-schlueffken', '2026-04-12', '0,25l', 2.7, 'vor Ort', 'approved');
+INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES ('malzmuehle-alt', '2026-03-05', '0,25l', 3.0, 'vor Ort', 'approved');
 
 -- Events
 INSERT OR IGNORE INTO events (id, title_de, title_en, brewery_id, date, description_de, description_en, status) VALUES ('sticke-herbst-2026', 'Sticke-Ausschank Uerige (Herbst)', 'Sticke release at Uerige (autumn)', 'uerige', '2026-10-20', 'Der traditionelle Sticke-Anstich im Uerige. Ein Termin für Alt-Liebhaber weltweit.', 'The traditional Sticke tapping at Uerige. A bucket-list date for Alt lovers worldwide.', 'approved');
@@ -85,4 +84,3 @@ INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES ('Obe
 INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES ('Hausbrauerei', 'Eine Brauerei, die direkt im angeschlossenen Gastraum ausschenkt. Die vier klassischen Düsseldorfer Hausbrauereien sind Uerige, Füchschen, Schumacher und Schlüssel.', 'A brewery that pours directly in its attached taproom. The four classic Düsseldorf brewpubs are Uerige, Füchschen, Schumacher and Schlüssel.');
 INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES ('Rheinisches Reinheitsgebot', 'Kein offizielles Gesetz, sondern ein augenzwinkerndes Selbstverständnis: ein richtiges Alt braucht nichts außer Wasser, Gerste, Hopfen und obergäriger Hefe — und einen Köbes, der es hinstellt.', 'Not an actual law, but a tongue-in-cheek self-understanding: a proper Alt needs nothing but water, barley, hops and top-fermenting yeast — and a Köbes to set it down.');
 
-COMMIT;
