@@ -34,78 +34,87 @@ altbieratlas/
 
 ---
 
-## 1 · Setup in 5 Schritten
+## 1 · Setup
+
+Gedeployed wird über **Workers Builds** (Cloudflare-Dashboard → GitHub-Integration). Es muss weder lokal noch in GitHub Actions `wrangler deploy` ausgeführt werden. Lokal brauchst du Wrangler nur für einmalige Admin-Aufgaben (D1 anlegen, Schema/Seed einspielen, Admin-User erzeugen).
 
 ### Voraussetzungen
 
-- Node.js ≥ 20
-- `wrangler` (wird als dev-dependency installiert)
-- Ein Cloudflare-Account
+- Cloudflare-Account mit verbundenem GitHub-Account
+- Node.js ≥ 20 (nur für die einmaligen Admin-Schritte unten)
 
-### 1.1 Installieren
+### 1.1 Einmalig: D1 anlegen, Schema, Admin-User
+
+Lokal am Rechner, einmal vor dem ersten Deploy:
 
 ```bash
 npm install
 npx wrangler login
+
+# D1-Datenbank anlegen
+npx wrangler d1 create altbieratlas
+#    → merkt euch die ausgegebene database_id
 ```
 
-### 1.2 D1-Datenbank anlegen
+Die `database_id` aus der Wrangler-Ausgabe nicht in die `wrangler.toml` eintragen — die kommt gleich als **Build-Secret** ins Dashboard. Stattdessen in der committeten `wrangler.toml` den Platzhalter `REPLACE_WITH_YOUR_D1_ID` stehen lassen.
 
-```bash
-npm run db:create
-```
-
-Aus der Ausgabe die `database_id` kopieren und in `wrangler.toml` eintragen:
-
-```toml
-[[d1_databases]]
-binding       = "DB"
-database_name = "altbieratlas"
-database_id   = "<HIER_DEINE_ID>"
-```
-
-### 1.3 Schema + Seed einspielen
-
-Für die produktive Umgebung:
+Für Schema + Seed braucht Wrangler die ID temporär. Trage sie **lokal** in der `wrangler.toml` ein (nicht committen!), dann:
 
 ```bash
 npm run db:setup:remote
-```
-
-Für lokale Tests (läuft gegen eine lokale SQLite-Kopie):
-
-```bash
-npm run db:setup:local
-```
-
-### 1.4 Admin-User anlegen
-
-```bash
 npm run admin:create -- admin <starkes-passwort> --remote
 ```
 
-Das Passwort muss mindestens 10 Zeichen lang sein. Der Hash wird lokal mit PBKDF2-SHA256 (120 000 Iterationen) berechnet und dann per `wrangler d1 execute` in die Datenbank geschrieben — das Klartext-Passwort verlässt nie deinen Rechner.
+Anschließend die ID wieder auf `REPLACE_WITH_YOUR_D1_ID` zurücksetzen und **erst dann** pushen. Oder bequemer: `git stash` vor dem Push, nach dem Push `git stash pop`, wenn du die ID für weitere `db:*`-Kommandos am Rechner brauchst.
 
-### 1.5 Secrets setzen
+> **Alternative:** Schema und Admin-User auch im Dashboard einspielen — unter *Workers & Pages → D1 → altbieratlas → Console* kannst du beliebige SQL-Befehle ausführen. Der Inhalt aus `migrations/0001_schema.sql` + `migrations/0002_seed.sql` reinkopieren und ausführen. Dann brauchst du die ID lokal gar nicht.
 
-```bash
-# Cloudflare Turnstile (https://dash.cloudflare.com/ → Turnstile → Add Site)
-wrangler secret put TURNSTILE_SECRET_KEY
-wrangler secret put TURNSTILE_SITE_KEY      # oder als [vars] — ist öffentlich
+### 1.2 Workers-Build im Dashboard konfigurieren
 
-# Optional: E-Mail-Adresse für Nominatim-User-Agent
-wrangler secret put CONTACT_EMAIL
-```
+Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
 
-### 1.6 Deployen
+- Git repository: dein GitHub-Repo
+- **Build command:** `npm install`
+- **Deploy command:**
+  ```
+  sed -i "s/REPLACE_WITH_YOUR_D1_ID/$database_id/" wrangler.toml && npx wrangler deploy
+  ```
+- Root directory: `/`
+- Production branch: `main`
 
-```bash
-npm run deploy
-```
+### 1.3 Build-Variables setzen
 
-Fertig. Die URL steht in der Wrangler-Ausgabe.
+Unter *Settings → Build → Variables and secrets* (die Build-Sektion, nicht die Worker-Runtime-Sektion):
+
+- **Name:** `database_id` · **Type:** *Secret* · **Value:** `<die-id-aus-npx-wrangler-d1-create>`
+
+Das Secret steht dem `sed`-Kommando im Deploy als `$database_id`-Umgebungsvariable zur Verfügung, ersetzt den Platzhalter in der `wrangler.toml` zur Build-Zeit und wird nie ins Repo committed.
+
+### 1.4 Worker-Variablen setzen (Runtime)
+
+Unter *Settings → Variables and Secrets* (die Worker-Runtime-Sektion):
+
+| Type | Name | Value |
+|---|---|---|
+| Plaintext | `CONTACT_EMAIL` | z. B. `kontakt@altbieratlas.de` |
+| Plaintext | `GA4_MEASUREMENT_ID` | `G-XXXXXXXXXX` oder leer |
+| Plaintext | `AUTHOR_NAME` | dein Name im Footer |
+| Plaintext | `AUTHOR_GITHUB` | URL |
+| Plaintext | `AUTHOR_LINKEDIN` | URL |
+| Plaintext | `IMPRESSUM_OWNER` | Betreiber |
+| Plaintext | `IMPRESSUM_ADDRESS` | Postanschrift |
+| Plaintext | `IMPRESSUM_EMAIL` | Kontakt |
+| Plaintext | `TURNSTILE_SITE_KEY` | öffentlicher Cloudflare-Turnstile-Key |
+| Secret | `TURNSTILE_SECRET_KEY` | Cloudflare-Turnstile-Secret |
+
+Dank `keep_vars = true` in der `wrangler.toml` bleiben diese Werte bei jedem Deploy erhalten.
+
+### 1.5 Deployen
+
+Ein Push auf `main` löst automatisch einen Build aus. Der erste Build deployed den Worker; alle weiteren Pushes werden ebenfalls automatisch ausgerollt.
 
 ---
+
 
 ## 2 · Konfiguration
 
