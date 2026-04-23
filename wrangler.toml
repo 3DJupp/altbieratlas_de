@@ -41,6 +41,24 @@ binding       = "DB"
 database_name = "REPLACE_WITH_YOUR_D1_NAME"
 database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
+# --- Observability --------------------------------------------
+# Spiegelt die Dashboard-Einstellungen wider, damit Wrangler sie
+# beim Deploy nicht überschreibt (Cloudflare warnt sonst).
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+head_sampling_rate = 1
+persist = true
+
 # --- Absichtlich KEINE [vars] in dieser Datei -----------------
 #
 # Alles wird im Dashboard gepflegt. Der Worker liest env.*
