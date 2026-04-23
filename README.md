@@ -109,15 +109,15 @@ Fertig. Die URL steht in der Wrangler-Ausgabe.
 
 ## 2 · Konfiguration
 
-Site-Konfiguration wird über **Worker-Umgebungsvariablen** gepflegt — in `wrangler.toml` unter `[vars]` oder im Cloudflare-Dashboard unter **Workers → altbieratlas → Settings → Variables and Secrets**.
+Site-Konfiguration wird **ausschließlich im Cloudflare-Dashboard** gepflegt — unter **Workers → altbieratlas → Settings → Variables and Secrets**. Der Worker liefert die Werte über `/api/config` ans Frontend, das sie zur Laufzeit in `window.ATLAS_CONFIG` merged.
 
-Der Worker liefert diese Werte über `/api/config` ans Frontend, das sie zur Laufzeit in `window.ATLAS_CONFIG` merged. Dashboard-Änderungen bleiben beim nächsten `wrangler deploy` erhalten, weil in der `wrangler.toml` `keep_vars = true` gesetzt ist.
+Warum Dashboard statt `wrangler.toml`? `keep_vars = true` in der `wrangler.toml` schützt Dashboard-Werte nur dann, wenn die Variable **gar nicht** in der Datei steht. Sobald ein Variablenname unter `[vars]` auftaucht (auch mit leerem String), überschreibt der Deploy den Dashboard-Wert. Deshalb ist `[vars]` in diesem Projekt bewusst leer.
 
-### Verfügbare Variablen
+### Erwartete Variablen
 
 | Variable | Zweck | Sensibel? |
 |---|---|---|
-| `GA4_MEASUREMENT_ID` | GA4-Measurement-ID (`G-XXXXXXXXXX`). Leer = GA4 deaktiviert. | nein |
+| `GA4_MEASUREMENT_ID` | GA4-Measurement-ID (`G-XXXXXXXXXX`). Nicht gesetzt = GA4 deaktiviert. | nein |
 | `AUTHOR_NAME` | Name im Footer („Entwickelt von …") | nein |
 | `AUTHOR_GITHUB` | Vollständige URL zum GitHub-Profil | nein |
 | `AUTHOR_LINKEDIN` | Vollständige URL zum LinkedIn-Profil | nein |
@@ -125,21 +125,19 @@ Der Worker liefert diese Werte über `/api/config` ans Frontend, das sie zur Lau
 | `IMPRESSUM_OWNER` | Name des Betreibers für § 5 TMG | nein |
 | `IMPRESSUM_ADDRESS` | Postanschrift (Komma-getrennt → wird im Impressum zeilenweise umgebrochen) | nein |
 | `IMPRESSUM_EMAIL` | Kontakt-E-Mail im Impressum | nein |
-| `TURNSTILE_SITE_KEY` | Öffentlicher Cloudflare-Turnstile-Key. Leer = Bot-Schutz-Platzhalter. | nein |
+| `TURNSTILE_SITE_KEY` | Öffentlicher Cloudflare-Turnstile-Key. Nicht gesetzt = Bot-Schutz-Platzhalter. | nein |
 | `CONTACT_EMAIL` | User-Agent-String für Nominatim-Proxy | nein |
 | `TURNSTILE_SECRET_KEY` | Serverseitiger Turnstile-Key. **Nur als Secret setzen** (`wrangler secret put`)! | **JA** |
 
-### Im Dashboard pflegen (empfohlen)
+Fehlt eine Variable oder ist leer, fällt der Worker sauber auf sichtbare Platzhalter bzw. deaktivierte Features zurück — nichts crasht.
+
+### Variablen im Dashboard setzen
 
 1. **Workers & Pages → altbieratlas → Settings → Variables and Secrets**
 2. Unter *Variables* die gewünschten Werte als Plaintext eintragen (z. B. `AUTHOR_NAME` = „Max Mustermann")
-3. „Deploy" klicken
+3. „Deploy" klicken — Cloudflare führt einen neuen Deployment aus, der die Variablen in die Worker-Runtime übernimmt
 
-Das Frontend zieht den neuen Wert beim nächsten Seitenaufruf automatisch über `/api/config` — kein Rebuild nötig.
-
-### Per `wrangler.toml` + Git (alternativ)
-
-Werte direkt im Repo in der `wrangler.toml` unter `[vars]` setzen, committen, pushen → Workers Builds deployed. Für Dinge wie `CONTACT_EMAIL` oder Deploy-Defaults sinnvoll.
+Das Frontend zieht den neuen Wert beim nächsten Seitenaufruf automatisch über `/api/config`.
 
 ### `public/config.js`
 

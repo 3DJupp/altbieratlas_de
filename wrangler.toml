@@ -1,20 +1,31 @@
 # ============================================================
 # Altbieratlas — Cloudflare Workers Konfiguration
 # ============================================================
+# Diese Datei enthält KEINE konkreten Betreiber-Daten. Alle
+# Site-Werte (Autor, Impressum, GA4-ID, Turnstile-Site-Key …)
+# werden ausschließlich im Cloudflare-Dashboard gepflegt:
+#
+#   Workers & Pages → altbieratlas → Settings
+#     → Variables and Secrets
+#
+# Dank `keep_vars = true` bleiben Dashboard-Werte auch bei
+# jedem `wrangler deploy` erhalten.
+#
+# Welche Variablen der Worker erwartet, steht in der README
+# Abschnitt „Konfiguration".
+# ============================================================
 
 name = "altbieratlas"
 main = "src/worker.js"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Werte, die im Cloudflare-Dashboard unter
-# "Settings → Variables and Secrets" editiert werden, bleiben
-# beim nächsten Deploy erhalten. Ohne dieses Flag würde
-# `wrangler deploy` die Dashboard-Werte mit den Datei-Werten
-# überschreiben.
+# Alle im Dashboard gesetzten Variablen und Secrets bleiben bei
+# jedem Deploy erhalten. Ohne dieses Flag würde `wrangler deploy`
+# sie mit dem (hier absichtlich leeren) Datei-Zustand überschreiben.
 keep_vars = true
 
-# --- Statische Dateien (Worker Sites / Assets) ----------------
+# --- Statische Dateien ----------------------------------------
 # Der Worker beantwortet /api/* selbst und delegiert alles andere
 # ans ASSETS-Binding.
 [assets]
@@ -22,40 +33,33 @@ directory = "./public"
 binding = "ASSETS"
 
 # --- D1-Datenbank ---------------------------------------------
-# Nach dem Anlegen via `wrangler d1 create altbieratlas` die ID
-# unten einsetzen.
+# Einmalig anlegen:  npx wrangler d1 create altbieratlas
+# Danach die ausgegebene ID unten einsetzen und committen —
+# die ID ist nicht geheim, nur projektspezifisch.
 [[d1_databases]]
 binding       = "DB"
 database_name = "altbieratlas"
 database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
-# --- Umgebungsvariablen ---------------------------------------
-# Alles hier Definierte kann im Cloudflare-Dashboard überschrieben
-# werden ("Workers → altbieratlas → Settings → Variables and Secrets").
-# Diese Datei-Werte sind daher nur Defaults/Platzhalter.
-[vars]
-# Technisch
-CONTACT_EMAIL       = "kontakt@altbieratlas.example"
-
-# Analytics — leer lassen, um GA4 komplett zu deaktivieren.
-# Echte ID hat das Format G-XXXXXXXXXX.
-GA4_MEASUREMENT_ID  = ""
-
-# Autor / Social (leer = wird im Footer nicht angezeigt)
-AUTHOR_NAME         = ""
-AUTHOR_GITHUB       = ""
-AUTHOR_LINKEDIN     = ""
-AUTHOR_WEBSITE      = ""
-
-# Impressum
-IMPRESSUM_OWNER     = ""
-IMPRESSUM_ADDRESS   = ""
-IMPRESSUM_EMAIL     = ""
-
-# Turnstile Site-Key ist öffentlich und darf hier stehen.
-# Wenn leer, erscheint auf dem Beitrags-Formular ein Platzhalter
-# und der Worker überspringt die serverseitige Verifikation.
-TURNSTILE_SITE_KEY  = ""
-
-# --- Secrets (per CLI setzen, nicht committen!) ---------------
-# wrangler secret put TURNSTILE_SECRET_KEY
+# --- Absichtlich KEINE [vars] in dieser Datei -----------------
+#
+# Alles wird im Dashboard gepflegt. Der Worker liest env.*
+# direkt zur Laufzeit; fehlende Werte werden vom Frontend
+# sauber als „nicht gesetzt" behandelt (z. B. kein Social-Icon,
+# kein GA4-Tracking, Turnstile-Platzhalter).
+#
+# Erwartete Variablen (im Dashboard setzen):
+#   CONTACT_EMAIL        — für Nominatim-User-Agent
+#   GA4_MEASUREMENT_ID   — GA4-ID (G-XXXXXXXXXX), leer = aus
+#   AUTHOR_NAME          — Name im Footer
+#   AUTHOR_GITHUB        — GitHub-URL
+#   AUTHOR_LINKEDIN      — LinkedIn-URL
+#   AUTHOR_WEBSITE       — Website (optional)
+#   IMPRESSUM_OWNER      — Betreiber (§ 5 TMG)
+#   IMPRESSUM_ADDRESS    — Postanschrift
+#   IMPRESSUM_EMAIL      — Kontakt-E-Mail
+#   TURNSTILE_SITE_KEY   — öffentlicher Turnstile-Key
+#
+# Secrets (mit `wrangler secret put …` setzen — nie committen):
+#   TURNSTILE_SECRET_KEY
+# ============================================================
