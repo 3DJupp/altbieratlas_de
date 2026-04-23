@@ -193,35 +193,50 @@
 <script>
 renderShell({ activeNav: "knowledge" });
 
-(async () => {
+// Daten einmal laden, bei Sprachwechsel nur neu rendern (kein Reload!)
+let stylesCache = null;
+let glossaryCache = null;
+
+function paintStyles() {
+  if (!stylesCache) return;
   const lang = window.__atlasLang;
+  const grid = document.getElementById("style-grid");
+  grid.innerHTML = stylesCache.map((s) => `
+    <article class="spec-card">
+      <div class="spec-head" style="background: linear-gradient(135deg, ${s.color || "#8b4513"}, ${(s.color || "#8b4513")}cc)">
+        <h3>${s.name}</h3>
+      </div>
+      <div class="spec-body">
+        ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${s.abv} %</span></div>` : ""}
+        ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
+        <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
+      </div>
+    </article>
+  `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
+}
+
+function paintGlossary() {
+  if (!glossaryCache) return;
+  const lang = window.__atlasLang;
+  const gg = document.getElementById("gloss-grid");
+  gg.innerHTML = glossaryCache.map((g) => `
+    <div class="gloss-item">
+      <h3>${g.term}</h3>
+      <p>${(g.definition && (g.definition[lang] || g.definition.de)) || ""}</p>
+    </div>
+  `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
+}
+
+(async () => {
   try {
     const [styleRes, glossRes] = await Promise.all([
       window.AtlasAPI.listStyles(),
       window.AtlasAPI.listGlossary(),
     ]);
-
-    const grid = document.getElementById("style-grid");
-    grid.innerHTML = (styleRes.styles || []).map((s) => `
-      <article class="spec-card">
-        <div class="spec-head" style="background: linear-gradient(135deg, ${s.color || "#8b4513"}, ${(s.color || "#8b4513")}cc)">
-          <h3>${s.name}</h3>
-        </div>
-        <div class="spec-body">
-          ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${s.abv} %</span></div>` : ""}
-          ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
-          <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
-        </div>
-      </article>
-    `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
-
-    const gg = document.getElementById("gloss-grid");
-    gg.innerHTML = (glossRes.glossary || []).map((g) => `
-      <div class="gloss-item">
-        <h3>${g.term}</h3>
-        <p>${(g.definition && (g.definition[lang] || g.definition.de)) || ""}</p>
-      </div>
-    `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
+    stylesCache = styleRes.styles || [];
+    glossaryCache = glossRes.glossary || [];
+    paintStyles();
+    paintGlossary();
   } catch (e) {
     console.error("[wissen]", e);
     document.getElementById("style-grid").innerHTML = `<p style="color:#9b1f1f;grid-column:1/-1">Fehler beim Laden.</p>`;
@@ -242,8 +257,11 @@ function updateActive() {
 }
 window.addEventListener("scroll", updateActive, { passive: true });
 
-// Re-render on language change
-document.addEventListener("atlas:lang-changed", () => location.reload());
+// Bei Sprachwechsel: nur neu rendern, kein Seiten-Reload!
+document.addEventListener("atlas:lang-changed", () => {
+  paintStyles();
+  paintGlossary();
+});
 </script>
 </body>
 </html>
