@@ -20,8 +20,8 @@ binding = "ASSETS"
 # Nach dem Anlegen via `wrangler d1 create altbieratlas` die ID unten einsetzen.
 [[d1_databases]]
 binding       = "DB"
-database_name = "altbieratlas"
-database_id   = "REPLACE_WITH_YOUR_D1_ID"
+database_name = "d1-altbieratlas"
+database_id   = "4a711f24-24f0-4d1c-9c64-8e6297a6343b"
 # migrations_dir = "migrations"   # für `wrangler d1 migrations apply`
 
 # --- (optional) KV für Cache o.ä. — derzeit ungenutzt ---------
@@ -31,7 +31,7 @@ database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
 # --- Umgebungsvariablen (plain, nicht sensitiv) ---------------
 [vars]
-CONTACT_EMAIL = "kontakt@altbieratlas.example"
+CONTACT_EMAIL = "kontakt@altbieratlas.de"
 
 # --- Secrets (per CLI setzen, nicht committen!) ---------------
 # wrangler secret put TURNSTILE_SECRET_KEY
