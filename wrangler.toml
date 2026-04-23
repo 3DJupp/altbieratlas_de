@@ -5,7 +5,7 @@
 # Site-Werte (Autor, Impressum, GA4-ID, Turnstile-Site-Key …)
 # werden ausschließlich im Cloudflare-Dashboard gepflegt:
 #
-#   Workers & Pages → altbieratlas → Settings
+#   Workers & Pages → <dein-worker-name> → Settings
 #     → Variables and Secrets
 #
 # Dank `keep_vars = true` bleiben Dashboard-Werte auch bei
@@ -33,12 +33,12 @@ directory = "./public"
 binding = "ASSETS"
 
 # --- D1-Datenbank ---------------------------------------------
-# Einmalig anlegen:  npx wrangler d1 create altbieratlas
-# Danach die ausgegebene ID unten einsetzen und committen —
-# die ID ist nicht geheim, nur projektspezifisch.
+# Name und ID werden beim Deploy aus Build-Secrets ersetzt (siehe
+# Deploy-Command im Cloudflare-Dashboard unter Build configuration).
+# Für den Ersteinrichtung: `npx wrangler d1 create <dein-name>`
 [[d1_databases]]
 binding       = "DB"
-database_name = "altbieratlas"
+database_name = "REPLACE_WITH_YOUR_D1_NAME"
 database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
 # --- Absichtlich KEINE [vars] in dieser Datei -----------------

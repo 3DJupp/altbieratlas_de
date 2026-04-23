@@ -59,7 +59,8 @@ async function main() {
   const tmp = join(tmpdir(), `altbier-admin-${Date.now()}.sql`);
   writeFileSync(tmp, sql);
   try {
-    const cmd = `wrangler d1 execute altbieratlas ${remote ? "--remote" : "--local"} --file=${tmp}`;
+    const dbName = process.env.D1_NAME || "my-d1-database";
+    const cmd = `wrangler d1 execute ${dbName} ${remote ? "--remote" : "--local"} --file=${tmp}`;
     console.log(`→ ${cmd}`);
     execSync(cmd, { stdio: "inherit" });
     console.log(`✓ Admin '${username}' wurde ${remote ? "remote" : "lokal"} angelegt.`);
