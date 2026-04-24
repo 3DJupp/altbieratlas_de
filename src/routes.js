@@ -289,8 +289,14 @@ export async function adminLogin(req, env) {
   const password = typeof body.password === "string" ? body.password : null;
   if (!username || !password) return error(400, "credentials-required");
 
-  // Rate-Limit Login (5 pro 5 min pro IP)
   const ip = clientIp(req);
+
+  // Turnstile: schützt vor Brute-Force. Wird übersprungen, wenn kein
+  // Secret gesetzt ist (Dev-Modus).
+  const ts = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, ip);
+  if (!ts.success) return error(403, "turnstile-failed");
+
+  // Rate-Limit Login (5 pro 5 min pro IP)
   const rl = await rateLimit(env.DB, `login:${ip}:${Math.floor(Date.now() / 300000)}`, 5, 300);
   if (!rl.allowed) return error(429, "too-many-attempts");
 
@@ -526,5 +532,58 @@ export async function adminStats(req, env) {
     rejected: rejected?.n ?? 0,
     breweries: breweries?.n ?? 0,
     prices: prices?.n ?? 0,
+  });
+}
+
+// ============================================================
+//  SITEMAP (öffentlich)
+// ============================================================
+// GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
+export async function sitemap(req, env) {
+  const url = new URL(req.url);
+  const base = `${url.protocol}//${url.host}`;
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                              .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+                              .replace(/'/g, "&apos;");
+  const staticPaths = ["/", "/index.html", "/ranglisten.html", "/wissen.html",
+                       "/beitragen.html", "/impressum.html"];
+  let breweryIds = [];
+  let lastMod = null;
+  try {
+    const r = await env.DB.prepare(
+      "SELECT id, updated_at FROM breweries WHERE status = 'approved' ORDER BY updated_at DESC LIMIT 5000"
+    ).all();
+    breweryIds = r.results.map((x) => ({ id: x.id, lastmod: x.updated_at }));
+    lastMod = r.results[0]?.updated_at || null;
+  } catch { /* keine DB → nur statische Seiten */ }
+
+  const nowIso = new Date().toISOString().slice(0, 10);
+  const today = nowIso;
+  const entries = [
+    ...staticPaths.map((p) => `
+  <url>
+    <loc>${esc(base + p)}</loc>
+    <lastmod>${lastMod ? lastMod.slice(0, 10) : today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>${p === "/" || p === "/index.html" ? "1.0" : "0.7"}</priority>
+  </url>`),
+    ...breweryIds.map((b) => `
+  <url>
+    <loc>${esc(base + "/brauerei.html?id=" + b.id)}</loc>
+    <lastmod>${(b.lastmod || today).slice(0, 10)}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`),
+  ].join("");
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries}
+</urlset>`;
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      "content-type": "application/xml; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+    },
   });
 }

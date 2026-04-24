@@ -188,7 +188,7 @@
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
     // Admin
     admin: {
-      login:          (username, password) => req("/admin/login", { method: "POST", body: { username, password } }),
+      login:          (username, password, turnstileToken) => req("/admin/login", { method: "POST", body: { username, password, turnstileToken } }),
       logout:         () => req("/admin/logout", { method: "POST" }),
       me:             () => req("/admin/me"),
       stats:          () => req("/admin/stats"),
@@ -236,7 +236,7 @@
         }
         return LIVE.admin[fn].apply(LIVE.admin, args);
       },
-      login:          (u, p) => window.AtlasAPI.admin._gate("login", u, p),
+      login:          (u, p, t) => window.AtlasAPI.admin._gate("login", u, p, t),
       logout:         () => window.AtlasAPI.admin._gate("logout"),
       me:             () => window.AtlasAPI.admin._gate("me"),
       stats:          () => window.AtlasAPI.admin._gate("stats"),

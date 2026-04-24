@@ -82,6 +82,16 @@ export default {
       return error(404, "api-route-not-found", { path: url.pathname });
     }
 
+    // Dynamische Sitemap (außerhalb /api, damit Crawler sie unter /sitemap.xml finden)
+    if (url.pathname === "/sitemap.xml" && request.method === "GET") {
+      try {
+        return await R.sitemap(request, env, {});
+      } catch (e) {
+        console.error("[worker] sitemap threw:", e?.stack || e);
+        return new Response("sitemap error", { status: 500 });
+      }
+    }
+
     // Statische Dateien über ASSETS-Binding
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);

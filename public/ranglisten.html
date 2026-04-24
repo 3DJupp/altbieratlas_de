@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
 <title>Ranglisten · Altbieratlas</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,15 +107,15 @@
 
   <section class="rank-hero">
     <div class="container">
-      <div class="eyebrow">Ranglisten</div>
-      <h1>Wo Alt am günstigsten, wo es am teuersten ist</h1>
-      <p>Alle Preise stammen aus Community-Meldungen. Nur die jüngste Meldung pro Brauerei zählt. Werte können veralten — <a href="beitragen.html?typ=preis">melde einen aktuellen Preis</a>.</p>
+      <div class="eyebrow" data-i18n="nav.rankings">Ranglisten</div>
+      <h1 data-i18n="rank.heroTitle">Wo Alt am günstigsten, wo es am teuersten ist</h1>
+      <p><span data-i18n="rank.heroPrelude">Alle Preise stammen aus Community-Meldungen. Nur die jüngste Meldung pro Brauerei zählt. Werte können veralten — </span><a href="beitragen.html?typ=preis" data-i18n="rank.heroPreludeLink">melde einen aktuellen Preis</a>.</p>
 
       <div class="stats-strip">
-        <div class="stat"><div class="label">Ø 0,25 l</div><div class="val" id="st-avg-025">—</div><div class="meta">über alle Meldungen</div></div>
-        <div class="stat"><div class="label">Ø 0,5 l</div><div class="val" id="st-avg-05">—</div><div class="meta">über alle Meldungen</div></div>
-        <div class="stat"><div class="label">Brauereien</div><div class="val" id="st-br">—</div><div class="meta">im Atlas</div></div>
-        <div class="stat"><div class="label">Preismeldungen</div><div class="val" id="st-pr">—</div><div class="meta">gesamt</div></div>
+        <div class="stat"><div class="label" data-i18n="rank.statAvg25">Ø 0,25 l</div><div class="val" id="st-avg-025">—</div><div class="meta" data-i18n="rank.statMetaAll">über alle Meldungen</div></div>
+        <div class="stat"><div class="label" data-i18n="rank.statAvg50">Ø 0,5 l</div><div class="val" id="st-avg-05">—</div><div class="meta" data-i18n="rank.statMetaAll">über alle Meldungen</div></div>
+        <div class="stat"><div class="label" data-i18n="rank.statBreweries">Brauereien</div><div class="val" id="st-br">—</div><div class="meta" data-i18n="rank.statMetaInAtlas">im Atlas</div></div>
+        <div class="stat"><div class="label" data-i18n="rank.statPrices">Preismeldungen</div><div class="val" id="st-pr">—</div><div class="meta" data-i18n="rank.statMetaTotal">gesamt</div></div>
       </div>
     </div>
   </section>
@@ -119,10 +124,10 @@
     <div class="container">
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
         <div class="tab-bar" style="margin: 30px 0 0; flex: 1">
-          <button data-tab="cheapest" class="active">Günstigstes Alt</button>
-          <button data-tab="priciest">Teuerstes Alt</button>
-          <button data-tab="most">Meistgemeldet</button>
-          <button data-tab="newest">Neu auf dem Atlas</button>
+          <button data-tab="cheapest" class="active" data-i18n="rank.tabCheapest">Günstigstes Alt</button>
+          <button data-tab="priciest" data-i18n="rank.tabPriciest">Teuerstes Alt</button>
+          <button data-tab="most" data-i18n="rank.tabMost">Meistgemeldet</button>
+          <button data-tab="newest" data-i18n="rank.tabNewest">Neu auf dem Atlas</button>
         </div>
         <div class="size-toggle" id="size-toggle">
           <button data-size="0,25l" class="active">0,25l</button>
@@ -133,11 +138,11 @@
 
       <div class="rank-card-full" style="margin-top:20px">
         <div class="rank-head-full">
-          <h2 id="rank-title">Günstigstes Alt</h2>
-          <div style="font-size:12px;color:var(--ink-muted);font-family:var(--font-mono)" id="rank-meta">— Einträge</div>
+          <h2 id="rank-title" data-i18n="rank.tabCheapest">Günstigstes Alt</h2>
+          <div style="font-size:12px;color:var(--ink-muted);font-family:var(--font-mono)" id="rank-meta">— <span data-i18n="rank.entries">Einträge</span></div>
         </div>
         <div class="rank-row head">
-          <span>#</span><span>Brauerei</span><span>Stadt</span><span>Größe</span><span style="text-align:right">Preis</span><span style="text-align:right">Datum</span>
+          <span>#</span><span data-i18n="rank.colBrewery">Brauerei</span><span data-i18n="rank.colCity">Stadt</span><span data-i18n="rank.colSize">Größe</span><span style="text-align:right" data-i18n="rank.colPrice">Preis</span><span style="text-align:right" data-i18n="rank.colDate">Datum</span>
         </div>
         <div id="rank-body">
           <p style="color:var(--ink-muted);padding:20px" data-i18n="common.loading">Lade…</p>
@@ -186,7 +191,7 @@ const breweryById = new Map();
   } catch (e) {
     console.error(e);
     document.getElementById("rank-body").innerHTML =
-      `<p style="color:#9b1f1f;padding:20px">Fehler beim Laden der Ranglisten.</p>`;
+      `<p style="color:#9b1f1f;padding:20px">${window.t("rank.loadError")}</p>`;
   }
 })();
 
@@ -216,20 +221,21 @@ function countPerBrewery() {
 
 function render() {
   const body = document.getElementById("rank-body");
+  const t = window.t;
   let list = [];
   let title = "";
 
   if (currentTab === "cheapest") {
     list = latestPerBrewery(currentSize).sort((a, b) => a.price - b.price);
-    title = "Günstigstes Alt · " + currentSize;
+    title = t("rank.titleCheapest") + currentSize;
   } else if (currentTab === "priciest") {
     list = latestPerBrewery(currentSize).sort((a, b) => b.price - a.price);
-    title = "Teuerstes Alt · " + currentSize;
+    title = t("rank.titlePriciest") + currentSize;
   } else if (currentTab === "most") {
     list = countPerBrewery().sort((a, b) => b.n - a.n).map((x) => ({
       brewery: x.brewery, price: null, date: null, size: null, count: x.n,
     }));
-    title = "Meistgemeldete Brauereien";
+    title = t("rank.titleMost");
   } else if (currentTab === "newest") {
     const seen = new Set(); list = [];
     prices.slice().sort((a, b) => b.date.localeCompare(a.date)).forEach((p) => {
@@ -238,25 +244,29 @@ function render() {
       const br = breweryById.get(p.breweryId);
       if (br) list.push({ ...p, brewery: br });
     });
-    title = "Neueste Preismeldungen";
+    title = t("rank.titleNewest");
   }
 
   document.getElementById("rank-title").textContent = title;
-  document.getElementById("rank-meta").textContent = list.length + " Einträge";
+  // Den rank-title nach dem programmatischen Setzen gegen den i18n-Auto-Override schützen
+  document.getElementById("rank-title").removeAttribute("data-i18n");
+  document.getElementById("rank-meta").innerHTML = list.length + " <span>" + t("rank.entries") + "</span>";
 
+  const lang = window.__atlasLang;
+  const locale = lang === "en" ? "en-US" : "de-DE";
   body.innerHTML = list.slice(0, 30).map((it, i) => `
     <div class="rank-row">
       <span class="rn">${String(i + 1).padStart(2, "0")}</span>
       <span class="nm">
         <a href="brauerei.html?id=${it.brewery.id}">${it.brewery.name}</a>
-        <div class="sub">${it.brewery.type === "hausbrauerei" ? "Hausbrauerei" : it.brewery.type === "gastronomie" ? "Gastronomie" : "Handel"}${it.brewery.founded ? " · seit " + it.brewery.founded : ""}</div>
+        <div class="sub">${t("type." + it.brewery.type)}${it.brewery.founded ? " · " + t("rank.sinceYear") + it.brewery.founded : ""}</div>
       </span>
       <span class="city">${it.brewery.city}${it.brewery.country && it.brewery.country !== "DE" ? " · " + it.brewery.country : ""}</span>
-      <span class="sz">${it.size || (it.count ? it.count + " Meld." : "—")}</span>
+      <span class="sz">${it.size || (it.count ? it.count + t("rank.reportsShort") : "—")}</span>
       <span class="pr">${it.price != null ? "€ " + it.price.toFixed(2).replace(".", ",") : (it.count ? "×" + it.count : "—")}</span>
-      <span class="dt">${it.date ? new Date(it.date).toLocaleDateString("de-DE") : "—"}</span>
+      <span class="dt">${it.date ? new Date(it.date).toLocaleDateString(locale) : "—"}</span>
     </div>
-  `).join("") || '<p style="color:var(--ink-muted);padding:20px">Keine Einträge für diese Auswahl.</p>';
+  `).join("") || `<p style="color:var(--ink-muted);padding:20px">${t("rank.noEntries")}</p>`;
 }
 
 document.querySelectorAll(".tab-bar button").forEach((b) => {
@@ -275,6 +285,11 @@ document.querySelectorAll("#size-toggle button").forEach((b) => {
     currentSize = b.dataset.size;
     render();
   });
+});
+
+// Bei Sprachwechsel neu rendern (keine Fehler wenn Daten noch nicht geladen — render() schreibt einfach leer)
+document.addEventListener("atlas:lang-changed", () => {
+  if (breweries.length) render();
 });
 </script>
 </body>

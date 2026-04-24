@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
 <title>Admin · Altbieratlas</title>
 <meta name="robots" content="noindex,nofollow" />
 
@@ -119,6 +124,15 @@
         <label data-i18n="admin.password">Passwort</label>
         <input name="password" type="password" required autocomplete="current-password" />
       </div>
+
+      <!-- Turnstile: echtes Widget wenn Site-Key gesetzt, sonst Platzhalter -->
+      <div id="turnstile-widget" style="margin:12px 0 4px"></div>
+      <div class="turnstile-box" id="turnstile-placeholder" style="display:none">
+        <span class="cf-mark">CF</span>
+        <span data-i18n="contrib.turnstilePlaceholder">Cloudflare Turnstile · Bot-Prüfung (Platzhalter, Site-Key nicht gesetzt)</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--ink-muted)">verifiziert ✓</span>
+      </div>
+
       <div class="admin-error" id="login-error" data-i18n="admin.loginFailed">Anmeldung fehlgeschlagen.</div>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:8px" data-i18n="admin.login">Anmelden</button>
     </form>
@@ -239,8 +253,44 @@ let me = null;
     showAdmin();
   } catch (e) {
     loginSection.style.display = "block";
+    initTurnstile();
   }
 })();
+
+// ============ Turnstile ============
+let turnstileToken = null;
+function initTurnstile() {
+  const cfg = window.ATLAS_CONFIG;
+  const siteKey = cfg.turnstileSiteKey;
+  const enabled = cfg.turnstileEnabled && siteKey && !String(siteKey).includes("PLACEHOLDER");
+
+  if (!enabled) {
+    document.getElementById("turnstile-placeholder").style.display = "flex";
+    return;
+  }
+  window.turnstileCallback = (token) => { turnstileToken = token; };
+  window.turnstileExpired  = () => { turnstileToken = null; };
+
+  if (!document.querySelector('script[src*="turnstile/v0/api.js"]')) {
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    s.async = true; s.defer = true;
+    document.head.appendChild(s);
+  }
+  const host = document.getElementById("turnstile-widget");
+  host.innerHTML = `<div class="cf-turnstile"
+    data-sitekey="${siteKey}"
+    data-callback="turnstileCallback"
+    data-expired-callback="turnstileExpired"></div>`;
+}
+
+// Server-Config kann asynchron kommen — Widget dann nachladen
+document.addEventListener("atlas:config-ready", () => {
+  if (loginSection.style.display !== "none" && !turnstileToken
+      && !document.querySelector(".cf-turnstile")) {
+    initTurnstile();
+  }
+});
 
 // ============ Login ============
 document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -248,14 +298,21 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   loginErr.classList.remove("visible");
   const fd = new FormData(e.target);
   try {
-    const r = await window.AtlasAPI.admin.login(fd.get("username"), fd.get("password"));
+    const r = await window.AtlasAPI.admin.login(fd.get("username"), fd.get("password"), turnstileToken);
     me = r;
     showAdmin();
   } catch (err) {
     loginErr.textContent = err.status === 429
       ? "Zu viele Fehlversuche. Bitte kurz warten."
+      : err.status === 403
+      ? "Bot-Prüfung fehlgeschlagen. Bitte Seite neu laden."
       : window.t("admin.loginFailed");
     loginErr.classList.add("visible");
+    // Turnstile-Token ist einmalig → zurücksetzen
+    if (window.turnstile && document.querySelector(".cf-turnstile")) {
+      try { window.turnstile.reset(); } catch {}
+      turnstileToken = null;
+    }
   }
 });
 

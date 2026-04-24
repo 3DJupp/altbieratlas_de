@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
 <title>Altbieratlas — Die interaktive Karte des Altbiers</title>
 <meta name="description" content="Der Altbieratlas: Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt." />
 
@@ -39,8 +44,8 @@
       <div class="hero-copy">
         <div class="eyebrow">Altbieratlas</div>
         <h1 class="hero-title">
-          Der interaktive<br />
-          <em>Atlas</em> des Altbiers.
+          <span data-i18n="index.heroTitlePart1">Der interaktive</span><br />
+          <em data-i18n="index.heroTitlePart2">Atlas</em> <span data-i18n="index.heroTitlePart3">des Altbiers.</span>
         </h1>
         <p class="hero-sub" data-i18n="hero.subtitle">Der Altbieratlas sammelt Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt.</p>
         <div class="hero-actions">
@@ -68,8 +73,8 @@
   <section id="map-section" class="container" style="padding: 60px 24px 32px">
     <div class="section-head">
       <div>
-        <div class="eyebrow">Schnellübersicht</div>
-        <h2>Preise im Überblick</h2>
+        <div class="eyebrow" data-i18n="index.quickOverview">Schnellübersicht</div>
+        <h2 data-i18n="index.pricesAtAGlance">Preise im Überblick</h2>
       </div>
       <a class="btn btn-ghost" href="ranglisten.html" data-i18n="common.more">Mehr erfahren →</a>
     </div>
@@ -94,10 +99,10 @@
   <section class="container" style="padding: 24px 24px 60px">
     <div class="section-head">
       <div>
-        <div class="eyebrow">Kalender</div>
-        <h2>Kommende Termine</h2>
+        <div class="eyebrow" data-i18n="index.calendar">Kalender</div>
+        <h2 data-i18n="index.upcomingEvents">Kommende Termine</h2>
       </div>
-      <a class="btn btn-ghost" href="beitragen.html?typ=event" data-i18n="contrib.type.event">Event melden →</a>
+      <a class="btn btn-ghost" href="beitragen.html?typ=event" data-i18n="index.reportEventLink">Event melden →</a>
     </div>
     <div class="event-grid" id="event-grid"></div>
   </section>
@@ -566,9 +571,9 @@ function renderEvents(events) {
           <div class="event-date">${dateText}</div>
           <div class="event-title">${ev.title[lang] || ev.title.de}</div>
           <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
-          <div class="event-loc">${b ? "@ " + b.name + " · " + b.city : "— Düsseldorf Altstadt —"}</div>
+          <div class="event-loc">${b ? "@ " + b.name + " · " + b.city : "— " + window.t("contrib.locationPlaceholder") + " —"}</div>
         </article>`;
-    }).join("") || `<p style="color:var(--ink-muted)">Keine anstehenden Termine.</p>`;
+    }).join("") || `<p style="color:var(--ink-muted)">${window.t("index.noEvents")}</p>`;
   }
   paint();
   document.addEventListener("atlas:lang-changed", paint);
