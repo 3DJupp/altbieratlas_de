@@ -92,14 +92,13 @@ window.renderShell = function ({ activeNav }) {
             <h4 data-i18n="footer.legal">Rechtliches</h4>
             <ul>
               <li><a href="impressum.html" data-i18n="nav.imprint">Impressum</a></li>
-              <li><a href="impressum.html#datenschutz">Datenschutz</a></li>
-              <li><a href="#" id="cookie-open" data-i18n="cookie.settings">Cookie-Einstellungen</a></li>
+              <li><a href="impressum.html#datenschutz" data-i18n="footer.privacy">Datenschutz</a></li>
             </ul>
           </div>
         </div>
         <div class="bottom">
           <span>© ${new Date().getFullYear()} Altbieratlas</span>
-          <span id="atlas-mode-tag" class="mono">v0.2 · <span id="atlas-mode">…</span></span>
+          <span id="atlas-mode-tag" class="mono">v0.3 · <span id="atlas-mode">…</span></span>
         </div>
       </div>
     </footer>
@@ -180,13 +179,12 @@ window.renderShell = function ({ activeNav }) {
     localStorage.setItem("atlas-consent", "essential");
     banner.classList.add("hidden");
   });
-  const cookieOpen = document.getElementById("cookie-open");
-  if (cookieOpen) {
-    cookieOpen.addEventListener("click", (e) => {
-      e.preventDefault();
-      banner.classList.remove("hidden");
-    });
-  }
+
+  // Funktion global, damit sie von der Impressum-/Datenschutz-Seite
+  // aus aufgerufen werden kann (Cookie-Einstellungen ändern).
+  window.openCookieBanner = function () {
+    banner.classList.remove("hidden");
+  };
 
   window.setLang(window.__atlasLang);
 

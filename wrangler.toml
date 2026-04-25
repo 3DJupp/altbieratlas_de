@@ -33,9 +33,10 @@ directory = "./public"
 binding = "ASSETS"
 
 # --- D1-Datenbank ---------------------------------------------
-# Name und ID werden beim Deploy aus Build-Secrets ersetzt (siehe
-# Deploy-Command im Cloudflare-Dashboard unter Build configuration).
-# Für den Ersteinrichtung: `npx wrangler d1 create <dein-name>`
+# Platzhalter werden von scripts/deploy.sh via sed ersetzt.
+# Deploy-Command im CF-Dashboard: bash scripts/deploy.sh
+# Benötigte Build-Umgebungsvariablen: D1_DATABASE_ID, D1_DATABASE_NAME
+# Ersteinrichtung: `npx wrangler d1 create <dein-name>`
 [[d1_databases]]
 binding       = "DB"
 database_name = "REPLACE_WITH_YOUR_D1_NAME"

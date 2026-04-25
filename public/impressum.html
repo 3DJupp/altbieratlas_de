@@ -57,6 +57,9 @@
       <p data-i18n="imp.cookies1">Wir verwenden ausschließlich technisch notwendige Cookies — für deine Spracheinstellung, dein Theme (hell/dunkel) und, im Admin-Bereich, eine Session. Diese Cookies werden ohne deine Zustimmung gesetzt, da sie für den Betrieb der Seite erforderlich sind.</p>
       <p data-i18n-html="imp.cookies2Html">Zusätzlich setzen wir — <strong>nur nach deiner ausdrücklichen Einwilligung</strong> über das Cookie-Banner — <em>Google Analytics 4</em> mit IP-Anonymisierung (<span class="kbd">anonymize_ip</span>) ein, um die Nutzung der Seite zu verstehen und zu verbessern. Ohne Zustimmung wird kein Analyse-Cookie gesetzt und kein Tracking-Request gesendet.</p>
       <p data-i18n-html="imp.cookies3Html">Deine Einwilligung kannst du jederzeit im Footer unter <em>Cookie-Einstellungen</em> widerrufen.</p>
+      <p>
+        <button class="btn btn-ghost" id="open-cookie-settings" data-i18n="imp.openCookieSettings">Cookie-Einstellungen öffnen</button>
+      </p>
 
       <h3 data-i18n="imp.h3.bot">Spam- und Bot-Schutz</h3>
       <p data-i18n-html="imp.botHtml">Zum Schutz der Beitrags-Formulare vor automatisierten Einsendungen setzen wir <em>Cloudflare Turnstile</em> als CAPTCHA-Alternative ein. Dabei werden technische Informationen des Browsers an Cloudflare übertragen. Cloudflare verwendet diese Daten ausschließlich zur Missbrauchserkennung und nicht für ein Nutzer-Tracking.</p>
@@ -103,6 +106,11 @@ function paintImpressum() {
 paintImpressum();
 document.addEventListener("atlas:config-ready", paintImpressum);
 document.addEventListener("atlas:lang-changed", paintImpressum);
+
+// Cookie-Einstellungen-Button öffnet das Banner (Funktion kommt aus shell.js)
+document.getElementById("open-cookie-settings").addEventListener("click", () => {
+  if (typeof window.openCookieBanner === "function") window.openCookieBanner();
+});
 </script>
 </body>
 </html>
