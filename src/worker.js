@@ -37,6 +37,8 @@ const ROUTES = [
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],
   ["POST",   "/api/contributions",                         R.postContribution],
+  // --- Untappd ---
+  ["GET",    "/api/untappd/brewery/:id",                   R.getUntappdBrewery],
   // --- Admin ---
   ["POST",   "/api/admin/login",                           R.adminLogin],
   ["POST",   "/api/admin/logout",                          R.adminLogout],

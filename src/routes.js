@@ -5,7 +5,7 @@ import {
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
-  clientIp, brewRow,
+  clientIp, brewRow, sendConfirmationEmail,
 } from "./utils.js";
 
 // ---- Auth-Middleware ----
@@ -258,10 +258,32 @@ export async function postContribution(req, env) {
     return error(400, "validation-failed", { detail: e.message });
   }
 
+  // Auto-Geocoding: fehlende Koordinaten für neue Brauereien ableiten
+  if (type === "brewery" && (data.lat == null || data.lng == null) && data.city) {
+    const q = encodeURIComponent([data.name, data.city, data.country || "DE"].filter(Boolean).join(", "));
+    try {
+      const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=jsonv2&limit=1`, {
+        headers: { "User-Agent": `Altbieratlas/1.0 (${env.CONTACT_EMAIL || "admin@example.com"})` },
+        cf: { cacheTtl: 86400, cacheEverything: true },
+      });
+      if (geoRes.ok) {
+        const rows = await geoRes.json();
+        if (rows.length > 0) {
+          data.lat = parseFloat(rows[0].lat);
+          data.lng = parseFloat(rows[0].lon);
+          data._geocoded = true;
+        }
+      }
+    } catch {}
+  }
+
   const id = uuid();
   await env.DB.prepare(
     "INSERT INTO contributions (id, type, payload, submitter_email, submitter_ip, status) VALUES (?, ?, ?, ?, ?, 'pending')"
   ).bind(id, type, JSON.stringify(data), email, ip).run();
+
+  // Bestätigungsmail wenn E-Mail angegeben — fire & forget
+  if (email) sendConfirmationEmail(env, { to: email, type, id });
 
   return json({ ok: true, id, status: "pending" }, { status: 201 });
 }
@@ -533,6 +555,69 @@ export async function adminStats(req, env) {
     breweries: breweries?.n ?? 0,
     prices: prices?.n ?? 0,
   });
+}
+
+// ============================================================
+//  UNTAPPD (öffentlich, gecacht)
+// ============================================================
+// GET /api/untappd/brewery/:id
+// Proxy + 24h-D1-Cache für Untappd-Brauereisuchergebnisse.
+// Nur aktiv, wenn UNTAPPD_CLIENT_ID + UNTAPPD_CLIENT_SECRET gesetzt sind.
+export async function getUntappdBrewery(req, env, { id }) {
+  const clientId = env.UNTAPPD_CLIENT_ID;
+  const clientSecret = env.UNTAPPD_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return json({ available: false });
+
+  // Cache prüfen (24h TTL)
+  const cached = await env.DB.prepare(
+    "SELECT data, cached_at FROM untappd_cache WHERE atlas_id = ?"
+  ).bind(id).first();
+  if (cached && (Date.now() - new Date(cached.cached_at).getTime()) < 86400000) {
+    return json({ available: true, cached: true, ...JSON.parse(cached.data) });
+  }
+
+  // Brauereiname aus DB holen
+  const brewery = await env.DB.prepare(
+    "SELECT name FROM breweries WHERE id = ? AND status = 'approved'"
+  ).bind(id).first();
+  if (!brewery) return json({ available: false });
+
+  try {
+    const searchUrl = `https://api.untappd.com/v4/search/brewery`
+      + `?q=${encodeURIComponent(brewery.name)}`
+      + `&client_id=${clientId}&client_secret=${clientSecret}&limit=3`;
+    const r = await fetch(searchUrl, {
+      headers: { "User-Agent": "Altbieratlas/1.0" },
+      cf: { cacheTtl: 3600 },
+    });
+    if (!r.ok) return json({ available: false });
+
+    const d = await r.json();
+    const items = (d.response?.brewery?.items) || [];
+    let data;
+    if (!items.length) {
+      data = { found: false };
+    } else {
+      const b = items[0].brewery;
+      data = {
+        found: true,
+        untappdId: b.brewery_id,
+        name: b.brewery_name,
+        slug: b.brewery_slug,
+        rating: b.rating?.rating_score ?? null,
+        beerCount: b.beer_count ?? null,
+        label: b.brewery_label || null,
+      };
+    }
+
+    await env.DB.prepare(
+      "INSERT OR REPLACE INTO untappd_cache (atlas_id, data, cached_at) VALUES (?, ?, datetime('now'))"
+    ).bind(id, JSON.stringify(data)).run();
+
+    return json({ available: true, cached: false, ...data });
+  } catch (e) {
+    return json({ available: false });
+  }
 }
 
 // ============================================================

@@ -363,12 +363,16 @@ function forms(typ) {
     <div class="grid-2">
       <div class="field">
         <label>${t("contrib.form.latLabel")}</label>
-        <input name="lat" type="number" step="0.0001" placeholder="51.2253" required />
+        <input name="lat" type="number" step="0.0001" placeholder="51.2253" id="f-lat" />
       </div>
       <div class="field">
         <label>${t("contrib.form.lngLabel")}</label>
-        <input name="lng" type="number" step="0.0001" placeholder="6.7722" required />
+        <input name="lng" type="number" step="0.0001" placeholder="6.7722" id="f-lng" />
       </div>
+    </div>
+    <div id="geo-status" style="font-size:12px;color:var(--ink-muted);margin:-8px 0 12px;display:flex;align-items:center;gap:6px">
+      <span>${t("contrib.form.geoHint") || "Koordinaten optional — werden automatisch aus Adresse/Ort abgeleitet."}</span>
+      <button type="button" id="btn-geocode" class="btn btn-ghost" style="padding:4px 10px;font-size:12px">${t("contrib.form.geoBtn") || "Ableiten"}</button>
     </div>
     <div class="field">
       <label>${t("field.website")}</label>
@@ -470,6 +474,31 @@ function renderForm(typ) {
   const url = new URL(location.href);
   url.searchParams.set("typ", typ);
   history.replaceState(null, "", url.toString());
+
+  // Geocoding-Button verdrahten
+  const btnGeo = document.getElementById("btn-geocode");
+  if (btnGeo) {
+    btnGeo.addEventListener("click", async () => {
+      const fd = new FormData(document.getElementById("contrib-form"));
+      const q = [fd.get("name"), fd.get("address"), fd.get("city")].filter(Boolean).join(", ");
+      if (!q) return;
+      const statusEl = document.getElementById("geo-status");
+      statusEl.innerHTML = '<span style="color:var(--copper)">⟳ Ermittle…</span>';
+      try {
+        const res = await window.AtlasAPI.geocode(q);
+        const r = res && res.results && res.results[0];
+        if (r) {
+          document.getElementById("f-lat").value = r.lat.toFixed(6);
+          document.getElementById("f-lng").value = r.lng.toFixed(6);
+          statusEl.innerHTML = `<span style="color:green">✓ ${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span> <span style="color:var(--ink-muted)">${r.name.slice(0, 60)}</span>`;
+        } else {
+          statusEl.innerHTML = '<span style="color:#a07a20">Kein Ergebnis — bitte Koordinaten manuell eingeben.</span>';
+        }
+      } catch {
+        statusEl.innerHTML = '<span style="color:#9b1f1f">Geocoder nicht erreichbar.</span>';
+      }
+    });
+  }
 }
 
 document.querySelectorAll(".type-switcher button").forEach((btn) => {
@@ -502,9 +531,32 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
   // Normalisiere preis → float, type
   if (currentTyp === "preis") data.price = parseFloat(String(data.price).replace(",", "."));
   if (currentTyp === "brauerei") {
-    data.lat = parseFloat(String(data.lat).replace(",", "."));
-    data.lng = parseFloat(String(data.lng).replace(",", "."));
-    data.coords = [data.lat, data.lng];
+    const rawLat = String(data.lat || "").replace(",", ".");
+    const rawLng = String(data.lng || "").replace(",", ".");
+    data.lat = rawLat ? parseFloat(rawLat) : null;
+    data.lng = rawLng ? parseFloat(rawLng) : null;
+
+    // Client-seitiges Auto-Geocoding wenn keine Koordinaten eingegeben
+    if ((data.lat == null || isNaN(data.lat)) || (data.lng == null || isNaN(data.lng))) {
+      const statusEl = document.getElementById("geo-status");
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--copper)">⟳ Koordinaten werden ermittelt…</span>';
+      const q = [data.name, data.address, data.city].filter(Boolean).join(", ");
+      try {
+        const geoRes = await window.AtlasAPI.geocode(q);
+        const r = (geoRes && geoRes.results && geoRes.results[0]);
+        if (r) {
+          data.lat = r.lat;
+          data.lng = r.lng;
+          if (statusEl) statusEl.innerHTML = `<span style="color:green">✓ ${data.lat.toFixed(4)}, ${data.lng.toFixed(4)} (Geocoder)</span>`;
+        } else {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--ink-muted)">Keine Koordinaten gefunden — werden bei der Prüfung ergänzt.</span>';
+        }
+      } catch {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--ink-muted)">Geocoder nicht erreichbar — Koordinaten werden bei Prüfung gesetzt.</span>';
+      }
+    }
+
+    if (data.lat != null && data.lng != null) data.coords = [data.lat, data.lng];
   }
   if (currentTyp === "sorte") {
     if (data.abv) data.abv = parseFloat(String(data.abv).replace(",", "."));

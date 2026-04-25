@@ -210,6 +210,44 @@ export function clientIp(req) {
       || "0.0.0.0";
 }
 
+// ---- E-Mail-Bestätigung via Resend API ----
+// Benötigt env.RESEND_API_KEY (Secret) und optional env.RESEND_FROM.
+// Sendet still — wirft nie eine Exception nach außen.
+export async function sendConfirmationEmail(env, { to, type, id }) {
+  if (!env.RESEND_API_KEY || !to) return;
+  const labels = {
+    price: "Preismeldung", brewery: "Brauerei-Eintrag",
+    style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung",
+  };
+  const label = labels[type] || type;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        to,
+        subject: "Dein Beitrag ist eingegangen — Altbieratlas",
+        text: [
+          `Hallo,`,
+          ``,
+          `deine ${label} (ID: ${id}) ist beim Altbieratlas eingegangen`,
+          `und wird nun redaktionell geprüft.`,
+          ``,
+          `Nach der Freigabe erscheint sie automatisch auf dem Atlas.`,
+          `Wir melden uns ausschließlich bei Rückfragen.`,
+          ``,
+          `Vielen Dank fürs Mitmachen!`,
+          `— Das Altbieratlas-Team`,
+        ].join("\n"),
+      }),
+    });
+  } catch {}
+}
+
 // ---- Brewery-Assembler (wandelt DB-Zeile in API-Shape) ----
 export function brewRow(r, styles = []) {
   if (!r) return null;
