@@ -546,7 +546,7 @@ export async function sitemap(req, env) {
                               .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
                               .replace(/'/g, "&apos;");
   const staticPaths = ["/", "/index.html", "/ranglisten.html", "/wissen.html",
-                       "/beitragen.html", "/impressum.html"];
+                       "/beitragen.html"];
   let breweryIds = [];
   let lastMod = null;
   try {

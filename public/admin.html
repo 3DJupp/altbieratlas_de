@@ -113,7 +113,7 @@
   <!-- ============ LOGIN ============ -->
   <section id="login-section" class="admin-login" style="display:none">
     <h1 data-i18n="admin.title">Administration</h1>
-    <p class="hint">Anmeldung erforderlich.</p>
+    <p class="hint" data-i18n="admin.hint">Anmeldung erforderlich.</p>
 
     <form id="login-form">
       <div class="field">
@@ -136,7 +136,7 @@
       <div class="admin-error" id="login-error" data-i18n="admin.loginFailed">Anmeldung fehlgeschlagen.</div>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:8px" data-i18n="admin.login">Anmelden</button>
     </form>
-    <p style="color:var(--ink-muted);font-size:12px;margin-top:18px">
+    <p style="color:var(--ink-muted);font-size:12px;margin-top:18px" data-i18n="admin.liveOnly">
       Die Admin-Funktionen sind nur im Live-Modus (Worker + D1) verfügbar.
     </p>
   </section>
@@ -146,11 +146,11 @@
     <div class="container">
       <div class="admin-header">
         <div>
-          <div class="eyebrow">Redaktion</div>
+          <div class="eyebrow" data-i18n="admin.redaktion">Redaktion</div>
           <h1 data-i18n="admin.title">Administration</h1>
         </div>
         <div style="display:flex;gap:12px;align-items:center">
-          <div class="who">angemeldet als <strong id="admin-username">—</strong></div>
+          <div class="who"><span data-i18n="admin.loggedInAs">angemeldet als</span> <strong id="admin-username">—</strong></div>
           <button class="btn btn-ghost" id="btn-logout" data-i18n="admin.logout">Abmelden</button>
         </div>
       </div>
@@ -169,11 +169,11 @@
             <div class="admin-stat"><div class="n" id="s-approved">—</div><div class="lbl" data-i18n="admin.approved">Freigegeben</div></div>
             <div class="admin-stat"><div class="n" id="s-rejected">—</div><div class="lbl" data-i18n="admin.rejected">Abgelehnt</div></div>
             <div class="admin-stat"><div class="n" id="s-breweries">—</div><div class="lbl" data-i18n="admin.breweries">Brauereien</div></div>
-            <div class="admin-stat"><div class="n" id="s-prices">—</div><div class="lbl">Preismeldungen</div></div>
+            <div class="admin-stat"><div class="n" id="s-prices">—</div><div class="lbl" data-i18n="rank.statPrices">Preismeldungen</div></div>
           </div>
 
           <h2 style="font-family:var(--font-display);font-weight:500;margin:30px 0 10px" data-i18n="admin.pending">Offene Beiträge</h2>
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px">Die neuesten offenen Einreichungen im Schnellzugriff:</p>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.dashboardPending">Die neuesten offenen Einreichungen im Schnellzugriff:</p>
           <div id="dashboard-pending"></div>
         </section>
 
@@ -189,12 +189,12 @@
 
         <!-- Breweries -->
         <section id="tab-breweries">
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px">Alle Brauereien-Einträge (inkl. offener).</p>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.breweriesSub">Alle Brauereien-Einträge (inkl. offener).</p>
           <div style="overflow:auto">
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th>Name</th><th>Stadt</th><th>Typ</th><th>Status</th><th>Verif.</th><th></th>
+                  <th data-i18n="admin.colName">Name</th><th data-i18n="admin.colCity">Stadt</th><th data-i18n="admin.colType">Typ</th><th data-i18n="admin.colStatus">Status</th><th data-i18n="admin.colVerified">Verif.</th><th></th>
                 </tr>
               </thead>
               <tbody id="brewery-tbody"></tbody>
@@ -208,10 +208,10 @@
   <!-- Reject-Dialog -->
   <div class="reject-dialog" id="reject-dialog">
     <div class="box">
-      <h3>Beitrag ablehnen</h3>
+      <h3 data-i18n="admin.rejectTitle">Beitrag ablehnen</h3>
       <div class="field">
         <label data-i18n="admin.rejectReason">Grund (optional)</label>
-        <textarea id="reject-notes" rows="3" placeholder="Kurzer Grund — wird intern gespeichert."></textarea>
+        <textarea id="reject-notes" rows="3" data-i18n-placeholder="admin.rejectReasonPh" placeholder="Kurzer Grund — wird intern gespeichert."></textarea>
       </div>
       <div class="actions">
         <button class="btn btn-ghost" id="reject-cancel" data-i18n="common.cancel">Abbrechen</button>
@@ -243,7 +243,7 @@ let me = null;
   await window.AtlasAPI.ready();
   if (window.AtlasAPI.mode() !== "live") {
     loginSection.style.display = "block";
-    loginErr.textContent = "Admin-Bereich benötigt Live-API (Mock-Modus erkannt).";
+    loginErr.textContent = window.t("admin.mockWarning");
     loginErr.classList.add("visible");
     return;
   }
@@ -303,9 +303,9 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     showAdmin();
   } catch (err) {
     loginErr.textContent = err.status === 429
-      ? "Zu viele Fehlversuche. Bitte kurz warten."
+      ? window.t("admin.tooManyAttempts")
       : err.status === 403
-      ? "Bot-Prüfung fehlgeschlagen. Bitte Seite neu laden."
+      ? window.t("admin.botCheckFailed")
       : window.t("admin.loginFailed");
     loginErr.classList.add("visible");
     // Turnstile-Token ist einmalig → zurücksetzen
@@ -390,7 +390,7 @@ function renderContribCards(items, host, status) {
     return;
   }
   host.innerHTML = items.map((c) => {
-    const d = new Date(c.createdAt).toLocaleString("de-DE");
+    const d = window.formatDateTime(c.createdAt);
     const payload = JSON.stringify(c.payload, null, 2);
     return `
       <div class="contrib-card" data-id="${c.id}">
@@ -399,7 +399,7 @@ function renderContribCards(items, host, status) {
             <span class="type-tag">${c.type}</span>
             <span>${d}</span>
             ${c.submitterEmail ? `<span>${c.submitterEmail}</span>` : ""}
-            ${c.adminNotes ? `<span>· Note: ${c.adminNotes}</span>` : ""}
+            ${c.adminNotes ? `<span>· ${window.t("admin.note")}: ${c.adminNotes}</span>` : ""}
           </div>
           <div class="payload">${payload}</div>
         </div>
@@ -428,7 +428,7 @@ async function handleAction(id, action, cardEl) {
       cardEl.remove();
       loadDashboard();
     } catch (e) {
-      alert("Freigabe fehlgeschlagen: " + (e.detail?.detail || e.message));
+      alert(window.t("admin.approveError") + (e.detail?.detail || e.message));
     }
   } else if (action === "reject") {
     openReject(id, cardEl);
@@ -456,7 +456,7 @@ document.getElementById("reject-confirm").addEventListener("click", async () => 
     rejectDialog.classList.remove("visible");
     loadDashboard();
   } catch (e) {
-    alert("Ablehnung fehlgeschlagen: " + (e.detail?.detail || e.message));
+    alert(window.t("admin.rejectError") + (e.detail?.detail || e.message));
   }
 });
 rejectDialog.addEventListener("click", (e) => {
@@ -465,23 +465,24 @@ rejectDialog.addEventListener("click", (e) => {
 
 // ============ Breweries Table ============
 async function loadBreweriesTable() {
+  const t = window.t;
   const tbody = document.getElementById("brewery-tbody");
-  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px" data-i18n="common.loading">Lade…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
   try {
     const r = await window.AtlasAPI.admin.listBreweries();
     tbody.innerHTML = (r.breweries || []).map((b) => `
       <tr data-id="${b.id}">
         <td><a href="brauerei.html?id=${b.id}" target="_blank">${b.name}</a></td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
-        <td>${b.type}</td>
+        <td>${t("type." + b.type) || b.type}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
         <td>${b.verified ? "✓" : "—"}</td>
         <td class="actions">
-          <button class="btn" data-act="toggle-verified">${b.verified ? "Un-Verif." : "Verifizieren"}</button>
-          <button class="btn btn-reject" data-act="delete">Löschen</button>
+          <button class="btn" data-act="toggle-verified">${b.verified ? t("admin.actionUnverify") : t("admin.actionVerify")}</button>
+          <button class="btn btn-reject" data-act="delete">${t("admin.actionDelete")}</button>
         </td>
       </tr>
-    `).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Einträge.</td></tr>`;
+    `).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noTableEntries")}</td></tr>`;
 
     tbody.querySelectorAll("tr[data-id]").forEach((row) => {
       const id = row.dataset.id;
@@ -495,23 +496,31 @@ async function loadBreweriesTable() {
 }
 
 async function handleBreweryAction(id, act, rowEl) {
+  const t = window.t;
   if (act === "delete") {
-    if (!confirm("Brauerei wirklich löschen? Alle zugehörigen Preise werden mitgelöscht.")) return;
+    if (!confirm(t("admin.confirmDelete"))) return;
     try {
       await window.AtlasAPI.admin.deleteBrewery(id);
       rowEl.remove();
       loadDashboard();
-    } catch (e) { alert("Fehler: " + e.message); }
+    } catch (e) { alert(t("admin.errorPrefix") + e.message); }
   } else if (act === "toggle-verified") {
     const currentBadge = rowEl.querySelector("td:nth-child(5)").textContent.trim();
     const nowVerified = currentBadge === "✓" ? 0 : 1;
     try {
       await window.AtlasAPI.admin.updateBrewery(id, { verified: nowVerified });
       rowEl.querySelector("td:nth-child(5)").textContent = nowVerified ? "✓" : "—";
-      rowEl.querySelector("button[data-act='toggle-verified']").textContent = nowVerified ? "Un-Verif." : "Verifizieren";
-    } catch (e) { alert("Fehler: " + e.message); }
+      rowEl.querySelector("button[data-act='toggle-verified']").textContent = nowVerified ? t("admin.actionUnverify") : t("admin.actionVerify");
+    } catch (e) { alert(t("admin.errorPrefix") + e.message); }
   }
 }
+
+// Bei Sprachwechsel die dynamisch gerenderten Bereiche neu zeichnen
+document.addEventListener("atlas:lang-changed", () => {
+  if (document.querySelector("#tab-breweries.active")) loadBreweriesTable();
+  if (document.querySelector("#tab-contribs.active")) loadContributions(currentStatus);
+  if (document.querySelector("#tab-dashboard.active") && me) loadDashboard();
+});
 </script>
 </body>
 </html>

@@ -545,7 +545,7 @@ function renderRankings(prices) {
     if (!b) return;
     newest.push({
       id: b.id, name: b.name, short: b.short, city: b.city,
-      priceText: new Date(p.date).toLocaleDateString("de-DE", { day: "2-digit", month: "short" }),
+      priceText: window.formatDate(p.date, { day: "2-digit", month: "short" }),
     });
   });
   fill("rank-newest", newest.slice(0, 5));
@@ -562,10 +562,7 @@ function renderEvents(events) {
     const lang = window.__atlasLang;
     grid.innerHTML = upcoming.map((ev) => {
       const b = ev.breweryId ? allBreweries.find((x) => x.id === ev.breweryId) : null;
-      const d = new Date(ev.date);
-      const dateText = d.toLocaleDateString(lang === "en" ? "en-US" : "de-DE", {
-        weekday: "short", day: "2-digit", month: "long", year: "numeric",
-      });
+      const dateText = window.formatDateLong(ev.date);
       return `
         <article class="card event-card">
           <div class="event-date">${dateText}</div>

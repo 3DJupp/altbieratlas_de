@@ -857,3 +857,36 @@ html { scroll-behavior: smooth; }
   .hero-title { font-size: clamp(1.6rem, 7vw, 2.2rem); }
   .hero-sub { font-size: 14px; }
 }
+
+/* ============================================================
+   Footer auf Mobile
+   ============================================================ */
+
+/* Tablet: 2x2 Grid (war schon da @ 800px); Mobile: 1 Spalte */
+@media (max-width: 560px) {
+  .atlas-footer .grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .atlas-footer .bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  /* Social-Row sauberer: Label-Block über die ganze Breite */
+  .social-row {
+    gap: 6px 10px;
+  }
+  /* Auf Mobile nur Icons — Text-Labels „GitHub"/„LinkedIn"/„Website" ausblenden */
+  .social-link span { display: none; }
+  .social-link {
+    width: 36px; height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .social-icons {
+    margin-left: 0;
+    width: 100%;
+  }
+}

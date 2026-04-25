@@ -22,15 +22,27 @@
 .know-hero .lede em { font-style: italic; color: var(--copper); }
 
 .know-nav {
-  display: flex; gap: 4px; margin: 40px 0 0;
+  margin: 40px 0 0;
   border-bottom: 1px solid var(--rule);
-  overflow-x: auto; position: sticky; top: 64px;
+  position: sticky; top: 64px;
   background: var(--bg); z-index: 10;
 }
+.know-nav .container {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Damit der letzte Tab nicht direkt am Rand klebt */
+  padding-right: 24px;
+}
+.know-nav .container::-webkit-scrollbar { display: none; }
 .know-nav a {
   border: none; padding: 14px 18px;
   color: var(--ink-soft); font-size: 14px;
   border-bottom: 2px solid transparent; white-space: nowrap;
+  flex: 0 0 auto;
 }
 .know-nav a:hover { color: var(--ink); }
 .know-nav a.active { color: var(--ink); border-bottom-color: var(--copper); }
@@ -119,7 +131,7 @@
   </section>
 
   <nav class="know-nav">
-    <div class="container" style="display:flex;gap:4px">
+    <div class="container">
       <a href="#geschichte" class="active" data-i18n="know.nav.history">Geschichte</a>
       <a href="#sorten" data-i18n="know.nav.styles">Sorten</a>
       <a href="#koebes" data-i18n="know.nav.koebes">Köbes-Kultur</a>

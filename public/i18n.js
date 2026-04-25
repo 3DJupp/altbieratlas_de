@@ -237,6 +237,100 @@ window.ATLAS_I18N = {
     "popup.details": "Details →",
     // Rank sub
     "rank.reportsOnly": " Meldungen",
+    // Impressum
+    "imp.eyebrow": "Rechtliches",
+    "imp.h1": "Impressum & Datenschutz",
+    "imp.intro": "Der Altbieratlas wird privat und unkommerziell betrieben. Die folgenden Angaben entsprechen den gesetzlichen Anforderungen.",
+    "imp.h2.legal": "Angaben gemäß § 5 TMG",
+    "imp.responsibleHtml": "<strong>Verantwortlich für den Inhalt</strong> (§ 18 Abs. 2 MStV): <span id=\"impressum-responsible\"></span>, Anschrift wie oben.",
+    "imp.h2.disclaimer": "Haftungsausschluss",
+    "imp.disclaimer1": "Die Inhalte des Altbieratlas — insbesondere Preise, Adressen, Öffnungszeiten — werden von der Gemeinschaft gemeldet und redaktionell geprüft. Auch nach Prüfung übernimmt der Betreiber keine Gewähr für fortwährende Richtigkeit, Vollständigkeit oder Aktualität. Irrtümer, kurzfristige Preisanpassungen und Schließungen sind möglich — im Zweifel lohnt der Anruf.",
+    "imp.disclaimer2": "Markennamen, Logos und Kennzeichen der gelisteten Brauereien sind Eigentum ihrer jeweiligen Inhaber. Die Nennung dient ausschließlich der redaktionellen Information.",
+    "imp.h2.privacy": "Datenschutz",
+    "imp.privacyIntro": "Wir erheben und verarbeiten personenbezogene Daten nur im technisch notwendigen Umfang.",
+    "imp.h3.contrib": "Beiträge",
+    "imp.contribText": "Wenn du einen Preis, eine Brauerei, eine Korrektur oder ein Event meldest, werden die angegebenen Daten gespeichert und nach redaktioneller Prüfung veröffentlicht. Zusätzlich wird zum Schutz vor Missbrauch deine IP-Adresse gespeichert; sie wird nach 30 Tagen gelöscht, sofern keine Missbrauchsverdachtsmomente vorliegen. Die Angabe einer E-Mail-Adresse ist freiwillig — wir kontaktieren dich ausschließlich, wenn wir Rückfragen zu deiner Meldung haben.",
+    "imp.h3.cookies": "Cookies & Analyse",
+    "imp.cookies1": "Wir verwenden ausschließlich technisch notwendige Cookies — für deine Spracheinstellung, dein Theme (hell/dunkel) und, im Admin-Bereich, eine Session. Diese Cookies werden ohne deine Zustimmung gesetzt, da sie für den Betrieb der Seite erforderlich sind.",
+    "imp.cookies2Html": "Zusätzlich setzen wir — <strong>nur nach deiner ausdrücklichen Einwilligung</strong> über das Cookie-Banner — <em>Google Analytics 4</em> mit IP-Anonymisierung (<span class=\"kbd\">anonymize_ip</span>) ein, um die Nutzung der Seite zu verstehen und zu verbessern. Ohne Zustimmung wird kein Analyse-Cookie gesetzt und kein Tracking-Request gesendet.",
+    "imp.cookies3Html": "Deine Einwilligung kannst du jederzeit im Footer unter <em>Cookie-Einstellungen</em> widerrufen.",
+    "imp.h3.bot": "Spam- und Bot-Schutz",
+    "imp.botHtml": "Zum Schutz der Beitrags-Formulare vor automatisierten Einsendungen setzen wir <em>Cloudflare Turnstile</em> als CAPTCHA-Alternative ein. Dabei werden technische Informationen des Browsers an Cloudflare übertragen. Cloudflare verwendet diese Daten ausschließlich zur Missbrauchserkennung und nicht für ein Nutzer-Tracking.",
+    "imp.h3.geo": "Geocoder (Ortssuche)",
+    "imp.geoHtml": "Die Ortssuche auf der Karte nutzt den öffentlichen Dienst <em>Nominatim</em> des OpenStreetMap-Projekts. Deine Suchanfrage wird über unseren Server an Nominatim weitergeleitet — nicht direkt vom Browser. Dadurch sieht Nominatim nicht deine IP-Adresse. Es werden keine personenbezogenen Daten gespeichert.",
+    "imp.h3.hosting": "Hosting & Server-Logs",
+    "imp.hostingText": "Der Altbieratlas wird auf der Cloudflare-Workers-Plattform betrieben. Beim Aufruf fallen technische Request-Logs (IP-Adresse, User-Agent, Zeitstempel) an, die von Cloudflare für die Missbrauchserkennung und DDoS-Abwehr maximal kurzfristig vorgehalten werden. Eigene anwendungsseitige Zugriffslogs führen wir nicht, außer bei Beitragseinreichungen (siehe oben).",
+    "imp.h2.rights": "Deine Rechte",
+    "imp.rights1": "Du hast jederzeit das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Schicke eine formlose E-Mail an die oben genannte Kontaktadresse.",
+    "imp.rights2": "Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.",
+    "imp.h2.tech": "Technik-Hinweis",
+    "imp.techText": "Der Altbieratlas läuft als Cloudflare Worker mit angebundener D1-Datenbank. Eingereichte Beiträge werden in einer Moderations-Warteschlange gespeichert und erst nach redaktioneller Freigabe öffentlich sichtbar. Der Quellcode dieses Projekts ist auf GitHub verfügbar (siehe Footer).",
+    "imp.contactLabel": "<strong>Kontakt:</strong>",
+    "imp.contactEmail": "E-Mail: ",
+    "imp.ownerFallback": "Betreiber nicht konfiguriert",
+    "imp.country": "Deutschland",
+    // Contribute-Seite Zusatz
+    "contrib.hero.subtitleShort": "Hilf mit, den Altbieratlas aktuell zu halten. Alle Beiträge werden vor Veröffentlichung geprüft.",
+    "contrib.form.priceTitle": "Preis melden",
+    "contrib.form.priceSub": "Du hast gerade ein Alt getrunken oder gekauft? Melde den Preis — Datum, Größe, Ort.",
+    "contrib.form.breweryTitle": "Brauerei / Kneipe eintragen",
+    "contrib.form.brewerySub": "Ein Ort fehlt? Trage ihn ein — Adresse, Koordinaten und kurze Beschreibung reichen.",
+    "contrib.form.styleTitle": "Sorte & Geschmacksnotizen",
+    "contrib.form.styleSub": "Neues Alt oder Saisonbier? Beschreibe Stil, Stärke und Geschmack.",
+    "contrib.form.correctionTitle": "Korrektur einreichen",
+    "contrib.form.correctionSub": "Etwas stimmt nicht? Hilf mit, Fehler zu beheben.",
+    "contrib.form.eventTitle": "Event melden",
+    "contrib.form.eventSub": "Brauereifest, Sticke-Anstich, Altbierrunde? Trage den Termin ein.",
+    "contrib.form.breweryLabel": "Betrifft welchen Eintrag?",
+    "contrib.form.latLabel": "Breitengrad (Lat)",
+    "contrib.form.lngLabel": "Längengrad (Lng)",
+    "contrib.form.priceNotesPh": "z.B. Happy Hour, Sticke-Anstich…",
+    "contrib.form.styleNamePh": "z.B. Frühlings-Sticke 2026",
+    "contrib.form.breweryNamePh": "z.B. Hausbrauerei zum Anker",
+    "contrib.form.eventNamePh": "z.B. Altstadt-Brauereifest 2026",
+    "contrib.form.breweryDescPh": "Was macht diesen Ort aus?",
+    "contrib.form.tastingPh": "Malz, Hopfen, Karamell, Abgang…",
+    "contrib.form.correctionPh": "Was ist falsch, und wie sollte es lauten?",
+    "contrib.form.target.address": "Adresse / Koordinaten",
+    "contrib.form.target.website": "Website",
+    "contrib.form.target.description": "Beschreibung",
+    "contrib.form.target.price": "Preis",
+    "contrib.form.target.style": "Sorte / Stil-Info",
+    "contrib.form.target.other": "Sonstiges",
+    "contrib.form.dash": "—",
+    "contrib.recent.typeLabel.price": "Preis",
+    "contrib.recent.typeLabel.brewery": "Brauerei",
+    "contrib.recent.typeLabel.style": "Sorte",
+    "contrib.recent.typeLabel.correction": "Korrektur",
+    "contrib.recent.typeLabel.event": "Event",
+    // Admin-Seite Zusatz
+    "admin.hint": "Anmeldung erforderlich.",
+    "admin.redaktion": "Redaktion",
+    "admin.liveOnly": "Die Admin-Funktionen sind nur im Live-Modus (Worker + D1) verfügbar.",
+    "admin.loggedInAs": "angemeldet als",
+    "admin.dashboardPending": "Die neuesten offenen Einreichungen im Schnellzugriff:",
+    "admin.breweriesSub": "Alle Brauereien-Einträge (inkl. offener).",
+    "admin.colName": "Name",
+    "admin.colCity": "Stadt",
+    "admin.colType": "Typ",
+    "admin.colStatus": "Status",
+    "admin.colVerified": "Verif.",
+    "admin.actionVerify": "Verifizieren",
+    "admin.actionUnverify": "Un-Verif.",
+    "admin.actionDelete": "Löschen",
+    "admin.confirmDelete": "Brauerei wirklich löschen? Alle zugehörigen Preise werden mitgelöscht.",
+    "admin.errorPrefix": "Fehler: ",
+    "admin.approveError": "Freigabe fehlgeschlagen: ",
+    "admin.rejectError": "Ablehnung fehlgeschlagen: ",
+    "admin.rejectTitle": "Beitrag ablehnen",
+    "admin.rejectReasonPh": "Kurzer Grund — wird intern gespeichert.",
+    "admin.tooManyAttempts": "Zu viele Fehlversuche. Bitte kurz warten.",
+    "admin.botCheckFailed": "Bot-Prüfung fehlgeschlagen. Bitte Seite neu laden.",
+    "admin.mockWarning": "Admin-Bereich benötigt Live-API (Mock-Modus erkannt).",
+    "admin.noTableEntries": "Keine Einträge.",
+    "admin.note": "Note",
+    // Rank sub
+    "rank.hero.eyebrow": "Ranglisten",
   },
   en: {
     "nav.map": "Map",
@@ -463,6 +557,100 @@ window.ATLAS_I18N = {
     "popup.details": "Details →",
     // Rank sub
     "rank.reportsOnly": " reports",
+    // Imprint
+    "imp.eyebrow": "Legal",
+    "imp.h1": "Imprint & Privacy",
+    "imp.intro": "The Altbieratlas is operated privately and non-commercially. The following details comply with legal requirements.",
+    "imp.h2.legal": "Details according to § 5 TMG (German Telemedia Act)",
+    "imp.responsibleHtml": "<strong>Responsible for the content</strong> (§ 18 para. 2 MStV): <span id=\"impressum-responsible\"></span>, address as above.",
+    "imp.h2.disclaimer": "Liability disclaimer",
+    "imp.disclaimer1": "The content of the Altbieratlas — especially prices, addresses, opening hours — is reported by the community and editorially reviewed. Even after review, the operator assumes no liability for continued accuracy, completeness or timeliness. Mistakes, short-notice price changes and closures are possible — when in doubt, call ahead.",
+    "imp.disclaimer2": "Brand names, logos and marks of the listed breweries are the property of their respective owners. They are mentioned solely for editorial information.",
+    "imp.h2.privacy": "Privacy",
+    "imp.privacyIntro": "We collect and process personal data only to the technically necessary extent.",
+    "imp.h3.contrib": "Submissions",
+    "imp.contribText": "When you report a price, a brewery, a correction or an event, the data you provide is stored and published after editorial review. Additionally, your IP address is stored for abuse protection; it is deleted after 30 days unless there are grounds for suspecting abuse. Providing an email address is optional — we will only contact you if we have questions about your submission.",
+    "imp.h3.cookies": "Cookies & analytics",
+    "imp.cookies1": "We use only technically necessary cookies — for your language setting, your theme (light/dark) and, in the admin area, a session. These cookies are set without your consent because they are required for the site to operate.",
+    "imp.cookies2Html": "Additionally, we use — <strong>only with your explicit consent</strong> via the cookie banner — <em>Google Analytics 4</em> with IP anonymisation (<span class=\"kbd\">anonymize_ip</span>) to understand and improve how the site is used. Without consent, no analytics cookie is set and no tracking request is sent.",
+    "imp.cookies3Html": "You can revoke your consent at any time via <em>Cookie settings</em> in the footer.",
+    "imp.h3.bot": "Spam and bot protection",
+    "imp.botHtml": "To protect the submission forms against automated submissions, we use <em>Cloudflare Turnstile</em> as a CAPTCHA alternative. This transmits technical browser information to Cloudflare. Cloudflare uses this data solely for abuse detection, not for user tracking.",
+    "imp.h3.geo": "Geocoder (location search)",
+    "imp.geoHtml": "The location search on the map uses the public <em>Nominatim</em> service of the OpenStreetMap project. Your search query is forwarded through our server to Nominatim — not directly from your browser. That way Nominatim does not see your IP address. No personal data is stored.",
+    "imp.h3.hosting": "Hosting & server logs",
+    "imp.hostingText": "The Altbieratlas is operated on the Cloudflare Workers platform. Technical request logs (IP address, user agent, timestamp) are created on access and kept by Cloudflare only briefly for abuse detection and DDoS mitigation. We do not keep our own application-level access logs, except for submissions (see above).",
+    "imp.h2.rights": "Your rights",
+    "imp.rights1": "You have the right at any time to access, rectification, deletion, restriction of processing, data portability and objection. Please send an informal email to the contact address above.",
+    "imp.rights2": "You also have the right to lodge a complaint with a data protection supervisory authority.",
+    "imp.h2.tech": "Technical note",
+    "imp.techText": "The Altbieratlas runs as a Cloudflare Worker with an attached D1 database. Submissions are stored in a moderation queue and become publicly visible only after editorial approval. The source code of this project is available on GitHub (see footer).",
+    "imp.contactLabel": "<strong>Contact:</strong>",
+    "imp.contactEmail": "Email: ",
+    "imp.ownerFallback": "Operator not configured",
+    "imp.country": "Germany",
+    // Contribute
+    "contrib.hero.subtitleShort": "Help keep the Altbieratlas current. All contributions are reviewed before publishing.",
+    "contrib.form.priceTitle": "Report a price",
+    "contrib.form.priceSub": "Just had or bought an Alt? Report the price — date, size, place.",
+    "contrib.form.breweryTitle": "Add brewery / taproom",
+    "contrib.form.brewerySub": "A place is missing? Add it — address, coordinates and a short description are enough.",
+    "contrib.form.styleTitle": "Style & tasting notes",
+    "contrib.form.styleSub": "A new Alt or seasonal beer? Describe style, strength and flavour.",
+    "contrib.form.correctionTitle": "Submit a correction",
+    "contrib.form.correctionSub": "Something's off? Help us fix it.",
+    "contrib.form.eventTitle": "Report an event",
+    "contrib.form.eventSub": "Brewery festival, Sticke tapping, Altbier round? Enter the date.",
+    "contrib.form.breweryLabel": "Which entry is this about?",
+    "contrib.form.latLabel": "Latitude",
+    "contrib.form.lngLabel": "Longitude",
+    "contrib.form.priceNotesPh": "e.g. happy hour, Sticke tapping…",
+    "contrib.form.styleNamePh": "e.g. Spring Sticke 2026",
+    "contrib.form.breweryNamePh": "e.g. Hausbrauerei zum Anker",
+    "contrib.form.eventNamePh": "e.g. Old-town brewery festival 2026",
+    "contrib.form.breweryDescPh": "What makes this place special?",
+    "contrib.form.tastingPh": "Malt, hops, caramel, finish…",
+    "contrib.form.correctionPh": "What's wrong, and what should it say instead?",
+    "contrib.form.target.address": "Address / coordinates",
+    "contrib.form.target.website": "Website",
+    "contrib.form.target.description": "Description",
+    "contrib.form.target.price": "Price",
+    "contrib.form.target.style": "Style / style info",
+    "contrib.form.target.other": "Other",
+    "contrib.form.dash": "—",
+    "contrib.recent.typeLabel.price": "Price",
+    "contrib.recent.typeLabel.brewery": "Brewery",
+    "contrib.recent.typeLabel.style": "Style",
+    "contrib.recent.typeLabel.correction": "Correction",
+    "contrib.recent.typeLabel.event": "Event",
+    // Admin
+    "admin.hint": "Sign-in required.",
+    "admin.redaktion": "Editorial",
+    "admin.liveOnly": "Admin functions are only available in live mode (Worker + D1).",
+    "admin.loggedInAs": "signed in as",
+    "admin.dashboardPending": "The latest open submissions at a glance:",
+    "admin.breweriesSub": "All brewery entries (incl. pending).",
+    "admin.colName": "Name",
+    "admin.colCity": "City",
+    "admin.colType": "Type",
+    "admin.colStatus": "Status",
+    "admin.colVerified": "Verif.",
+    "admin.actionVerify": "Verify",
+    "admin.actionUnverify": "Un-verify",
+    "admin.actionDelete": "Delete",
+    "admin.confirmDelete": "Really delete this brewery? All associated prices will be deleted too.",
+    "admin.errorPrefix": "Error: ",
+    "admin.approveError": "Approval failed: ",
+    "admin.rejectError": "Rejection failed: ",
+    "admin.rejectTitle": "Reject submission",
+    "admin.rejectReasonPh": "Short reason — stored internally.",
+    "admin.tooManyAttempts": "Too many failed attempts. Please wait a moment.",
+    "admin.botCheckFailed": "Bot check failed. Please reload the page.",
+    "admin.mockWarning": "Admin area requires live API (mock mode detected).",
+    "admin.noTableEntries": "No entries.",
+    "admin.note": "Note",
+    // Rank sub
+    "rank.hero.eyebrow": "Rankings",
   },
 };
 
@@ -494,6 +682,36 @@ window.setLang = function (lang) {
   // Wert in document.title gespiegelt)
   const titleKey = document.documentElement.getAttribute("data-i18n-title");
   if (titleKey) document.title = window.t(titleKey);
+};
+
+// ---- Datumsformat ----
+// Liefert das passende Locale für die aktuelle Sprache. Außerhalb von DE/EN
+// fällt es auf das Browser-Default zurück.
+window.atlasLocale = function () {
+  return window.__atlasLang === "en" ? "en-GB" : "de-DE";
+};
+
+// Kurzdatum: 24.04.2026 (de) bzw. 24/04/2026 (en-GB)
+window.formatDate = function (input, opts) {
+  if (input == null || input === "") return "—";
+  const d = input instanceof Date ? input : new Date(input);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(window.atlasLocale(), opts || undefined);
+};
+
+// Datum + Uhrzeit
+window.formatDateTime = function (input) {
+  if (input == null || input === "") return "—";
+  const d = input instanceof Date ? input : new Date(input);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleString(window.atlasLocale());
+};
+
+// Langes Datum (für Eventkarten): „Sa., 24. April 2026" / „Sat, 24 April 2026"
+window.formatDateLong = function (input) {
+  return window.formatDate(input, {
+    weekday: "short", day: "2-digit", month: "long", year: "numeric",
+  });
 };
 
 (function () {

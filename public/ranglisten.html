@@ -252,8 +252,6 @@ function render() {
   document.getElementById("rank-title").removeAttribute("data-i18n");
   document.getElementById("rank-meta").innerHTML = list.length + " <span>" + t("rank.entries") + "</span>";
 
-  const lang = window.__atlasLang;
-  const locale = lang === "en" ? "en-US" : "de-DE";
   body.innerHTML = list.slice(0, 30).map((it, i) => `
     <div class="rank-row">
       <span class="rn">${String(i + 1).padStart(2, "0")}</span>
@@ -264,7 +262,7 @@ function render() {
       <span class="city">${it.brewery.city}${it.brewery.country && it.brewery.country !== "DE" ? " · " + it.brewery.country : ""}</span>
       <span class="sz">${it.size || (it.count ? it.count + t("rank.reportsShort") : "—")}</span>
       <span class="pr">${it.price != null ? "€ " + it.price.toFixed(2).replace(".", ",") : (it.count ? "×" + it.count : "—")}</span>
-      <span class="dt">${it.date ? new Date(it.date).toLocaleDateString(locale) : "—"}</span>
+      <span class="dt">${it.date ? window.formatDate(it.date) : "—"}</span>
     </div>
   `).join("") || `<p style="color:var(--ink-muted);padding:20px">${t("rank.noEntries")}</p>`;
 }

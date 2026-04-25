@@ -191,7 +191,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 
           <div class="submit-bar">
             <div style="font-size:12px;color:var(--ink-muted)">
-              Mit dem Absenden stimmst du der <a href="impressum.html#datenschutz">Verarbeitung</a> zu.
+              <span data-i18n="contrib.consent">Mit dem Absenden stimmst du der </span><a href="impressum.html#datenschutz" data-i18n="contrib.consentLink">Verarbeitung</a><span data-i18n="contrib.consentTail"> zu.</span>
             </div>
             <div style="display:flex;gap:10px">
               <a class="btn btn-ghost" href="index.html" data-i18n="common.back">Zurück</a>
@@ -204,10 +204,10 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
       <div class="thanks" id="thanks">
         <div class="check">✓</div>
         <h2 data-i18n="contrib.thanks">Danke! Dein Beitrag wird geprüft.</h2>
-        <p style="color:var(--ink-soft)">Nach der Freigabe erscheint er öffentlich auf dem Atlas.</p>
+        <p style="color:var(--ink-soft)" data-i18n="contrib.thanksSub">Nach der Freigabe erscheint er öffentlich auf dem Atlas.</p>
         <div style="margin-top:16px;display:flex;gap:10px">
-          <a class="btn" href="index.html">Zur Karte</a>
-          <button class="btn btn-ghost" id="another">Weiteren Beitrag erfassen</button>
+          <a class="btn" href="index.html" data-i18n="contrib.toMap">Zur Karte</a>
+          <button class="btn btn-ghost" id="another" data-i18n="contrib.another">Weiteren Beitrag erfassen</button>
         </div>
       </div>
     </div>
@@ -215,8 +215,8 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 
   <section class="recent-contribs">
     <div class="container container-narrow">
-      <div class="eyebrow">Zuletzt eingereicht (lokal)</div>
-      <h2 style="margin: 8px 0 20px">Deine Beiträge</h2>
+      <div class="eyebrow" data-i18n="contrib.recentEyebrow">Zuletzt eingereicht (lokal)</div>
+      <h2 style="margin: 8px 0 20px" data-i18n="contrib.recentTitle">Deine Beiträge</h2>
       <div id="recent-list"></div>
     </div>
   </section>
@@ -308,149 +308,150 @@ function initTurnstile() {
 
 // ============ Form templates ============
 function forms(typ) {
+  const t = window.t;
   if (typ === "preis") return `
-    <h2>Preis melden</h2>
-    <p class="hint">Du hast gerade ein Alt getrunken oder gekauft? Melde den Preis — Datum, Größe, Ort.</p>
+    <h2>${t("contrib.form.priceTitle")}</h2>
+    <p class="hint">${t("contrib.form.priceSub")}</p>
     <div class="field">
-      <label data-i18n="field.brewery">Brauerei / Ausschank</label>
+      <label>${t("field.brewery")}</label>
       <select name="breweryId" required>${breweryOptions}</select>
     </div>
     <div class="grid-2">
       <div class="field">
-        <label data-i18n="field.price">Preis (€)</label>
+        <label>${t("field.price")}</label>
         <input name="price" type="number" step="0.01" min="0" placeholder="2,70" required />
       </div>
       <div class="field">
-        <label data-i18n="field.size">Größe</label>
+        <label>${t("field.size")}</label>
         <select name="size">${sizeOptions}</select>
       </div>
     </div>
     <div class="field">
-      <label data-i18n="field.date">Datum</label>
+      <label>${t("field.date")}</label>
       <input name="date" type="date" value="${today}" max="${today}" required />
     </div>
     <div class="field">
-      <label data-i18n="field.notes">Notizen (optional)</label>
-      <textarea name="notes" placeholder="z.B. Happy Hour, Sticke-Anstich…"></textarea>
+      <label>${t("field.notes")}</label>
+      <textarea name="notes" placeholder="${t("contrib.form.priceNotesPh")}"></textarea>
     </div>
   `;
   if (typ === "brauerei") return `
-    <h2>Brauerei / Kneipe eintragen</h2>
-    <p class="hint">Ein Ort fehlt? Trage ihn ein — Adresse, Koordinaten und kurze Beschreibung reichen.</p>
+    <h2>${t("contrib.form.breweryTitle")}</h2>
+    <p class="hint">${t("contrib.form.brewerySub")}</p>
     <div class="field">
-      <label data-i18n="field.name">Name der Brauerei</label>
-      <input name="name" required placeholder="z.B. Hausbrauerei zum Anker" />
+      <label>${t("field.name")}</label>
+      <input name="name" required placeholder="${t("contrib.form.breweryNamePh")}" />
     </div>
     <div class="grid-2">
       <div class="field">
-        <label data-i18n="field.city">Stadt</label>
+        <label>${t("field.city")}</label>
         <input name="city" required placeholder="Düsseldorf" />
       </div>
       <div class="field">
-        <label data-i18n="field.type">Typ</label>
+        <label>${t("field.type")}</label>
         <select name="type">
-          <option value="hausbrauerei">Hausbrauerei</option>
-          <option value="gastronomie">Gastronomie</option>
-          <option value="shop">Handel</option>
+          <option value="hausbrauerei">${t("type.hausbrauerei")}</option>
+          <option value="gastronomie">${t("type.gastronomie")}</option>
+          <option value="shop">${t("type.shop")}</option>
         </select>
       </div>
     </div>
     <div class="field">
-      <label data-i18n="field.address">Adresse</label>
+      <label>${t("field.address")}</label>
       <input name="address" placeholder="Berger Straße 1, 40213 Düsseldorf" />
     </div>
     <div class="grid-2">
       <div class="field">
-        <label>Breitengrad (Lat)</label>
+        <label>${t("contrib.form.latLabel")}</label>
         <input name="lat" type="number" step="0.0001" placeholder="51.2253" required />
       </div>
       <div class="field">
-        <label>Längengrad (Lng)</label>
+        <label>${t("contrib.form.lngLabel")}</label>
         <input name="lng" type="number" step="0.0001" placeholder="6.7722" required />
       </div>
     </div>
     <div class="field">
-      <label data-i18n="field.website">Website</label>
+      <label>${t("field.website")}</label>
       <input name="website" type="url" placeholder="https://..." />
     </div>
     <div class="field">
-      <label data-i18n="field.description">Beschreibung</label>
-      <textarea name="description" placeholder="Was macht diesen Ort aus?"></textarea>
+      <label>${t("field.description")}</label>
+      <textarea name="description" placeholder="${t("contrib.form.breweryDescPh")}"></textarea>
     </div>
   `;
   if (typ === "sorte") return `
-    <h2>Sorte & Geschmacksnotizen</h2>
-    <p class="hint">Neues Alt oder Saisonbier? Beschreibe Stil, Stärke und Geschmack.</p>
+    <h2>${t("contrib.form.styleTitle")}</h2>
+    <p class="hint">${t("contrib.form.styleSub")}</p>
     <div class="field">
-      <label data-i18n="field.brewery">Brauerei</label>
+      <label>${t("field.brewery")}</label>
       <select name="breweryId" required>${breweryOptions}</select>
     </div>
     <div class="field">
-      <label data-i18n="field.styleName">Name der Sorte</label>
-      <input name="styleName" required placeholder="z.B. Frühlings-Sticke 2026" />
+      <label>${t("field.styleName")}</label>
+      <input name="styleName" required placeholder="${t("contrib.form.styleNamePh")}" />
     </div>
     <div class="grid-2">
       <div class="field">
-        <label data-i18n="field.abv">Alkoholgehalt (%)</label>
+        <label>${t("field.abv")}</label>
         <input name="abv" type="number" step="0.1" min="0" max="15" placeholder="4,7" />
       </div>
       <div class="field">
-        <label data-i18n="field.ibu">Bittereinheiten (IBU)</label>
+        <label>${t("field.ibu")}</label>
         <input name="ibu" type="number" min="0" max="120" placeholder="38" />
       </div>
     </div>
     <div class="field">
-      <label data-i18n="field.tasting">Geschmacksnotizen</label>
-      <textarea name="tasting" placeholder="Malz, Hopfen, Karamell, Abgang…" required></textarea>
+      <label>${t("field.tasting")}</label>
+      <textarea name="tasting" placeholder="${t("contrib.form.tastingPh")}" required></textarea>
     </div>
   `;
   if (typ === "korrektur") return `
-    <h2>Korrektur einreichen</h2>
-    <p class="hint">Etwas stimmt nicht? Hilf mit, Fehler zu beheben.</p>
+    <h2>${t("contrib.form.correctionTitle")}</h2>
+    <p class="hint">${t("contrib.form.correctionSub")}</p>
     <div class="field">
-      <label data-i18n="field.brewery">Betrifft welchen Eintrag?</label>
+      <label>${t("contrib.form.breweryLabel")}</label>
       <select name="breweryId" required>${breweryOptions}</select>
     </div>
     <div class="field">
-      <label data-i18n="field.correctionTarget">Was soll korrigiert werden?</label>
+      <label>${t("field.correctionTarget")}</label>
       <select name="target" required>
-        <option value="address">Adresse / Koordinaten</option>
-        <option value="website">Website</option>
-        <option value="description">Beschreibung</option>
-        <option value="price">Preis</option>
-        <option value="style">Sorte / Stil-Info</option>
-        <option value="other">Sonstiges</option>
+        <option value="address">${t("contrib.form.target.address")}</option>
+        <option value="website">${t("contrib.form.target.website")}</option>
+        <option value="description">${t("contrib.form.target.description")}</option>
+        <option value="price">${t("contrib.form.target.price")}</option>
+        <option value="style">${t("contrib.form.target.style")}</option>
+        <option value="other">${t("contrib.form.target.other")}</option>
       </select>
     </div>
     <div class="field">
-      <label data-i18n="field.correctionText">Korrektur</label>
-      <textarea name="correction" required placeholder="Was ist falsch, und wie sollte es lauten?"></textarea>
+      <label>${t("field.correctionText")}</label>
+      <textarea name="correction" required placeholder="${t("contrib.form.correctionPh")}"></textarea>
     </div>
   `;
   if (typ === "event") return `
-    <h2>Event melden</h2>
-    <p class="hint">Brauereifest, Sticke-Anstich, Altbierrunde? Trage den Termin ein.</p>
+    <h2>${t("contrib.form.eventTitle")}</h2>
+    <p class="hint">${t("contrib.form.eventSub")}</p>
     <div class="field">
-      <label data-i18n="field.eventName">Name des Events</label>
-      <input name="eventName" required placeholder="z.B. Altstadt-Brauereifest 2026" />
+      <label>${t("field.eventName")}</label>
+      <input name="eventName" required placeholder="${t("contrib.form.eventNamePh")}" />
     </div>
     <div class="grid-2">
       <div class="field">
-        <label data-i18n="field.eventDate">Datum</label>
+        <label>${t("field.eventDate")}</label>
         <input name="eventDate" type="date" required min="${today}" />
       </div>
       <div class="field">
-        <label data-i18n="field.eventLocation">Ort</label>
-        <input name="eventLocation" required placeholder="Düsseldorf Altstadt" />
+        <label>${t("field.eventLocation")}</label>
+        <input name="eventLocation" required placeholder="${t("contrib.locationPlaceholder")}" />
       </div>
     </div>
     <div class="field">
-      <label>Brauerei (optional)</label>
-      <select name="breweryId"><option value="">—</option>${breweryOptions}</select>
+      <label>${t("contrib.breweryOpt")}</label>
+      <select name="breweryId"><option value="">${t("contrib.form.dash")}</option>${breweryOptions}</select>
     </div>
     <div class="field">
-      <label data-i18n="field.description">Beschreibung</label>
-      <textarea name="description" placeholder="Was erwartet Besucher?"></textarea>
+      <label>${t("field.description")}</label>
+      <textarea name="description" placeholder="${t("contrib.eventDescPh")}"></textarea>
     </div>
   `;
   return "";
@@ -473,6 +474,12 @@ function renderForm(typ) {
 
 document.querySelectorAll(".type-switcher button").forEach((btn) => {
   btn.addEventListener("click", () => renderForm(btn.dataset.typ));
+});
+
+// Bei Sprachwechsel Formular neu rendern (Templates nutzen t()-Werte inline)
+document.addEventListener("atlas:lang-changed", () => {
+  if (currentTyp) renderForm(currentTyp);
+  renderRecent();
 });
 
 // ============ Submit ============
@@ -541,28 +548,30 @@ document.getElementById("another").addEventListener("click", () => {
 
 // ============ Recent (lokale Sicht) ============
 function renderRecent() {
+  const t = window.t;
   let list = [];
   try { list = JSON.parse(localStorage.getItem("atlas-contributions") || "[]").slice(0, 10); } catch {}
   const el = document.getElementById("recent-list");
   if (!list.length) {
-    el.innerHTML = '<p style="color:var(--ink-muted);font-size:14px">Noch keine Beiträge von dir.</p>';
+    el.innerHTML = `<p style="color:var(--ink-muted);font-size:14px">${t("contrib.recentEmpty")}</p>`;
     return;
   }
   el.innerHTML = list.map((c) => {
-    const d = c.createdAt ? new Date(c.createdAt).toLocaleDateString(window.__atlasLang === "en" ? "en-US" : "de-DE") : "—";
+    const d = c.createdAt ? window.formatDate(c.createdAt) : "—";
     const data = c.data || {};
+    const typeLabel = t("contrib.recent.typeLabel." + c.type) || c.type;
     const summary =
         c.type === "price"      ? `${data.breweryId || "—"} · € ${parseFloat(data.price || 0).toFixed(2).replace(".", ",")}`
       : c.type === "brewery"    ? `${data.name || "—"} · ${data.city || ""}`
       : c.type === "style"      ? `${data.styleName || "—"}`
-      : c.type === "correction" ? `Korrektur · ${data.target || ""}`
+      : c.type === "correction" ? `${typeLabel} · ${data.target || ""}`
                                  : `${data.eventName || "—"}`;
     return `
       <div class="contrib-row">
         <span class="date">${d}</span>
-        <span class="typ">${c.type}</span>
+        <span class="typ">${typeLabel}</span>
         <span>${summary}</span>
-        <span class="tag pending">In Prüfung</span>
+        <span class="tag pending">${t("common.pending")}</span>
       </div>
     `;
   }).join("");

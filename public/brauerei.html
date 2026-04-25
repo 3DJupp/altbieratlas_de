@@ -202,7 +202,7 @@ const root = document.getElementById("brewery-root");
             <div class="price-hero">
               <div class="label">Aktuell · ${latest.size}</div>
               <div class="big">€ ${latest.price.toFixed(2).replace('.', ',')}</div>
-              <div class="small">gemeldet ${new Date(latest.date).toLocaleDateString(lang === "en" ? "en-US" : 'de-DE')}</div>
+              <div class="small">${window.t("brewery.reported")}${window.formatDate(latest.date)}</div>
             </div>
           ` : ''}
         </div>
@@ -257,7 +257,7 @@ const root = document.getElementById("brewery-root");
       <div class="price-log">
         ${prices.slice(0, 10).map((p) => `
           <div class="price-log-row">
-            <span class="date">${new Date(p.date).toLocaleDateString(lang === "en" ? "en-US" : 'de-DE')}</span>
+            <span class="date">${window.formatDate(p.date)}</span>
             <span class="src">${p.source || ''}</span>
             <span class="sz">${p.size}</span>
             <span class="p">€ ${p.price.toFixed(2).replace('.', ',')}</span>
@@ -334,7 +334,7 @@ const root = document.getElementById("brewery-root");
     const xTicks = series.filter((_, i) => i === 0 || i === series.length - 1 || i === Math.floor(series.length / 2));
     const xLabels = xTicks.map((s) => {
       const d = new Date(s.date);
-      return `<text class="axis-label" x="${x(d.getTime())}" y="${H - 8}" text-anchor="middle">${d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}</text>`;
+      return `<text class="axis-label" x="${x(d.getTime())}" y="${H - 8}" text-anchor="middle">${d.toLocaleDateString(window.atlasLocale(), { month: 'short', year: '2-digit' })}</text>`;
     }).join('');
 
     const dots = series.map((s) =>
