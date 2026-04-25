@@ -104,6 +104,22 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 
+.autocomplete-field { position: relative; }
+.ac-dropdown {
+  position: absolute; left: 0; right: 0; top: calc(100% + 2px);
+  background: var(--bg-card);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  z-index: 300;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,.12);
+}
+.ac-item { padding: 8px 14px; cursor: pointer; border-bottom: 1px solid var(--rule); }
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover { background: var(--bg-elev); }
+.ac-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+.ac-sub { font-size: 11px; color: var(--ink-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 .turnstile-box {
   display: flex; align-items: center; gap: 10px;
   padding: 14px 16px;
@@ -338,9 +354,10 @@ function forms(typ) {
   if (typ === "brauerei") return `
     <h2>${t("contrib.form.breweryTitle")}</h2>
     <p class="hint">${t("contrib.form.brewerySub")}</p>
-    <div class="field">
+    <div class="field autocomplete-field">
       <label>${t("field.name")}</label>
-      <input name="name" required placeholder="${t("contrib.form.breweryNamePh")}" />
+      <input name="name" id="f-name" required placeholder="${t("contrib.form.breweryNamePh")}" autocomplete="off" />
+      <div id="ac-dropdown" hidden class="ac-dropdown"></div>
     </div>
     <div class="grid-2">
       <div class="field">
@@ -484,20 +501,66 @@ function renderForm(typ) {
       if (!q) return;
       const statusEl = document.getElementById("geo-status");
       statusEl.innerHTML = '<span style="color:var(--copper)">⟳ Ermittle…</span>';
-      try {
-        const res = await window.AtlasAPI.geocode(q);
-        const r = res && res.results && res.results[0];
-        if (r) {
-          document.getElementById("f-lat").value = r.lat.toFixed(6);
-          document.getElementById("f-lng").value = r.lng.toFixed(6);
-          statusEl.innerHTML = `<span style="color:green">✓ ${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span> <span style="color:var(--ink-muted)">${r.name.slice(0, 60)}</span>`;
-        } else {
-          statusEl.innerHTML = '<span style="color:#a07a20">Kein Ergebnis — bitte Koordinaten manuell eingeben.</span>';
-        }
-      } catch {
-        statusEl.innerHTML = '<span style="color:#9b1f1f">Geocoder nicht erreichbar.</span>';
+      const res = await window.AtlasAPI.geocode(q);
+      const r = res && res.results && res.results[0];
+      if (r) {
+        document.getElementById("f-lat").value = r.lat.toFixed(6);
+        document.getElementById("f-lng").value = r.lng.toFixed(6);
+        statusEl.innerHTML = `<span style="color:green">✓ ${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span> <span style="color:var(--ink-muted)">${r.name.slice(0, 60)}</span>`;
+      } else {
+        statusEl.innerHTML = '<span style="color:#a07a20">Kein Ergebnis — bitte Koordinaten manuell eingeben.</span>';
       }
     });
+  }
+
+  // Autocomplete für Brauerei-Name
+  const nameInput = document.getElementById("f-name");
+  const acDrop = document.getElementById("ac-dropdown");
+  if (nameInput && acDrop) {
+    let acTimer = null;
+    let acResults = [];
+
+    nameInput.addEventListener("input", () => {
+      clearTimeout(acTimer);
+      const q = nameInput.value.trim();
+      if (q.length < 3) { acDrop.hidden = true; return; }
+      acTimer = setTimeout(async () => {
+        const res = await window.AtlasAPI.geocode(q);
+        acResults = (res && res.results) || [];
+        if (!acResults.length) { acDrop.hidden = true; return; }
+        acDrop.innerHTML = acResults.slice(0, 6).map((r, i) => {
+          const shortName = r.name.split(",")[0].trim();
+          return `<div class="ac-item" data-idx="${i}">` +
+            `<div class="ac-name">${shortName}</div>` +
+            `<div class="ac-sub">${r.name}</div>` +
+            `</div>`;
+        }).join("");
+        acDrop.hidden = false;
+      }, 380);
+    });
+
+    acDrop.addEventListener("mousedown", (e) => {
+      const item = e.target.closest(".ac-item");
+      if (!item) return;
+      e.preventDefault();
+      const r = acResults[parseInt(item.dataset.idx, 10)];
+      if (!r) return;
+      nameInput.value = r.name.split(",")[0].trim();
+      const cityInput = document.querySelector('[name="city"]');
+      if (cityInput && r.city) cityInput.value = r.city;
+      const latInput = document.getElementById("f-lat");
+      const lngInput = document.getElementById("f-lng");
+      if (latInput) latInput.value = r.lat.toFixed(6);
+      if (lngInput) lngInput.value = r.lng.toFixed(6);
+      const statusEl = document.getElementById("geo-status");
+      if (statusEl) statusEl.innerHTML =
+        `<span style="color:green">✓ ${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span>` +
+        ` <span style="color:var(--ink-muted)">${r.name.slice(0, 60)}</span>`;
+      acDrop.hidden = true;
+    });
+
+    nameInput.addEventListener("blur", () => { setTimeout(() => { acDrop.hidden = true; }, 150); });
+    nameInput.addEventListener("keydown", (e) => { if (e.key === "Escape") acDrop.hidden = true; });
   }
 }
 
@@ -551,12 +614,14 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
         } else {
           if (statusEl) statusEl.innerHTML = '<span style="color:var(--ink-muted)">Keine Koordinaten gefunden — werden bei der Prüfung ergänzt.</span>';
         }
-      } catch {
-        if (statusEl) statusEl.innerHTML = '<span style="color:var(--ink-muted)">Geocoder nicht erreichbar — Koordinaten werden bei Prüfung gesetzt.</span>';
       }
     }
 
-    if (data.lat != null && data.lng != null) data.coords = [data.lat, data.lng];
+    if (data.lat != null && data.lng != null) {
+      data.lat = parseFloat(data.lat.toFixed(6));
+      data.lng = parseFloat(data.lng.toFixed(6));
+      data.coords = [data.lat, data.lng];
+    }
   }
   if (currentTyp === "sorte") {
     if (data.abv) data.abv = parseFloat(String(data.abv).replace(",", "."));
@@ -569,6 +634,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
       type: apiType,
       data,
       email,
+      lang: window.__atlasLang || "de",
       turnstileToken,
     });
     atlasTrack("contribution_submit", { type: apiType });
