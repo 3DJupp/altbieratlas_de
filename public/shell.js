@@ -98,7 +98,7 @@ window.renderShell = function ({ activeNav }) {
         </div>
         <div class="bottom">
           <span>© ${new Date().getFullYear()} Altbieratlas</span>
-          <span id="atlas-mode-tag" class="mono">v0.4 · <span id="atlas-mode">…</span></span>
+          <span id="atlas-mode-tag" class="mono">v0.3.1 · <span id="atlas-mode">…</span></span>
         </div>
       </div>
     </footer>
