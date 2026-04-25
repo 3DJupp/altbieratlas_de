@@ -177,8 +177,9 @@ export async function geocode(req, env) {
   const nomUrl = new URL("https://nominatim.openstreetmap.org/search");
   nomUrl.searchParams.set("q", q);
   nomUrl.searchParams.set("format", "jsonv2");
-  nomUrl.searchParams.set("limit", "5");
+  nomUrl.searchParams.set("limit", "6");
   nomUrl.searchParams.set("accept-language", "de,en");
+  nomUrl.searchParams.set("addressdetails", "1");
 
   try {
     const r = await fetch(nomUrl.toString(), {
@@ -190,15 +191,19 @@ export async function geocode(req, env) {
     });
     if (!r.ok) return json({ results: [] });
     const rows = await r.json();
-    const results = rows.map((row) => ({
-      name: row.display_name,
-      lat: parseFloat(row.lat),
-      lng: parseFloat(row.lon),
-      type: row.type,
-      class: row.class,
-      importance: row.importance,
-      boundingbox: row.boundingbox ? row.boundingbox.map(parseFloat) : null,
-    })).filter((r) => Number.isFinite(r.lat) && Number.isFinite(r.lng));
+    const results = rows.map((row) => {
+      const addr = row.address || {};
+      const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "";
+      return {
+        name: row.display_name,
+        lat: parseFloat(row.lat),
+        lng: parseFloat(row.lon),
+        city,
+        type: row.type,
+        class: row.class,
+        importance: row.importance,
+      };
+    }).filter((r) => Number.isFinite(r.lat) && Number.isFinite(r.lng));
     return json({ results });
   } catch (e) {
     return json({ results: [], error: "geocoder-unreachable" });
@@ -225,6 +230,8 @@ export async function postContribution(req, env) {
   if (!rl.allowed) return error(429, "too-many-submissions");
 
   // Validierung
+  const lang = body.lang === "en" ? "en" : "de";
+
   let type, data, email;
   try {
     type = oneOf(body.type, ["price", "brewery", "style", "correction", "event"], { required: true, name: "type" });
@@ -283,7 +290,7 @@ export async function postContribution(req, env) {
   ).bind(id, type, JSON.stringify(data), email, ip).run();
 
   // Bestätigungsmail wenn E-Mail angegeben — fire & forget
-  if (email) sendConfirmationEmail(env, { to: email, type, id });
+  if (email) sendConfirmationEmail(env, { to: email, type, id, data, ip, lang, submittedAt: new Date().toISOString() });
 
   return json({ ok: true, id, status: "pending" }, { status: 201 });
 }

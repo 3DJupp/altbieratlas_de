@@ -126,24 +126,26 @@
     async listEvents() { return { events: window.ATLAS_DATA.events }; },
     async listGlossary() { return { glossary: window.ATLAS_DATA.glossary }; },
     async geocode(q) {
-      // Im Mock ohne Backend können wir direkt Nominatim aufrufen — wenn der
-      // Browser nicht durch CORS blockiert wird (tut Nominatim nicht, erlaubt *).
       if (!q || q.length < 2) return { results: [] };
       try {
         const r = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=${encodeURIComponent(q)}`,
+          `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&addressdetails=1&q=${encodeURIComponent(q)}`,
           { headers: { "Accept": "application/json" } },
         );
         if (!r.ok) return { results: [] };
         const rows = await r.json();
         return {
-          results: rows.map((x) => ({
-            name: x.display_name,
-            lat: parseFloat(x.lat),
-            lng: parseFloat(x.lon),
-            type: x.type,
-            class: x.class,
-          })),
+          results: rows.map((x) => {
+            const addr = x.address || {};
+            return {
+              name: x.display_name,
+              lat: parseFloat(x.lat),
+              lng: parseFloat(x.lon),
+              city: addr.city || addr.town || addr.village || addr.municipality || "",
+              type: x.type,
+              class: x.class,
+            };
+          }),
         };
       } catch {
         return { results: [] };
@@ -184,7 +186,7 @@
     listPrices:       () => req("/prices"),
     listEvents:       () => req("/events"),
     listGlossary:     () => req("/glossary"),
-    geocode:          (q) => req(`/geocode?q=${encodeURIComponent(q)}`),
+    geocode:          async (q) => { try { return await req(`/geocode?q=${encodeURIComponent(q)}`); } catch { return { results: [] }; } },
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
     // Admin
     admin: {

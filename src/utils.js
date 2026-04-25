@@ -212,40 +212,122 @@ export function clientIp(req) {
 
 // ---- E-Mail-Bestätigung via Resend API ----
 // Benötigt env.RESEND_API_KEY (Secret) und optional env.RESEND_FROM.
-// Sendet still — wirft nie eine Exception nach außen.
-export async function sendConfirmationEmail(env, { to, type, id }) {
+// Sendet lokalisiert (lang: "de"|"en"), fire & forget, wirft nie.
+export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip = "–", lang = "de", submittedAt }) {
   if (!env.RESEND_API_KEY || !to) return;
-  const labels = {
-    price: "Preismeldung", brewery: "Brauerei-Eintrag",
-    style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung",
+
+  const de = lang !== "en";
+  const typeLabels = {
+    de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung" },
+    en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event" },
   };
-  const label = labels[type] || type;
+  const label = (de ? typeLabels.de : typeLabels.en)[type] || type;
+  const ts = submittedAt || new Date().toISOString();
+  let dateStr = ts;
+  try {
+    dateStr = new Date(ts).toLocaleString(de ? "de-DE" : "en-GB", {
+      timeZone: "Europe/Berlin", dateStyle: "long", timeStyle: "short",
+    });
+  } catch {}
+
+  // Last octet / group anonymisiert
+  const anonIp = String(ip).replace(/\.(\d+)$/, ".xxx").replace(/:[\da-f]+$/i, ":xxxx");
+
+  const rows = _emailDataRows(type, data, de);
+  const tableText = rows.map(([k, v]) => `  ${k}: ${v}`).join("\n");
+  const tableHtml = rows.map(([k, v]) =>
+    `<tr><td style="padding:3px 16px 3px 0;color:#999;white-space:nowrap;font-size:13px">${_esc(k)}</td>` +
+    `<td style="padding:3px 0;font-size:13px">${_esc(String(v))}</td></tr>`
+  ).join("");
+
+  const subject = de
+    ? `Dein Beitrag ist eingegangen — Altbieratlas`
+    : `Your contribution has been received — Altbieratlas`;
+
+  const greeting   = de ? "Hallo," : "Hello,";
+  const intro      = de ? `vielen Dank! Wir haben folgende ${label} erhalten:` : `thank you! We have received the following ${label}:`;
+  const body2      = de ? "Dein Beitrag wird nun geprüft. Nach der Freigabe erscheint er auf dem Altbieratlas.\nWir melden uns nur bei Rückfragen." : "Your contribution is now under review. Once approved it will appear on Altbieratlas.\nWe will only reach out if we have questions.";
+  const thanks     = de ? "Vielen Dank fürs Mitmachen!\n— Das Altbieratlas-Team" : "Thanks for contributing!\n— The Altbieratlas Team";
+  const noReply    = de ? "Diese Adresse wird nicht überwacht." : "This mailbox is not monitored.";
+  const labelId    = de ? "Beitrags-ID" : "Contribution ID";
+  const labelRcvd  = de ? "Eingegangen" : "Received";
+
+  const text = [greeting, "", intro, "", tableText, "", body2, "", thanks, "",
+    "─".repeat(40), `${labelId}: ${id}`, `${labelRcvd}: ${dateStr}`, `IP: ${anonIp}`, "", noReply,
+  ].join("\n");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="font-family:system-ui,sans-serif;color:#222;max-width:560px;margin:0 auto;padding:24px;background:#f9f5f0">
+<div style="background:#b57a3a;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;font-size:18px;font-weight:600">Altbieratlas</div>
+<div style="background:#fff;border:1px solid #e4d8cc;border-top:none;padding:24px 28px;border-radius:0 0 8px 8px">
+  <h2 style="margin:0 0 10px;font-size:16px;font-weight:600">${de ? "Dein Beitrag ist eingegangen" : "Your contribution has been received"}</h2>
+  <p style="color:#555;margin:0 0 18px;font-size:14px">${de ? `Vielen Dank! Wir haben folgende <strong>${_esc(label)}</strong> erhalten:` : `Thank you! We received the following <strong>${_esc(label)}</strong>:`}</p>
+  <table style="border-collapse:collapse;width:100%;margin-bottom:20px">${tableHtml}</table>
+  <p style="color:#555;font-size:13px;line-height:1.5">${de ? "Dein Beitrag wird nun geprüft. Nach der Freigabe erscheint er auf dem Altbieratlas.<br>Wir melden uns nur bei Rückfragen." : "Your contribution is now under review. Once approved it will appear on Altbieratlas.<br>We will only reach out if we have questions."}</p>
+  <hr style="border:none;border-top:1px solid #e4d8cc;margin:20px 0">
+  <table style="border-collapse:collapse;font-size:11px;color:#bbb">
+    <tr><td style="padding:2px 16px 2px 0">${_esc(labelId)}</td><td>${_esc(id)}</td></tr>
+    <tr><td style="padding:2px 16px 2px 0">${_esc(labelRcvd)}</td><td>${_esc(dateStr)}</td></tr>
+    <tr><td style="padding:2px 16px 2px 0">IP</td><td>${_esc(anonIp)}</td></tr>
+  </table>
+  <p style="font-size:11px;color:#bbb;margin-top:10px">${_esc(noReply)}</p>
+</div>
+</body></html>`;
+
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
-        to,
-        subject: "Dein Beitrag ist eingegangen — Altbieratlas",
-        text: [
-          `Hallo,`,
-          ``,
-          `deine ${label} (ID: ${id}) ist beim Altbieratlas eingegangen`,
-          `und wird nun redaktionell geprüft.`,
-          ``,
-          `Nach der Freigabe erscheint sie automatisch auf dem Atlas.`,
-          `Wir melden uns ausschließlich bei Rückfragen.`,
-          ``,
-          `Vielen Dank fürs Mitmachen!`,
-          `— Das Altbieratlas-Team`,
-        ].join("\n"),
+        to, subject, text, html,
       }),
     });
   } catch {}
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function _emailDataRows(type, data, de) {
+  const f = (k, v) => (v != null && v !== "" && v !== null) ? [[k, v]] : [];
+  if (type === "price") return [
+    ...f(de ? "Brauerei-ID" : "Brewery ID", data.breweryId),
+    ...f(de ? "Preis" : "Price", data.price != null ? `${data.price} €` : null),
+    ...f(de ? "Größe" : "Size", data.size),
+    ...f(de ? "Datum" : "Date", data.date),
+    ...f(de ? "Hinweis" : "Notes", data.notes),
+  ];
+  if (type === "brewery") return [
+    ...f("Name", data.name),
+    ...f(de ? "Stadt" : "City", data.city),
+    ...f("Typ / Type", data.type),
+    ...f(de ? "Adresse" : "Address", data.address),
+    ...f("Website", data.website),
+    ...f(de ? "Koordinaten" : "Coordinates", data.lat != null && data.lng != null ? `${Number(data.lat).toFixed(4)}, ${Number(data.lng).toFixed(4)}` : null),
+    ...f(de ? "Beschreibung" : "Description", data.description),
+  ];
+  if (type === "event") return [
+    ...f("Name", data.eventName),
+    ...f(de ? "Datum" : "Date", data.eventDate),
+    ...f(de ? "Ort" : "Location", data.eventLocation),
+    ...f(de ? "Brauerei" : "Brewery", data.breweryId),
+    ...f(de ? "Beschreibung" : "Description", data.description),
+  ];
+  if (type === "style") return [
+    ...f(de ? "Brauerei" : "Brewery", data.breweryId),
+    ...f(de ? "Sorte" : "Style", data.styleName),
+    ...f("ABV", data.abv != null ? `${data.abv} %` : null),
+    ...f("IBU", data.ibu),
+    ...f(de ? "Beschreibung" : "Tasting", data.tasting),
+  ];
+  if (type === "correction") return [
+    ...f(de ? "Brauerei" : "Brewery", data.breweryId),
+    ...f(de ? "Feld" : "Target", data.target),
+    ...f(de ? "Korrektur" : "Correction", data.correction),
+  ];
+  return Object.entries(data).filter(([k, v]) => v != null && v !== "" && !k.startsWith("_")).map(([k, v]) => [k, v]);
 }
 
 // ---- Brewery-Assembler (wandelt DB-Zeile in API-Shape) ----
