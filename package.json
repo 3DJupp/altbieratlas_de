@@ -1,6 +1,6 @@
 {
   "name": "altbieratlas",
-  "version": "0.4.0",
+  "version": "0.3.1",
   "description": "Die interaktive Karte des Altbiers — Cloudflare Workers + D1",
   "private": true,
   "type": "module",
