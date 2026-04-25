@@ -117,8 +117,8 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**, nicht R
 
 | Name | Type | Wert |
 |---|---|---|
-| `D1_DATABASE_ID` | Secret | UUID aus `npx wrangler d1 create` |
-| `D1_DATABASE_NAME` | Secret | Name der D1-DB, z. B. `altbieratlas` |
+| `database_id` | Secret | UUID aus `npx wrangler d1 create` |
+| `database_name` | Secret | Name der D1-DB, z. B. `altbieratlas` |
 
 ### 1.4 Worker-Runtime-Variablen setzen
 
