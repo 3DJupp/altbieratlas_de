@@ -5,16 +5,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "_comment_db_name": "Alle db:*-Scripts nutzen $D1_NAME (Shell-Variable). Default: my-d1-database. Vor Gebrauch z.B. setzen: `export D1_NAME=meine-db` — oder inline: `D1_NAME=meine-db npm run db:create`.",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "db:create": "wrangler d1 create ${D1_NAME:-my-d1-database}",
-    "db:schema:local": "wrangler d1 execute ${D1_NAME:-my-d1-database} --local --file=./migrations/0001_schema.sql",
-    "db:schema:remote": "wrangler d1 execute ${D1_NAME:-my-d1-database} --remote --file=./migrations/0001_schema.sql",
-    "db:seed:local": "wrangler d1 execute ${D1_NAME:-my-d1-database} --local --file=./migrations/0002_seed.sql",
-    "db:seed:remote": "wrangler d1 execute ${D1_NAME:-my-d1-database} --remote --file=./migrations/0002_seed.sql",
-    "db:setup:local": "npm run db:schema:local && npm run db:seed:local",
-    "db:setup:remote": "npm run db:schema:remote && npm run db:seed:remote",
+    "db:create": "wrangler d1 create ${D1_DATABASE_NAME:-altbieratlas}",
+    "db:setup": "bash scripts/db-setup.sh",
+    "db:setup:remote": "bash scripts/db-setup.sh --remote",
+    "db:setup:demo": "bash scripts/db-setup.sh --demo",
+    "db:setup:demo:remote": "bash scripts/db-setup.sh --remote --demo",
     "admin:create": "node scripts/create-admin.mjs"
   },
   "devDependencies": {

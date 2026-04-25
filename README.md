@@ -24,10 +24,12 @@ altbieratlas/
 │   └── data.js              # Seed-Daten für Mock-Fallback
 ├── migrations/
 │   ├── 0001_schema.sql      # Tabellen, Indizes, FK-Kaskaden
-│   ├── 0002_seed.sql        # Beispieldaten
-│   └── 0003_untappd_cache.sql  # Untappd-Cache-Tabelle
+│   ├── 0002_base.sql        # Basisdaten: Bierstile + Glossar (immer einspielen)
+│   ├── 0003_untappd_cache.sql  # Untappd-Cache-Tabelle
+│   └── demo.sql             # Demo-Daten: Brauereien, Preise, Events (optional)
 ├── scripts/
 │   ├── create-admin.mjs     # Admin-User anlegen
+│   ├── db-setup.sh          # DB-Setup (Schema + Basis [+ Demo])
 │   └── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen)
 ├── wrangler.toml
 └── package.json
@@ -58,22 +60,31 @@ npx wrangler d1 create altbieratlas
 Die `database_id` kommt **nicht** in die `wrangler.toml` — sie wird als Build-Variable ins Cloudflare-Dashboard eingetragen (siehe 1.3). Für das einmalige Einspielen des Schemas brauchst du sie aber lokal. Trage sie temporär ein (nicht committen!):
 
 ```bash
-# Temporär in wrangler.toml setzen, dann:
-npx wrangler d1 execute altbieratlas --remote --file=migrations/0001_schema.sql
-npx wrangler d1 execute altbieratlas --remote --file=migrations/0002_seed.sql
-npx wrangler d1 execute altbieratlas --remote --file=migrations/0003_untappd_cache.sql
+# Temporär in wrangler.toml setzen (oder D1_DATABASE_NAME setzen), dann:
+
+# Produktion: nur Schema + Basisdaten (Stile, Glossar)
+D1_DATABASE_NAME=altbieratlas npm run db:setup:remote
+
+# Staging / Dev: Schema + Basisdaten + Beispiel-Brauereien/Preise/Events
+D1_DATABASE_NAME=altbieratlas npm run db:setup:demo:remote
+
+# Admin-User anlegen
 node scripts/create-admin.mjs admin <starkes-passwort> --remote
 
 # Danach database_id wieder auf Platzhalter zurücksetzen!
 git checkout wrangler.toml
 ```
 
-> **Alternative (ohne lokalen Wrangler):** Schema-SQL direkt im Dashboard einfügen unter *Workers & Pages → D1 → altbieratlas → Console*. Alle drei SQL-Dateien nacheinander einfügen und ausführen. Admin-User dann ebenfalls per SQL:
-> ```sql
-> -- Hash vorher mit: node -e "const c=require('crypto');..." erzeugen
-> -- oder create-admin.mjs lokal ausführen und nur den INSERT kopieren.
-> INSERT INTO admin_users (username, password_hash) VALUES ('admin', '<hash>');
-> ```
+Was die Migrations-Dateien enthalten:
+
+| Datei | Inhalt | Immer einspielen? |
+|---|---|---|
+| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden | **Ja** |
+| `0002_base.sql` | Bierstile + Glossar | **Ja** |
+| `0003_untappd_cache.sql` | Untappd-Cache-Tabelle | **Ja** |
+| `demo.sql` | Brauereien, Preise, Events (Beispiele) | Nur Dev/Staging |
+
+> **Alternative (ohne lokalen Wrangler):** SQL direkt im Dashboard eingeben unter *Workers & Pages → D1 → altbieratlas → Console*. Die drei Pflicht-Dateien (`0001`, `0002_base`, `0003`) nacheinander einfügen und ausführen. Für Demo-Daten zusätzlich `demo.sql`.
 
 ### 1.2 Workers-Build im Dashboard konfigurieren
 
@@ -173,7 +184,7 @@ Zusätzlich:
 ## 3 · Lokal entwickeln
 
 ```bash
-npm run db:setup:local
+npm run db:setup:demo   # Schema + Basisdaten + Demo-Brauereien lokal
 npm run dev
 ```
 
