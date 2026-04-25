@@ -3,10 +3,10 @@
 # Altbieratlas — Deploy-Script für Cloudflare Workers CI
 # ============================================================
 # Erwartet folgende Build-Umgebungsvariablen im CF-Dashboard
-# (Workers → <worker-name> → Settings → Build → Environment):
+# (Workers → <worker-name> → Settings → Build → Variables and secrets):
 #
-#   D1_DATABASE_ID    — UUID der D1-Datenbank
-#   D1_DATABASE_NAME  — Name der D1-Datenbank
+#   database_id    — UUID der D1-Datenbank
+#   database_name  — Name der D1-Datenbank
 #
 # Verwendung:
 #   bash scripts/deploy.sh              # nur Worker deployen (Standard)
@@ -20,8 +20,8 @@
 # ============================================================
 set -euo pipefail
 
-: "${D1_DATABASE_ID:?Bitte D1_DATABASE_ID als Build-Umgebungsvariable setzen}"
-: "${D1_DATABASE_NAME:?Bitte D1_DATABASE_NAME als Build-Umgebungsvariable setzen}"
+: "${database_id:?Bitte database_id als Build-Umgebungsvariable setzen}"
+: "${database_name:?Bitte database_name als Build-Umgebungsvariable setzen}"
 
 SEED=false
 DEMO=false
@@ -36,23 +36,23 @@ done
 
 # D1-Platzhalter in wrangler.toml ersetzen
 sed -i \
-  -e "s/REPLACE_WITH_YOUR_D1_ID/${D1_DATABASE_ID}/g" \
-  -e "s/REPLACE_WITH_YOUR_D1_NAME/${D1_DATABASE_NAME}/g" \
+  -e "s/REPLACE_WITH_YOUR_D1_ID/${database_id}/g" \
+  -e "s/REPLACE_WITH_YOUR_D1_NAME/${database_name}/g" \
   wrangler.toml
 
 # Optional: DB-Migrations einspielen (--yes überspringt interaktive Bestätigung)
 if [ "$SEED" = true ]; then
   echo "▶ Schema einspielen..."
-  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/0001_schema.sql
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
   echo "▶ Basisdaten einspielen (Stile, Glossar)..."
-  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/0002_base.sql
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_base.sql
   echo "▶ Untappd-Cache-Tabelle einspielen..."
-  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/0003_untappd_cache.sql
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_untappd_cache.sql
 fi
 
 if [ "$DEMO" = true ]; then
   echo "▶ Demo-Daten einspielen (Brauereien, Preise, Events)..."
-  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/demo.sql
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/demo.sql
 fi
 
 echo "▶ Worker deployen..."
