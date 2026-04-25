@@ -8,17 +8,52 @@
 #   D1_DATABASE_ID    — UUID der D1-Datenbank
 #   D1_DATABASE_NAME  — Name der D1-Datenbank
 #
-# Deploy-Command im Cloudflare-Dashboard:
-#   bash scripts/deploy.sh
+# Verwendung:
+#   bash scripts/deploy.sh              # nur Worker deployen (Standard)
+#   bash scripts/deploy.sh --seed       # Schema + Basisdaten + Deploy
+#   bash scripts/deploy.sh --seed --demo # Schema + Basis + Demo-Daten + Deploy
+#
+# --seed:  Schema (0001), Basisdaten/Stile/Glossar (0002_base),
+#          Untappd-Cache-Tabelle (0003) einspielen — idempotent, sicher
+# --demo:  Zusätzlich Beispiel-Brauereien, Preise und Events (demo.sql)
+#          — nur für Staging/Dev sinnvoll
 # ============================================================
 set -euo pipefail
 
-: "${D1_DATABASE_ID:?Bitte D1_DATABASE_ID als Build-Umgebungsvariable im CF-Dashboard setzen}"
-: "${D1_DATABASE_NAME:?Bitte D1_DATABASE_NAME als Build-Umgebungsvariable im CF-Dashboard setzen}"
+: "${D1_DATABASE_ID:?Bitte D1_DATABASE_ID als Build-Umgebungsvariable setzen}"
+: "${D1_DATABASE_NAME:?Bitte D1_DATABASE_NAME als Build-Umgebungsvariable setzen}"
 
+SEED=false
+DEMO=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --seed) SEED=true ;;
+    --demo) DEMO=true ;;
+    *) echo "Unbekanntes Argument: $arg" >&2; exit 1 ;;
+  esac
+done
+
+# D1-Platzhalter in wrangler.toml ersetzen
 sed -i \
   -e "s/REPLACE_WITH_YOUR_D1_ID/${D1_DATABASE_ID}/g" \
   -e "s/REPLACE_WITH_YOUR_D1_NAME/${D1_DATABASE_NAME}/g" \
   wrangler.toml
 
+# Optional: DB-Migrations einspielen (--yes überspringt interaktive Bestätigung)
+if [ "$SEED" = true ]; then
+  echo "▶ Schema einspielen..."
+  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/0001_schema.sql
+  echo "▶ Basisdaten einspielen (Stile, Glossar)..."
+  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/0002_base.sql
+  echo "▶ Untappd-Cache-Tabelle einspielen..."
+  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/0003_untappd_cache.sql
+fi
+
+if [ "$DEMO" = true ]; then
+  echo "▶ Demo-Daten einspielen (Brauereien, Preise, Events)..."
+  npx wrangler d1 execute "$D1_DATABASE_NAME" --remote --yes --file=migrations/demo.sql
+fi
+
+echo "▶ Worker deployen..."
 exec npx wrangler versions upload

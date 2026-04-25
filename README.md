@@ -98,7 +98,18 @@ Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
 | Root directory | `/` |
 | Production branch | `main` |
 
-Das `scripts/deploy.sh` ersetzt die Platzhalter in `wrangler.toml` mit den unten konfigurierten Build-Variablen, bevor es `npx wrangler versions upload` ausführt.
+Das `scripts/deploy.sh` ersetzt die Platzhalter in `wrangler.toml` und startet `wrangler versions upload`. Mit optionalen Flags können beim gleichen Lauf auch DB-Migrations eingespielt werden:
+
+```bash
+# Nur Worker deployen (Standard — jeder Push auf main)
+bash scripts/deploy.sh
+
+# Ersteinrichtung: Schema + Basisdaten + Deploy
+bash scripts/deploy.sh --seed
+
+# Staging mit Beispieldaten: Schema + Basis + Demo + Deploy
+bash scripts/deploy.sh --seed --demo
+```
 
 ### 1.3 Build-Variablen setzen
 
