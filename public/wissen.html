@@ -280,7 +280,6 @@ function syncNav() {
   // Prevents hash-link clicks (scroll-margin-top 130px) from toggling nav off.
   const threshold = wasFixed ? headerBottom + 20 : headerBottom;
   const shouldFix = sentTop <= threshold;
-  const wasFixed = knowNav.classList.contains("is-fixed");
   if (shouldFix === wasFixed) return;
   knowNav.classList.toggle("is-fixed", shouldFix);
   if (shouldFix) {
