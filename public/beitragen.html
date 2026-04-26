@@ -614,6 +614,8 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
         } else {
           if (statusEl) statusEl.innerHTML = '<span style="color:var(--ink-muted)">Keine Koordinaten gefunden — werden bei der Prüfung ergänzt.</span>';
         }
+      } catch {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--ink-muted)">Geocoder nicht verfügbar — Koordinaten werden bei Prüfung gesetzt.</span>';
       }
     }
 

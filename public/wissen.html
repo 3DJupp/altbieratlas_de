@@ -16,13 +16,12 @@
 
 <link rel="stylesheet" href="styles.css" />
 <style>
-.know-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); }
+.know-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); margin-bottom: 0; }
 .know-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; }
 .know-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
 .know-hero .lede em { font-style: italic; color: var(--copper); }
 
 .know-nav {
-  margin: 40px 0 0;
   border-bottom: 1px solid var(--rule);
   position: sticky; top: 64px;
   background: var(--bg); z-index: 10;
@@ -114,7 +113,6 @@
   .glossary-grid { grid-template-columns: 1fr; }
   .gloss-item { border-right: none; }
   .koebes-cards { grid-template-columns: 1fr; }
-  .know-nav { top: 64px; }
 }
 </style>
 </head>
@@ -270,9 +268,14 @@ function updateActive() {
     const el = document.getElementById(id);
     if (el && el.offsetTop <= y) active = id;
   });
+  // Letzten Abschnitt aktivieren wenn nahe am Seitenende
+  if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 80) {
+    active = sections[sections.length - 1];
+  }
   navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + active));
 }
 window.addEventListener("scroll", updateActive, { passive: true });
+updateActive();
 
 // Bei Sprachwechsel: nur neu rendern, kein Seiten-Reload!
 document.addEventListener("atlas:lang-changed", () => {
