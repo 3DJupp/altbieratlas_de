@@ -217,6 +217,7 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
   if (!env.RESEND_API_KEY || !to) return;
 
   const de = lang !== "en";
+  const siteUrl = env.SITE_URL || "https://altbieratlas.de";
   const typeLabels = {
     de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung" },
     en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event" },
@@ -241,8 +242,7 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
   ).join("");
 
   const subject = de ? `Altbieratlas: Beitrag eingegangen` : `Altbieratlas: Contribution received`;
-  const labelId   = de ? "Beitrags-ID" : "Contribution ID";
-  const labelRcvd = de ? "Eingegangen"  : "Received";
+  const labelRcvd = de ? "Eingegangen" : "Received";
   const noReply   = de ? "Diese Adresse wird nicht überwacht." : "This mailbox is not monitored.";
 
   const text = [
@@ -252,24 +252,26 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
     "",
     tableText,
     "",
-    de ? "Wir melden uns nur bei Rückfragen.\nDas Altbieratlas-Team" : "We will only reach out if we have questions.\nThe Altbieratlas Team",
+    de ? `Wir melden uns nur bei Rückfragen.\nDas Altbieratlas-Team\n${siteUrl}` : `We will only reach out if we have questions.\nThe Altbieratlas Team\n${siteUrl}`,
     "",
-    `${labelId}: ${id}`,
     `${labelRcvd}: ${dateStr}`,
     `IP: ${anonIp}`,
     noReply,
   ].join("\n");
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"></head>
 <body style="margin:0;padding:0;background:#f9f5f0;font-family:system-ui,-apple-system,sans-serif;color:#222">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
 <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
 
   <tr><td style="background:#fff;border:1px solid #e4d8cc;border-bottom:none;border-radius:8px 8px 0 0;padding:18px 28px">
+    <a href="${siteUrl}" style="text-decoration:none;display:inline-block">
     <table cellpadding="0" cellspacing="0"><tr>
       <td style="background:#b57a3a;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:700;width:28px;height:28px;text-align:center;border-radius:3px;line-height:28px">A</td>
       <td style="padding-left:10px;font-family:Georgia,'Times New Roman',serif;font-size:18px;color:#1a1410;font-weight:600;vertical-align:middle">Altbieratlas</td>
     </tr></table>
+    </a>
   </td></tr>
 
   <tr><td style="background:#b57a3a;height:3px;border-left:1px solid #e4d8cc;border-right:1px solid #e4d8cc"></td></tr>
@@ -281,12 +283,12 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
     <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc;margin-bottom:20px">${tableHtml}</table>
     <p style="margin:0 0 24px;font-size:13px;color:#888;line-height:1.6">${de ? "Wir melden uns nur bei Rückfragen." : "We will only reach out if we have questions."}</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc"><tr><td style="padding-top:16px">
-      <table cellpadding="0" cellspacing="0">
-        <tr><td style="padding:2px 20px 2px 0;font-size:11px;color:#bbb;white-space:nowrap">${_esc(labelId)}</td><td style="padding:2px 0;font-size:11px;color:#888;font-family:'Courier New',monospace">${_esc(id)}</td></tr>
-        <tr><td style="padding:2px 20px 2px 0;font-size:11px;color:#bbb">${_esc(labelRcvd)}</td><td style="padding:2px 0;font-size:11px;color:#888">${_esc(dateStr)}</td></tr>
+      <a href="${siteUrl}" style="font-size:12px;color:#b57a3a;text-decoration:none">${siteUrl}</a>
+      <table cellpadding="0" cellspacing="0" style="margin-top:10px">
+        <tr><td style="padding:2px 20px 2px 0;font-size:11px;color:#bbb;white-space:nowrap">${_esc(labelRcvd)}</td><td style="padding:2px 0;font-size:11px;color:#888">${_esc(dateStr)}</td></tr>
         <tr><td style="padding:2px 20px 2px 0;font-size:11px;color:#bbb">IP</td><td style="padding:2px 0;font-size:11px;color:#888;font-family:'Courier New',monospace">${_esc(anonIp)}</td></tr>
       </table>
-      <p style="margin:12px 0 0;font-size:11px;color:#bbb">${_esc(noReply)}</p>
+      <p style="margin:10px 0 0;font-size:11px;color:#bbb">${_esc(noReply)}</p>
     </td></tr></table>
   </td></tr>
 
@@ -319,15 +321,24 @@ function _emailDataRows(type, data, de) {
     ...f(de ? "Datum" : "Date", data.date),
     ...f(de ? "Hinweis" : "Notes", data.notes),
   ];
-  if (type === "brewery") return [
-    ...f("Name", data.name),
-    ...f(de ? "Stadt" : "City", data.city),
-    ...f("Typ / Type", data.type),
-    ...f(de ? "Adresse" : "Address", data.address),
-    ...f("Website", data.website),
-    ...f(de ? "Koordinaten" : "Coordinates", data.lat != null && data.lng != null ? `${Number(data.lat).toFixed(4)}, ${Number(data.lng).toFixed(4)}` : null),
-    ...f(de ? "Beschreibung" : "Description", data.description),
-  ];
+  if (type === "brewery") {
+    const brewTypeMap = {
+      hausbrauerei: { de: "Hausbrauerei", en: "Brewpub" },
+      gastronomie:  { de: "Gastronomie",  en: "Bar / Restaurant" },
+      shop:         { de: "Handel",        en: "Retail" },
+    };
+    const brewTypeLabel = data.type
+      ? (brewTypeMap[data.type]?.[de ? "de" : "en"] || data.type.charAt(0).toUpperCase() + data.type.slice(1))
+      : null;
+    return [
+      ...f("Name", data.name),
+      ...f(de ? "Stadt" : "City", data.city),
+      ...f(de ? "Typ" : "Type", brewTypeLabel),
+      ...f(de ? "Adresse" : "Address", data.address),
+      ...f("Website", data.website),
+      ...f(de ? "Beschreibung" : "Description", data.description),
+    ];
+  }
   if (type === "event") return [
     ...f("Name", data.eventName),
     ...f(de ? "Datum" : "Date", data.eventDate),
@@ -357,6 +368,7 @@ function _emailDataRows(type, data, de) {
 export async function sendAdminDigest(env) {
   if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
 
+  const siteUrl = env.SITE_URL || "https://altbieratlas.de";
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   let rows;
   try {
@@ -402,7 +414,7 @@ export async function sendAdminDigest(env) {
 
   const n = rows.length;
   const subject = `Altbieratlas Digest: ${n} neue Einreichung${n > 1 ? "en" : ""}`;
-  const adminUrl = "https://altbieratlas.de/admin.html";
+  const adminUrl = siteUrl + "/admin.html";
 
   const text = [
     `${n} neue Einreichung${n > 1 ? "en" : ""} in den letzten 24 Stunden:`,
@@ -410,17 +422,20 @@ export async function sendAdminDigest(env) {
     `Admin: ${adminUrl}`,
   ].join("\n");
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"></head>
 <body style="margin:0;padding:0;background:#f9f5f0;font-family:system-ui,-apple-system,sans-serif;color:#222">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
 
   <tr><td style="background:#fff;border:1px solid #e4d8cc;border-bottom:none;border-radius:8px 8px 0 0;padding:18px 28px">
+    <a href="${siteUrl}" style="text-decoration:none;display:inline-block">
     <table cellpadding="0" cellspacing="0"><tr>
       <td style="background:#b57a3a;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:700;width:28px;height:28px;text-align:center;border-radius:3px;line-height:28px">A</td>
       <td style="padding-left:10px;font-family:Georgia,'Times New Roman',serif;font-size:18px;color:#1a1410;font-weight:600;vertical-align:middle">Altbieratlas</td>
       <td style="padding-left:16px;font-size:11px;color:#b57a3a;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.1em;vertical-align:middle">Admin Digest</td>
     </tr></table>
+    </a>
   </td></tr>
 
   <tr><td style="background:#b57a3a;height:3px;border-left:1px solid #e4d8cc;border-right:1px solid #e4d8cc"></td></tr>

@@ -722,6 +722,17 @@ window.formatDateLong = function (input) {
   });
 };
 
+// Preis: 2,50 (de) / 2.50 (en)
+window.formatPrice = function (n) {
+  const s = Number(n).toFixed(2);
+  return window.__atlasLang === "en" ? s : s.replace(".", ",");
+};
+
+// Größenangabe: 0,25l (de) / 0.25l (en)
+window.formatSize = function (s) {
+  return window.__atlasLang === "en" && s ? String(s).replace(",", ".") : (s || "");
+};
+
 (function () {
   const stored = localStorage.getItem("atlas-lang");
   window.__atlasLang = stored || (window.ATLAS_CONFIG && window.ATLAS_CONFIG.defaultLang) || "de";
