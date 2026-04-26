@@ -212,7 +212,7 @@ export async function geocode(req, env) {
 
 // POST /api/contributions
 // Body: { type, data, email?, turnstileToken? }
-export async function postContribution(req, env) {
+export async function postContribution(req, env, _params, ctx) {
   let body;
   try { body = await req.json(); }
   catch { return error(400, "invalid-json"); }
@@ -289,21 +289,24 @@ export async function postContribution(req, env) {
     "INSERT INTO contributions (id, type, payload, submitter_email, submitter_ip, status) VALUES (?, ?, ?, ?, ?, 'pending')"
   ).bind(id, type, JSON.stringify(data), email, ip).run();
 
-  // Bestätigungsmail wenn E-Mail angegeben — fire & forget
-  if (email) sendConfirmationEmail(env, { to: email, type, id, data, ip, lang, submittedAt: new Date().toISOString() });
+  // Bestätigungsmail wenn E-Mail angegeben — via waitUntil, damit CF den Fetch nicht abbricht
+  if (email) {
+    const mailPromise = sendConfirmationEmail(env, { to: email, type, id, data, ip, lang, submittedAt: new Date().toISOString() });
+    if (ctx?.waitUntil) ctx.waitUntil(mailPromise);
+  }
 
   return json({ ok: true, id, status: "pending" }, { status: 201 });
 }
 
 // POST /api/prices (Convenience — wrapt als Contribution vom Typ "price")
-export async function postPrice(req, env) {
+export async function postPrice(req, env, _params, ctx) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
   return postContribution(new Request(req.url, {
     method: "POST",
     headers: req.headers,
     body: JSON.stringify({ type: "price", data: body, turnstileToken: body.turnstileToken, email: body.email }),
-  }), env);
+  }), env, {}, ctx);
 }
 
 // ============================================================
