@@ -42,6 +42,13 @@ binding       = "DB"
 database_name = "REPLACE_WITH_YOUR_D1_NAME"
 database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
+# --- Cron: täglicher Admin-Digest ----------------------------
+# Sendet einmal täglich eine Zusammenfassung aller neuen
+# Beiträge an ADMIN_EMAIL (siehe Secrets unten).
+# Zeitzone: UTC → 07:00 UTC = 08:00 / 09:00 Uhr Berlin.
+[triggers]
+crons = ["0 7 * * *"]
+
 # --- Observability --------------------------------------------
 # Spiegelt die Dashboard-Einstellungen wider, damit Wrangler sie
 # beim Deploy nicht überschreibt (Cloudflare warnt sonst).
@@ -81,4 +88,7 @@ persist = true
 #
 # Secrets (mit `wrangler secret put …` setzen — nie committen):
 #   TURNSTILE_SECRET_KEY
+#   RESEND_API_KEY       — API-Key von resend.com (für alle Mails)
+#   RESEND_FROM          — Absender-Adresse (z. B. "Altbieratlas <noreply@altbieratlas.de>")
+#   ADMIN_EMAIL          — Empfänger des täglichen Beitrags-Digests
 # ============================================================

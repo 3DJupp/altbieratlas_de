@@ -330,6 +330,100 @@ function _emailDataRows(type, data, de) {
   return Object.entries(data).filter(([k, v]) => v != null && v !== "" && !k.startsWith("_")).map(([k, v]) => [k, v]);
 }
 
+// ---- Täglicher Admin-Digest via Resend API ----
+// Wird vom scheduled()-Handler aufgerufen (Cron: einmal täglich).
+// Benötigt env.RESEND_API_KEY (Secret) + env.ADMIN_EMAIL (Secret).
+// Sendet nur, wenn in den letzten 24 h neue Beiträge eingegangen sind.
+export async function sendAdminDigest(env) {
+  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  let rows;
+  try {
+    ({ results: rows } = await env.DB.prepare(
+      "SELECT id, type, payload, submitter_email, submitter_ip, created_at FROM contributions WHERE created_at >= ? AND status = 'pending' ORDER BY created_at DESC"
+    ).bind(since).all());
+  } catch (e) {
+    console.error("[digest] DB-Fehler:", e);
+    return;
+  }
+  if (!rows || !rows.length) return;
+
+  const typeLabels = {
+    price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
+    correction: "Korrektur", event: "Event",
+  };
+
+  const rowsHtml = rows.map((r) => {
+    let data = {};
+    try { data = JSON.parse(r.payload); } catch {}
+    const label = typeLabels[r.type] || r.type;
+    const anonIp = String(r.submitter_ip || "–").replace(/\.(\d+)$/, ".xxx").replace(/:[\da-f]+$/i, ":xxxx");
+    const ts = (() => {
+      try { return new Date(r.created_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" }); }
+      catch { return r.created_at; }
+    })();
+    const summary = data.name || data.breweryId || data.eventName || "–";
+    const email = r.submitter_email ? _esc(r.submitter_email) : "–";
+    return `<tr style="border-bottom:1px solid #e4d8cc">
+      <td style="padding:8px 12px 8px 0;font-size:13px;color:#b57a3a;white-space:nowrap">${_esc(label)}</td>
+      <td style="padding:8px 12px 8px 0;font-size:13px">${_esc(summary)}</td>
+      <td style="padding:8px 12px 8px 0;font-size:12px;color:#999">${email}</td>
+      <td style="padding:8px 0;font-size:12px;color:#999;white-space:nowrap">${ts}</td>
+    </tr>`;
+  }).join("");
+
+  const rowsText = rows.map((r) => {
+    let data = {};
+    try { data = JSON.parse(r.payload); } catch {}
+    const label = typeLabels[r.type] || r.type;
+    const summary = data.name || data.breweryId || data.eventName || "–";
+    return `  [${label}] ${summary} — ${r.submitter_email || "anonym"}`;
+  }).join("\n");
+
+  const n = rows.length;
+  const subject = `[Altbieratlas] ${n} neue Einreichung${n > 1 ? "en" : ""} (Tagesübersicht)`;
+  const adminUrl = "https://altbieratlas.de/admin.html";
+
+  const text = [
+    `${n} neue Einreichung${n > 1 ? "en" : ""} in den letzten 24 Stunden:`,
+    "", rowsText, "",
+    `Admin-Bereich: ${adminUrl}`,
+  ].join("\n");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="font-family:system-ui,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:24px;background:#f9f5f0">
+<div style="background:#b57a3a;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;font-size:18px;font-weight:600">Altbieratlas · Admin-Digest</div>
+<div style="background:#fff;border:1px solid #e4d8cc;border-top:none;padding:24px 28px;border-radius:0 0 8px 8px">
+  <p style="margin:0 0 16px;font-size:14px;color:#555">${n} neue Einreichung${n > 1 ? "en" : ""} in den letzten 24 Stunden:</p>
+  <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
+    <thead><tr style="border-bottom:2px solid #e4d8cc">
+      <th style="padding:6px 12px 6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">Typ</th>
+      <th style="padding:6px 12px 6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">Inhalt</th>
+      <th style="padding:6px 12px 6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">E-Mail</th>
+      <th style="padding:6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">Uhrzeit</th>
+    </tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+  <a href="${adminUrl}" style="display:inline-block;background:#b57a3a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">Admin-Bereich öffnen</a>
+</div>
+</body></html>`;
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        to: env.ADMIN_EMAIL,
+        subject, text, html,
+      }),
+    });
+  } catch (e) {
+    console.error("[digest] Resend-Fehler:", e);
+  }
+}
+
 // ---- Brewery-Assembler (wandelt DB-Zeile in API-Shape) ----
 export function brewRow(r, styles = []) {
   if (!r) return null;
