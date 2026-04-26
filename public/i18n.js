@@ -728,9 +728,11 @@ window.formatPrice = function (n) {
   return window.__atlasLang === "en" ? s : s.replace(".", ",");
 };
 
-// Größenangabe: 0,25l (de) / 0.25l (en)
+// Größenangabe: 0,25 l (de) / 0.25 l (en)
 window.formatSize = function (s) {
-  return window.__atlasLang === "en" && s ? String(s).replace(",", ".") : (s || "");
+  if (!s) return "";
+  const str = window.__atlasLang === "en" ? String(s).replace(",", ".") : String(s);
+  return str.replace(/(\d)(l)$/i, "$1 $2");
 };
 
 (function () {

@@ -23,12 +23,10 @@
 
 .know-nav {
   border-bottom: 1px solid var(--rule);
-  background: var(--bg); z-index: 10;
-}
-.know-nav.is-fixed {
-  position: fixed;
-  left: 0; right: 0;
-  z-index: 10;
+  background: var(--bg);
+  position: sticky;
+  top: 64px;
+  z-index: 30;
 }
 .know-nav .container {
   display: flex;
@@ -261,38 +259,6 @@ function paintGlossary() {
     document.getElementById("style-grid").innerHTML = `<p style="color:#9b1f1f;grid-column:1/-1">Fehler beim Laden.</p>`;
   }
 })();
-
-// JS-Sticky für .know-nav — Sentinel misst die natürliche Position zuverlässig
-const knowNav = document.querySelector(".know-nav");
-const sentinel = document.createElement("div");
-sentinel.style.cssText = "height:0;pointer-events:none;margin:0;padding:0";
-knowNav.before(sentinel);
-const navSpacer = document.createElement("div");
-navSpacer.style.height = "0";
-knowNav.after(navSpacer);
-
-function syncNav() {
-  const headerEl = document.querySelector(".atlas-header");
-  const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 65;
-  const sentTop = sentinel.getBoundingClientRect().top;
-  const wasFixed = knowNav.classList.contains("is-fixed");
-  // Hysteresis: once fixed, allow up to 20px above threshold before unfixing.
-  // Prevents hash-link clicks (scroll-margin-top 130px) from toggling nav off.
-  const threshold = wasFixed ? headerBottom + 20 : headerBottom;
-  const shouldFix = sentTop <= threshold;
-  if (shouldFix === wasFixed) return;
-  knowNav.classList.toggle("is-fixed", shouldFix);
-  if (shouldFix) {
-    knowNav.style.top = headerBottom + "px";
-    navSpacer.style.height = knowNav.offsetHeight + "px";
-  } else {
-    knowNav.style.top = "";
-    navSpacer.style.height = "0";
-  }
-}
-window.addEventListener("scroll", syncNav, { passive: true });
-window.addEventListener("resize", syncNav);
-syncNav();
 
 // Aktiver Tab beim Scrollen
 const sections = ["geschichte", "sorten", "koebes", "glossar"];

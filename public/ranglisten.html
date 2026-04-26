@@ -130,9 +130,9 @@
           <button data-tab="newest" data-i18n="rank.tabNewest">Neu auf dem Atlas</button>
         </div>
         <div class="size-toggle" id="size-toggle">
-          <button data-size="0,25l" class="active">0,25l</button>
-          <button data-size="0,5l">0,5l</button>
-          <button data-size="0,33l">0,33l</button>
+          <button data-size="0,25l" class="active"></button>
+          <button data-size="0,5l"></button>
+          <button data-size="0,33l"></button>
         </div>
       </div>
 
@@ -202,6 +202,13 @@ function renderStats() {
 let currentTab = "cheapest";
 let currentSize = "0,25l";
 
+function updateSizeLabels() {
+  document.querySelectorAll("#size-toggle button").forEach((btn) => {
+    btn.textContent = window.formatSize(btn.dataset.size);
+  });
+}
+updateSizeLabels();
+
 function latestPerBrewery(size) {
   const map = {};
   prices.filter((p) => p.size === size)
@@ -231,10 +238,10 @@ function render() {
 
   if (currentTab === "cheapest") {
     list = latestPerBrewery(currentSize).sort((a, b) => a.price - b.price);
-    title = t("rank.titleCheapest") + currentSize;
+    title = t("rank.titleCheapest") + window.formatSize(currentSize);
   } else if (currentTab === "priciest") {
     list = latestPerBrewery(currentSize).sort((a, b) => b.price - a.price);
-    title = t("rank.titlePriciest") + currentSize;
+    title = t("rank.titlePriciest") + window.formatSize(currentSize);
   } else if (currentTab === "most") {
     list = countPerBrewery().sort((a, b) => b.n - a.n).map((x) => ({
       brewery: x.brewery, price: null, date: null, size: null, count: x.n,
@@ -264,7 +271,7 @@ function render() {
         <div class="sub">${t("type." + it.brewery.type)}${it.brewery.founded ? " · " + t("rank.sinceYear") + it.brewery.founded : ""}</div>
       </span>
       <span class="city">${it.brewery.city}${it.brewery.country && it.brewery.country !== "DE" ? " · " + it.brewery.country : ""}</span>
-      <span class="sz">${it.size || (it.count ? it.count + t("rank.reportsShort") : "—")}</span>
+      <span class="sz">${it.size ? window.formatSize(it.size) : (it.count ? it.count + t("rank.reportsShort") : "—")}</span>
       <span class="pr">${it.price != null ? "€ " + window.formatPrice(it.price) : (it.count ? "×" + it.count : "—")}</span>
       <span class="dt">${it.date ? window.formatDate(it.date) : "—"}</span>
     </div>
@@ -291,6 +298,7 @@ document.querySelectorAll("#size-toggle button").forEach((b) => {
 
 // Bei Sprachwechsel neu rendern (keine Fehler wenn Daten noch nicht geladen — render() schreibt einfach leer)
 document.addEventListener("atlas:lang-changed", () => {
+  updateSizeLabels();
   if (breweries.length) { renderStats(); render(); }
 });
 </script>

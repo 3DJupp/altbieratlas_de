@@ -623,11 +623,12 @@ function renderRecent() {
     const d = c.createdAt ? window.formatDate(c.createdAt) : "—";
     const data = c.data || {};
     const typeLabel = t("contrib.recent.typeLabel." + c.type) || c.type;
-    const priceVal = parseFloat(data.price || 0).toFixed(2);
-    const priceStr = window.__atlasLang === "en" ? priceVal : priceVal.replace(".", ",");
-    const sizeStr = window.__atlasLang === "en" && data.size ? data.size.replace(",", ".") : (data.size || "");
+    const priceStr = window.formatPrice(parseFloat(data.price || 0));
+    const sizeStr = window.formatSize(data.size || "");
+    const br = breweries.find((b) => b.id === data.breweryId);
+    const breweryLabel = br ? `${br.name} · ${br.city}` : (data.breweryId || "—");
     const summary =
-        c.type === "price"      ? `${data.breweryId || "—"} · € ${priceStr} ${sizeStr}`
+        c.type === "price"      ? `${breweryLabel} · € ${priceStr} ${sizeStr}`
       : c.type === "brewery"    ? `${data.name || "—"} · ${data.city || ""}`
       : c.type === "style"      ? `${data.styleName || "—"}`
       : c.type === "correction" ? `${typeLabel} · ${data.target || ""}`

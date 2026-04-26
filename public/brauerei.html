@@ -184,8 +184,7 @@ const root = document.getElementById("brewery-root");
 
   document.title = `${b.name} · Altbieratlas`;
 
-  const typeLabel = b.type === "hausbrauerei" ? "Hausbrauerei"
-                  : b.type === "gastronomie" ? "Gastronomie" : "Handel";
+  const typeLabel = window.t("type." + b.type);
 
   root.innerHTML = `
     <section class="brewery-hero">
@@ -203,14 +202,14 @@ const root = document.getElementById("brewery-root");
               <span>${typeLabel}</span>
               <span class="dot"></span>
               <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
-              ${b.founded ? `<span class="dot"></span><span>seit ${b.founded}</span>` : ''}
+              ${b.founded ? `<span class="dot"></span><span>${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
               ${b.website ? `<span class="dot"></span><a href="${b.website}" target="_blank" rel="noopener">Website →</a>` : ''}
             </div>
           </div>
           ${latest ? `
             <div class="price-hero">
-              <div class="label">Aktuell · ${latest.size}</div>
-              <div class="big">€ ${latest.price.toFixed(2).replace('.', ',')}</div>
+              <div class="label">${window.t("brewery.current")}${window.formatSize(latest.size)}</div>
+              <div class="big">€ ${window.formatPrice(latest.price)}</div>
               <div class="small">${window.t("brewery.reported")}${window.formatDate(latest.date)}</div>
             </div>
           ` : ''}
@@ -232,7 +231,7 @@ const root = document.getElementById("brewery-root");
     ${styles.length ? `
       <section class="container" style="padding-bottom:40px">
         <div class="eyebrow" data-i18n="brewery.style">Stil</div>
-        <h2 style="margin-top:8px">Was hier gebraut wird</h2>
+        <h2 style="margin-top:8px" data-i18n="brewery.stylesTitle">Was hier gebraut wird</h2>
         <div class="style-grid">
           ${styles.map((s) => `
             <article class="card style-card">
@@ -255,7 +254,7 @@ const root = document.getElementById("brewery-root");
       <div class="section-head" style="display:flex;justify-content:space-between;align-items:end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
         <div>
           <div class="eyebrow" data-i18n="brewery.priceHistory">Preisentwicklung</div>
-          <h2 style="margin-top:8px">Preis über Zeit</h2>
+          <h2 style="margin-top:8px" data-i18n="brewery.pricesOverTime">Preis über Zeit</h2>
         </div>
         <a class="btn btn-primary" href="beitragen.html?typ=preis&brauerei=${b.id}" data-i18n="brewery.addPrice">Preis melden</a>
       </div>
@@ -270,10 +269,10 @@ const root = document.getElementById("brewery-root");
           <div class="price-log-row">
             <span class="date">${window.formatDate(p.date)}</span>
             <span class="src">${p.source || ''}</span>
-            <span class="sz">${p.size}</span>
-            <span class="p">€ ${p.price.toFixed(2).replace('.', ',')}</span>
+            <span class="sz">${window.formatSize(p.size)}</span>
+            <span class="p">€ ${window.formatPrice(p.price)}</span>
           </div>
-        `).join('') || '<p style="color:var(--ink-muted);padding:20px">Noch keine Meldungen.</p>'}
+        `).join('') || `<p style="color:var(--ink-muted);padding:20px">${window.t("brewery.noPriceReports")}</p>`}
       </div>
 
       <div class="action-bar">
@@ -311,7 +310,7 @@ const root = document.getElementById("brewery-root");
     const container = document.getElementById('chart');
     if (!container) return;
     if (series.length < 2) {
-      container.innerHTML = '<p style="color:var(--ink-muted);font-size:13px">Zu wenig Datenpunkte für einen Verlauf.</p>';
+      container.innerHTML = `<p style="color:var(--ink-muted);font-size:13px">${window.t("brewery.insufficientChart")}</p>`;
       return;
     }
     const W = container.clientWidth || 600;
@@ -339,7 +338,7 @@ const root = document.getElementById("brewery-root");
     for (let i = 0; i <= steps; i++) {
       const v = yMin + (yMax - yMin) * (i / steps);
       gridLines.push(`<line class="grid-line" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}" />`);
-      gridLines.push(`<text class="axis-label" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">€ ${v.toFixed(2).replace('.', ',')}</text>`);
+      gridLines.push(`<text class="axis-label" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">€ ${window.formatPrice(v)}</text>`);
     }
 
     const xTicks = series.filter((_, i) => i === 0 || i === series.length - 1 || i === Math.floor(series.length / 2));
@@ -364,6 +363,7 @@ const root = document.getElementById("brewery-root");
   }
   drawChart();
   window.addEventListener('resize', drawChart);
+  document.addEventListener('atlas:lang-changed', drawChart);
 
   // Untappd-Daten nachladen (fire & forget — zeigt nur wenn verfügbar)
   fetch(`/api/untappd/brewery/${encodeURIComponent(b.id)}`)
