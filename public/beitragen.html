@@ -285,14 +285,23 @@ let turnstileToken = null;
   breweryOptions = breweries
     .map((b) => `<option value="${b.id}"${b.id === preBrewery ? ' selected' : ''}>${b.name} · ${b.city}</option>`)
     .join("");
-  sizeOptions = window.ATLAS_CONFIG.priceSizes
-    .map((s) => `<option value="${s}"${s === "0,25l" ? " selected" : ""}>${s}</option>`)
-    .join("");
+  // sizeOptions wird dynamisch pro Sprache erzeugt (buildSizeOptions)
 
   initTurnstile();
   renderForm(currentTyp);
   renderRecent();
 })();
+
+// Größen-Optionen sprachabhängig (DE: 0,25l / EN: 0.25l)
+function buildSizeOptions() {
+  const en = (window.__atlasLang === "en");
+  return window.ATLAS_CONFIG.priceSizes
+    .map((s) => {
+      const label = en ? s.replace(",", ".") : s;
+      return `<option value="${s}"${s === "0,25l" ? " selected" : ""}>${label}</option>`;
+    })
+    .join("");
+}
 
 // ============ Turnstile ============
 function initTurnstile() {
@@ -335,11 +344,11 @@ function forms(typ) {
     <div class="grid-2">
       <div class="field">
         <label>${t("field.price")}</label>
-        <input name="price" type="number" step="0.01" min="0" placeholder="2,70" required />
+        <input name="price" type="number" step="0.01" min="0" placeholder="${window.__atlasLang === "en" ? "2.70" : "2,70"}" required />
       </div>
       <div class="field">
         <label>${t("field.size")}</label>
-        <select name="size">${sizeOptions}</select>
+        <select name="size">${buildSizeOptions()}</select>
       </div>
     </div>
     <div class="field">
@@ -519,28 +528,40 @@ function renderForm(typ) {
   if (nameInput && acDrop) {
     let acTimer = null;
     let acResults = [];
+    let acReqId = 0;
+
+    function renderAcResults(results, q) {
+      if (!results.length) {
+        acDrop.innerHTML = `<div class="ac-item" style="color:var(--ink-muted);cursor:default"><div class="ac-name" style="font-style:italic">Keine Treffer für „${q}"</div></div>`;
+        acDrop.hidden = false;
+        return;
+      }
+      acDrop.innerHTML = results.slice(0, 6).map((r, i) => {
+        const shortName = r.name.split(",")[0].trim();
+        return `<div class="ac-item" data-idx="${i}">` +
+          `<div class="ac-name">${shortName}</div>` +
+          `<div class="ac-sub">${r.name}</div>` +
+          `</div>`;
+      }).join("");
+      acDrop.hidden = false;
+    }
 
     nameInput.addEventListener("input", () => {
       clearTimeout(acTimer);
       const q = nameInput.value.trim();
-      if (q.length < 3) { acDrop.hidden = true; return; }
+      if (q.length < 2) { acDrop.hidden = true; acResults = []; return; }
+      // Zeige Lade-Indikator sofort (behalte vorherige Ergebnisse sichtbar)
       acTimer = setTimeout(async () => {
+        const reqId = ++acReqId;
         const res = await window.AtlasAPI.geocode(q);
+        if (reqId !== acReqId) return; // veraltetes Ergebnis ignorieren
         acResults = (res && res.results) || [];
-        if (!acResults.length) { acDrop.hidden = true; return; }
-        acDrop.innerHTML = acResults.slice(0, 6).map((r, i) => {
-          const shortName = r.name.split(",")[0].trim();
-          return `<div class="ac-item" data-idx="${i}">` +
-            `<div class="ac-name">${shortName}</div>` +
-            `<div class="ac-sub">${r.name}</div>` +
-            `</div>`;
-        }).join("");
-        acDrop.hidden = false;
-      }, 380);
+        renderAcResults(acResults, q);
+      }, 420);
     });
 
     acDrop.addEventListener("mousedown", (e) => {
-      const item = e.target.closest(".ac-item");
+      const item = e.target.closest(".ac-item[data-idx]");
       if (!item) return;
       e.preventDefault();
       const r = acResults[parseInt(item.dataset.idx, 10)];
@@ -557,10 +578,13 @@ function renderForm(typ) {
         `<span style="color:green">✓ ${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}</span>` +
         ` <span style="color:var(--ink-muted)">${r.name.slice(0, 60)}</span>`;
       acDrop.hidden = true;
+      acResults = [];
     });
 
-    nameInput.addEventListener("blur", () => { setTimeout(() => { acDrop.hidden = true; }, 150); });
-    nameInput.addEventListener("keydown", (e) => { if (e.key === "Escape") acDrop.hidden = true; });
+    nameInput.addEventListener("blur", () => { setTimeout(() => { acDrop.hidden = true; }, 180); });
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { acDrop.hidden = true; acResults = []; }
+    });
   }
 }
 
@@ -680,8 +704,11 @@ function renderRecent() {
     const d = c.createdAt ? window.formatDate(c.createdAt) : "—";
     const data = c.data || {};
     const typeLabel = t("contrib.recent.typeLabel." + c.type) || c.type;
+    const priceVal = parseFloat(data.price || 0).toFixed(2);
+    const priceStr = window.__atlasLang === "en" ? priceVal : priceVal.replace(".", ",");
+    const sizeStr = window.__atlasLang === "en" && data.size ? data.size.replace(",", ".") : (data.size || "");
     const summary =
-        c.type === "price"      ? `${data.breweryId || "—"} · € ${parseFloat(data.price || 0).toFixed(2).replace(".", ",")}`
+        c.type === "price"      ? `${data.breweryId || "—"} · € ${priceStr} ${sizeStr}`
       : c.type === "brewery"    ? `${data.name || "—"} · ${data.city || ""}`
       : c.type === "style"      ? `${data.styleName || "—"}`
       : c.type === "correction" ? `${typeLabel} · ${data.target || ""}`

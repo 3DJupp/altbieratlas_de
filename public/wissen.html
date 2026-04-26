@@ -23,8 +23,13 @@
 
 .know-nav {
   border-bottom: 1px solid var(--rule);
-  position: sticky; top: 64px;
   background: var(--bg); z-index: 10;
+}
+.know-nav.is-fixed {
+  position: fixed;
+  top: 64px;
+  left: 0; right: 0;
+  z-index: 10;
 }
 .know-nav .container {
   display: flex;
@@ -258,17 +263,38 @@ function paintGlossary() {
   }
 })();
 
-// Sticky nav highlight
+// JS-Sticky für .know-nav (CSS sticky ist in flex-Containern unzuverlässig)
+const knowNav = document.querySelector(".know-nav");
+const navSpacer = document.createElement("div");
+knowNav.after(navSpacer);
+let navNaturalTop = 0;
+function initNavTop() {
+  knowNav.classList.remove("is-fixed");
+  navSpacer.style.height = "0";
+  navNaturalTop = knowNav.getBoundingClientRect().top + window.scrollY;
+}
+function syncNavFixed() {
+  const stuck = window.scrollY + 64 >= navNaturalTop;
+  if (stuck !== knowNav.classList.contains("is-fixed")) {
+    knowNav.classList.toggle("is-fixed", stuck);
+    navSpacer.style.height = stuck ? knowNav.offsetHeight + "px" : "0";
+  }
+}
+window.addEventListener("scroll", syncNavFixed, { passive: true });
+window.addEventListener("resize", () => { initNavTop(); syncNavFixed(); });
+initNavTop();
+syncNavFixed();
+
+// Aktiver Tab beim Scrollen
 const sections = ["geschichte", "sorten", "koebes", "glossar"];
 const navLinks = document.querySelectorAll(".know-nav a");
 function updateActive() {
-  const y = window.scrollY + 150;
+  const y = window.scrollY + 130;
   let active = sections[0];
   sections.forEach((id) => {
     const el = document.getElementById(id);
     if (el && el.offsetTop <= y) active = id;
   });
-  // Letzten Abschnitt aktivieren wenn nahe am Seitenende
   if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 80) {
     active = sections[sections.length - 1];
   }
