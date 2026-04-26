@@ -303,7 +303,7 @@ function renderMarkers(filter = "all", search = "") {
     const marker = L.marker(b.coords, { icon: pinIcon(b.type, b.pending) }).addTo(map);
     const latest = priceByBrewery.get(b.id);
     const priceText = latest
-      ? `<div class="pop-price">€ ${latest.price.toFixed(2).replace(".", ",")} <span style="font-size:11px;opacity:.6">/ ${latest.size}</span></div>`
+      ? `<div class="pop-price">€ ${window.formatPrice(latest.price)} <span style="font-size:11px;opacity:.6">/ ${window.formatSize(latest.size)}</span></div>`
       : `<div style="font-size:12px;opacity:.6;margin-top:6px">Noch keine Preismeldung</div>`;
     marker.bindPopup(`
       <h4>${b.name}</h4>
@@ -461,6 +461,9 @@ document.querySelectorAll(".filter-btn").forEach((btn) => {
 });
 
 // ============ Daten laden ============
+let cachedPrices = [];
+let cachedAvgPrice025 = null;
+
 (async () => {
   try {
     const [brews, prices, stats, events] = await Promise.all([
@@ -470,12 +473,13 @@ document.querySelectorAll(".filter-btn").forEach((btn) => {
       window.AtlasAPI.listEvents(),
     ]);
     allBreweries = brews.breweries || [];
+    cachedPrices = prices.prices || [];
+    cachedAvgPrice025 = stats.avgPrice025 ?? null;
 
     // Preis-Index aufbauen (neuester Preis pro Brauerei & 0,25l bevorzugt)
     const byId = new Map();
-    (prices.prices || []).forEach((p) => {
+    cachedPrices.forEach((p) => {
       const cur = byId.get(p.breweryId);
-      // Bevorzugt 0,25l; andernfalls neuestes Datum
       const score = (p.size === "0,25l" ? 1000 : 0) + new Date(p.date).getTime() / 1e10;
       const curScore = cur ? (cur.size === "0,25l" ? 1000 : 0) + new Date(cur.date).getTime() / 1e10 : -1;
       if (!cur || score > curScore) byId.set(p.breweryId, p);
@@ -483,18 +487,24 @@ document.querySelectorAll(".filter-btn").forEach((btn) => {
     priceByBrewery = byId;
 
     // Ticker
-    document.getElementById("avg-price").textContent = stats.avgPrice025
-      ? "€ " + stats.avgPrice025.toFixed(2).replace(".", ",") : "—";
+    document.getElementById("avg-price").textContent = cachedAvgPrice025
+      ? "€ " + window.formatPrice(cachedAvgPrice025) : "—";
     document.getElementById("data-points").textContent = stats.priceCount ?? "—";
     document.getElementById("brewery-count").textContent = stats.breweryCount ?? "—";
 
     renderMarkers();
-    renderRankings(prices.prices || []);
+    renderRankings(cachedPrices);
     renderEvents(events.events || []);
   } catch (e) {
     console.error("[atlas] Daten konnten nicht geladen werden:", e);
   }
 })();
+
+document.addEventListener("atlas:lang-changed", () => {
+  if (cachedAvgPrice025 != null)
+    document.getElementById("avg-price").textContent = "€ " + window.formatPrice(cachedAvgPrice025);
+  if (cachedPrices.length) { renderMarkers(); renderRankings(cachedPrices); }
+});
 
 // ============ Rankings ============
 function renderRankings(prices) {
@@ -528,12 +538,12 @@ function renderRankings(prices) {
   fill("rank-cheapest",
     [...uniq].sort((a, b) => a.price - b.price).slice(0, 5).map((b) => ({
       id: b.id, name: b.name, short: b.short, city: b.city,
-      priceText: "€ " + b.price.toFixed(2).replace(".", ","),
+      priceText: "€ " + window.formatPrice(b.price),
     })));
   fill("rank-priciest",
     [...uniq].sort((a, b) => b.price - a.price).slice(0, 5).map((b) => ({
       id: b.id, name: b.name, short: b.short, city: b.city,
-      priceText: "€ " + b.price.toFixed(2).replace(".", ","),
+      priceText: "€ " + window.formatPrice(b.price),
     })));
 
   const seen = new Set();

@@ -91,4 +91,5 @@ persist = true
 #   RESEND_API_KEY       — API-Key von resend.com (für alle Mails)
 #   RESEND_FROM          — Absender-Adresse (z. B. "Altbieratlas <noreply@altbieratlas.de>")
 #   ADMIN_EMAIL          — Empfänger des täglichen Beitrags-Digests
+#   SITE_URL             — Öffentliche URL der Site (Standard: https://altbieratlas.de)
 # ============================================================
