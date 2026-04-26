@@ -230,48 +230,68 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
     });
   } catch {}
 
-  // Last octet / group anonymisiert
   const anonIp = String(ip).replace(/\.(\d+)$/, ".xxx").replace(/:[\da-f]+$/i, ":xxxx");
 
   const rows = _emailDataRows(type, data, de);
   const tableText = rows.map(([k, v]) => `  ${k}: ${v}`).join("\n");
   const tableHtml = rows.map(([k, v]) =>
-    `<tr><td style="padding:3px 16px 3px 0;color:#999;white-space:nowrap;font-size:13px">${_esc(k)}</td>` +
-    `<td style="padding:3px 0;font-size:13px">${_esc(String(v))}</td></tr>`
+    `<tr style="border-bottom:1px solid #efe8e0">` +
+    `<td style="padding:9px 20px 9px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b57a3a;white-space:nowrap;font-family:'Courier New',monospace;vertical-align:top">${_esc(k)}</td>` +
+    `<td style="padding:9px 0;font-size:14px;color:#333;vertical-align:top">${_esc(String(v))}</td></tr>`
   ).join("");
 
-  const subject = de
-    ? `Dein Beitrag ist eingegangen — Altbieratlas`
-    : `Your contribution has been received — Altbieratlas`;
+  const subject = de ? `Altbieratlas: Beitrag eingegangen` : `Altbieratlas: Contribution received`;
+  const labelId   = de ? "Beitrags-ID" : "Contribution ID";
+  const labelRcvd = de ? "Eingegangen"  : "Received";
+  const noReply   = de ? "Diese Adresse wird nicht überwacht." : "This mailbox is not monitored.";
 
-  const greeting   = de ? "Hallo," : "Hello,";
-  const intro      = de ? `vielen Dank! Wir haben folgende ${label} erhalten:` : `thank you! We have received the following ${label}:`;
-  const body2      = de ? "Dein Beitrag wird nun geprüft. Nach der Freigabe erscheint er auf dem Altbieratlas.\nWir melden uns nur bei Rückfragen." : "Your contribution is now under review. Once approved it will appear on Altbieratlas.\nWe will only reach out if we have questions.";
-  const thanks     = de ? "Vielen Dank fürs Mitmachen!\n— Das Altbieratlas-Team" : "Thanks for contributing!\n— The Altbieratlas Team";
-  const noReply    = de ? "Diese Adresse wird nicht überwacht." : "This mailbox is not monitored.";
-  const labelId    = de ? "Beitrags-ID" : "Contribution ID";
-  const labelRcvd  = de ? "Eingegangen" : "Received";
-
-  const text = [greeting, "", intro, "", tableText, "", body2, "", thanks, "",
-    "─".repeat(40), `${labelId}: ${id}`, `${labelRcvd}: ${dateStr}`, `IP: ${anonIp}`, "", noReply,
+  const text = [
+    de ? `Altbieratlas: ${label} eingegangen` : `Altbieratlas: ${label} received`,
+    "",
+    de ? "Vielen Dank! Dein Beitrag wird geprüft und nach der Freigabe auf dem Atlas veröffentlicht." : "Thank you! Your contribution is under review and will be published once approved.",
+    "",
+    tableText,
+    "",
+    de ? "Wir melden uns nur bei Rückfragen.\nDas Altbieratlas-Team" : "We will only reach out if we have questions.\nThe Altbieratlas Team",
+    "",
+    `${labelId}: ${id}`,
+    `${labelRcvd}: ${dateStr}`,
+    `IP: ${anonIp}`,
+    noReply,
   ].join("\n");
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="font-family:system-ui,sans-serif;color:#222;max-width:560px;margin:0 auto;padding:24px;background:#f9f5f0">
-<div style="background:#b57a3a;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;font-size:18px;font-weight:600">Altbieratlas</div>
-<div style="background:#fff;border:1px solid #e4d8cc;border-top:none;padding:24px 28px;border-radius:0 0 8px 8px">
-  <h2 style="margin:0 0 10px;font-size:16px;font-weight:600">${de ? "Dein Beitrag ist eingegangen" : "Your contribution has been received"}</h2>
-  <p style="color:#555;margin:0 0 18px;font-size:14px">${de ? `Vielen Dank! Wir haben folgende <strong>${_esc(label)}</strong> erhalten:` : `Thank you! We received the following <strong>${_esc(label)}</strong>:`}</p>
-  <table style="border-collapse:collapse;width:100%;margin-bottom:20px">${tableHtml}</table>
-  <p style="color:#555;font-size:13px;line-height:1.5">${de ? "Dein Beitrag wird nun geprüft. Nach der Freigabe erscheint er auf dem Altbieratlas.<br>Wir melden uns nur bei Rückfragen." : "Your contribution is now under review. Once approved it will appear on Altbieratlas.<br>We will only reach out if we have questions."}</p>
-  <hr style="border:none;border-top:1px solid #e4d8cc;margin:20px 0">
-  <table style="border-collapse:collapse;font-size:11px;color:#bbb">
-    <tr><td style="padding:2px 16px 2px 0">${_esc(labelId)}</td><td>${_esc(id)}</td></tr>
-    <tr><td style="padding:2px 16px 2px 0">${_esc(labelRcvd)}</td><td>${_esc(dateStr)}</td></tr>
-    <tr><td style="padding:2px 16px 2px 0">IP</td><td>${_esc(anonIp)}</td></tr>
-  </table>
-  <p style="font-size:11px;color:#bbb;margin-top:10px">${_esc(noReply)}</p>
-</div>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f5f0;font-family:system-ui,-apple-system,sans-serif;color:#222">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
+
+  <tr><td style="background:#fff;border:1px solid #e4d8cc;border-bottom:none;border-radius:8px 8px 0 0;padding:18px 28px">
+    <table cellpadding="0" cellspacing="0"><tr>
+      <td style="background:#b57a3a;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:700;width:28px;height:28px;text-align:center;border-radius:3px;line-height:28px">A</td>
+      <td style="padding-left:10px;font-family:Georgia,'Times New Roman',serif;font-size:18px;color:#1a1410;font-weight:600;vertical-align:middle">Altbieratlas</td>
+    </tr></table>
+  </td></tr>
+
+  <tr><td style="background:#b57a3a;height:3px;border-left:1px solid #e4d8cc;border-right:1px solid #e4d8cc"></td></tr>
+
+  <tr><td style="background:#fff;border:1px solid #e4d8cc;border-top:none;border-radius:0 0 8px 8px;padding:28px 28px 24px">
+    <p style="margin:0 0 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#b57a3a;font-family:'Courier New',monospace">${_esc(label)}</p>
+    <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410;line-height:1.2">${de ? "Beitrag eingegangen" : "Contribution received"}</h2>
+    <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.65">${de ? "Vielen Dank! Dein Beitrag wird geprüft und nach der Freigabe auf dem Atlas veröffentlicht." : "Thank you! Your contribution is under review and will be published once approved."}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc;margin-bottom:20px">${tableHtml}</table>
+    <p style="margin:0 0 24px;font-size:13px;color:#888;line-height:1.6">${de ? "Wir melden uns nur bei Rückfragen." : "We will only reach out if we have questions."}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc"><tr><td style="padding-top:16px">
+      <table cellpadding="0" cellspacing="0">
+        <tr><td style="padding:2px 20px 2px 0;font-size:11px;color:#bbb;white-space:nowrap">${_esc(labelId)}</td><td style="padding:2px 0;font-size:11px;color:#888;font-family:'Courier New',monospace">${_esc(id)}</td></tr>
+        <tr><td style="padding:2px 20px 2px 0;font-size:11px;color:#bbb">${_esc(labelRcvd)}</td><td style="padding:2px 0;font-size:11px;color:#888">${_esc(dateStr)}</td></tr>
+        <tr><td style="padding:2px 20px 2px 0;font-size:11px;color:#bbb">IP</td><td style="padding:2px 0;font-size:11px;color:#888;font-family:'Courier New',monospace">${_esc(anonIp)}</td></tr>
+      </table>
+      <p style="margin:12px 0 0;font-size:11px;color:#bbb">${_esc(noReply)}</p>
+    </td></tr></table>
+  </td></tr>
+
+</table>
+</td></tr></table>
 </body></html>`;
 
   try {
@@ -358,18 +378,17 @@ export async function sendAdminDigest(env) {
     let data = {};
     try { data = JSON.parse(r.payload); } catch {}
     const label = typeLabels[r.type] || r.type;
-    const anonIp = String(r.submitter_ip || "–").replace(/\.(\d+)$/, ".xxx").replace(/:[\da-f]+$/i, ":xxxx");
     const ts = (() => {
       try { return new Date(r.created_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" }); }
       catch { return r.created_at; }
     })();
-    const summary = data.name || data.breweryId || data.eventName || "–";
-    const email = r.submitter_email ? _esc(r.submitter_email) : "–";
-    return `<tr style="border-bottom:1px solid #e4d8cc">
-      <td style="padding:8px 12px 8px 0;font-size:13px;color:#b57a3a;white-space:nowrap">${_esc(label)}</td>
-      <td style="padding:8px 12px 8px 0;font-size:13px">${_esc(summary)}</td>
-      <td style="padding:8px 12px 8px 0;font-size:12px;color:#999">${email}</td>
-      <td style="padding:8px 0;font-size:12px;color:#999;white-space:nowrap">${ts}</td>
+    const summary = data.name || data.breweryId || data.eventName || "?";
+    const email = r.submitter_email ? _esc(r.submitter_email) : "anonym";
+    return `<tr style="border-bottom:1px solid #efe8e0">
+      <td style="padding:9px 14px 9px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b57a3a;white-space:nowrap;font-family:'Courier New',monospace;vertical-align:top">${_esc(label)}</td>
+      <td style="padding:9px 14px 9px 0;font-size:14px;color:#222;vertical-align:top">${_esc(summary)}</td>
+      <td style="padding:9px 14px 9px 0;font-size:12px;color:#888;vertical-align:top">${email}</td>
+      <td style="padding:9px 0;font-size:12px;color:#888;white-space:nowrap;vertical-align:top">${ts}</td>
     </tr>`;
   }).join("");
 
@@ -377,36 +396,52 @@ export async function sendAdminDigest(env) {
     let data = {};
     try { data = JSON.parse(r.payload); } catch {}
     const label = typeLabels[r.type] || r.type;
-    const summary = data.name || data.breweryId || data.eventName || "–";
-    return `  [${label}] ${summary} — ${r.submitter_email || "anonym"}`;
+    const summary = data.name || data.breweryId || data.eventName || "?";
+    return `  [${label}] ${summary} (${r.submitter_email || "anonym"})`;
   }).join("\n");
 
   const n = rows.length;
-  const subject = `[Altbieratlas] ${n} neue Einreichung${n > 1 ? "en" : ""} (Tagesübersicht)`;
+  const subject = `Altbieratlas Digest: ${n} neue Einreichung${n > 1 ? "en" : ""}`;
   const adminUrl = "https://altbieratlas.de/admin.html";
 
   const text = [
     `${n} neue Einreichung${n > 1 ? "en" : ""} in den letzten 24 Stunden:`,
     "", rowsText, "",
-    `Admin-Bereich: ${adminUrl}`,
+    `Admin: ${adminUrl}`,
   ].join("\n");
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="font-family:system-ui,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:24px;background:#f9f5f0">
-<div style="background:#b57a3a;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;font-size:18px;font-weight:600">Altbieratlas · Admin-Digest</div>
-<div style="background:#fff;border:1px solid #e4d8cc;border-top:none;padding:24px 28px;border-radius:0 0 8px 8px">
-  <p style="margin:0 0 16px;font-size:14px;color:#555">${n} neue Einreichung${n > 1 ? "en" : ""} in den letzten 24 Stunden:</p>
-  <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
-    <thead><tr style="border-bottom:2px solid #e4d8cc">
-      <th style="padding:6px 12px 6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">Typ</th>
-      <th style="padding:6px 12px 6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">Inhalt</th>
-      <th style="padding:6px 12px 6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">E-Mail</th>
-      <th style="padding:6px 0;font-size:11px;text-align:left;color:#999;text-transform:uppercase;letter-spacing:.06em">Uhrzeit</th>
-    </tr></thead>
-    <tbody>${rowsHtml}</tbody>
-  </table>
-  <a href="${adminUrl}" style="display:inline-block;background:#b57a3a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">Admin-Bereich öffnen</a>
-</div>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f5f0;font-family:system-ui,-apple-system,sans-serif;color:#222">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+
+  <tr><td style="background:#fff;border:1px solid #e4d8cc;border-bottom:none;border-radius:8px 8px 0 0;padding:18px 28px">
+    <table cellpadding="0" cellspacing="0"><tr>
+      <td style="background:#b57a3a;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:700;width:28px;height:28px;text-align:center;border-radius:3px;line-height:28px">A</td>
+      <td style="padding-left:10px;font-family:Georgia,'Times New Roman',serif;font-size:18px;color:#1a1410;font-weight:600;vertical-align:middle">Altbieratlas</td>
+      <td style="padding-left:16px;font-size:11px;color:#b57a3a;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.1em;vertical-align:middle">Admin Digest</td>
+    </tr></table>
+  </td></tr>
+
+  <tr><td style="background:#b57a3a;height:3px;border-left:1px solid #e4d8cc;border-right:1px solid #e4d8cc"></td></tr>
+
+  <tr><td style="background:#fff;border:1px solid #e4d8cc;border-top:none;border-radius:0 0 8px 8px;padding:28px 28px 24px">
+    <h2 style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410">${n} neue Einreichung${n > 1 ? "en" : ""}</h2>
+    <p style="margin:0 0 22px;font-size:13px;color:#888">Letzte 24 Stunden</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc;margin-bottom:24px">
+      <thead><tr style="border-bottom:1px solid #e4d8cc">
+        <th style="padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">Typ</th>
+        <th style="padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">Inhalt</th>
+        <th style="padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">E-Mail</th>
+        <th style="padding:8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">Zeit</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <a href="${adminUrl}" style="display:inline-block;background:#b57a3a;color:#fff;padding:11px 22px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">Admin-Bereich</a>
+  </td></tr>
+
+</table>
+</td></tr></table>
 </body></html>`;
 
   try {
