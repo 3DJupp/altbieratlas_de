@@ -81,15 +81,15 @@
 
     <div class="rank-grid">
       <div class="card rank-card">
-        <div class="rank-head"><h3 data-i18n="rank.cheapest">Günstigstes Alt</h3><span class="tag">0,25 l</span></div>
+        <div class="rank-head"><h3 data-i18n="rank.cheapest">Günstigstes Alt</h3><span class="tag" id="tag-size-cheapest">0,25 l</span></div>
         <ol id="rank-cheapest" class="rank-list"></ol>
       </div>
       <div class="card rank-card">
-        <div class="rank-head"><h3 data-i18n="rank.priciest">Teuerstes Alt</h3><span class="tag">0,25 l</span></div>
+        <div class="rank-head"><h3 data-i18n="rank.priciest">Teuerstes Alt</h3><span class="tag" id="tag-size-priciest">0,25 l</span></div>
         <ol id="rank-priciest" class="rank-list"></ol>
       </div>
       <div class="card rank-card">
-        <div class="rank-head"><h3 data-i18n="rank.newest">Neu auf dem Atlas</h3><span class="tag">30 Tage</span></div>
+        <div class="rank-head"><h3 data-i18n="rank.newest">Neu auf dem Atlas</h3><span class="tag" data-i18n="rank.tag30days">30 Tage</span></div>
         <ol id="rank-newest" class="rank-list"></ol>
       </div>
     </div>
@@ -304,10 +304,10 @@ function renderMarkers(filter = "all", search = "") {
     const latest = priceByBrewery.get(b.id);
     const priceText = latest
       ? `<div class="pop-price">€ ${window.formatPrice(latest.price)} <span style="font-size:11px;opacity:.6">/ ${window.formatSize(latest.size)}</span></div>`
-      : `<div style="font-size:12px;opacity:.6;margin-top:6px">Noch keine Preismeldung</div>`;
+      : `<div style="font-size:12px;opacity:.6;margin-top:6px">${window.t("brewery.noPrice")}</div>`;
     marker.bindPopup(`
       <h4>${b.name}</h4>
-      <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · seit " + b.founded : ""}</div>
+      <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · " + window.t("rank.sinceYear") + b.founded : ""}</div>
       ${priceText}
       <div style="margin-top:10px"><a href="brauerei.html?id=${b.id}">Details →</a></div>
     `);
@@ -500,7 +500,17 @@ let cachedAvgPrice025 = null;
   }
 })();
 
+function updateRankSizeTags() {
+  const sized = window.formatSize("0,25l");
+  const tc = document.getElementById("tag-size-cheapest");
+  const tp = document.getElementById("tag-size-priciest");
+  if (tc) tc.textContent = sized;
+  if (tp) tp.textContent = sized;
+}
+updateRankSizeTags();
+
 document.addEventListener("atlas:lang-changed", () => {
+  updateRankSizeTags();
   if (cachedAvgPrice025 != null)
     document.getElementById("avg-price").textContent = "€ " + window.formatPrice(cachedAvgPrice025);
   if (cachedPrices.length) { renderMarkers(); renderRankings(cachedPrices); }

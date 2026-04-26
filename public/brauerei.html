@@ -56,7 +56,7 @@
 }
 .price-hero .small { font-size: 12px; color: var(--ink-muted); margin-top: 8px; font-family: var(--font-mono); }
 
-.grid-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px; padding: 40px 0; }
+.grid-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px; padding-top: 40px; padding-bottom: 40px; }
 .about p { font-family: var(--font-display); font-size: 1.15rem; line-height: 1.65; color: var(--ink-soft); }
 .detail-map { height: 320px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--rule); }
 
@@ -70,7 +70,7 @@
 }
 .style-card p { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
 
-.price-history { padding: 40px 0; }
+.price-history { padding-top: 40px; padding-bottom: 40px; }
 .chart { width: 100%; height: 220px; }
 .chart svg { width: 100%; height: 100%; display: block; }
 .chart .grid-line { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
@@ -199,18 +199,18 @@ const root = document.getElementById("brewery-root");
             <h1 class="brewery-title">${b.name}</h1>
             <div class="brewery-meta">
               <span class="tag ${b.verified ? 'verified' : 'pending'}">${b.verified ? window.t('common.verified') : window.t('common.pending')}</span>
-              <span>${typeLabel}</span>
+              <span id="b-type">${typeLabel}</span>
               <span class="dot"></span>
               <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
-              ${b.founded ? `<span class="dot"></span><span>${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
+              ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
               ${b.website ? `<span class="dot"></span><a href="${b.website}" target="_blank" rel="noopener">Website →</a>` : ''}
             </div>
           </div>
           ${latest ? `
             <div class="price-hero">
-              <div class="label">${window.t("brewery.current")}${window.formatSize(latest.size)}</div>
-              <div class="big">€ ${window.formatPrice(latest.price)}</div>
-              <div class="small">${window.t("brewery.reported")}${window.formatDate(latest.date)}</div>
+              <div class="label" id="b-price-label">${window.t("brewery.current")}${window.formatSize(latest.size)}</div>
+              <div class="big" id="b-price-val">€ ${window.formatPrice(latest.price)}</div>
+              <div class="small" id="b-price-date">${window.t("brewery.reported")}${window.formatDate(latest.date)}</div>
             </div>
           ` : ''}
         </div>
@@ -220,7 +220,7 @@ const root = document.getElementById("brewery-root");
     <section class="container grid-2col">
       <div class="about">
         <h3 data-i18n="brewery.about">Über</h3>
-        <p>${(b.description && (b.description[lang] || b.description.de)) || ''}</p>
+        <p id="b-description">${(b.description && (b.description[lang] || b.description.de)) || ''}</p>
         ${b.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${b.address}</p>` : ''}
       </div>
       <div>
@@ -241,7 +241,7 @@ const root = document.getElementById("brewery-root");
                 ${s.abv != null ? `<span><strong>${s.abv}%</strong> ABV</span>` : ''}
                 ${s.ibu != null ? `<span><strong>${s.ibu}</strong> IBU</span>` : ''}
               </div>
-              <p>${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ''}</p>
+              <p id="tasting-${s.id}">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ''}</p>
             </article>
           `).join('')}
         </div>
@@ -363,7 +363,40 @@ const root = document.getElementById("brewery-root");
   }
   drawChart();
   window.addEventListener('resize', drawChart);
-  document.addEventListener('atlas:lang-changed', drawChart);
+
+  function updateBreweryTexts() {
+    const l = window.__atlasLang;
+    const elType = document.getElementById('b-type');
+    if (elType) elType.textContent = window.t('type.' + b.type);
+    const elSince = document.getElementById('b-since');
+    if (elSince) elSince.textContent = window.t('rank.sinceYear') + b.founded;
+    if (latest) {
+      const elLabel = document.getElementById('b-price-label');
+      if (elLabel) elLabel.textContent = window.t('brewery.current') + window.formatSize(latest.size);
+      const elVal = document.getElementById('b-price-val');
+      if (elVal) elVal.textContent = '€ ' + window.formatPrice(latest.price);
+      const elDate = document.getElementById('b-price-date');
+      if (elDate) elDate.textContent = window.t('brewery.reported') + window.formatDate(latest.date);
+    }
+    const elDesc = document.getElementById('b-description');
+    if (elDesc) elDesc.textContent = (b.description && (b.description[l] || b.description.de)) || '';
+    styles.forEach((s) => {
+      const el = document.getElementById('tasting-' + s.id);
+      if (el) el.textContent = (s.tasting && (s.tasting[l] || s.tasting.de)) || '';
+    });
+    const log = document.querySelector('.price-log');
+    if (log) {
+      log.innerHTML = prices.slice(0, 10).map((p) => `
+        <div class="price-log-row">
+          <span class="date">${window.formatDate(p.date)}</span>
+          <span class="src">${p.source || ''}</span>
+          <span class="sz">${window.formatSize(p.size)}</span>
+          <span class="p">€ ${window.formatPrice(p.price)}</span>
+        </div>
+      `).join('') || `<p style="color:var(--ink-muted);padding:20px">${window.t('brewery.noPriceReports')}</p>`;
+    }
+  }
+  document.addEventListener('atlas:lang-changed', () => { updateBreweryTexts(); drawChart(); });
 
   // Untappd-Daten nachladen (fire & forget — zeigt nur wenn verfügbar)
   fetch(`/api/untappd/brewery/${encodeURIComponent(b.id)}`)

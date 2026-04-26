@@ -22,7 +22,7 @@
 
 .tab-bar {
   display: flex; gap: 4px;
-  margin: 30px 0 20px;
+  margin: 30px 0 0;
   border-bottom: 1px solid var(--rule);
   overflow-x: auto;
 }
@@ -35,23 +35,23 @@
 }
 .tab-bar button.active { color: var(--ink); border-bottom-color: var(--copper); }
 
-.size-toggle {
+.pill-toggle {
   display: inline-flex; gap: 4px; padding: 4px;
   background: var(--bg-card); border: 1px solid var(--rule);
-  border-radius: 999px; margin-left: auto;
+  border-radius: 999px;
 }
-.size-toggle button {
+.pill-toggle button {
   background: transparent; border: none;
   padding: 6px 12px; font-family: var(--font-mono);
   font-size: 12px; color: var(--ink-soft);
   cursor: pointer; border-radius: 999px;
 }
-.size-toggle button.active { background: var(--accent); color: var(--accent-ink); }
+.pill-toggle button.active { background: var(--accent); color: var(--accent-ink); }
 
 .rank-row {
   display: grid;
-  grid-template-columns: 50px 1fr 140px 90px 110px 110px;
-  gap: 16px; padding: 14px 18px;
+  grid-template-columns: 1fr auto;
+  gap: 8px 16px; padding: 12px 18px;
   align-items: center;
   border-bottom: 1px solid var(--rule);
 }
@@ -60,14 +60,12 @@
   font-size: 11px; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--ink-muted);
 }
-.rank-row .rn { font-family: var(--font-display); font-size: 24px; color: var(--copper); font-weight: 500; }
 .rank-row .nm { font-weight: 500; }
 .rank-row .nm a { border: none; }
-.rank-row .nm .sub { font-size: 12px; color: var(--ink-muted); font-weight: 400; }
-.rank-row .city { color: var(--ink-soft); font-size: 13px; }
-.rank-row .sz { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); }
-.rank-row .pr { font-family: var(--font-mono); color: var(--copper); font-weight: 500; font-size: 16px; text-align: right; }
-.rank-row .dt { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); text-align: right; }
+.rank-row .nm .sub { font-size: 12px; color: var(--ink-muted); font-weight: 400; margin-top: 2px; }
+.pr-cell { text-align: right; }
+.pr-cell .pr { font-family: var(--font-mono); color: var(--copper); font-weight: 500; font-size: 16px; display: block; }
+.pr-cell .dt { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); display: block; margin-top: 2px; }
 
 .rank-table { padding: 30px 0 80px; }
 .rank-card-full { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); overflow: hidden; }
@@ -95,8 +93,6 @@
 .stat .meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
 
 @media (max-width: 800px) {
-  .rank-row { grid-template-columns: 40px 1fr auto; }
-  .rank-row .city, .rank-row .sz, .rank-row .dt { display: none; }
   .stats-strip { grid-template-columns: 1fr 1fr; }
 }
 </style>
@@ -122,14 +118,17 @@
 
   <section class="rank-table">
     <div class="container">
-      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-        <div class="tab-bar" style="margin: 30px 0 0; flex: 1">
-          <button data-tab="cheapest" class="active" data-i18n="rank.tabCheapest">Günstigstes Alt</button>
-          <button data-tab="priciest" data-i18n="rank.tabPriciest">Teuerstes Alt</button>
-          <button data-tab="most" data-i18n="rank.tabMost">Meistgemeldet</button>
-          <button data-tab="newest" data-i18n="rank.tabNewest">Neu auf dem Atlas</button>
+      <div class="tab-bar">
+        <button data-tab="prices" class="active" data-i18n="rank.tabPrices">Preise</button>
+        <button data-tab="most" data-i18n="rank.tabMost">Meistgemeldet</button>
+        <button data-tab="newest" data-i18n="rank.tabNewest">Neu auf dem Atlas</button>
+      </div>
+      <div id="controls-row" style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+        <div class="pill-toggle" id="sort-toggle">
+          <button data-dir="asc" class="active"></button>
+          <button data-dir="desc"></button>
         </div>
-        <div class="size-toggle" id="size-toggle">
+        <div class="pill-toggle" id="size-toggle">
           <button data-size="0,25l" class="active"></button>
           <button data-size="0,5l"></button>
           <button data-size="0,33l"></button>
@@ -138,11 +137,12 @@
 
       <div class="rank-card-full" style="margin-top:20px">
         <div class="rank-head-full">
-          <h2 id="rank-title" data-i18n="rank.tabCheapest">Günstigstes Alt</h2>
+          <h2 id="rank-title" data-i18n="rank.tabPrices">Preise</h2>
           <div style="font-size:12px;color:var(--ink-muted);font-family:var(--font-mono)" id="rank-meta">— <span data-i18n="rank.entries">Einträge</span></div>
         </div>
         <div class="rank-row head">
-          <span>#</span><span data-i18n="rank.colBrewery">Brauerei</span><span data-i18n="rank.colCity">Stadt</span><span data-i18n="rank.colSize">Größe</span><span style="text-align:right" data-i18n="rank.colPrice">Preis</span><span style="text-align:right" data-i18n="rank.colDate">Datum</span>
+          <span data-i18n="rank.colBrewery">Brauerei</span>
+          <span style="text-align:right" data-i18n="rank.colPrice">Preis</span>
         </div>
         <div id="rank-body">
           <p style="color:var(--ink-muted);padding:20px" data-i18n="common.loading">Lade…</p>
@@ -199,15 +199,33 @@ function renderStats() {
   }
 })();
 
-let currentTab = "cheapest";
+let currentTab = "prices";
 let currentSize = "0,25l";
+let currentDir = "asc";
 
-function updateSizeLabels() {
+function monthYear(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  return String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear();
+}
+
+function updateToggleLabels() {
   document.querySelectorAll("#size-toggle button").forEach((btn) => {
     btn.textContent = window.formatSize(btn.dataset.size);
   });
+  const t = window.t;
+  const asc = document.querySelector("#sort-toggle [data-dir='asc']");
+  const desc = document.querySelector("#sort-toggle [data-dir='desc']");
+  if (asc) asc.textContent = t("rank.sortAsc");
+  if (desc) desc.textContent = t("rank.sortDesc");
 }
-updateSizeLabels();
+updateToggleLabels();
+
+function updateControls() {
+  document.getElementById("controls-row").style.display =
+    currentTab === "prices" ? "flex" : "none";
+}
 
 function latestPerBrewery(size) {
   const map = {};
@@ -215,10 +233,7 @@ function latestPerBrewery(size) {
     .slice().sort((a, b) => b.date.localeCompare(a.date))
     .forEach((p) => { if (!map[p.breweryId]) map[p.breweryId] = p; });
   return Object.values(map)
-    .map((p) => {
-      const b = breweryById.get(p.breweryId);
-      return b ? { ...p, brewery: b } : null;
-    })
+    .map((p) => { const b = breweryById.get(p.breweryId); return b ? { ...p, brewery: b } : null; })
     .filter(Boolean);
 }
 
@@ -236,19 +251,19 @@ function render() {
   let list = [];
   let title = "";
 
-  if (currentTab === "cheapest") {
-    list = latestPerBrewery(currentSize).sort((a, b) => a.price - b.price);
-    title = t("rank.titleCheapest") + window.formatSize(currentSize);
-  } else if (currentTab === "priciest") {
-    list = latestPerBrewery(currentSize).sort((a, b) => b.price - a.price);
-    title = t("rank.titlePriciest") + window.formatSize(currentSize);
+  if (currentTab === "prices") {
+    list = latestPerBrewery(currentSize);
+    list = currentDir === "asc"
+      ? list.sort((a, b) => a.price - b.price)
+      : list.sort((a, b) => b.price - a.price);
+    title = t(currentDir === "asc" ? "rank.titleCheapest" : "rank.titlePriciest") + window.formatSize(currentSize);
   } else if (currentTab === "most") {
     list = countPerBrewery().sort((a, b) => b.n - a.n).map((x) => ({
       brewery: x.brewery, price: null, date: null, size: null, count: x.n,
     }));
     title = t("rank.titleMost");
   } else if (currentTab === "newest") {
-    const seen = new Set(); list = [];
+    const seen = new Set();
     prices.slice().sort((a, b) => b.date.localeCompare(a.date)).forEach((p) => {
       if (seen.has(p.breweryId)) return;
       seen.add(p.breweryId);
@@ -259,23 +274,30 @@ function render() {
   }
 
   document.getElementById("rank-title").textContent = title;
-  // Den rank-title nach dem programmatischen Setzen gegen den i18n-Auto-Override schützen
   document.getElementById("rank-title").removeAttribute("data-i18n");
-  document.getElementById("rank-meta").innerHTML = list.length + " <span>" + t("rank.entries") + "</span>";
+  document.getElementById("rank-meta").innerHTML = Math.min(list.length, 10) + " <span>" + t("rank.entries") + "</span>";
 
-  body.innerHTML = list.slice(0, 30).map((it, i) => `
-    <div class="rank-row">
-      <span class="rn">${String(i + 1).padStart(2, "0")}</span>
-      <span class="nm">
-        <a href="brauerei.html?id=${it.brewery.id}">${it.brewery.name}</a>
-        <div class="sub">${t("type." + it.brewery.type)}${it.brewery.founded ? " · " + t("rank.sinceYear") + it.brewery.founded : ""}</div>
-      </span>
-      <span class="city">${it.brewery.city}${it.brewery.country && it.brewery.country !== "DE" ? " · " + it.brewery.country : ""}</span>
-      <span class="sz">${it.size ? window.formatSize(it.size) : (it.count ? it.count + t("rank.reportsShort") : "—")}</span>
-      <span class="pr">${it.price != null ? "€ " + window.formatPrice(it.price) : (it.count ? "×" + it.count : "—")}</span>
-      <span class="dt">${it.date ? window.formatDate(it.date) : "—"}</span>
-    </div>
-  `).join("") || `<p style="color:var(--ink-muted);padding:20px">${t("rank.noEntries")}</p>`;
+  body.innerHTML = list.slice(0, 10).map((it) => {
+    const priceDisplay = it.price != null
+      ? "€ " + window.formatPrice(it.price)
+      : (it.count ? "×" + it.count : "—");
+    const dateDisplay = it.date ? monthYear(it.date) : "";
+    const city = it.brewery.city || "";
+    const type = t("type." + it.brewery.type);
+    const sub = [type, city].filter(Boolean).join(" · ");
+    return `
+      <div class="rank-row">
+        <span class="nm">
+          <a href="brauerei.html?id=${it.brewery.id}">${it.brewery.name}</a>
+          <div class="sub">${sub}</div>
+        </span>
+        <span class="pr-cell">
+          <span class="pr">${priceDisplay}</span>
+          ${dateDisplay ? `<span class="dt">${dateDisplay}</span>` : ""}
+        </span>
+      </div>
+    `;
+  }).join("") || `<p style="color:var(--ink-muted);padding:20px">${t("rank.noEntries")}</p>`;
 }
 
 document.querySelectorAll(".tab-bar button").forEach((b) => {
@@ -283,10 +305,20 @@ document.querySelectorAll(".tab-bar button").forEach((b) => {
     document.querySelectorAll(".tab-bar button").forEach((x) => x.classList.remove("active"));
     b.classList.add("active");
     currentTab = b.dataset.tab;
-    document.getElementById("size-toggle").style.visibility = currentTab === "most" ? "hidden" : "visible";
+    updateControls();
     render();
   });
 });
+
+document.querySelectorAll("#sort-toggle button").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#sort-toggle button").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    currentDir = b.dataset.dir;
+    render();
+  });
+});
+
 document.querySelectorAll("#size-toggle button").forEach((b) => {
   b.addEventListener("click", () => {
     document.querySelectorAll("#size-toggle button").forEach((x) => x.classList.remove("active"));
@@ -296,9 +328,8 @@ document.querySelectorAll("#size-toggle button").forEach((b) => {
   });
 });
 
-// Bei Sprachwechsel neu rendern (keine Fehler wenn Daten noch nicht geladen — render() schreibt einfach leer)
 document.addEventListener("atlas:lang-changed", () => {
-  updateSizeLabels();
+  updateToggleLabels();
   if (breweries.length) { renderStats(); render(); }
 });
 </script>
