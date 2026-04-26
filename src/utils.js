@@ -315,8 +315,8 @@ function _esc(s) {
 function _emailDataRows(type, data, de) {
   const f = (k, v) => (v != null && v !== "" && v !== null) ? [[k, v]] : [];
   if (type === "price") return [
-    ...f(de ? "Brauerei-ID" : "Brewery ID", data.breweryId),
-    ...f(de ? "Preis" : "Price", data.price != null ? `${data.price} €` : null),
+    ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
+    ...f(de ? "Preis" : "Price", data.price != null ? `${Number(data.price).toFixed(2)} €` : null),
     ...f(de ? "Größe" : "Size", data.size),
     ...f(de ? "Datum" : "Date", data.date),
     ...f(de ? "Hinweis" : "Notes", data.notes),
@@ -343,18 +343,18 @@ function _emailDataRows(type, data, de) {
     ...f("Name", data.eventName),
     ...f(de ? "Datum" : "Date", data.eventDate),
     ...f(de ? "Ort" : "Location", data.eventLocation),
-    ...f(de ? "Brauerei" : "Brewery", data.breweryId),
+    ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
     ...f(de ? "Beschreibung" : "Description", data.description),
   ];
   if (type === "style") return [
-    ...f(de ? "Brauerei" : "Brewery", data.breweryId),
+    ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
     ...f(de ? "Sorte" : "Style", data.styleName),
     ...f("ABV", data.abv != null ? `${data.abv} %` : null),
     ...f("IBU", data.ibu),
     ...f(de ? "Beschreibung" : "Tasting", data.tasting),
   ];
   if (type === "correction") return [
-    ...f(de ? "Brauerei" : "Brewery", data.breweryId),
+    ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
     ...f(de ? "Feld" : "Target", data.target),
     ...f(de ? "Korrektur" : "Correction", data.correction),
   ];

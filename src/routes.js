@@ -265,6 +265,15 @@ export async function postContribution(req, env, _params, ctx) {
     return error(400, "validation-failed", { detail: e.message });
   }
 
+  // Brauerei-Name für Anzeige in E-Mails nachschlagen (für alle Typen mit breweryId)
+  if (data.breweryId && ["price", "style", "correction", "event"].includes(type)) {
+    try {
+      const bRow = await env.DB.prepare("SELECT name, city FROM breweries WHERE id = ? LIMIT 1")
+        .bind(data.breweryId).first();
+      if (bRow) data._breweryName = `${bRow.name} · ${bRow.city}`;
+    } catch {}
+  }
+
   // Auto-Geocoding: fehlende Koordinaten für neue Brauereien ableiten
   if (type === "brewery" && (data.lat == null || data.lng == null) && data.city) {
     const q = encodeURIComponent([data.name, data.city, data.country || "DE"].filter(Boolean).join(", "));
