@@ -495,12 +495,7 @@ function renderForm(typ) {
     let acResults = [];
     let acReqId = 0;
 
-    function renderAcResults(results, q) {
-      if (!results.length) {
-        acDrop.innerHTML = `<div class="ac-item" style="color:var(--ink-muted);cursor:default"><div class="ac-name" style="font-style:italic">Keine Treffer für „${q}"</div></div>`;
-        acDrop.hidden = false;
-        return;
-      }
+    function renderAcResults(results) {
       acDrop.innerHTML = results.slice(0, 6).map((r, i) => {
         const shortName = r.name.split(",")[0].trim();
         return `<div class="ac-item" data-idx="${i}">` +
@@ -513,15 +508,15 @@ function renderForm(typ) {
 
     nameInput.addEventListener("input", () => {
       clearTimeout(acTimer);
+      const capturedId = ++acReqId;
       const q = nameInput.value.trim();
       if (q.length < 2) { acDrop.hidden = true; acResults = []; return; }
-      // Zeige Lade-Indikator sofort (behalte vorherige Ergebnisse sichtbar)
+      acDrop.hidden = true;
       acTimer = setTimeout(async () => {
-        const reqId = ++acReqId;
         const res = await window.AtlasAPI.geocode(q);
-        if (reqId !== acReqId) return; // veraltetes Ergebnis ignorieren
+        if (capturedId !== acReqId) return;
         acResults = (res && res.results) || [];
-        renderAcResults(acResults, q);
+        if (acResults.length) renderAcResults(acResults);
       }, 600);
     });
 

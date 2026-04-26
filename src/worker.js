@@ -6,7 +6,7 @@
 // ============================================================
 
 import * as R from "./routes.js";
-import { error } from "./utils.js";
+import { error, sendAdminDigest } from "./utils.js";
 
 // Minimaler Router mit Pfad-Parameter-Matching (/x/:id)
 function match(pattern, path) {
@@ -53,6 +53,10 @@ const ROUTES = [
 ];
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(sendAdminDigest(env));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
