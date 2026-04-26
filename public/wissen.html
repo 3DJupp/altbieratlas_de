@@ -27,7 +27,6 @@
 }
 .know-nav.is-fixed {
   position: fixed;
-  top: 64px;
   left: 0; right: 0;
   z-index: 10;
 }
@@ -263,27 +262,33 @@ function paintGlossary() {
   }
 })();
 
-// JS-Sticky für .know-nav (CSS sticky ist in flex-Containern unzuverlässig)
+// JS-Sticky für .know-nav — Sentinel misst die natürliche Position zuverlässig
 const knowNav = document.querySelector(".know-nav");
+const sentinel = document.createElement("div");
+sentinel.style.cssText = "height:0;pointer-events:none;margin:0;padding:0";
+knowNav.before(sentinel);
 const navSpacer = document.createElement("div");
+navSpacer.style.height = "0";
 knowNav.after(navSpacer);
-let navNaturalTop = 0;
-function initNavTop() {
-  knowNav.classList.remove("is-fixed");
-  navSpacer.style.height = "0";
-  navNaturalTop = knowNav.getBoundingClientRect().top + window.scrollY;
-}
-function syncNavFixed() {
-  const stuck = window.scrollY + 64 >= navNaturalTop;
-  if (stuck !== knowNav.classList.contains("is-fixed")) {
-    knowNav.classList.toggle("is-fixed", stuck);
-    navSpacer.style.height = stuck ? knowNav.offsetHeight + "px" : "0";
+
+function syncNav() {
+  const headerBottom = document.querySelector(".atlas-header")?.getBoundingClientRect().bottom || 65;
+  const sentTop = sentinel.getBoundingClientRect().top;
+  const shouldFix = sentTop <= headerBottom;
+  const wasFixed = knowNav.classList.contains("is-fixed");
+  if (shouldFix === wasFixed) return;
+  knowNav.classList.toggle("is-fixed", shouldFix);
+  if (shouldFix) {
+    knowNav.style.top = headerBottom + "px";
+    navSpacer.style.height = knowNav.offsetHeight + "px";
+  } else {
+    knowNav.style.top = "";
+    navSpacer.style.height = "0";
   }
 }
-window.addEventListener("scroll", syncNavFixed, { passive: true });
-window.addEventListener("resize", () => { initNavTop(); syncNavFixed(); });
-initNavTop();
-syncNavFixed();
+window.addEventListener("scroll", syncNav, { passive: true });
+window.addEventListener("resize", syncNav);
+syncNav();
 
 // Aktiver Tab beim Scrollen
 const sections = ["geschichte", "sorten", "koebes", "glossar"];
