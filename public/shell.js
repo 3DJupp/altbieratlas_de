@@ -18,9 +18,7 @@ window.renderShell = function ({ activeNav }) {
           <a href="ranglisten.html" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
           <a href="wissen.html" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
           <a href="beitragen.html" class="${activeNav === "contribute" ? "active" : ""} hide-sm" data-i18n="nav.contribute">Beitragen</a>
-          <button class="lang-toggle" id="lang-toggle" title="Sprache / Language">
-            <span data-lang-de>DE</span> · <span data-lang-en>EN</span>
-          </button>
+          <button class="lang-toggle" id="lang-toggle" title="Sprache / Language">DE</button>
           <button class="theme-toggle" id="theme-toggle" aria-label="Theme">☾</button>
         </nav>
       </div>
@@ -98,7 +96,7 @@ window.renderShell = function ({ activeNav }) {
         </div>
         <div class="bottom">
           <span>© ${new Date().getFullYear()} Altbieratlas</span>
-          <span id="atlas-mode-tag" class="mono">v0.3.3 · <span id="atlas-mode">…</span></span>
+          <span id="atlas-mode-tag" class="mono">v0.3.4 · <span id="atlas-mode">…</span></span>
         </div>
       </div>
     </footer>
@@ -138,10 +136,7 @@ window.renderShell = function ({ activeNav }) {
   // ---- Bind: lang ----
   const langBtn = document.getElementById("lang-toggle");
   function paintLang() {
-    const de = langBtn.querySelector("[data-lang-de]");
-    const en = langBtn.querySelector("[data-lang-en]");
-    de.classList.toggle("active", window.__atlasLang === "de");
-    en.classList.toggle("active", window.__atlasLang === "en");
+    langBtn.textContent = (window.__atlasLang === "de" ? "DE" : "EN");
   }
   langBtn.addEventListener("click", () => {
     window.setLang(window.__atlasLang === "de" ? "en" : "de");
