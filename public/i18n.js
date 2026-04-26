@@ -714,7 +714,10 @@ window.formatDate = function (input, opts) {
   if (input == null || input === "") return "—";
   const d = input instanceof Date ? input : new Date(input);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(window.atlasLocale(), opts || undefined);
+  return d.toLocaleDateString(
+    window.atlasLocale(),
+    opts || { day: "2-digit", month: "2-digit", year: "numeric" }
+  );
 };
 
 // Datum + Uhrzeit

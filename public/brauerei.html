@@ -57,7 +57,8 @@
 .price-hero .small { font-size: 12px; color: var(--ink-muted); margin-top: 8px; font-family: var(--font-mono); }
 
 .grid-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px; padding-top: 40px; padding-bottom: 40px; }
-.about p { font-family: var(--font-display); font-size: 1.15rem; line-height: 1.65; color: var(--ink-soft); }
+.about { display: flex; flex-direction: column; gap: 12px; }
+.about p { font-size: 14px; line-height: 1.65; color: var(--ink-soft); }
 .detail-map { height: 320px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--rule); }
 
 .style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
@@ -218,7 +219,7 @@ const root = document.getElementById("brewery-root");
     </section>
 
     <section class="container grid-2col">
-      <div class="about">
+      <div class="about card">
         <h3 data-i18n="brewery.about">Über</h3>
         <p id="b-description">${(b.description && (b.description[lang] || b.description.de)) || ''}</p>
         ${b.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${b.address}</p>` : ''}
