@@ -78,7 +78,7 @@ export default {
         const params = match(pattern, url.pathname);
         if (params) {
           try {
-            return await handler(request, env, params);
+            return await handler(request, env, params, ctx);
           } catch (e) {
             console.error("[worker] handler threw:", e?.stack || e);
             return error(500, "internal-error", { detail: String(e?.message || e) });
