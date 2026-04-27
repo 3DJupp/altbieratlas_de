@@ -102,6 +102,7 @@ window.ATLAS_I18N = {
     "footer.contribute": "Mitmachen",
     "footer.about": "Über den Atlas",
     "footer.author": "Entwickelt von",
+    "footer.aiNote": "Mit KI-Unterstützung entwickelt.",
     // Admin
     "admin.title": "Administration",
     "admin.login": "Anmelden",
@@ -433,6 +434,7 @@ window.ATLAS_I18N = {
     "footer.contribute": "Contribute",
     "footer.about": "About the atlas",
     "footer.author": "Built by",
+    "footer.aiNote": "Built with AI support.",
     "admin.title": "Administration",
     "admin.login": "Sign in",
     "admin.logout": "Sign out",

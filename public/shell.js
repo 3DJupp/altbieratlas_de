@@ -95,7 +95,7 @@ window.renderShell = function ({ activeNav }) {
           </div>
         </div>
         <div class="bottom">
-          <span>© ${new Date().getFullYear()} Altbieratlas</span>
+          <span>© ${new Date().getFullYear()} Altbieratlas · <span data-i18n="footer.aiNote">Mit KI-Unterstützung entwickelt.</span></span>
           <span id="atlas-mode-tag" class="mono">V 0.3.9 ·<span id="atlas-mode">…</span></span>
         </div>
       </div>

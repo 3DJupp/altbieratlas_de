@@ -148,6 +148,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 }
 .contrib-row:last-child { border-bottom: none; }
 .contrib-row .date { color: var(--ink-muted); }
+.contrib-row .summary { overflow-wrap: break-word; min-width: 0; }
 .contrib-row .tag { justify-self: start; white-space: nowrap; }
 .contrib-row .typ {
   text-transform: uppercase;
@@ -168,7 +169,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 
   <section class="contrib-hero">
     <div class="container container-narrow">
-      <div class="eyebrow">Mitmachen</div>
+      <div class="eyebrow" data-i18n="footer.contribute">Mitmachen</div>
       <h1 data-i18n="contrib.title">Beitragen</h1>
       <p data-i18n="contrib.subtitle">Hilf mit, den Altbieratlas aktuell zu halten. Alle Beiträge werden vor Veröffentlichung geprüft.</p>
     </div>
@@ -360,7 +361,7 @@ function forms(typ) {
     <div class="grid-2">
       <div class="field">
         <label>${t("field.price")}</label>
-        <input name="price" type="number" step="0.01" min="0" placeholder="${window.__atlasLang === "en" ? "2.70" : "2,70"}" required />
+        <input name="price" type="text" inputmode="decimal" placeholder="${window.__atlasLang === "en" ? "2.70" : "2,70"}" required />
       </div>
       <div class="field">
         <label>${t("field.size")}</label>
@@ -425,7 +426,7 @@ function forms(typ) {
     <div class="grid-2">
       <div class="field">
         <label>${t("field.abv")}</label>
-        <input name="abv" type="number" step="0.1" min="0" max="15" placeholder="4,7" />
+        <input name="abv" type="text" inputmode="decimal" placeholder="${window.__atlasLang === "en" ? "4.7" : "4,7"}" />
       </div>
       <div class="field">
         <label>${t("field.ibu")}</label>
@@ -612,7 +613,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     const br = breweries.find((b) => b.id === data.breweryId);
     const brLabel = br ? `${br.name} · ${br.city}` : (data.breweryId || "");
     const summary =
-        apiType === "price"      ? `${brLabel} · ${window.formatPrice(data.price)} ${window.formatSize(data.size)}`
+        apiType === "price"      ? `${brLabel} · € ${window.formatPrice(data.price)} ${window.formatSize(data.size)}`
       : apiType === "brewery"    ? `${data.name || ""} · ${data.city || ""}`
       : apiType === "style"      ? `${data.styleName || ""} · ${brLabel}`
       : apiType === "correction" ? `${brLabel} → ${data.target || ""}`
@@ -661,7 +662,7 @@ function renderRecent() {
       <div class="contrib-row">
         <span class="date">${window.formatDate(c.dt) || "—"}</span>
         <span class="typ">${typeLabel}</span>
-        <span>${c.sm || "—"}</span>
+        <span class="summary">${c.sm || "—"}</span>
         <span class="tag pending">${t("common.pending")}</span>
       </div>
     `;
