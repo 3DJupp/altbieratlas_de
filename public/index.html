@@ -145,6 +145,12 @@
   border-radius: var(--radius-lg);
   padding: 32px 34px;
   max-width: 520px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.hero-copy.hidden {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
 }
 .hero-title { font-weight: 500; margin: 10px 0 18px; }
 .hero-title em { font-style: italic; color: var(--copper); font-weight: 400; }
@@ -473,6 +479,15 @@ searchEl.addEventListener("keydown", (e) => {
     searchEl.blur();
   }
 });
+
+// "Karte erkunden" hides the hero copy card
+const exploreBtn = document.querySelector('a[href="#map-section"].btn');
+if (exploreBtn) {
+  exploreBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    document.querySelector(".hero-copy")?.classList.add("hidden");
+  });
+}
 
 // Filter-Buttons
 document.querySelectorAll(".filter-btn").forEach((btn) => {
