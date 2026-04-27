@@ -30,12 +30,29 @@ async function requireAdmin(req, env) {
 
 // GET /api/config
 // Liefert alle nicht-sensitiven Werte, die das Frontend zur Laufzeit benötigt.
-// Quelle der Wahrheit sind die [vars] aus wrangler.toml bzw. Dashboard-Overrides.
+// Primärquelle: SITE_CONFIG (JSON-String). Fallback: Einzelvariablen (Legacy).
 export async function getPublicConfig(req, env) {
   const v = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : null);
-  const siteKey = v(env.TURNSTILE_SITE_KEY);
-  const ga = v(env.GA4_MEASUREMENT_ID);
+
+  // SITE_CONFIG JSON parsen (bevorzugt), Einzelvars als Fallback
+  let sc = {};
+  try { if (env.SITE_CONFIG) sc = JSON.parse(env.SITE_CONFIG); } catch {}
+
+  const pick = (scVal, envVal) => v(scVal) || v(envVal);
+
+  const siteKey = pick(sc.turnstileSiteKey, env.TURNSTILE_SITE_KEY);
+  const ga      = pick(sc.ga4MeasurementId, env.GA4_MEASUREMENT_ID);
+
+  const priceSizes = Array.isArray(sc.priceSizes) && sc.priceSizes.length > 0
+    ? sc.priceSizes
+    : null;
+
+  const author = sc.author || {};
+  const impr   = sc.impressum || {};
+
   return json({
+    // Biergrößen (Dezimalzahlen ohne Einheit, UI ergänzt "l" + Locale)
+    priceSizes,
     // Turnstile
     turnstileSiteKey: siteKey,
     turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
@@ -43,18 +60,17 @@ export async function getPublicConfig(req, env) {
     ga4MeasurementId: ga && !ga.startsWith("G-X") ? ga : null,
     // Author / Social
     author: {
-      name:     v(env.AUTHOR_NAME),
-      github:   v(env.AUTHOR_GITHUB),
-      linkedin: v(env.AUTHOR_LINKEDIN),
-      website:  v(env.AUTHOR_WEBSITE),
+      name:     pick(author.name,     env.AUTHOR_NAME),
+      github:   pick(author.github,   env.AUTHOR_GITHUB),
+      linkedin: pick(author.linkedin, env.AUTHOR_LINKEDIN),
+      website:  pick(author.website,  env.AUTHOR_WEBSITE),
     },
     // Impressum
     impressum: {
-      owner:   v(env.IMPRESSUM_OWNER),
-      address: v(env.IMPRESSUM_ADDRESS),
-      email:   v(env.IMPRESSUM_EMAIL),
+      owner:   pick(impr.owner,   env.IMPRESSUM_OWNER),
+      address: pick(impr.address, env.IMPRESSUM_ADDRESS),
+      email:   pick(impr.email,   env.IMPRESSUM_EMAIL),
     },
-    //
     requireModeration: true,
   });
 }

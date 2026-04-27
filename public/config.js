@@ -44,7 +44,8 @@ window.ATLAS_CONFIG = {
 
   // --- Währung ---
   currency: "EUR",
-  priceSizes: ["0,2l", "0,25l", "0,33l", "0,4l", "0,5l"],
+  // Dezimalzahlen ohne Einheit; UI formatiert locale-aware mit "l"
+  priceSizes: [0.2, 0.25, 0.4, 0.5],
   requireModeration: true,
 
   // ============================================================

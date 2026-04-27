@@ -292,15 +292,30 @@ let turnstileToken = null;
   renderRecent();
 })();
 
-// Größen-Optionen sprachabhängig (DE: 0,25l / EN: 0.25l)
+// Größen-Optionen: Quelle remoteCfg > ATLAS_CONFIG, je als Dezimalzahl ohne Einheit
 function buildSizeOptions() {
-  const en = (window.__atlasLang === "en");
-  return window.ATLAS_CONFIG.priceSizes
-    .map((s) => {
-      const label = en ? s.replace(",", ".") : s;
-      return `<option value="${s}"${s === "0,25l" ? " selected" : ""}>${label}</option>`;
-    })
-    .join("");
+  const sizes = (remoteCfg && Array.isArray(remoteCfg.priceSizes) && remoteCfg.priceSizes.length > 0)
+    ? remoteCfg.priceSizes
+    : window.ATLAS_CONFIG.priceSizes;
+  return sizes.map((s) => {
+    const num = typeof s === "number" ? s : parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+    const val = String(num);
+    const label = window.formatSize(val);
+    const isDefault = Math.abs(num - 0.25) < 0.001;
+    return `<option value="${val}"${isDefault ? " selected" : ""}>${label}</option>`;
+  }).join("");
+}
+
+// ============ Submissions-Cookie ============
+function getSubsCookie() {
+  try {
+    const m = document.cookie.match(/(?:^|; )atlas_subs=([^;]*)/);
+    return m ? JSON.parse(decodeURIComponent(m[1])) : [];
+  } catch { return []; }
+}
+function pushSubsCookie(entry) {
+  const entries = [entry, ...getSubsCookie()].slice(0, 8);
+  document.cookie = `atlas_subs=${encodeURIComponent(JSON.stringify(entries))};max-age=${60 * 60 * 24 * 90};path=/;samesite=lax`;
 }
 
 // ============ Turnstile ============
@@ -583,6 +598,18 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
       turnstileToken,
     });
     atlasTrack("contribution_submit", { type: apiType });
+
+    // Kompakten Eintrag in Cookie schreiben
+    const br = breweries.find((b) => b.id === data.breweryId);
+    const brLabel = br ? `${br.name} · ${br.city}` : (data.breweryId || "");
+    const summary =
+        apiType === "price"      ? `${brLabel} · ${window.formatPrice(data.price)} ${window.formatSize(data.size)}`
+      : apiType === "brewery"    ? `${data.name || ""} · ${data.city || ""}`
+      : apiType === "style"      ? `${data.styleName || ""}`
+      : apiType === "correction" ? `${data.target || ""}`
+      :                            `${data.eventName || ""}`;
+    pushSubsCookie({ tp: apiType, sm: summary.trim(), dt: new Date().toISOString().slice(0, 10) });
+
     document.getElementById("contrib-form").style.display = "none";
     document.getElementById("thanks").classList.add("visible");
     window.scrollTo({ top: document.getElementById("thanks").offsetTop - 90, behavior: "smooth" });
@@ -609,35 +636,22 @@ document.getElementById("another").addEventListener("click", () => {
   renderForm(currentTyp);
 });
 
-// ============ Recent (lokale Sicht) ============
+// ============ Recent (Cookie-basiert) ============
 function renderRecent() {
   const t = window.t;
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem("atlas-contributions") || "[]").slice(0, 10); } catch {}
+  const list = getSubsCookie();
   const el = document.getElementById("recent-list");
   if (!list.length) {
     el.innerHTML = `<p style="color:var(--ink-muted);font-size:14px">${t("contrib.recentEmpty")}</p>`;
     return;
   }
   el.innerHTML = list.map((c) => {
-    const d = c.createdAt ? window.formatDate(c.createdAt) : "—";
-    const data = c.data || {};
-    const typeLabel = t("contrib.recent.typeLabel." + c.type) || c.type;
-    const priceStr = window.formatPrice(parseFloat(data.price || 0));
-    const sizeStr = window.formatSize(data.size || "");
-    const br = breweries.find((b) => b.id === data.breweryId);
-    const breweryLabel = br ? `${br.name} · ${br.city}` : (data.breweryId || "—");
-    const summary =
-        c.type === "price"      ? `${breweryLabel} · € ${priceStr} ${sizeStr}`
-      : c.type === "brewery"    ? `${data.name || "—"} · ${data.city || ""}`
-      : c.type === "style"      ? `${data.styleName || "—"}`
-      : c.type === "correction" ? `${typeLabel} · ${data.target || ""}`
-                                 : `${data.eventName || "—"}`;
+    const typeLabel = t("contrib.recent.typeLabel." + c.tp) || c.tp;
     return `
       <div class="contrib-row">
-        <span class="date">${d}</span>
+        <span class="date">${c.dt || "—"}</span>
         <span class="typ">${typeLabel}</span>
-        <span>${summary}</span>
+        <span>${c.sm || "—"}</span>
         <span class="tag pending">${t("common.pending")}</span>
       </div>
     `;
