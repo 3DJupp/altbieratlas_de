@@ -59,7 +59,23 @@
 .grid-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px; padding-top: 40px; padding-bottom: 40px; }
 .about { display: flex; flex-direction: column; gap: 12px; }
 .about p { font-size: 14px; line-height: 1.65; color: var(--ink-soft); }
-.detail-map { height: 320px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--rule); }
+.detail-map { height: 320px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--rule); cursor: pointer; }
+.maps-open-btn {
+  display: inline-block;
+  background: var(--bg-card);
+  color: var(--ink-soft) !important;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  text-decoration: none !important;
+  margin: 6px;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.maps-open-btn:hover { color: var(--copper) !important; border-color: var(--copper); }
 
 .style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
 .style-card { padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
@@ -300,6 +316,23 @@ const root = document.getElementById("brewery-root");
       iconSize: [22, 22], iconAnchor: [11, 11],
     }),
   }).addTo(dm);
+
+  // "Open in Maps" — Leaflet control + click handler
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}`;
+  const MapsBtn = L.Control.extend({
+    onAdd() {
+      const a = L.DomUtil.create('a', 'maps-open-btn');
+      a.href = mapsUrl;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.setAttribute('data-i18n', 'brewery.openInMaps');
+      a.textContent = window.t('brewery.openInMaps');
+      L.DomEvent.disableClickPropagation(a);
+      return a;
+    },
+  });
+  new MapsBtn({ position: 'bottomright' }).addTo(dm);
+  dm.on('click', () => window.open(mapsUrl, '_blank', 'noopener'));
 
   // ============ Chart ============
   function drawChart() {

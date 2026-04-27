@@ -48,6 +48,7 @@ window.ATLAS_I18N = {
     "rank.price": "Preis",
     "rank.size": "Größe",
     // Beitragen
+    "contrib.eyebrow": "Gemeinschaft",
     "contrib.title": "Beitragen",
     "contrib.subtitle":
       "Hilf mit, den Altbieratlas aktuell zu halten. Alle Beiträge werden vor Veröffentlichung geprüft.",
@@ -273,6 +274,8 @@ window.ATLAS_I18N = {
     "imp.rights2": "Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.",
     "imp.h2.tech": "Technik-Hinweis",
     "imp.techText": "Der Altbieratlas läuft als Cloudflare Worker mit angebundener D1-Datenbank. Eingereichte Beiträge werden in einer Moderations-Warteschlange gespeichert und erst nach redaktioneller Freigabe öffentlich sichtbar. Der Quellcode dieses Projekts ist auf GitHub verfügbar (siehe Footer).",
+    "imp.aiNote": "Teile des Projekts wurden mit KI-Unterstützung entwickelt. Alle Inhalte werden manuell geprüft — trotzdem können Fehler auftreten. Korrekturen können jederzeit über das Beitrags-Formular eingereicht werden.",
+    "brewery.openInMaps": "In Maps öffnen",
     "imp.contactLabel": "<strong>Kontakt:</strong>",
     "imp.contactEmail": "E-Mail: ",
     "imp.ownerFallback": "Betreiber nicht konfiguriert",
@@ -384,6 +387,7 @@ window.ATLAS_I18N = {
     "rank.city": "City",
     "rank.price": "Price",
     "rank.size": "Size",
+    "contrib.eyebrow": "Community",
     "contrib.title": "Contribute",
     "contrib.subtitle":
       "Help keep the Altbieratlas current. All contributions are reviewed before publishing.",
@@ -603,6 +607,8 @@ window.ATLAS_I18N = {
     "imp.rights2": "You also have the right to lodge a complaint with a data protection supervisory authority.",
     "imp.h2.tech": "Technical note",
     "imp.techText": "The Altbieratlas runs as a Cloudflare Worker with an attached D1 database. Submissions are stored in a moderation queue and become publicly visible only after editorial approval. The source code of this project is available on GitHub (see footer).",
+    "imp.aiNote": "Parts of this project were developed with AI assistance. All content is reviewed manually — errors may still occur. Corrections can be submitted at any time via the contribution form.",
+    "brewery.openInMaps": "Open in Maps",
     "imp.contactLabel": "<strong>Contact:</strong>",
     "imp.contactEmail": "Email: ",
     "imp.ownerFallback": "Operator not configured",
