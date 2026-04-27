@@ -26,9 +26,12 @@
   // pflegen, statt sie im Frontend-Bundle zu hinterlegen.
   function mergeServerConfig(srv) {
     if (!srv || typeof srv !== "object") return;
-    if (srv.turnstileSiteKey)              cfg.turnstileSiteKey   = srv.turnstileSiteKey;
-    if (typeof srv.turnstileEnabled === "boolean") cfg.turnstileEnabled = srv.turnstileEnabled;
-    if (srv.ga4MeasurementId)              cfg.ga4MeasurementId   = srv.ga4MeasurementId;
+    if (srv.turnstileSiteKey)                                      cfg.turnstileSiteKey    = srv.turnstileSiteKey;
+    if (typeof srv.turnstileEnabled === "boolean")                 cfg.turnstileEnabled    = srv.turnstileEnabled;
+    if (srv.ga4MeasurementId)                                      cfg.ga4MeasurementId    = srv.ga4MeasurementId;
+    if (Array.isArray(srv.priceSizes) && srv.priceSizes.length)    cfg.priceSizes          = srv.priceSizes;
+    if (Array.isArray(srv.highlightedSizes))                       cfg.highlightedSizes    = srv.highlightedSizes;
+    if (typeof srv.requireModeration === "boolean")                cfg.requireModeration   = srv.requireModeration;
     if (srv.author && typeof srv.author === "object") {
       cfg.author = cfg.author || {};
       for (const k of ["name", "github", "linkedin", "website"]) {
@@ -81,7 +84,13 @@
       localStorage.setItem("atlas-contributions", JSON.stringify(all));
     },
     async getConfig() {
-      return { turnstileSiteKey: cfg.turnstileSiteKey, turnstileEnabled: cfg.turnstileEnabled, requireModeration: true };
+      return {
+        turnstileSiteKey:  cfg.turnstileSiteKey,
+        turnstileEnabled:  cfg.turnstileEnabled,
+        priceSizes:        cfg.priceSizes,
+        highlightedSizes:  cfg.highlightedSizes,
+        requireModeration: cfg.requireModeration ?? true,
+      };
     },
     async getStats() {
       const d = window.ATLAS_DATA;
