@@ -74,16 +74,21 @@ persist = true
 # sauber als „nicht gesetzt" behandelt (z. B. kein Social-Icon,
 # kein GA4-Tracking, Turnstile-Platzhalter).
 #
-# ── Bevorzugt: eine einzige JSON-Variable ──────────────────────
+# ── Einzige Konfigurationsvariable: SITE_CONFIG ───────────────
 #
-#   SITE_CONFIG  (JSON-String, im Dashboard als Variable setzen)
+#   SITE_CONFIG  (JSON-String, im Dashboard als Plaintext-Variable)
 #
-#   Beispiel:
+#   Vollständiges Beispiel:
 #   {
 #     "contactEmail":     "deine@email.de",
 #     "ga4MeasurementId": "G-XXXXXXXXXX",
 #     "turnstileSiteKey": "0x...",
 #     "priceSizes":       [0.2, 0.25, 0.4, 0.5],
+#     "highlightedSizes": [0.25, 0.5],
+#     "requireModeration": true,
+#     "untappdClientId":  "XXXXXXXXXXXXXXXX",
+#     "siteUrl":          "https://altbieratlas.de",
+#     "resendFrom":       "Altbieratlas <noreply@altbieratlas.de>",
 #     "author": {
 #       "name":     "Dein Name",
 #       "github":   "https://github.com/...",
@@ -97,25 +102,19 @@ persist = true
 #     }
 #   }
 #
-#   priceSizes: Dezimalzahlen ohne Einheit (UI ergänzt „l" und
-#   Locale). Standard: [0.2, 0.25, 0.4, 0.5]
+#   priceSizes:       Dezimalzahlen ohne Einheit (UI ergänzt „l").
+#                     Standard: [0.2, 0.25, 0.4, 0.5]
+#   highlightedSizes: Teilmenge von priceSizes, die in Ranglisten
+#                     hervorgehoben wird. 1–n Werte möglich.
+#   requireModeration: true = alle Beiträge landen in der Queue.
+#                      Standard: true
+#   untappdClientId:  Client-ID der Untappd-App (optional).
+#   siteUrl:          Öffentliche URL, z. B. für E-Mail-Links.
+#   resendFrom:       Absenderadresse für alle Mails via Resend.
 #
-# ── Legacy: Einzelvariablen (weiterhin unterstützt) ───────────
-#   CONTACT_EMAIL        — für Nominatim-User-Agent
-#   GA4_MEASUREMENT_ID   — GA4-ID (G-XXXXXXXXXX), leer = aus
-#   AUTHOR_NAME          — Name im Footer
-#   AUTHOR_GITHUB        — GitHub-URL
-#   AUTHOR_LINKEDIN      — LinkedIn-URL
-#   AUTHOR_WEBSITE       — Website (optional)
-#   IMPRESSUM_OWNER      — Betreiber (§ 5 TMG)
-#   IMPRESSUM_ADDRESS    — Postanschrift
-#   IMPRESSUM_EMAIL      — Kontakt-E-Mail
-#   TURNSTILE_SITE_KEY   — öffentlicher Turnstile-Key
-#
-# Secrets (mit `wrangler secret put …` setzen — nie committen):
-#   TURNSTILE_SECRET_KEY
+# Secrets (nie in SITE_CONFIG — immer einzeln im Dashboard setzen):
+#   TURNSTILE_SECRET_KEY — serverseitiger Turnstile-Key
 #   RESEND_API_KEY       — API-Key von resend.com (für alle Mails)
-#   RESEND_FROM          — Absender-Adresse (z. B. "Altbieratlas <noreply@altbieratlas.de>")
 #   ADMIN_EMAIL          — Empfänger des täglichen Beitrags-Digests
-#   SITE_URL             — Öffentliche URL der Site (Standard: https://altbieratlas.de)
+#   UNTAPPD_CLIENT_SECRET — Untappd-App-Secret (sensitiv)
 # ============================================================

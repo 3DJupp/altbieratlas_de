@@ -210,14 +210,19 @@ export function clientIp(req) {
       || "0.0.0.0";
 }
 
+function getSiteConfig(env) {
+  try { return env.SITE_CONFIG ? JSON.parse(env.SITE_CONFIG) : {}; } catch { return {}; }
+}
+
 // ---- E-Mail-Bestätigung via Resend API ----
-// Benötigt env.RESEND_API_KEY (Secret) und optional env.RESEND_FROM.
+// Benötigt env.RESEND_API_KEY (Secret) und optional SITE_CONFIG.resendFrom / SITE_CONFIG.siteUrl.
 // Sendet lokalisiert (lang: "de"|"en"), fire & forget, wirft nie.
 export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip = "–", lang = "de", submittedAt }) {
   if (!env.RESEND_API_KEY || !to) return;
 
+  const sc = getSiteConfig(env);
   const de = lang !== "en";
-  const siteUrl = env.SITE_URL || "https://altbieratlas.de";
+  const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
   const typeLabels = {
     de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung" },
     en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event" },
@@ -301,7 +306,7 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
       method: "POST",
       headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        from: sc.resendFrom || env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
         to, subject, text, html,
       }),
     });
@@ -368,7 +373,8 @@ function _emailDataRows(type, data, de) {
 export async function sendAdminDigest(env) {
   if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
 
-  const siteUrl = env.SITE_URL || "https://altbieratlas.de";
+  const sc = getSiteConfig(env);
+  const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   let rows;
   try {
@@ -464,7 +470,7 @@ export async function sendAdminDigest(env) {
       method: "POST",
       headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        from: sc.resendFrom || env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
         to: env.ADMIN_EMAIL,
         subject, text, html,
       }),
