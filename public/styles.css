@@ -935,9 +935,7 @@ html { scroll-behavior: smooth; }
     gap: 28px;
   }
   .atlas-footer .bottom {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
+    align-items: center;
   }
   /* Social-Row sauberer: Label-Block über die ganze Breite */
   .social-row {

@@ -2,6 +2,7 @@
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
 import {
+  APP_VERSION,
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
@@ -60,6 +61,8 @@ export async function getPublicConfig(req, env) {
   const impr   = sc.impressum || {};
 
   return json({
+    // App-Version
+    version: APP_VERSION,
     // Biergrößen (Dezimalzahlen ohne Einheit, UI ergänzt "l" + Locale)
     priceSizes,
     // Hervorgehobene Größen in Ranglisten (Teilmenge von priceSizes)
