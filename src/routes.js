@@ -12,9 +12,9 @@ import {
 function siteConfig(env) {
   try { return env.SITE_CONFIG ? JSON.parse(env.SITE_CONFIG) : {}; } catch { return {}; }
 }
-// Nominatim-User-Agent-E-Mail: SITE_CONFIG.contactEmail > CONTACT_EMAIL > Fallback
+// Nominatim-User-Agent-E-Mail aus SITE_CONFIG.contactEmail
 function contactEmail(env) {
-  return siteConfig(env).contactEmail || contactEmail(env);
+  return siteConfig(env).contactEmail || "";
 }
 
 // ---- Auth-Middleware ----
@@ -43,17 +43,17 @@ async function requireAdmin(req, env) {
 export async function getPublicConfig(req, env) {
   const v = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : null);
 
-  // SITE_CONFIG JSON parsen (bevorzugt), Einzelvars als Fallback
-  let sc = {};
-  try { if (env.SITE_CONFIG) sc = JSON.parse(env.SITE_CONFIG); } catch {}
+  const sc = siteConfig(env);
 
-  const pick = (scVal, envVal) => v(scVal) || v(envVal);
-
-  const siteKey = pick(sc.turnstileSiteKey, env.TURNSTILE_SITE_KEY);
-  const ga      = pick(sc.ga4MeasurementId, env.GA4_MEASUREMENT_ID);
+  const siteKey = v(sc.turnstileSiteKey);
+  const ga      = v(sc.ga4MeasurementId);
 
   const priceSizes = Array.isArray(sc.priceSizes) && sc.priceSizes.length > 0
     ? sc.priceSizes
+    : null;
+
+  const highlightedSizes = Array.isArray(sc.highlightedSizes) && sc.highlightedSizes.length > 0
+    ? sc.highlightedSizes
     : null;
 
   const author = sc.author || {};
@@ -62,6 +62,8 @@ export async function getPublicConfig(req, env) {
   return json({
     // Biergrößen (Dezimalzahlen ohne Einheit, UI ergänzt "l" + Locale)
     priceSizes,
+    // Hervorgehobene Größen in Ranglisten (Teilmenge von priceSizes)
+    highlightedSizes,
     // Turnstile
     turnstileSiteKey: siteKey,
     turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
@@ -69,18 +71,18 @@ export async function getPublicConfig(req, env) {
     ga4MeasurementId: ga && !ga.startsWith("G-X") ? ga : null,
     // Author / Social
     author: {
-      name:     pick(author.name,     env.AUTHOR_NAME),
-      github:   pick(author.github,   env.AUTHOR_GITHUB),
-      linkedin: pick(author.linkedin, env.AUTHOR_LINKEDIN),
-      website:  pick(author.website,  env.AUTHOR_WEBSITE),
+      name:     v(author.name),
+      github:   v(author.github),
+      linkedin: v(author.linkedin),
+      website:  v(author.website),
     },
     // Impressum
     impressum: {
-      owner:   pick(impr.owner,   env.IMPRESSUM_OWNER),
-      address: pick(impr.address, env.IMPRESSUM_ADDRESS),
-      email:   pick(impr.email,   env.IMPRESSUM_EMAIL),
+      owner:   v(impr.owner),
+      address: v(impr.address),
+      email:   v(impr.email),
     },
-    requireModeration: true,
+    requireModeration: sc.requireModeration !== false,
   });
 }
 
@@ -608,7 +610,8 @@ export async function adminStats(req, env) {
 // Proxy + 24h-D1-Cache für Untappd-Brauereisuchergebnisse.
 // Nur aktiv, wenn UNTAPPD_CLIENT_ID + UNTAPPD_CLIENT_SECRET gesetzt sind.
 export async function getUntappdBrewery(req, env, { id }) {
-  const clientId = env.UNTAPPD_CLIENT_ID;
+  const sc = siteConfig(env);
+  const clientId = sc.untappdClientId || env.UNTAPPD_CLIENT_ID;
   const clientSecret = env.UNTAPPD_CLIENT_SECRET;
   if (!clientId || !clientSecret) return json({ available: false });
 

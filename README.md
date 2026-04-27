@@ -124,7 +124,7 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**, nicht R
 
 Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 
-#### Empfohlen: eine einzige JSON-Variable
+#### Einzige Konfigurationsvariable: `SITE_CONFIG`
 
 | Name | Type | Zweck |
 |---|---|---|
@@ -132,10 +132,15 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 
 ```json
 {
-  "contactEmail":     "deine@email.de",
-  "ga4MeasurementId": "G-XXXXXXXXXX",
-  "turnstileSiteKey": "0x...",
-  "priceSizes":       [0.2, 0.25, 0.4, 0.5],
+  "contactEmail":      "deine@email.de",
+  "ga4MeasurementId":  "G-XXXXXXXXXX",
+  "turnstileSiteKey":  "0x...",
+  "priceSizes":        [0.2, 0.25, 0.4, 0.5],
+  "highlightedSizes":  [0.25, 0.5],
+  "requireModeration": true,
+  "untappdClientId":   "XXXXXXXXXXXXXXXX",
+  "siteUrl":           "https://altbieratlas.de",
+  "resendFrom":        "Altbieratlas <noreply@altbieratlas.de>",
   "author": {
     "name":     "Dein Name",
     "github":   "https://github.com/...",
@@ -150,33 +155,27 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 }
 ```
 
-> **`priceSizes`**: Dezimalzahlen ohne Einheit (z. B. `[0.2, 0.25, 0.4, 0.5]`). Das UI formatiert diese locale-korrekt mit „l" als Einheit. Nicht konfigurierte Größen werden in Ranglisten und Einreichungen als „Andere" gebündelt.
+| Feld | Beschreibung |
+|---|---|
+| `contactEmail` | E-Mail für den Nominatim-User-Agent-Header |
+| `ga4MeasurementId` | Google-Analytics-4-ID (`G-XXXXXXXXXX`), fehlt = Analytics aus |
+| `turnstileSiteKey` | Öffentlicher Cloudflare-Turnstile-Key |
+| `priceSizes` | Verfügbare Biergrößen als Dezimalzahlen ohne Einheit (UI ergänzt „l"). Standard: `[0.2, 0.25, 0.4, 0.5]` |
+| `highlightedSizes` | Teilmenge von `priceSizes`, die in Ranglisten hervorgehoben wird. 1–n Werte möglich, z. B. `[0.25]` oder `[0.25, 0.5]`. Fehlt der Schlüssel, gibt es keine Hervorhebung. |
+| `requireModeration` | `true` = alle Beiträge landen in der Moderations-Queue. Standard: `true` |
+| `untappdClientId` | Client-ID der Untappd-App (optional, ersetzt die frühere Env-Variable `UNTAPPD_CLIENT_ID`) |
+| `siteUrl` | Öffentliche URL der Site — wird in E-Mail-Links verwendet. Standard: `https://altbieratlas.de` |
+| `resendFrom` | Absenderadresse für alle Mails via Resend, z. B. `Altbieratlas <noreply@altbieratlas.de>` |
+| `author` | Footer-Angaben: `name`, `github`, `linkedin`, `website` |
+| `impressum` | Impressumsangaben (§ 5 TMG): `owner`, `address`, `email` |
 
-#### Alternativ: Einzelvariablen (Legacy, weiterhin unterstützt)
-
-Werden als Fallback genutzt, wenn `SITE_CONFIG` fehlt oder ein Feld nicht belegt ist.
-
-| Name | Type | Zweck |
-|---|---|---|
-| `CONTACT_EMAIL` | Plaintext | User-Agent für Nominatim-Proxy |
-| `GA4_MEASUREMENT_ID` | Plaintext | `G-XXXXXXXXXX`, leer = Analytics aus |
-| `AUTHOR_NAME` | Plaintext | Name im Footer |
-| `AUTHOR_GITHUB` | Plaintext | GitHub-Profil-URL |
-| `AUTHOR_LINKEDIN` | Plaintext | LinkedIn-URL |
-| `AUTHOR_WEBSITE` | Plaintext | Persönliche Website (optional) |
-| `IMPRESSUM_OWNER` | Plaintext | Betreiber (§ 5 TMG) |
-| `IMPRESSUM_ADDRESS` | Plaintext | Postanschrift (Komma-getrennt) |
-| `IMPRESSUM_EMAIL` | Plaintext | Kontakt-E-Mail im Impressum |
-| `TURNSTILE_SITE_KEY` | Plaintext | Öffentlicher Cloudflare-Turnstile-Key |
-
-#### Secrets (immer einzeln setzen)
+#### Secrets (immer einzeln im Dashboard setzen — nie in `SITE_CONFIG`)
 
 | Name | Type | Zweck |
 |---|---|---|
 | `TURNSTILE_SECRET_KEY` | **Secret** | Serverseitiger Turnstile-Key |
 | `RESEND_API_KEY` | **Secret** | [Resend](https://resend.com)-API-Key für Bestätigungsmails |
-| `RESEND_FROM` | Plaintext | Absenderadresse, z. B. `Altbieratlas <noreply@altbieratlas.de>` |
-| `UNTAPPD_CLIENT_ID` | Plaintext | Untappd-App-Client-ID (optional) |
+| `ADMIN_EMAIL` | **Secret** | Empfänger des täglichen Beitrags-Digests |
 | `UNTAPPD_CLIENT_SECRET` | **Secret** | Untappd-App-Client-Secret (optional) |
 
 Dank `keep_vars = true` bleiben alle Runtime-Werte bei jedem Deploy erhalten.
@@ -247,7 +246,7 @@ Für reines UI-Testen (ohne Wrangler) einfach `index.html` im Browser öffnen �
 
 | Methode | Pfad | Zweck |
 |---|---|---|
-| GET | `/api/config` | Turnstile-Key, GA4-ID, Author-Infos, Impressum, priceSizes |
+| GET | `/api/config` | Turnstile-Key, GA4-ID, Author-Infos, Impressum, priceSizes, highlightedSizes, requireModeration |
 | GET | `/api/stats` | Kennzahlen für Footer-Ticker |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |
@@ -276,7 +275,7 @@ Für reines UI-Testen (ohne Wrangler) einfach `index.html` im Browser öffnen �
 ## 5 · Untappd-Integration einrichten
 
 1. App auf [untappd.com/api/register](https://untappd.com/api/register) registrieren
-2. `UNTAPPD_CLIENT_ID` (Plaintext) und `UNTAPPD_CLIENT_SECRET` (Secret) im CF-Dashboard setzen
+2. `untappdClientId` in `SITE_CONFIG` eintragen und `UNTAPPD_CLIENT_SECRET` als Secret im CF-Dashboard setzen
 3. Migration `0003_untappd_cache.sql` einspielen (falls noch nicht geschehen)
 
 Ohne diese Variablen antwortet `/api/untappd/brewery/:id` mit `{ "available": false }` — die Brauerei-Seite zeigt dann keine Untappd-Sektion.
@@ -293,7 +292,7 @@ Ohne diese Variablen antwortet `/api/untappd/brewery/:id` mit `{ "available": fa
 2. Domain verifizieren und API-Key erstellen
 3. Im CF-Dashboard setzen:
    - `RESEND_API_KEY` (Secret)
-   - `RESEND_FROM` (Plaintext), z. B. `Altbieratlas <noreply@altbieratlas.de>`
+   - `resendFrom` und `siteUrl` in `SITE_CONFIG` eintragen
 
 Ohne `RESEND_API_KEY` werden keine Mails verschickt — das Einreichen funktioniert weiterhin normal.
 
