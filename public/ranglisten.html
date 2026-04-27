@@ -108,8 +108,8 @@
       <p><span data-i18n="rank.heroPrelude">Alle Preise stammen aus Community-Meldungen. Nur die jüngste Meldung pro Brauerei zählt. Werte können veralten — </span><a href="beitragen.html?typ=preis" data-i18n="rank.heroPreludeLink">melde einen aktuellen Preis</a>.</p>
 
       <div class="stats-strip">
-        <div class="stat"><div class="label" data-i18n="rank.statAvg25">Ø 0,25 l</div><div class="val" id="st-avg-025">—</div><div class="meta" data-i18n="rank.statMetaAll">über alle Meldungen</div></div>
-        <div class="stat"><div class="label" data-i18n="rank.statAvg50">Ø 0,5 l</div><div class="val" id="st-avg-05">—</div><div class="meta" data-i18n="rank.statMetaAll">über alle Meldungen</div></div>
+        <div class="stat"><div class="label" id="stat-lbl-0">Ø 0,25 l</div><div class="val" id="st-avg-025">—</div><div class="meta" data-i18n="rank.statMetaAll">über alle Meldungen</div></div>
+        <div class="stat"><div class="label" id="stat-lbl-1">Ø 0,5 l</div><div class="val" id="st-avg-05">—</div><div class="meta" data-i18n="rank.statMetaAll">über alle Meldungen</div></div>
         <div class="stat"><div class="label" data-i18n="rank.statBreweries">Brauereien</div><div class="val" id="st-br">—</div><div class="meta" data-i18n="rank.statMetaInAtlas">im Atlas</div></div>
         <div class="stat"><div class="label" data-i18n="rank.statPrices">Preismeldungen</div><div class="val" id="st-pr">—</div><div class="meta" data-i18n="rank.statMetaTotal">gesamt</div></div>
       </div>
@@ -129,9 +129,7 @@
           <button data-dir="desc"></button>
         </div>
         <div class="pill-toggle" id="size-toggle">
-          <button data-size="0,25l" class="active"></button>
-          <button data-size="0,5l"></button>
-          <button data-size="0,33l"></button>
+          <!-- wird von initSizeToggle() befüllt -->
         </div>
       </div>
 
@@ -167,26 +165,78 @@ let breweries = [];
 let prices = [];
 const breweryById = new Map();
 
-function avgPrice(size) {
-  const xs = prices.filter((p) => p.size === size);
+// Normalisiert Größenangaben: "0,25l", "0.25l", "0.25" → 0.25
+function normSize(s) {
+  return parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+}
+
+// Konfigurierte Größen (Zahlen, ohne Einheit)
+function configSizes() {
+  return window.ATLAS_CONFIG.priceSizes || [0.2, 0.25, 0.4, 0.5];
+}
+
+// Gehört eine Größe zu den konfigurierten Größen?
+function isConfigSize(num) {
+  return configSizes().some((c) => Math.abs(c - num) < 0.001);
+}
+
+function avgPrice(sizeNum) {
+  const xs = prices.filter((p) => Math.abs(normSize(p.size) - sizeNum) < 0.001);
   return xs.length ? xs.reduce((a, b) => a + b.price, 0) / xs.length : 0;
 }
+
 function renderStats() {
-  document.getElementById("st-avg-025").textContent = "€ " + window.formatPrice(avgPrice("0,25l"));
-  document.getElementById("st-avg-05").textContent  = "€ " + window.formatPrice(avgPrice("0,5l"));
+  const sizes = configSizes();
+  const s0 = sizes.length >= 2 ? sizes[1] : sizes[0]; // bevorzugt 0.25
+  const s1 = sizes[sizes.length - 1];                  // bevorzugt 0.5
+  document.getElementById("stat-lbl-0").textContent = "Ø " + window.formatSize(String(s0));
+  document.getElementById("stat-lbl-1").textContent = "Ø " + window.formatSize(String(s1));
+  document.getElementById("st-avg-025").textContent = "€ " + window.formatPrice(avgPrice(s0));
+  document.getElementById("st-avg-05").textContent  = "€ " + window.formatPrice(avgPrice(s1));
+}
+
+let currentTab = "prices";
+let currentSize = null; // wird von initSizeToggle gesetzt (Zahl oder null für "Andere")
+let currentDir = "asc";
+
+function initSizeToggle(sizes) {
+  const t = window.t;
+  const toggle = document.getElementById("size-toggle");
+  const otherLabel = window.__atlasLang === "en" ? "Other" : "Andere";
+  toggle.innerHTML =
+    sizes.map((n, i) =>
+      `<button data-size="${n}"${i === 0 ? ' class="active"' : ''}>${window.formatSize(String(n))}</button>`
+    ).join("") +
+    `<button data-size="other">${otherLabel}</button>`;
+
+  if (currentSize === null) currentSize = sizes[0];
+
+  toggle.querySelectorAll("button").forEach((b) => {
+    b.addEventListener("click", () => {
+      toggle.querySelectorAll("button").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      currentSize = b.dataset.size === "other" ? null : parseFloat(b.dataset.size);
+      render();
+    });
+  });
 }
 
 (async () => {
   try {
-    const [b, p] = await Promise.all([
+    const [b, p, cfg] = await Promise.all([
       window.AtlasAPI.listBreweries(),
       window.AtlasAPI.listPrices(),
+      window.AtlasAPI.getConfig().catch(() => null),
     ]);
     breweries = b.breweries || [];
     prices = p.prices || [];
     breweries.forEach((br) => breweryById.set(br.id, br));
 
-    // Stats
+    // Pricesses aus remotem Config übernehmen falls gesetzt
+    if (cfg?.priceSizes?.length) window.ATLAS_CONFIG.priceSizes = cfg.priceSizes;
+
+    initSizeToggle(configSizes());
+    updateToggleLabels();
     renderStats();
     document.getElementById("st-br").textContent = breweries.length;
     document.getElementById("st-pr").textContent = prices.length;
@@ -199,10 +249,6 @@ function renderStats() {
   }
 })();
 
-let currentTab = "prices";
-let currentSize = "0,25l";
-let currentDir = "asc";
-
 function monthYear(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
@@ -212,7 +258,10 @@ function monthYear(dateStr) {
 
 function updateToggleLabels() {
   document.querySelectorAll("#size-toggle button").forEach((btn) => {
-    btn.textContent = window.formatSize(btn.dataset.size);
+    const s = btn.dataset.size;
+    btn.textContent = s === "other"
+      ? (window.__atlasLang === "en" ? "Other" : "Andere")
+      : window.formatSize(s);
   });
   const t = window.t;
   const asc = document.querySelector("#sort-toggle [data-dir='asc']");
@@ -220,17 +269,19 @@ function updateToggleLabels() {
   if (asc) asc.textContent = t("rank.sortAsc");
   if (desc) desc.textContent = t("rank.sortDesc");
 }
-updateToggleLabels();
 
 function updateControls() {
   document.getElementById("controls-row").style.display =
     currentTab === "prices" ? "flex" : "none";
 }
 
-function latestPerBrewery(size) {
+// sizeNum = Zahl (z. B. 0.25) oder null für "Andere" (nicht in configSizes)
+function latestPerBrewery(sizeNum) {
   const map = {};
-  prices.filter((p) => p.size === size)
-    .slice().sort((a, b) => b.date.localeCompare(a.date))
+  const filtered = sizeNum !== null
+    ? prices.filter((p) => Math.abs(normSize(p.size) - sizeNum) < 0.001)
+    : prices.filter((p) => !isConfigSize(normSize(p.size)));
+  filtered.slice().sort((a, b) => b.date.localeCompare(a.date))
     .forEach((p) => { if (!map[p.breweryId]) map[p.breweryId] = p; });
   return Object.values(map)
     .map((p) => { const b = breweryById.get(p.breweryId); return b ? { ...p, brewery: b } : null; })
@@ -256,7 +307,10 @@ function render() {
     list = currentDir === "asc"
       ? list.sort((a, b) => a.price - b.price)
       : list.sort((a, b) => b.price - a.price);
-    title = t(currentDir === "asc" ? "rank.titleCheapest" : "rank.titlePriciest") + window.formatSize(currentSize);
+    const sizeLabel = currentSize !== null
+      ? window.formatSize(String(currentSize))
+      : (window.__atlasLang === "en" ? "Other" : "Andere");
+    title = t(currentDir === "asc" ? "rank.titleCheapest" : "rank.titlePriciest") + sizeLabel;
   } else if (currentTab === "most") {
     list = countPerBrewery().sort((a, b) => b.n - a.n).map((x) => ({
       brewery: x.brewery, price: null, date: null, size: null, count: x.n,
@@ -284,7 +338,9 @@ function render() {
     const dateDisplay = it.date ? monthYear(it.date) : "";
     const city = it.brewery.city || "";
     const type = t("type." + it.brewery.type);
-    const sub = [type, city].filter(Boolean).join(" · ");
+    // Bei "Andere"-Ansicht die tatsächliche Größe in der Zeile zeigen
+    const sizeHint = currentSize === null && it.size ? window.formatSize(String(normSize(it.size))) : "";
+    const sub = [type, city, sizeHint].filter(Boolean).join(" · ");
     return `
       <div class="rank-row">
         <span class="nm">
@@ -319,19 +375,13 @@ document.querySelectorAll("#sort-toggle button").forEach((b) => {
   });
 });
 
-document.querySelectorAll("#size-toggle button").forEach((b) => {
-  b.addEventListener("click", () => {
-    document.querySelectorAll("#size-toggle button").forEach((x) => x.classList.remove("active"));
-    b.classList.add("active");
-    currentSize = b.dataset.size;
-    render();
-  });
-});
-
 document.addEventListener("atlas:lang-changed", () => {
   updateToggleLabels();
   if (breweries.length) { renderStats(); render(); }
 });
+
+// Sort-toggle-Labels sofort setzen (Größen-Toggle wird nach Datenladen befüllt)
+updateToggleLabels();
 </script>
 </body>
 </html>

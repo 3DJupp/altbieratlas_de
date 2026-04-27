@@ -148,6 +148,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 }
 .contrib-row:last-child { border-bottom: none; }
 .contrib-row .date { color: var(--ink-muted); }
+.contrib-row .tag { justify-self: start; white-space: nowrap; }
 .contrib-row .typ {
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -570,6 +571,14 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
   const errBox = document.getElementById("submit-error");
   errBox.classList.remove("visible");
   const btn = document.getElementById("submit-btn");
+
+  // Token-Guard: wenn Turnstile aktiv aber noch kein Token, kurz warten lassen
+  if (remoteCfg?.turnstileEnabled && !turnstileToken) {
+    errBox.textContent = "Bitte kurz warten — Bot-Prüfung läuft noch.";
+    errBox.classList.add("visible");
+    return;
+  }
+
   btn.disabled = true;
 
   const fd = new FormData(e.target);
@@ -605,10 +614,16 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     const summary =
         apiType === "price"      ? `${brLabel} · ${window.formatPrice(data.price)} ${window.formatSize(data.size)}`
       : apiType === "brewery"    ? `${data.name || ""} · ${data.city || ""}`
-      : apiType === "style"      ? `${data.styleName || ""}`
-      : apiType === "correction" ? `${data.target || ""}`
-      :                            `${data.eventName || ""}`;
+      : apiType === "style"      ? `${data.styleName || ""} · ${brLabel}`
+      : apiType === "correction" ? `${brLabel} → ${data.target || ""}`
+      :                            `${data.eventName || ""} · ${window.formatDate(data.eventDate || "")}`;
     pushSubsCookie({ tp: apiType, sm: summary.trim(), dt: new Date().toISOString().slice(0, 10) });
+
+    // Turnstile nach Erfolg zurücksetzen (Token ist einmalig)
+    if (window.turnstile && document.querySelector(".cf-turnstile")) {
+      try { window.turnstile.reset(); } catch {}
+      turnstileToken = null;
+    }
 
     document.getElementById("contrib-form").style.display = "none";
     document.getElementById("thanks").classList.add("visible");
@@ -623,11 +638,6 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     errBox.classList.add("visible");
   } finally {
     btn.disabled = false;
-    // Turnstile-Token ist einmalig, reset triggern wenn vorhanden
-    if (window.turnstile && document.querySelector(".cf-turnstile")) {
-      try { window.turnstile.reset(); } catch {}
-      turnstileToken = null;
-    }
   }
 });
 
@@ -649,7 +659,7 @@ function renderRecent() {
     const typeLabel = t("contrib.recent.typeLabel." + c.tp) || c.tp;
     return `
       <div class="contrib-row">
-        <span class="date">${c.dt || "—"}</span>
+        <span class="date">${window.formatDate(c.dt) || "—"}</span>
         <span class="typ">${typeLabel}</span>
         <span>${c.sm || "—"}</span>
         <span class="tag pending">${t("common.pending")}</span>
