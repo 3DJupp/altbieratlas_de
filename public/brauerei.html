@@ -255,7 +255,7 @@ const root = document.getElementById("brewery-root");
               <div class="swatch" style="background:${s.color || '#8b4513'}"></div>
               <h3>${s.name}</h3>
               <div class="nums">
-                ${s.abv != null ? `<span><strong>${s.abv}%</strong> ABV</span>` : ''}
+                ${s.abv != null ? `<span><strong>${window.formatABV(s.abv)}</strong> ABV</span>` : ''}
                 ${s.ibu != null ? `<span><strong>${s.ibu}</strong> IBU</span>` : ''}
               </div>
               <p id="tasting-${s.id}">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ''}</p>

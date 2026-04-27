@@ -749,6 +749,13 @@ window.formatPrice = function (n) {
   return window.__atlasLang === "en" ? s : s.replace(".", ",");
 };
 
+// Alkoholgehalt: 4,8 % (de) / 4.8 % (en)
+window.formatABV = function (n) {
+  if (n == null) return null;
+  const s = Number(n).toFixed(1);
+  return (window.__atlasLang === "en" ? s : s.replace(".", ",")) + " %";
+};
+
 // Größenangabe: 0,25 l (de) / 0.25 l (en)
 // Akzeptiert neue Dezimalform "0.25" und Legacy-Form "0,25l"
 window.formatSize = function (s) {
