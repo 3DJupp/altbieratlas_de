@@ -17,11 +17,22 @@ window.renderShell = function ({ activeNav }) {
           <a href="index.html" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
           <a href="ranglisten.html" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
           <a href="wissen.html" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
-          <a href="beitragen.html" class="${activeNav === "contribute" ? "active" : ""} hide-sm" data-i18n="nav.contribute">Beitragen</a>
+          <a href="beitragen.html" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
+        </nav>
+        <div class="header-controls">
           <button class="lang-toggle" id="lang-toggle" title="Sprache / Language">DE</button>
           <button class="theme-toggle" id="theme-toggle" aria-label="Theme">☾</button>
-        </nav>
+          <button class="hamburger" id="hamburger" aria-label="Menü öffnen" aria-expanded="false">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
       </div>
+      <nav class="mobile-nav" id="mobile-nav" aria-label="Hauptnavigation" hidden>
+        <a href="index.html" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
+        <a href="ranglisten.html" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
+        <a href="wissen.html" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
+        <a href="beitragen.html" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
+      </nav>
     </header>
   `;
 
@@ -180,6 +191,35 @@ window.renderShell = function ({ activeNav }) {
   window.openCookieBanner = function () {
     banner.classList.remove("hidden");
   };
+
+  // ---- Hamburger menu ----
+  const hamburger = document.getElementById("hamburger");
+  const mobileNav = document.getElementById("mobile-nav");
+  hamburger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const open = !mobileNav.hidden;
+    mobileNav.hidden = open;
+    hamburger.setAttribute("aria-expanded", String(!open));
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".atlas-header")) {
+      mobileNav.hidden = true;
+      hamburger.setAttribute("aria-expanded", "false");
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !mobileNav.hidden) {
+      mobileNav.hidden = true;
+      hamburger.setAttribute("aria-expanded", "false");
+    }
+  });
+  // Close menu when a mobile nav link is clicked
+  mobileNav.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", () => {
+      mobileNav.hidden = true;
+      hamburger.setAttribute("aria-expanded", "false");
+    });
+  });
 
   window.setLang(window.__atlasLang);
 
