@@ -97,13 +97,12 @@ window.ATLAS_I18N = {
     "cookie.settings": "Einstellungen",
     // Footer
     "footer.madeWith":
-      "Mit Liebe für das rheinische Bier gebaut. Gemeinschaftlich gepflegt.",
+      "Mit Liebe für das rheinische Bier gebaut. Gemeinschaftlich gepflegt, KI-unterstützt.",
     "footer.legal": "Rechtliches",
     "footer.privacy": "Datenschutz",
     "footer.contribute": "Mitmachen",
     "footer.about": "Über den Atlas",
     "footer.author": "Entwickelt von",
-    "footer.aiNote": "Mit KI-Unterstützung entwickelt.",
     // Admin
     "admin.title": "Administration",
     "admin.login": "Anmelden",
@@ -432,13 +431,12 @@ window.ATLAS_I18N = {
     "cookie.essential": "Essential only",
     "cookie.settings": "Settings",
     "footer.madeWith":
-      "Built with love for Rhenish beer. Community maintained.",
+      "Built with love for Rhenish beer. Community maintained, AI-enhanced.",
     "footer.legal": "Legal",
     "footer.privacy": "Privacy",
     "footer.contribute": "Contribute",
     "footer.about": "About the atlas",
     "footer.author": "Built by",
-    "footer.aiNote": "Built with AI support.",
     "admin.title": "Administration",
     "admin.login": "Sign in",
     "admin.logout": "Sign out",
