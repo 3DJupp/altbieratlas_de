@@ -24,9 +24,14 @@
 .know-nav {
   border-bottom: 1px solid var(--rule);
   background: var(--bg);
-  position: sticky;
-  top: 64px;
   z-index: 30;
+}
+.know-nav.is-stuck {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: var(--bg);
 }
 .know-nav .container {
   display: flex;
@@ -260,11 +265,44 @@ function paintGlossary() {
   }
 })();
 
-// Aktiver Tab beim Scrollen
+// --- Leiste fixieren ---
+const knowNav = document.querySelector(".know-nav");
+// Sentinel: 1-px-Marker an der natürlichen Position der Leiste
+const sentinel = document.createElement("div");
+sentinel.style.cssText = "height:1px;pointer-events:none;";
+knowNav.parentNode.insertBefore(sentinel, knowNav);
+// Spacer: füllt die Lücke wenn die Leiste fixed ist
+const navSpacer = document.createElement("div");
+navSpacer.style.display = "none";
+knowNav.insertAdjacentElement("afterend", navSpacer);
+
+let clickScrolling = false;
+
+function syncNavSticky() {
+  const sentinelTop = sentinel.getBoundingClientRect().top;
+  const shouldStick = sentinelTop < 64;
+  const isStuck = knowNav.classList.contains("is-stuck");
+  if (shouldStick && !isStuck) {
+    knowNav.classList.add("is-stuck");
+    navSpacer.style.height = knowNav.offsetHeight + "px";
+    navSpacer.style.display = "block";
+  } else if (!shouldStick && isStuck && !clickScrolling) {
+    knowNav.classList.remove("is-stuck");
+    navSpacer.style.display = "none";
+  }
+}
+window.addEventListener("scroll", syncNavSticky, { passive: true });
+syncNavSticky();
+
+// --- Aktiver Tab beim Scrollen ---
 const sections = ["geschichte", "sorten", "koebes", "glossar"];
 const navLinks = document.querySelectorAll(".know-nav a");
+let clickLockTimer = null;
+
 function updateActive() {
-  const y = window.scrollY + 130;
+  if (clickScrolling) return;
+  const navH = knowNav.offsetHeight;
+  const y = window.scrollY + 64 + navH + 10;
   let active = sections[0];
   sections.forEach((id) => {
     const el = document.getElementById(id);
@@ -277,6 +315,37 @@ function updateActive() {
 }
 window.addEventListener("scroll", updateActive, { passive: true });
 updateActive();
+
+// --- Klick-Handler: Leiste sofort fixieren + aktiv setzen ---
+navLinks.forEach((link) => {
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    const id = link.getAttribute("href").slice(1);
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    // Leiste sofort fixieren
+    knowNav.classList.add("is-stuck");
+    navSpacer.style.height = knowNav.offsetHeight + "px";
+    navSpacer.style.display = "block";
+
+    // Aktiv-Zustand sofort setzen, Scroll-Detektion kurz sperren
+    navLinks.forEach((a) => a.classList.remove("active"));
+    link.classList.add("active");
+    clickScrolling = true;
+    clearTimeout(clickLockTimer);
+    clickLockTimer = setTimeout(() => {
+      clickScrolling = false;
+      syncNavSticky();
+      updateActive();
+    }, 900);
+
+    // Zu Abschnitt scrollen (Offset: Header 64 + Leiste)
+    const navH = knowNav.offsetHeight;
+    const scrollTop = target.getBoundingClientRect().top + window.scrollY - 64 - navH;
+    window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+  });
+});
 
 // Bei Sprachwechsel: nur neu rendern, kein Seiten-Reload!
 document.addEventListener("atlas:lang-changed", () => {
