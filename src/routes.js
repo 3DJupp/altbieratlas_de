@@ -8,6 +8,15 @@ import {
   clientIp, brewRow, sendConfirmationEmail,
 } from "./utils.js";
 
+// Liest SITE_CONFIG JSON (falls gesetzt), fällt sonst auf {} zurück
+function siteConfig(env) {
+  try { return env.SITE_CONFIG ? JSON.parse(env.SITE_CONFIG) : {}; } catch { return {}; }
+}
+// Nominatim-User-Agent-E-Mail: SITE_CONFIG.contactEmail > CONTACT_EMAIL > Fallback
+function contactEmail(env) {
+  return siteConfig(env).contactEmail || contactEmail(env);
+}
+
 // ---- Auth-Middleware ----
 async function requireAdmin(req, env) {
   const cookies = parseCookies(req);
@@ -80,7 +89,7 @@ export async function getStats(req, env) {
   const [brewCount, priceCount, avgRow] = await Promise.all([
     env.DB.prepare("SELECT COUNT(*) AS n FROM breweries WHERE status = 'approved'").first(),
     env.DB.prepare("SELECT COUNT(*) AS n FROM prices WHERE status = 'approved'").first(),
-    env.DB.prepare("SELECT AVG(price) AS avg FROM prices WHERE status = 'approved' AND size = '0,25l'").first(),
+    env.DB.prepare("SELECT AVG(price) AS avg FROM prices WHERE status = 'approved' AND (size = '0,25l' OR size = '0.25')").first(),
   ]);
   return json({
     breweryCount: brewCount?.n ?? 0,
@@ -200,7 +209,7 @@ export async function geocode(req, env) {
   try {
     const r = await fetch(nomUrl.toString(), {
       headers: {
-        "User-Agent": `Altbieratlas/1.0 (${env.CONTACT_EMAIL || "admin@example.com"})`,
+        "User-Agent": `Altbieratlas/1.0 (${contactEmail(env)})`,
         "Accept": "application/json",
       },
       cf: { cacheTtl: 86400, cacheEverything: true },
@@ -295,7 +304,7 @@ export async function postContribution(req, env, _params, ctx) {
     const q = encodeURIComponent([data.name, data.city, data.country || "DE"].filter(Boolean).join(", "));
     try {
       const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=jsonv2&limit=1`, {
-        headers: { "User-Agent": `Altbieratlas/1.0 (${env.CONTACT_EMAIL || "admin@example.com"})` },
+        headers: { "User-Agent": `Altbieratlas/1.0 (${contactEmail(env)})` },
         cf: { cacheTtl: 86400, cacheEverything: true },
       });
       if (geoRes.ok) {

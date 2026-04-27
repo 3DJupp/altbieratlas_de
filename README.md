@@ -124,6 +124,38 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**, nicht R
 
 Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 
+#### Empfohlen: eine einzige JSON-Variable
+
+| Name | Type | Zweck |
+|---|---|---|
+| `SITE_CONFIG` | Plaintext | Alle nicht-sensitiven Konfigurationswerte als JSON (siehe unten) |
+
+```json
+{
+  "contactEmail":     "deine@email.de",
+  "ga4MeasurementId": "G-XXXXXXXXXX",
+  "turnstileSiteKey": "0x...",
+  "priceSizes":       [0.2, 0.25, 0.4, 0.5],
+  "author": {
+    "name":     "Dein Name",
+    "github":   "https://github.com/...",
+    "linkedin": "https://linkedin.com/in/...",
+    "website":  "https://example.com"
+  },
+  "impressum": {
+    "owner":   "Vor- und Nachname",
+    "address": "Musterstraße 1, 40213 Düsseldorf",
+    "email":   "kontakt@example.de"
+  }
+}
+```
+
+> **`priceSizes`**: Dezimalzahlen ohne Einheit (z. B. `[0.2, 0.25, 0.4, 0.5]`). Das UI formatiert diese locale-korrekt mit „l" als Einheit. Nicht konfigurierte Größen werden in Ranglisten und Einreichungen als „Andere" gebündelt.
+
+#### Alternativ: Einzelvariablen (Legacy, weiterhin unterstützt)
+
+Werden als Fallback genutzt, wenn `SITE_CONFIG` fehlt oder ein Feld nicht belegt ist.
+
 | Name | Type | Zweck |
 |---|---|---|
 | `CONTACT_EMAIL` | Plaintext | User-Agent für Nominatim-Proxy |
@@ -136,6 +168,11 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 | `IMPRESSUM_ADDRESS` | Plaintext | Postanschrift (Komma-getrennt) |
 | `IMPRESSUM_EMAIL` | Plaintext | Kontakt-E-Mail im Impressum |
 | `TURNSTILE_SITE_KEY` | Plaintext | Öffentlicher Cloudflare-Turnstile-Key |
+
+#### Secrets (immer einzeln setzen)
+
+| Name | Type | Zweck |
+|---|---|---|
 | `TURNSTILE_SECRET_KEY` | **Secret** | Serverseitiger Turnstile-Key |
 | `RESEND_API_KEY` | **Secret** | [Resend](https://resend.com)-API-Key für Bestätigungsmails |
 | `RESEND_FROM` | Plaintext | Absenderadresse, z. B. `Altbieratlas <noreply@altbieratlas.de>` |
@@ -173,6 +210,7 @@ Fünf Einreichungstypen — alle landen in einer Moderations-Queue:
 Zusätzlich:
 - **Bestätigungsmail** (wenn E-Mail angegeben): Nach erfolgreicher Einreichung bekommt der Beitragende eine Bestätigungs-Mail via Resend. Erfordert `RESEND_API_KEY`.
 - **Turnstile-Bot-Schutz** (wenn konfiguriert) auf allen Formularen
+- **„Deine Einreichungen"-Cookie** (`atlas_subs`): Nach jeder Einreichung wird ein kompakter Eintrag (Typ, Kurzinfo, Datum) in einem Client-Cookie (90 Tage, max. 8 Einträge) gespeichert — sichtbar im Bereich „Deine letzten Einreichungen" auf `beitragen.html`
 
 ### Moderations-Dashboard (`admin.html`)
 - Übersicht-Tab mit Statistiken und neuesten offenen Beiträgen
@@ -209,7 +247,7 @@ Für reines UI-Testen (ohne Wrangler) einfach `index.html` im Browser öffnen �
 
 | Methode | Pfad | Zweck |
 |---|---|---|
-| GET | `/api/config` | Turnstile-Key, GA4-ID, Author-Infos, Impressum |
+| GET | `/api/config` | Turnstile-Key, GA4-ID, Author-Infos, Impressum, priceSizes |
 | GET | `/api/stats` | Kennzahlen für Footer-Ticker |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |
