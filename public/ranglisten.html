@@ -214,13 +214,15 @@ function initSizeToggle(sizes) {
   const t = window.t;
   const toggle = document.getElementById("size-toggle");
   const otherLabel = window.__atlasLang === "en" ? "Other" : "Andere";
+  const hl = window.ATLAS_CONFIG.highlightedSizes || [];
+  const defaultSize = hl.length > 0 ? hl[0] : sizes[0];
   toggle.innerHTML =
-    sizes.map((n, i) =>
-      `<button data-size="${n}"${i === 0 ? ' class="active"' : ''}>${window.formatSize(String(n))}</button>`
+    sizes.map((n) =>
+      `<button data-size="${n}"${Math.abs(n - defaultSize) < 0.001 ? ' class="active"' : ''}>${window.formatSize(String(n))}</button>`
     ).join("") +
     `<button data-size="other">${otherLabel}</button>`;
 
-  if (currentSize === null) currentSize = sizes[0];
+  if (currentSize === null) currentSize = defaultSize;
 
   toggle.querySelectorAll("button").forEach((b) => {
     b.addEventListener("click", () => {
@@ -354,6 +356,9 @@ function render() {
     // Bei "Andere"-Ansicht die tatsächliche Größe in der Zeile zeigen
     const sizeHint = currentSize === null && it.size ? window.formatSize(String(normSize(it.size))) : "";
     const sub = [type, city, sizeHint].filter(Boolean).join(" · ");
+    // Bei "Neu auf dem Atlas": Größe und Datum kombiniert anzeigen
+    const sizeLabel = currentTab === "newest" && it.size ? window.formatSize(String(normSize(it.size))) : "";
+    const metaDisplay = [sizeLabel, dateDisplay].filter(Boolean).join(" · ");
     return `
       <div class="rank-row">
         <span class="nm">
@@ -362,7 +367,7 @@ function render() {
         </span>
         <span class="pr-cell">
           <span class="pr">${priceDisplay}</span>
-          ${dateDisplay ? `<span class="dt">${dateDisplay}</span>` : ""}
+          ${metaDisplay ? `<span class="dt">${metaDisplay}</span>` : ""}
         </span>
       </div>
     `;
