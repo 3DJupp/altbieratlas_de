@@ -32,7 +32,7 @@
       <div class="ticker">
         <div class="pulse"></div>
         <div>
-          <div class="ticker-label eyebrow" data-i18n="hero.avgPriceLabel">Aktuelles 0,25 l Alt im Schnitt</div>
+          <div class="ticker-label eyebrow" id="ticker-label">Aktuelles 0,25 l Alt im Schnitt</div>
           <div class="ticker-value mono" id="avg-price">—</div>
           <div class="ticker-meta mono">
             <span id="data-points">—</span> <span data-i18n="hero.dataPoints">Preismeldungen</span>
@@ -284,9 +284,23 @@ function pinIcon(type, pending) {
   });
 }
 
+// ============ Konfigurations-Helpers ============
+function normSize(s) {
+  return parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+}
+// Erste hervorgehobene Größe aus der Config (Dezimalzahl); Fallback: erste priceSizes oder 0,25
+function getHighlightedSize() {
+  const hl = window.ATLAS_CONFIG.highlightedSizes;
+  if (Array.isArray(hl) && hl.length > 0) return hl[0];
+  const ps = window.ATLAS_CONFIG.priceSizes;
+  if (Array.isArray(ps) && ps.length > 0) return ps[0];
+  return 0.25;
+}
+
 // ============ State ============
 let allBreweries = [];
-let priceByBrewery = new Map();   // id → latest 0,25l
+let priceByBrewery = new Map();   // id → neuester Preis (bevorzugt erste highlightedSize)
+let cachedHlAvg = null;           // Durchschnittspreis für erste highlightedSize
 const markerMap = new Map();
 let geoMarker = null;             // Geocode-Treffer (temporärer Pin)
 
@@ -462,7 +476,6 @@ document.querySelectorAll(".filter-btn").forEach((btn) => {
 
 // ============ Daten laden ============
 let cachedPrices = [];
-let cachedAvgPrice025 = null;
 
 (async () => {
   try {
@@ -474,23 +487,31 @@ let cachedAvgPrice025 = null;
     ]);
     allBreweries = brews.breweries || [];
     cachedPrices = prices.prices || [];
-    cachedAvgPrice025 = stats.avgPrice025 ?? null;
 
-    // Preis-Index aufbauen (neuester Preis pro Brauerei & 0,25l bevorzugt)
+    // Preis-Index aufbauen (neuester Preis pro Brauerei, bevorzugt erste highlightedSize)
+    const hlSize = getHighlightedSize();
     const byId = new Map();
     cachedPrices.forEach((p) => {
       const cur = byId.get(p.breweryId);
-      const score = (p.size === "0,25l" ? 1000 : 0) + new Date(p.date).getTime() / 1e10;
-      const curScore = cur ? (cur.size === "0,25l" ? 1000 : 0) + new Date(cur.date).getTime() / 1e10 : -1;
+      const isHL = Math.abs(normSize(p.size) - hlSize) < 0.001;
+      const score = (isHL ? 1000 : 0) + new Date(p.date).getTime() / 1e10;
+      const curIsHL = cur ? Math.abs(normSize(cur.size) - hlSize) < 0.001 : false;
+      const curScore = cur ? (curIsHL ? 1000 : 0) + new Date(cur.date).getTime() / 1e10 : -1;
       if (!cur || score > curScore) byId.set(p.breweryId, p);
     });
     priceByBrewery = byId;
 
+    // Durchschnittspreis für erste highlightedSize (für Ticker)
+    const hlPrices = cachedPrices.filter((p) => Math.abs(normSize(p.size) - hlSize) < 0.001);
+    cachedHlAvg = hlPrices.length ? hlPrices.reduce((a, b) => a + b.price, 0) / hlPrices.length : null;
+
     // Ticker
-    document.getElementById("avg-price").textContent = cachedAvgPrice025
-      ? "€ " + window.formatPrice(cachedAvgPrice025) : "—";
+    updateTickerLabel();
+    document.getElementById("avg-price").textContent = cachedHlAvg
+      ? "€ " + window.formatPrice(cachedHlAvg) : "—";
     document.getElementById("data-points").textContent = stats.priceCount ?? "—";
     document.getElementById("brewery-count").textContent = stats.breweryCount ?? "—";
+    updateRankSizeTags();
 
     renderMarkers();
     renderRankings(cachedPrices);
@@ -500,8 +521,18 @@ let cachedAvgPrice025 = null;
   }
 })();
 
+function updateTickerLabel() {
+  const lang = window.__atlasLang || "de";
+  const sizeStr = window.formatSize ? window.formatSize(String(getHighlightedSize())) : "0,25 l";
+  const el = document.getElementById("ticker-label");
+  if (el) el.textContent = lang === "en"
+    ? `Average ${sizeStr} Altbier`
+    : `Aktuelles ${sizeStr} Alt im Schnitt`;
+}
+updateTickerLabel();
+
 function updateRankSizeTags() {
-  const sized = window.formatSize("0,25l");
+  const sized = window.formatSize ? window.formatSize(String(getHighlightedSize())) : "0,25 l";
   const tc = document.getElementById("tag-size-cheapest");
   const tp = document.getElementById("tag-size-priciest");
   if (tc) tc.textContent = sized;
@@ -510,16 +541,18 @@ function updateRankSizeTags() {
 updateRankSizeTags();
 
 document.addEventListener("atlas:lang-changed", () => {
+  updateTickerLabel();
   updateRankSizeTags();
-  if (cachedAvgPrice025 != null)
-    document.getElementById("avg-price").textContent = "€ " + window.formatPrice(cachedAvgPrice025);
+  if (cachedHlAvg != null)
+    document.getElementById("avg-price").textContent = "€ " + window.formatPrice(cachedHlAvg);
   if (cachedPrices.length) { renderMarkers(); renderRankings(cachedPrices); }
 });
 
 // ============ Rankings ============
 function renderRankings(prices) {
+  const hlSize = getHighlightedSize();
   const alt025 = prices
-    .filter((p) => p.size === "0,25l")
+    .filter((p) => Math.abs(normSize(p.size) - hlSize) < 0.001)
     .map((p) => {
       const b = allBreweries.find((x) => x.id === p.breweryId);
       return b ? { ...b, price: p.price, date: p.date } : null;
