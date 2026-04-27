@@ -742,10 +742,14 @@ window.formatPrice = function (n) {
 };
 
 // Größenangabe: 0,25 l (de) / 0.25 l (en)
+// Akzeptiert neue Dezimalform "0.25" und Legacy-Form "0,25l"
 window.formatSize = function (s) {
   if (!s) return "";
-  const str = window.__atlasLang === "en" ? String(s).replace(",", ".") : String(s);
-  return str.replace(/(\d)(l)$/i, "$1 $2");
+  const num = parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+  if (isNaN(num)) return String(s);
+  let dec = num.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  if (window.__atlasLang !== "en") dec = dec.replace(".", ",");
+  return dec + " l";
 };
 
 (function () {

@@ -74,7 +74,33 @@ persist = true
 # sauber als „nicht gesetzt" behandelt (z. B. kein Social-Icon,
 # kein GA4-Tracking, Turnstile-Platzhalter).
 #
-# Erwartete Variablen (im Dashboard setzen):
+# ── Bevorzugt: eine einzige JSON-Variable ──────────────────────
+#
+#   SITE_CONFIG  (JSON-String, im Dashboard als Variable setzen)
+#
+#   Beispiel:
+#   {
+#     "contactEmail":     "deine@email.de",
+#     "ga4MeasurementId": "G-XXXXXXXXXX",
+#     "turnstileSiteKey": "0x...",
+#     "priceSizes":       [0.2, 0.25, 0.4, 0.5],
+#     "author": {
+#       "name":     "Dein Name",
+#       "github":   "https://github.com/...",
+#       "linkedin": "https://linkedin.com/in/...",
+#       "website":  "https://example.com"
+#     },
+#     "impressum": {
+#       "owner":   "Vor- und Nachname",
+#       "address": "Musterstraße 1, 40213 Düsseldorf",
+#       "email":   "kontakt@example.de"
+#     }
+#   }
+#
+#   priceSizes: Dezimalzahlen ohne Einheit (UI ergänzt „l" und
+#   Locale). Standard: [0.2, 0.25, 0.4, 0.5]
+#
+# ── Legacy: Einzelvariablen (weiterhin unterstützt) ───────────
 #   CONTACT_EMAIL        — für Nominatim-User-Agent
 #   GA4_MEASUREMENT_ID   — GA4-ID (G-XXXXXXXXXX), leer = aus
 #   AUTHOR_NAME          — Name im Footer
