@@ -18,6 +18,7 @@ window.ATLAS_I18N = {
       "Der Altbieratlas sammelt Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt.",
     "hero.cta": "Preis melden",
     "hero.ctaSecondary": "Karte erkunden",
+    "hero.toRankings": "zu den Ranglisten →",
     // Karte
     "map.title": "Brauereien & Ausschankorte",
     "map.filter.all": "Alle",
@@ -360,6 +361,7 @@ window.ATLAS_I18N = {
       "The Altbieratlas collects prices, breweries and knowledge around the top-fermented beer. Community maintained.",
     "hero.cta": "Report a price",
     "hero.ctaSecondary": "Explore the map",
+    "hero.toRankings": "to the Rankings →",
     "map.title": "Breweries & taprooms",
     "map.filter.all": "All",
     "map.filter.hausbrauerei": "Brewpub",
