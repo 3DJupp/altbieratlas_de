@@ -28,7 +28,7 @@
 }
 .know-nav.is-stuck {
   position: fixed;
-  top: 64px;
+  top: 0; /* wird per JS auf echte Header-Höhe gesetzt */
   left: 0;
   right: 0;
   background: var(--bg);
@@ -276,18 +276,26 @@ const navSpacer = document.createElement("div");
 navSpacer.style.display = "none";
 knowNav.insertAdjacentElement("afterend", navSpacer);
 
+// Echte Header-Höhe zur Laufzeit messen (kein Hardcode)
+function headerH() {
+  return document.querySelector(".atlas-header")?.offsetHeight ?? 0;
+}
+
 let clickScrolling = false;
 
 function syncNavSticky() {
+  const hh = headerH();
   const sentinelTop = sentinel.getBoundingClientRect().top;
-  const shouldStick = sentinelTop < 64;
+  const shouldStick = sentinelTop < hh;
   const isStuck = knowNav.classList.contains("is-stuck");
   if (shouldStick && !isStuck) {
     knowNav.classList.add("is-stuck");
+    knowNav.style.top = hh + "px";
     navSpacer.style.height = knowNav.offsetHeight + "px";
     navSpacer.style.display = "block";
   } else if (!shouldStick && isStuck && !clickScrolling) {
     knowNav.classList.remove("is-stuck");
+    knowNav.style.top = "";
     navSpacer.style.display = "none";
   }
 }
@@ -301,8 +309,9 @@ let clickLockTimer = null;
 
 function updateActive() {
   if (clickScrolling) return;
+  const hh = headerH();
   const navH = knowNav.offsetHeight;
-  const y = window.scrollY + 64 + navH + 10;
+  const y = window.scrollY + hh + navH + 10;
   let active = sections[0];
   sections.forEach((id) => {
     const el = document.getElementById(id);
@@ -325,7 +334,9 @@ navLinks.forEach((link) => {
     if (!target) return;
 
     // Leiste sofort fixieren
+    const hh = headerH();
     knowNav.classList.add("is-stuck");
+    knowNav.style.top = hh + "px";
     navSpacer.style.height = knowNav.offsetHeight + "px";
     navSpacer.style.display = "block";
 
@@ -340,9 +351,9 @@ navLinks.forEach((link) => {
       updateActive();
     }, 900);
 
-    // Zu Abschnitt scrollen (Offset: Header 64 + Leiste)
+    // Zu Abschnitt scrollen (Offset: echter Header + Leiste)
     const navH = knowNav.offsetHeight;
-    const scrollTop = target.getBoundingClientRect().top + window.scrollY - 64 - navH;
+    const scrollTop = target.getBoundingClientRect().top + window.scrollY - hh - navH;
     window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
   });
 });
