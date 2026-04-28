@@ -255,7 +255,7 @@ const root = document.getElementById("brewery-root");
               <div class="swatch" style="background:${s.color || '#8b4513'}"></div>
               <h3>${s.name}</h3>
               <div class="nums">
-                ${s.abv != null ? `<span><strong>${s.abv}%</strong> ABV</span>` : ''}
+                ${s.abv != null ? `<span><strong id="abv-${s.id}">${window.formatABV(s.abv)}</strong> ABV</span>` : ''}
                 ${s.ibu != null ? `<span><strong>${s.ibu}</strong> IBU</span>` : ''}
               </div>
               <p id="tasting-${s.id}">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ''}</p>
@@ -422,6 +422,10 @@ const root = document.getElementById("brewery-root");
     styles.forEach((s) => {
       const el = document.getElementById('tasting-' + s.id);
       if (el) el.textContent = (s.tasting && (s.tasting[l] || s.tasting.de)) || '';
+      if (s.abv != null) {
+        const elAbv = document.getElementById('abv-' + s.id);
+        if (elAbv) elAbv.textContent = window.formatABV(s.abv);
+      }
     });
     const log = document.querySelector('.price-log');
     if (log) {

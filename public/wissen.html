@@ -229,7 +229,7 @@ function paintStyles() {
         <h3>${s.name}</h3>
       </div>
       <div class="spec-body">
-        ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${s.abv} %</span></div>` : ""}
+        ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${window.formatABV(s.abv)}</span></div>` : ""}
         ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
         <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
       </div>
