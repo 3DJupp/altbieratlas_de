@@ -103,7 +103,10 @@
         <div class="eyebrow" data-i18n="index.calendar">Kalender</div>
         <h2 data-i18n="index.upcomingEvents">Kommende Termine</h2>
       </div>
-      <a class="btn btn-ghost" href="beitragen.html?typ=event" data-i18n="index.reportEventLink">Event melden →</a>
+      <div class="section-head-actions">
+        <a class="btn btn-ghost" href="/api/events/calendar.ics" download="altbieratlas-termine.ics" data-i18n="index.downloadIcs" title="Kalender herunterladen (.ics)">📅 .ics</a>
+        <a class="btn btn-ghost" href="beitragen.html?typ=event" data-i18n="index.reportEventLink">Event melden →</a>
+      </div>
     </div>
     <div class="event-grid" id="event-grid"></div>
   </section>
@@ -253,6 +256,7 @@
 .rank-list .city { font-size: 12px; color: var(--ink-muted); display: block; }
 .rank-list .price { font-family: var(--font-mono); color: var(--copper); font-weight: 500; }
 
+.section-head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .event-card { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
 .event-date { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--copper); }
@@ -641,9 +645,10 @@ function renderEvents(events) {
     grid.innerHTML = upcoming.map((ev) => {
       const b = ev.breweryId ? allBreweries.find((x) => x.id === ev.breweryId) : null;
       const dateText = window.formatDateLong(ev.date);
+      const timeText = ev.time ? ` · ${ev.time} ${window.t("index.clock")}` : "";
       return `
         <article class="card event-card">
-          <div class="event-date">${dateText}</div>
+          <div class="event-date">${dateText}${timeText}</div>
           <div class="event-title">${ev.title[lang] || ev.title.de}</div>
           <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
           <div class="event-loc">${b ? "@ " + b.name + " · " + b.city : "— " + window.t("contrib.locationPlaceholder") + " —"}</div>

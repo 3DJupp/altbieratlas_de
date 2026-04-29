@@ -474,9 +474,13 @@ function forms(typ) {
         <input name="eventDate" type="date" required min="${today}" />
       </div>
       <div class="field">
-        <label>${t("field.eventLocation")}</label>
-        <input name="eventLocation" required placeholder="${t("contrib.locationPlaceholder")}" />
+        <label>${t("field.eventTime")}</label>
+        <input name="eventTime" type="time" placeholder="z.B. 19:00" />
       </div>
+    </div>
+    <div class="field">
+      <label>${t("field.eventLocation")}</label>
+      <input name="eventLocation" required placeholder="${t("contrib.locationPlaceholder")}" />
     </div>
     <div class="field">
       <label>${t("contrib.breweryOpt")}</label>

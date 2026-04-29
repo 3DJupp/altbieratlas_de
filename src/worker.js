@@ -34,6 +34,7 @@ const ROUTES = [
   ["GET",    "/api/prices",                                R.listPrices],
   ["POST",   "/api/prices",                                R.postPrice],
   ["GET",    "/api/events",                                R.listEvents],
+  ["GET",    "/api/events/calendar.ics",                  R.eventsIcs],
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],
   ["POST",   "/api/contributions",                         R.postContribution],
