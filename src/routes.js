@@ -180,79 +180,93 @@ export async function listEvents(req, env) {
   });
 }
 
-// GET /api/events/calendar.ics
-export async function eventsIcs(req, env) {
-  const res = await env.DB.prepare(
-    `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
-     FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
-     WHERE e.status = 'approved' ORDER BY e.date ASC, e.time ASC`
-  ).all();
-
-  const url = new URL(req.url);
-  const base = `${url.protocol}//${url.host}`;
-
-  function icsEscape(s) {
-    return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;")
-      .replace(/,/g, "\\,").replace(/\n/g, "\\n").replace(/\r/g, "");
+// ---- ICS-Hilfsfunktionen ----
+function icsEscape(s) {
+  return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;")
+    .replace(/,/g, "\\,").replace(/\n/g, "\\n").replace(/\r/g, "");
+}
+function icsFoldLine(line) {
+  const chars = [...line];
+  const out = [];
+  let cur = "";
+  for (const ch of chars) {
+    if ((cur + ch).length > 75) { out.push(cur); cur = " " + ch; }
+    else { cur += ch; }
   }
-  function foldLine(line) {
-    const bytes = [...line];
-    const out = [];
-    let cur = "";
-    for (const ch of bytes) {
-      if ((cur + ch).length > 75) { out.push(cur); cur = " " + ch; }
-      else { cur += ch; }
-    }
-    if (cur) out.push(cur);
-    return out.join("\r\n");
-  }
-
-  const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z/, "Z");
-
-  const vevents = res.results.map((e) => {
-    const dtstart = e.time
-      ? `DTSTART;TZID=Europe/Berlin:${e.date.replace(/-/g, "")}T${e.time.replace(":", "")}00`
-      : `DTSTART;VALUE=DATE:${e.date.replace(/-/g, "")}`;
-    const summary = icsEscape(e.title_de || e.title_en || "Event");
-    const location = e.brewery_name
-      ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
-      : "";
-    const desc = icsEscape(e.description_de || "");
-    const uid = `${e.id}@altbieratlas.de`;
-    const lines = [
-      "BEGIN:VEVENT",
-      foldLine(`UID:${uid}`),
-      `DTSTAMP:${now}`,
-      foldLine(dtstart),
-      foldLine(`SUMMARY:${summary}`),
-    ];
-    if (location) lines.push(foldLine(`LOCATION:${location}`));
-    if (desc)     lines.push(foldLine(`DESCRIPTION:${desc}`));
-    lines.push(foldLine(`URL:${base}/`));
-    lines.push("END:VEVENT");
-    return lines.join("\r\n");
-  });
-
+  if (cur) out.push(cur);
+  return out.join("\r\n");
+}
+function buildVEvent(e, base) {
+  const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z/, "Z");
+  const dtstart = e.time
+    ? `DTSTART;TZID=Europe/Berlin:${e.date.replace(/-/g, "")}T${e.time.replace(":", "")}00`
+    : `DTSTART;VALUE=DATE:${e.date.replace(/-/g, "")}`;
+  const summary  = icsEscape(e.title_de || e.title_en || "Event");
+  const location = e.brewery_name
+    ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
+    : "";
+  const desc = icsEscape(e.description_de || "");
+  const lines = [
+    "BEGIN:VEVENT",
+    icsFoldLine(`UID:${e.id}@altbieratlas.de`),
+    `DTSTAMP:${dtstamp}`,
+    icsFoldLine(dtstart),
+    icsFoldLine(`SUMMARY:${summary}`),
+  ];
+  if (location) lines.push(icsFoldLine(`LOCATION:${location}`));
+  if (desc)     lines.push(icsFoldLine(`DESCRIPTION:${desc}`));
+  lines.push(icsFoldLine(`URL:${base}/`));
+  lines.push("END:VEVENT");
+  return lines.join("\r\n");
+}
+function icsResponse(vevents, calName, filename) {
   const cal = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Altbieratlas//DE",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    foldLine("X-WR-CALNAME:Altbieratlas – Termine"),
+    icsFoldLine(`X-WR-CALNAME:${calName}`),
     "X-WR-TIMEZONE:Europe/Berlin",
     ...vevents,
     "END:VCALENDAR",
   ].join("\r\n");
-
   return new Response(cal, {
     status: 200,
     headers: {
       "content-type": "text/calendar; charset=utf-8",
-      "content-disposition": 'attachment; filename="altbieratlas-termine.ics"',
+      "content-disposition": `attachment; filename="${filename}"`,
       "cache-control": "public, max-age=900",
     },
   });
+}
+
+// GET /api/events/calendar.ics  — alle zukünftigen Events als Kalender
+export async function eventsIcs(req, env) {
+  const res = await env.DB.prepare(
+    `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
+     FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+     WHERE e.status = 'approved' AND e.date >= date('now')
+     ORDER BY e.date ASC, e.time ASC`
+  ).all();
+  const base = (() => { const u = new URL(req.url); return `${u.protocol}//${u.host}`; })();
+  return icsResponse(
+    res.results.map((e) => buildVEvent(e, base)),
+    "Altbieratlas – Termine",
+    "altbieratlas-termine.ics",
+  );
+}
+
+// GET /api/events/:id/calendar.ics  — einzelnes Event als ICS
+export async function eventIcs(req, env, { id }) {
+  const e = await env.DB.prepare(
+    `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
+     FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+     WHERE e.id = ? AND e.status = 'approved'`
+  ).bind(id).first();
+  if (!e) return error(404, "not-found");
+  const base = (() => { const u = new URL(req.url); return `${u.protocol}//${u.host}`; })();
+  return icsResponse([buildVEvent(e, base)], icsEscape(e.title_de || "Event"), "altbieratlas-termin.ics");
 }
 
 // GET /api/glossary
