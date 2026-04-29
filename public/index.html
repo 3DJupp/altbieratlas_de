@@ -651,7 +651,8 @@ function renderEvents(events) {
       const b = ev.breweryId ? allBreweries.find((x) => x.id === ev.breweryId) : null;
       const dateText = window.formatDateLong(ev.date);
       const timeText = ev.time ? ` · ${ev.time} ${window.t("index.clock")}` : "";
-      const locText = b ? "@ " + b.name + " · " + b.city : "— " + window.t("contrib.locationPlaceholder") + " —";
+      const locText = b ? "@ " + b.name + " · " + b.city : ev.location ? "@ " + ev.location : "";
+      const urlBtn = ev.url ? `<a class="event-ics-link" href="${ev.url}" target="_blank" rel="noopener" title="${window.t("event.visitPage")}">🔗</a>` : "";
       return `
         <article class="card event-card">
           <div class="event-date">${dateText}${timeText}</div>
@@ -659,7 +660,10 @@ function renderEvents(events) {
           <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
           <div class="event-card-foot">
             <span class="event-loc">${locText}</span>
-            <a class="event-ics-link" href="/api/events/${ev.id}/calendar.ics?lang=${lang}" download="altbieratlas-termin.ics" title="${window.t("index.addToCalendar")}">📅 .ics</a>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              ${urlBtn}
+              <a class="event-ics-link" href="/api/events/${ev.id}/calendar.ics?lang=${lang}" download="altbieratlas-termin.ics" title="${window.t("index.addToCalendar")}">📅 .ics</a>
+            </div>
           </div>
         </article>`;
     }).join("") || `<p style="color:var(--ink-muted)">${window.t("index.noEvents")}</p>`;
