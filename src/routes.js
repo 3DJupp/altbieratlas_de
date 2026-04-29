@@ -196,16 +196,18 @@ function icsFoldLine(line) {
   if (cur) out.push(cur);
   return out.join("\r\n");
 }
-function buildVEvent(e, base) {
+function buildVEvent(e, base, lang) {
   const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z/, "Z");
   const dtstart = e.time
     ? `DTSTART;TZID=Europe/Berlin:${e.date.replace(/-/g, "")}T${e.time.replace(":", "")}00`
     : `DTSTART;VALUE=DATE:${e.date.replace(/-/g, "")}`;
-  const summary  = icsEscape(e.title_de || e.title_en || "Event");
+  const title   = lang === "en" ? (e.title_en || e.title_de) : (e.title_de || e.title_en);
+  const descRaw = lang === "en" ? (e.description_en || e.description_de) : (e.description_de || e.description_en);
+  const summary  = icsEscape(title || "Event");
   const location = e.brewery_name
     ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
     : "";
-  const desc = icsEscape(e.description_de || "");
+  const desc = icsEscape(descRaw || "");
   const lines = [
     "BEGIN:VEVENT",
     icsFoldLine(`UID:${e.id}@altbieratlas.de`),
@@ -243,30 +245,36 @@ function icsResponse(vevents, calName, filename) {
 
 // GET /api/events/calendar.ics  — alle zukünftigen Events als Kalender
 export async function eventsIcs(req, env) {
+  const url  = new URL(req.url);
+  const lang = url.searchParams.get("lang") === "en" ? "en" : "de";
   const res = await env.DB.prepare(
     `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
      FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
      WHERE e.status = 'approved' AND e.date >= date('now')
      ORDER BY e.date ASC, e.time ASC`
   ).all();
-  const base = (() => { const u = new URL(req.url); return `${u.protocol}//${u.host}`; })();
+  const base    = `${url.protocol}//${url.host}`;
+  const calName = lang === "en" ? "Altbieratlas – Events" : "Altbieratlas – Termine";
   return icsResponse(
-    res.results.map((e) => buildVEvent(e, base)),
-    "Altbieratlas – Termine",
+    res.results.map((e) => buildVEvent(e, base, lang)),
+    calName,
     "altbieratlas-termine.ics",
   );
 }
 
 // GET /api/events/:id/calendar.ics  — einzelnes Event als ICS
 export async function eventIcs(req, env, { id }) {
+  const url  = new URL(req.url);
+  const lang = url.searchParams.get("lang") === "en" ? "en" : "de";
   const e = await env.DB.prepare(
     `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
      FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
      WHERE e.id = ? AND e.status = 'approved'`
   ).bind(id).first();
   if (!e) return error(404, "not-found");
-  const base = (() => { const u = new URL(req.url); return `${u.protocol}//${u.host}`; })();
-  return icsResponse([buildVEvent(e, base)], icsEscape(e.title_de || "Event"), "altbieratlas-termin.ics");
+  const base    = `${url.protocol}//${url.host}`;
+  const calName = icsEscape((lang === "en" ? e.title_en : e.title_de) || e.title_de || e.title_en || "Event");
+  return icsResponse([buildVEvent(e, base, lang)], calName, "altbieratlas-termin.ics");
 }
 
 // GET /api/glossary
