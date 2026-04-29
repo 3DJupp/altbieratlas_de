@@ -262,7 +262,10 @@
 .event-date { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--copper); }
 .event-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
 .event-desc { color: var(--ink-soft); font-size: 14px; }
-.event-loc { font-size: 12px; color: var(--ink-muted); font-family: var(--font-mono); margin-top: auto; }
+.event-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+.event-loc { font-size: 12px; color: var(--ink-muted); font-family: var(--font-mono); }
+.event-ics-link { font-size: 11px; font-family: var(--font-mono); color: var(--copper); white-space: nowrap; border: 1px solid currentColor; border-radius: 4px; padding: 2px 6px; text-decoration: none; flex-shrink: 0; }
+.event-ics-link:hover { background: var(--copper); color: #fff; }
 
 @media (max-width: 900px) {
   .hero-overlay { grid-template-columns: 1fr; padding: 16px 16px 140px; }
@@ -646,12 +649,16 @@ function renderEvents(events) {
       const b = ev.breweryId ? allBreweries.find((x) => x.id === ev.breweryId) : null;
       const dateText = window.formatDateLong(ev.date);
       const timeText = ev.time ? ` · ${ev.time} ${window.t("index.clock")}` : "";
+      const locText = b ? "@ " + b.name + " · " + b.city : "— " + window.t("contrib.locationPlaceholder") + " —";
       return `
         <article class="card event-card">
           <div class="event-date">${dateText}${timeText}</div>
           <div class="event-title">${ev.title[lang] || ev.title.de}</div>
           <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
-          <div class="event-loc">${b ? "@ " + b.name + " · " + b.city : "— " + window.t("contrib.locationPlaceholder") + " —"}</div>
+          <div class="event-card-foot">
+            <span class="event-loc">${locText}</span>
+            <a class="event-ics-link" href="/api/events/${ev.id}/calendar.ics" download="altbieratlas-termin.ics" title="${window.t("index.addToCalendar")}">📅 .ics</a>
+          </div>
         </article>`;
     }).join("") || `<p style="color:var(--ink-muted)">${window.t("index.noEvents")}</p>`;
   }
