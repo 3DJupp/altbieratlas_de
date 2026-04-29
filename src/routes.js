@@ -258,7 +258,7 @@ export async function eventsIcs(req, env) {
   return icsResponse(
     res.results.map((e) => buildVEvent(e, base, lang)),
     calName,
-    "altbieratlas-termine.ics",
+    "altbieratlas.ics",
   );
 }
 
@@ -274,7 +274,7 @@ export async function eventIcs(req, env, { id }) {
   if (!e) return error(404, "not-found");
   const base    = `${url.protocol}//${url.host}`;
   const calName = icsEscape((lang === "en" ? e.title_en : e.title_de) || e.title_de || e.title_en || "Event");
-  return icsResponse([buildVEvent(e, base, lang)], calName, "altbieratlas-termin.ics");
+  return icsResponse([buildVEvent(e, base, lang)], calName, `${id}.ics`);
 }
 
 // GET /api/glossary
