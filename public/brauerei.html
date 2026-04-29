@@ -199,6 +199,13 @@ const root = document.getElementById("brewery-root");
   const latest = preferredSize;
   const lang = window.__atlasLang;
 
+  const SOURCE_KEYS = { "vor Ort": "source.vorOrt", "Beitrag": "source.beitrag" };
+  function translateSource(src) {
+    if (!src) return "";
+    const key = SOURCE_KEYS[src];
+    return key ? window.t(key) : src;
+  }
+
   document.title = `${b.name} · Altbieratlas`;
 
   const typeLabel = window.t("type." + b.type);
@@ -285,7 +292,7 @@ const root = document.getElementById("brewery-root");
         ${prices.slice(0, 5).map((p) => `
           <div class="price-log-row">
             <span class="date">${window.formatDate(p.date)}</span>
-            <span class="src">${p.source || ''}</span>
+            <span class="src">${translateSource(p.source)}</span>
             <span class="sz">${window.formatSize(p.size)}</span>
             <span class="p">€ ${window.formatPrice(p.price)}</span>
           </div>
@@ -432,7 +439,7 @@ const root = document.getElementById("brewery-root");
       log.innerHTML = prices.slice(0, 5).map((p) => `
         <div class="price-log-row">
           <span class="date">${window.formatDate(p.date)}</span>
-          <span class="src">${p.source || ''}</span>
+          <span class="src">${translateSource(p.source)}</span>
           <span class="sz">${window.formatSize(p.size)}</span>
           <span class="p">€ ${window.formatPrice(p.price)}</span>
         </div>

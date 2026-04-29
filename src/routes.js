@@ -175,6 +175,8 @@ export async function listEvents(req, env) {
       breweryId: e.brewery_id,
       date: e.date,
       time: e.time || null,
+      location: e.location || null,
+      url: e.url || null,
       description: { de: e.description_de, en: e.description_en },
     })),
   });
@@ -206,8 +208,9 @@ function buildVEvent(e, base, lang) {
   const summary  = icsEscape(title || "Event");
   const location = e.brewery_name
     ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
-    : "";
+    : (e.location ? icsEscape(e.location) : "");
   const desc = icsEscape(descRaw || "");
+  const eventUrl = e.url || `${base}/`;
   const lines = [
     "BEGIN:VEVENT",
     icsFoldLine(`UID:${e.id}@altbieratlas.de`),
@@ -217,7 +220,7 @@ function buildVEvent(e, base, lang) {
   ];
   if (location) lines.push(icsFoldLine(`LOCATION:${location}`));
   if (desc)     lines.push(icsFoldLine(`DESCRIPTION:${desc}`));
-  lines.push(icsFoldLine(`URL:${base}/`));
+  lines.push(icsFoldLine(`URL:${eventUrl}`));
   lines.push("END:VEVENT");
   return lines.join("\r\n");
 }
@@ -383,6 +386,8 @@ export async function postContribution(req, env, _params, ctx) {
       str(data.eventName, { required: true, max: 200, name: "eventName" });
       str(data.eventDate, { required: true, max: 20, name: "eventDate" });
       if (data.eventTime != null) str(data.eventTime, { max: 10, name: "eventTime" });
+      if (data.eventLocation != null) str(data.eventLocation, { max: 300, name: "eventLocation" });
+      if (data.eventUrl != null) str(data.eventUrl, { max: 500, name: "eventUrl" });
     } else if (type === "style") {
       str(data.styleName, { required: true, max: 200, name: "styleName" });
       str(data.breweryId, { required: true, max: 80, name: "breweryId" });
@@ -585,13 +590,15 @@ export async function adminApprove(req, env, { id }) {
       ).run();
     } else if (c.type === "event") {
       await env.DB.prepare(
-        `INSERT INTO events (id, title_de, title_en, brewery_id, date, time, description_de, description_en, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved')`
+        `INSERT INTO events (id, title_de, title_en, brewery_id, date, time, location, url, description_de, description_en, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')`
       ).bind(
         "ev_" + Math.random().toString(36).slice(2, 10),
         payload.eventName, payload.eventName, // en fallback
         payload.breweryId || null, payload.eventDate,
         payload.eventTime || null,
+        payload.eventLocation || null,
+        payload.eventUrl || null,
         payload.description || null, payload.description || null,
       ).run();
     } else if (c.type === "style") {
