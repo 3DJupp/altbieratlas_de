@@ -473,10 +473,14 @@ function forms(typ) {
         <label>${t("field.eventDate")}</label>
         <input name="eventDate" type="date" required min="${today}" />
       </div>
-      <div class="field">
+      <div class="field" id="event-time-field">
         <label>${t("field.eventTime")}</label>
-        <input name="eventTime" type="time" placeholder="z.B. 19:00" />
+        <input name="eventTime" id="eventTime" type="time" />
       </div>
+    </div>
+    <div class="field field-inline">
+      <input type="checkbox" name="eventAllDay" id="eventAllDay" value="yes" />
+      <label for="eventAllDay">${t("field.eventAllDay")}</label>
     </div>
     <div class="field">
       <label>${t("field.eventLocation")}</label>
@@ -507,6 +511,19 @@ function renderForm(typ) {
   const url = new URL(location.href);
   url.searchParams.set("typ", typ);
   history.replaceState(null, "", url.toString());
+
+  // Ganztägig-Checkbox für Event-Formular
+  const allDayChk = document.getElementById("eventAllDay");
+  if (allDayChk) {
+    function toggleTimeField() {
+      const timeInput = document.getElementById("eventTime");
+      const timeField = document.getElementById("event-time-field");
+      const isAllDay = allDayChk.checked;
+      timeInput.disabled = isAllDay;
+      timeField.style.opacity = isAllDay ? "0.35" : "";
+    }
+    allDayChk.addEventListener("change", toggleTimeField);
+  }
 
   // Autocomplete für Brauerei-Name
   const nameInput = document.getElementById("f-name");
