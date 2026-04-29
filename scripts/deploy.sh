@@ -50,6 +50,8 @@ if [ "$SEED" = true ]; then
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_untappd_cache.sql
   echo "▶ Event-Uhrzeit-Spalte hinzufügen..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_event_time.sql
+  echo "▶ Event-Ort und URL hinzufügen..."
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0005_event_location_url.sql
 fi
 
 if [ "$DEMO" = true ]; then
