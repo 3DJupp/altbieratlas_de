@@ -403,6 +403,9 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   border-color: var(--copper);
 }
 .field textarea { min-height: 90px; resize: vertical; }
+.field.field-inline { flex-direction: row; align-items: center; gap: 8px; padding: 4px 0; }
+.field.field-inline input[type="checkbox"] { width: auto; margin: 0; }
+.field.field-inline label { margin: 0; font-weight: 400; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* Turnstile placeholder */

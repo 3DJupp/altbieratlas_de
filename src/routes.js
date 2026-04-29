@@ -166,7 +166,7 @@ export async function listPrices(req, env) {
 // GET /api/events
 export async function listEvents(req, env) {
   const res = await env.DB.prepare(
-    "SELECT * FROM events WHERE status = 'approved' ORDER BY date ASC"
+    "SELECT * FROM events WHERE status = 'approved' ORDER BY date ASC, time ASC"
   ).all();
   return json({
     events: res.results.map((e) => ({
@@ -174,8 +174,84 @@ export async function listEvents(req, env) {
       title: { de: e.title_de, en: e.title_en },
       breweryId: e.brewery_id,
       date: e.date,
+      time: e.time || null,
       description: { de: e.description_de, en: e.description_en },
     })),
+  });
+}
+
+// GET /api/events/calendar.ics
+export async function eventsIcs(req, env) {
+  const res = await env.DB.prepare(
+    `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
+     FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+     WHERE e.status = 'approved' ORDER BY e.date ASC, e.time ASC`
+  ).all();
+
+  const url = new URL(req.url);
+  const base = `${url.protocol}//${url.host}`;
+
+  function icsEscape(s) {
+    return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;")
+      .replace(/,/g, "\\,").replace(/\n/g, "\\n").replace(/\r/g, "");
+  }
+  function foldLine(line) {
+    const bytes = [...line];
+    const out = [];
+    let cur = "";
+    for (const ch of bytes) {
+      if ((cur + ch).length > 75) { out.push(cur); cur = " " + ch; }
+      else { cur += ch; }
+    }
+    if (cur) out.push(cur);
+    return out.join("\r\n");
+  }
+
+  const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z/, "Z");
+
+  const vevents = res.results.map((e) => {
+    const dtstart = e.time
+      ? `DTSTART;TZID=Europe/Berlin:${e.date.replace(/-/g, "")}T${e.time.replace(":", "")}00`
+      : `DTSTART;VALUE=DATE:${e.date.replace(/-/g, "")}`;
+    const summary = icsEscape(e.title_de || e.title_en || "Event");
+    const location = e.brewery_name
+      ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
+      : "";
+    const desc = icsEscape(e.description_de || "");
+    const uid = `${e.id}@altbieratlas.de`;
+    const lines = [
+      "BEGIN:VEVENT",
+      foldLine(`UID:${uid}`),
+      `DTSTAMP:${now}`,
+      foldLine(dtstart),
+      foldLine(`SUMMARY:${summary}`),
+    ];
+    if (location) lines.push(foldLine(`LOCATION:${location}`));
+    if (desc)     lines.push(foldLine(`DESCRIPTION:${desc}`));
+    lines.push(foldLine(`URL:${base}/`));
+    lines.push("END:VEVENT");
+    return lines.join("\r\n");
+  });
+
+  const cal = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Altbieratlas//DE",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    foldLine("X-WR-CALNAME:Altbieratlas – Termine"),
+    "X-WR-TIMEZONE:Europe/Berlin",
+    ...vevents,
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  return new Response(cal, {
+    status: 200,
+    headers: {
+      "content-type": "text/calendar; charset=utf-8",
+      "content-disposition": 'attachment; filename="altbieratlas-termine.ics"',
+      "cache-control": "public, max-age=900",
+    },
   });
 }
 
@@ -284,6 +360,7 @@ export async function postContribution(req, env, _params, ctx) {
     } else if (type === "event") {
       str(data.eventName, { required: true, max: 200, name: "eventName" });
       str(data.eventDate, { required: true, max: 20, name: "eventDate" });
+      if (data.eventTime != null) str(data.eventTime, { max: 10, name: "eventTime" });
     } else if (type === "style") {
       str(data.styleName, { required: true, max: 200, name: "styleName" });
       str(data.breweryId, { required: true, max: 80, name: "breweryId" });
@@ -486,12 +563,13 @@ export async function adminApprove(req, env, { id }) {
       ).run();
     } else if (c.type === "event") {
       await env.DB.prepare(
-        `INSERT INTO events (id, title_de, title_en, brewery_id, date, description_de, description_en, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'approved')`
+        `INSERT INTO events (id, title_de, title_en, brewery_id, date, time, description_de, description_en, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved')`
       ).bind(
         "ev_" + Math.random().toString(36).slice(2, 10),
         payload.eventName, payload.eventName, // en fallback
         payload.breweryId || null, payload.eventDate,
+        payload.eventTime || null,
         payload.description || null, payload.description || null,
       ).run();
     } else if (c.type === "style") {
