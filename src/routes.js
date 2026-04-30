@@ -831,23 +831,28 @@ export async function serveImpressum(req, env) {
   const assetRes = await env.ASSETS.fetch(req);
   if (!assetRes.ok) return assetRes;
 
-  const sc  = siteConfig(env);
+  const sc   = siteConfig(env);
   const impr = sc.impressum || {};
-  const v   = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : "");
+  const v    = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : "");
 
-  const injection =
-    `<script>(function(){` +
-    `var i=window.ATLAS_CONFIG.impressum=window.ATLAS_CONFIG.impressum||{};` +
-    `i.owner=${JSON.stringify(v(impr.owner))};` +
-    `i.address=${JSON.stringify(v(impr.address))};` +
-    `i.email=${JSON.stringify(v(impr.email))};` +
-    `}());</script>`;
+  // Nur gesetzte Werte injizieren — leere Strings würden die config.js-Fallbacks überschreiben.
+  // E-Mail fällt auf den allgemeinen contactEmail zurück, wenn impressum.email fehlt.
+  const emailVal = v(impr.email) || v(sc.contactEmail);
+  const parts = [];
+  if (v(impr.owner))   parts.push(`i.owner=${JSON.stringify(v(impr.owner))};`);
+  if (v(impr.address)) parts.push(`i.address=${JSON.stringify(v(impr.address))};`);
+  if (emailVal)        parts.push(`i.email=${JSON.stringify(emailVal)};`);
 
   const html = await assetRes.text();
-  const patched = html.replace(
-    '<script src="config.js"></script>',
-    `<script src="config.js"></script>\n${injection}`,
-  );
+  const patched = parts.length
+    ? html.replace(
+        '<script src="config.js"></script>',
+        `<script src="config.js"></script>\n` +
+          `<script>(function(){var i=window.ATLAS_CONFIG.impressum=window.ATLAS_CONFIG.impressum||{};` +
+          parts.join("") +
+          `}());</script>`,
+      )
+    : html;
 
   // Vorhandene Response-Header übernehmen (CSP etc.), Content-Type korrigieren
   const headers = new Headers(assetRes.headers);
