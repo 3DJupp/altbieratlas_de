@@ -14,8 +14,8 @@
 #   bash scripts/deploy.sh --seed --demo # Schema + Basis + Demo-Daten + Deploy
 #
 # --seed:  Schema (0001), Basisdaten/Stile/Glossar (0002_base),
-#          Untappd-Cache-Tabelle (0003), Event-Uhrzeit (0004),
-#          Event-Ort/-URL (0005) einspielen — idempotent, sicher
+#          Untappd-Cache-Tabelle (0003) einspielen — idempotent, sicher.
+#          0001 enthält alle Spalten inkl. time/location/url.
 # --demo:  Zusätzlich Beispiel-Brauereien, Preise und Events (demo.sql)
 #          — nur für Staging/Dev sinnvoll
 # ============================================================
@@ -42,6 +42,8 @@ sed -i \
   wrangler.toml
 
 # Optional: DB-Migrations einspielen (--yes überspringt interaktive Bestätigung)
+# 0001 enthält das vollständige Schema inkl. time/location/url — idempotent (IF NOT EXISTS).
+# 0004/0005 sind Upgrade-Migrationen für Altbestände (kein IF NOT EXISTS, nur einmalig nötig).
 if [ "$SEED" = true ]; then
   echo "▶ Schema einspielen..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
@@ -49,10 +51,6 @@ if [ "$SEED" = true ]; then
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_base.sql
   echo "▶ Untappd-Cache-Tabelle einspielen..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_untappd_cache.sql
-  echo "▶ Event-Uhrzeit-Spalte hinzufügen..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_event_time.sql
-  echo "▶ Event-Ort und URL hinzufügen..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0005_event_location_url.sql
 fi
 
 if [ "$DEMO" = true ]; then
