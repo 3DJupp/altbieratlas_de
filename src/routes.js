@@ -87,7 +87,7 @@ export async function getStats(req, env) {
   const [brewCount, priceCount, avgRow] = await Promise.all([
     env.DB.prepare("SELECT COUNT(*) AS n FROM breweries WHERE status = 'approved'").first(),
     env.DB.prepare("SELECT COUNT(*) AS n FROM prices WHERE status = 'approved'").first(),
-    env.DB.prepare("SELECT AVG(price) AS avg FROM prices WHERE status = 'approved' AND (size = '0,25l' OR size = '0.25')").first(),
+    env.DB.prepare("SELECT AVG(price) AS avg FROM prices WHERE status = 'approved' AND size = '0.25l'").first(),
   ]);
   return json({
     breweryCount: brewCount?.n ?? 0,
@@ -372,7 +372,7 @@ export async function postContribution(req, env, _params, ctx) {
     } else if (type === "brewery") {
       str(data.name, { required: true, max: 200, name: "name" });
       str(data.city, { required: true, max: 200, name: "city" });
-      oneOf(data.type, ["hausbrauerei", "gastronomie", "shop"], { required: true, name: "type" });
+      oneOf(data.type, ["brewery", "pub", "shop"], { required: true, name: "type" });
       if (data.lat != null) num(data.lat, { min: -90, max: 90, name: "lat" });
       if (data.lng != null) num(data.lng, { min: -180, max: 180, name: "lng" });
     } else if (type === "event") {
@@ -576,7 +576,7 @@ export async function adminApprove(req, env, { id }) {
         `INSERT INTO breweries (id, name, short_name, type, city, country, address, lat, lng, founded, website, description_de, description_en, verified, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'approved')`
       ).bind(
-        newId, payload.name, payload.short || null, payload.type || "hausbrauerei",
+        newId, payload.name, payload.short || null, payload.type || "brewery",
         payload.city, payload.country || "DE", payload.address || null,
         lat, lng, payload.founded ? parseInt(payload.founded, 10) : null,
         payload.website || null, payload.description || null, payload.description_en || null,

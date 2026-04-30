@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS breweries (
   id             TEXT PRIMARY KEY,
   name           TEXT NOT NULL,
   short_name     TEXT,
-  type           TEXT NOT NULL CHECK (type IN ('hausbrauerei','gastronomie','shop')),
+  type           TEXT NOT NULL CHECK (type IN ('brewery','pub','shop')),
   city           TEXT NOT NULL,
   country        TEXT NOT NULL DEFAULT 'DE',
   address        TEXT,
@@ -134,3 +134,10 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   expires_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_rate_expires ON rate_limits(expires_at);
+
+-- Untappd cache (24 h TTL per brewery)
+CREATE TABLE IF NOT EXISTS untappd_cache (
+  atlas_id  TEXT PRIMARY KEY,
+  data      TEXT NOT NULL,       -- JSON: { found, untappdId, name, rating, beerCount, ... }
+  cached_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

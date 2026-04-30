@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # ============================================================
-# Altbieratlas — Datenbank-Setup
+# Altbieratlas — Database setup
 # ============================================================
-# Spielt Schema + Basisdaten ein. Mit --demo zusätzlich
-# Beispiel-Brauereien, Preise und Events (nur für Dev/Staging).
+# Applies schema + base data. With --demo also loads sample
+# breweries, prices and events (dev/staging only).
 #
-# Verwendung:
+# Usage:
 #   bash scripts/db-setup.sh [--remote] [--demo]
 #
-# Optionen:
-#   --remote   Gegen die Remote-D1-Datenbank ausführen (Standard: lokal)
-#   --demo     Zusätzlich Demo-Daten einspielen (Brauereien, Preise, Events)
+# Options:
+#   --remote   Run against the remote D1 database (default: local)
+#   --demo     Also load demo data (breweries, prices, events)
 #
-# Umgebungsvariable:
-#   D1_DATABASE_NAME   Name der D1-Datenbank (Standard: altbieratlas)
+# Environment:
+#   D1_DATABASE_NAME   Name of the D1 database (default: altbieratlas)
 #
-# Beispiele:
-#   bash scripts/db-setup.sh                    # lokal, nur Basisdaten
-#   bash scripts/db-setup.sh --demo             # lokal + Demo-Daten
-#   bash scripts/db-setup.sh --remote           # remote, nur Basisdaten (Produktion)
-#   bash scripts/db-setup.sh --remote --demo    # remote + Demo-Daten (Staging)
+# Examples:
+#   bash scripts/db-setup.sh                    # local, base data only
+#   bash scripts/db-setup.sh --demo             # local + demo data
+#   bash scripts/db-setup.sh --remote           # remote, base data only (production)
+#   bash scripts/db-setup.sh --remote --demo    # remote + demo data (staging)
 # ============================================================
 set -euo pipefail
 
@@ -31,13 +31,13 @@ for arg in "$@"; do
   case "$arg" in
     --remote) REMOTE_FLAG="--remote" ;;
     --demo)   DEMO=true ;;
-    *) echo "Unbekanntes Argument: $arg" >&2; exit 1 ;;
+    *) echo "Unknown argument: $arg" >&2; exit 1 ;;
   esac
 done
 
 TARGET="${REMOTE_FLAG:+remote}"
-TARGET="${TARGET:-lokal}"
-echo "▶ Ziel: ${TARGET} · DB: ${DB}${DEMO:+ · inkl. Demo-Daten}"
+TARGET="${TARGET:-local}"
+echo "▶ Target: ${TARGET} · DB: ${DB}${DEMO:+ · incl. demo data}"
 echo ""
 
 run() {
@@ -45,19 +45,16 @@ run() {
   npx wrangler d1 execute "$DB" $REMOTE_FLAG --file="$1"
 }
 
-echo "[1/3] Schema"
+echo "[1/2] Schema"
 run migrations/0001_schema.sql
 
-echo "[2/3] Basisdaten (Stile, Glossar)"
+echo "[2/2] Base data (styles, glossary)"
 run migrations/0002_base.sql
 
-echo "[3/3] Untappd-Cache-Tabelle"
-run migrations/0003_untappd_cache.sql
-
 if [ "$DEMO" = true ]; then
-  echo "[+Demo] Brauereien, Preise, Events"
+  echo "[+demo] Breweries, prices, events"
   run migrations/demo.sql
 fi
 
 echo ""
-echo "✓ Fertig."
+echo "✓ Done."

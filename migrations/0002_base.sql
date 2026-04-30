@@ -1,12 +1,12 @@
 -- ============================================================
--- Altbieratlas — Basisdaten (Glossar & Bierstile)
+-- Altbieratlas — Base data (glossary & beer styles)
 -- ============================================================
--- Referenzdaten, die auf jedem Deployment vorhanden sein sollten.
--- Wird von scripts/db-setup.sh automatisch eingespielt.
--- Kein Testinhalt — keine Brauereien, Preise oder Events.
+-- Reference data that should be present on every deployment.
+-- Applied automatically by scripts/db-setup.sh.
+-- No test content — no breweries, prices, or events.
 -- ============================================================
 
--- Bierstile
+-- Beer styles
 INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en) VALUES
   ('uerige-alt',    'Uerige Alt',       4.7,  52, '#7b3a13',
     'Kräftig herb, würzig, trockener Abgang. Eine der bitteren unter den Düsseldorfer Alts.',
@@ -42,7 +42,7 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en)
     'Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.',
     'Vermont take: malty, mildly sweet, with American hop character.');
 
--- Glossar
+-- Glossary
 INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES
   ('Altbier',
     'Obergäriges, dunkel-bernsteinfarbenes Bier aus dem Rheinland. "Alt" verweist auf die alte, obergärige Brauart (im Gegensatz zum später aufgekommenen, untergärigen Lager).',

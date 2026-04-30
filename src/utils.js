@@ -330,9 +330,9 @@ function _emailDataRows(type, data, de) {
   ];
   if (type === "brewery") {
     const brewTypeMap = {
-      hausbrauerei: { de: "Hausbrauerei", en: "Brewpub" },
-      gastronomie:  { de: "Gastronomie",  en: "Bar / Restaurant" },
-      shop:         { de: "Handel",        en: "Retail" },
+      brewery: { de: "Hausbrauerei", en: "Brewpub" },
+      pub:     { de: "Gastronomie",  en: "Bar / Restaurant" },
+      shop:    { de: "Handel",       en: "Retail" },
     };
     const brewTypeLabel = data.type
       ? (brewTypeMap[data.type]?.[de ? "de" : "en"] || data.type.charAt(0).toUpperCase() + data.type.slice(1))
