@@ -271,6 +271,8 @@ let sizeOptions = "";
 let breweryOptions = "";
 let remoteCfg = null;
 let turnstileToken = null;
+let turnstileWidgetId = null;
+let turnstileSiteKeyCache = null;
 
 (async () => {
   try {
@@ -321,6 +323,27 @@ function pushSubsCookie(entry) {
 }
 
 // ============ Turnstile ============
+function turnstileTheme() {
+  const t = document.documentElement.getAttribute("data-theme") || "light";
+  return t === "dark" ? "dark" : "light";
+}
+
+function renderTurnstileWidget() {
+  const host = document.getElementById("turnstile-widget");
+  if (!host || !turnstileSiteKeyCache || !window.turnstile) return;
+  if (turnstileWidgetId !== null) {
+    try { window.turnstile.remove(turnstileWidgetId); } catch {}
+    turnstileWidgetId = null;
+    turnstileToken = null;
+  }
+  turnstileWidgetId = window.turnstile.render(host, {
+    sitekey: turnstileSiteKeyCache,
+    theme: turnstileTheme(),
+    callback: (token) => { turnstileToken = token; },
+    "expired-callback": () => { turnstileToken = null; },
+  });
+}
+
 function initTurnstile() {
   const siteKey = (remoteCfg && remoteCfg.turnstileSiteKey)
                || window.ATLAS_CONFIG.turnstileSiteKey;
@@ -332,20 +355,15 @@ function initTurnstile() {
     return;
   }
 
-  // Echtes Widget laden
-  window.turnstileCallback = (token) => { turnstileToken = token; };
-  window.turnstileExpired = () => { turnstileToken = null; };
+  turnstileSiteKeyCache = siteKey;
+
+  window.onTurnstileLoad = renderTurnstileWidget;
+  document.addEventListener("atlas:theme-changed", renderTurnstileWidget);
 
   const s = document.createElement("script");
-  s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+  s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
   s.async = true; s.defer = true;
   document.head.appendChild(s);
-
-  const host = document.getElementById("turnstile-widget");
-  host.innerHTML = `<div class="cf-turnstile"
-    data-sitekey="${siteKey}"
-    data-callback="turnstileCallback"
-    data-expired-callback="turnstileExpired"></div>`;
 }
 
 // ============ Form templates ============
@@ -651,8 +669,8 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     pushSubsCookie({ tp: apiType, sm: summary.trim(), dt: new Date().toISOString().slice(0, 10), ...cookieExtra });
 
     // Turnstile nach Erfolg zurücksetzen (Token ist einmalig)
-    if (window.turnstile && document.querySelector(".cf-turnstile")) {
-      try { window.turnstile.reset(); } catch {}
+    if (window.turnstile && turnstileWidgetId !== null) {
+      try { window.turnstile.reset(turnstileWidgetId); } catch {}
       turnstileToken = null;
     }
 
