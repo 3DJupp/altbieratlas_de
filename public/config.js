@@ -71,7 +71,12 @@ window.ATLAS_CONFIG = {
     website: null,
   },
 
-  // Legal
+  // ============================================================
+  // Impressum-Daten — werden NICHT über /api/config übertragen
+  // (Datenminimierung: keine E-Mail-Adressen / Anschriften in der API).
+  // Werte hier vor dem Deployment eintragen; Impressum-Seite liest
+  // ausschließlich aus diesem Objekt.
+  // ============================================================
   impressum: {
     owner: "Altbieratlas",
     address: "",

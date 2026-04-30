@@ -58,7 +58,6 @@ export async function getPublicConfig(req, env) {
     : null;
 
   const author = sc.author || {};
-  const impr   = sc.impressum || {};
 
   return json({
     // App-Version
@@ -78,12 +77,6 @@ export async function getPublicConfig(req, env) {
       github:   v(author.github),
       linkedin: v(author.linkedin),
       website:  v(author.website),
-    },
-    // Impressum
-    impressum: {
-      owner:   v(impr.owner),
-      address: v(impr.address),
-      email:   v(impr.email),
     },
     requireModeration: sc.requireModeration !== false,
   });

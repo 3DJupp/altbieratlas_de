@@ -38,12 +38,6 @@
         if (srv.author[k]) cfg.author[k] = srv.author[k];
       }
     }
-    if (srv.impressum && typeof srv.impressum === "object") {
-      cfg.impressum = cfg.impressum || {};
-      for (const k of ["owner", "address", "email"]) {
-        if (srv.impressum[k]) cfg.impressum[k] = srv.impressum[k];
-      }
-    }
   }
 
   async function probe() {
