@@ -22,11 +22,14 @@
 .know-hero .lede em { font-style: italic; color: var(--copper); }
 
 .know-nav {
-  position: sticky;
-  top: 64px; /* atlas-header .inner height */
   border-bottom: 1px solid var(--rule);
   background: var(--bg);
   z-index: 30;
+}
+.know-nav.is-stuck {
+  position: fixed;
+  left: 0;
+  right: 0;
 }
 .know-nav .container {
   display: flex;
@@ -262,18 +265,49 @@ function paintGlossary() {
 
 const knowNav = document.querySelector(".know-nav");
 
-function headerH() {
-  return document.querySelector(".atlas-header")?.offsetHeight ?? 64;
+// Sentinel: markiert die natürliche Position der Nav im Dokument
+const sentinel = document.createElement("div");
+sentinel.style.cssText = "height:0;pointer-events:none;";
+knowNav.parentNode.insertBefore(sentinel, knowNav);
+
+// Spacer: füllt die Lücke wenn die Nav aus dem Flow genommen wird
+const navSpacer = document.createElement("div");
+navSpacer.style.display = "none";
+knowNav.insertAdjacentElement("afterend", navSpacer);
+
+function headerBottom() {
+  const h = document.querySelector(".atlas-header");
+  return h ? h.getBoundingClientRect().bottom : 64;
 }
+
+function syncSticky() {
+  const hb = headerBottom();
+  const sentinelTop = sentinel.getBoundingClientRect().top;
+  const isStuck = knowNav.classList.contains("is-stuck");
+  const shouldStick = sentinelTop <= hb;
+
+  if (shouldStick && !isStuck) {
+    navSpacer.style.height = knowNav.offsetHeight + "px";
+    navSpacer.style.display = "block";
+    knowNav.classList.add("is-stuck");
+  } else if (!shouldStick && isStuck) {
+    knowNav.classList.remove("is-stuck");
+    navSpacer.style.display = "none";
+  }
+
+  knowNav.style.top = shouldStick || isStuck ? Math.max(0, hb) + "px" : "";
+}
+window.addEventListener("scroll", syncSticky, { passive: true });
+syncSticky();
 
 // --- Aktiver Tab beim Scrollen ---
 const sections = ["geschichte", "sorten", "koebes", "glossar"];
 const navLinks = document.querySelectorAll(".know-nav a");
 
 function updateActive() {
-  const hh = headerH();
+  const hb = headerBottom();
   const navH = knowNav.offsetHeight;
-  const y = window.scrollY + hh + navH + 10;
+  const y = window.scrollY + hb + navH + 10;
   let active = sections[0];
   sections.forEach((id) => {
     const el = document.getElementById(id);
@@ -287,7 +321,7 @@ function updateActive() {
 window.addEventListener("scroll", updateActive, { passive: true });
 updateActive();
 
-// --- Klick-Handler: aktiv setzen + smooth scroll mit korrektem Offset ---
+// --- Klick-Handler ---
 navLinks.forEach((link) => {
   link.addEventListener("click", (e) => {
     e.preventDefault();
@@ -298,9 +332,9 @@ navLinks.forEach((link) => {
     navLinks.forEach((a) => a.classList.remove("active"));
     link.classList.add("active");
 
-    const hh = headerH();
+    const hb = headerBottom();
     const navH = knowNav.offsetHeight;
-    const scrollTop = target.getBoundingClientRect().top + window.scrollY - hh - navH;
+    const scrollTop = target.getBoundingClientRect().top + window.scrollY - Math.max(0, hb) - navH;
     window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
   });
 });
