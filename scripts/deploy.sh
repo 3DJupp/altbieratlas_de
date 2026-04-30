@@ -13,11 +13,12 @@
 #   bash scripts/deploy.sh --seed       # Schema + Basisdaten + Deploy
 #   bash scripts/deploy.sh --seed --demo # Schema + Basis + Demo-Daten + Deploy
 #
-# --seed:  Schema (0001), Basisdaten/Stile/Glossar (0002_base),
-#          Untappd-Cache-Tabelle (0003), Event-Uhrzeit (0004),
-#          Event-Ort/-URL (0005) einspielen — idempotent, sicher
-# --demo:  Zusätzlich Beispiel-Brauereien, Preise und Events (demo.sql)
-#          — nur für Staging/Dev sinnvoll
+# --seed:  Schema (0001), base data / styles / glossary (0002_base),
+#          Untappd cache table (0003). Idempotent — safe to re-run.
+#          0001 already includes all columns (time, location, url).
+#          0004/0005 are legacy upgrade migrations for pre-existing DBs.
+# --demo:  Additionally seed example breweries, prices and events (demo.sql).
+#          Only useful for staging / development.
 # ============================================================
 set -euo pipefail
 
@@ -41,22 +42,19 @@ sed -i \
   -e "s/REPLACE_WITH_YOUR_D1_NAME/${database_name}/g" \
   wrangler.toml
 
-# Optional: DB-Migrations einspielen (--yes überspringt interaktive Bestätigung)
+# Apply DB migrations (--yes skips the interactive confirmation prompt).
+# 0004/0005 are intentionally excluded: 0001 already defines all columns.
 if [ "$SEED" = true ]; then
-  echo "▶ Schema einspielen..."
+  echo "▶ Applying schema..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
-  echo "▶ Basisdaten einspielen (Stile, Glossar)..."
+  echo "▶ Seeding base data (styles, glossary)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_base.sql
-  echo "▶ Untappd-Cache-Tabelle einspielen..."
+  echo "▶ Applying Untappd cache table..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_untappd_cache.sql
-  echo "▶ Event-Uhrzeit-Spalte hinzufügen..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_event_time.sql
-  echo "▶ Event-Ort und URL hinzufügen..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0005_event_location_url.sql
 fi
 
 if [ "$DEMO" = true ]; then
-  echo "▶ Demo-Daten einspielen (Brauereien, Preise, Events)..."
+  echo "▶ Seeding demo data (breweries, prices, events)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/demo.sql
 fi
 
