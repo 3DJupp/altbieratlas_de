@@ -13,8 +13,8 @@
 #   bash scripts/deploy.sh --seed       # Schema + Basisdaten + Deploy
 #   bash scripts/deploy.sh --seed --demo # Schema + Basis + Demo-Daten + Deploy
 #
-# --seed:  Schema (0001), base data / styles / glossary (0002_base),
-#          Untappd cache table (0003). Idempotent — safe to re-run.
+# --seed:  Schema (0001), base data / styles / glossary (0002_base).
+#          Idempotent — safe to re-run.
 #          0001 already includes all columns (time, location, url).
 #          0004/0005 are legacy upgrade migrations for pre-existing DBs.
 # --demo:  Additionally seed example breweries, prices and events (demo.sql).
@@ -49,8 +49,6 @@ if [ "$SEED" = true ]; then
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
   echo "▶ Seeding base data (styles, glossary)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_base.sql
-  echo "▶ Applying Untappd cache table..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_untappd_cache.sql
 fi
 
 if [ "$DEMO" = true ]; then
