@@ -72,10 +72,10 @@ window.ATLAS_CONFIG = {
   },
 
   // ============================================================
-  // Impressum-Daten — werden NICHT über /api/config übertragen
-  // (Datenminimierung: keine E-Mail-Adressen / Anschriften in der API).
-  // Werte hier vor dem Deployment eintragen; Impressum-Seite liest
-  // ausschließlich aus diesem Objekt.
+  // Impressum-Daten — Fallback für lokale Entwicklung (Mock-Modus).
+  // Im Deployment injiziert der Worker die Werte aus SITE_CONFIG
+  // direkt als Inline-Skript in /impressum.html — sie werden NICHT
+  // über die JSON-API übertragen.
   // ============================================================
   impressum: {
     owner: "Altbieratlas",

@@ -100,6 +100,16 @@ export default {
       }
     }
 
+    // Impressum: Daten serverseitig ins HTML eingebettet (nicht via JSON-API)
+    if (url.pathname === "/impressum.html" && request.method === "GET" && env.ASSETS) {
+      try {
+        return await R.serveImpressum(request, env);
+      } catch (e) {
+        console.error("[worker] impressum threw:", e?.stack || e);
+        // bei Fehler: statische Datei unverändert ausliefern
+      }
+    }
+
     // Statische Dateien über ASSETS-Binding
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);

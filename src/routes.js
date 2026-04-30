@@ -822,3 +822,37 @@ export async function sitemap(req, env) {
     },
   });
 }
+
+// GET /impressum.html
+// Liefert die statische Seite, ergänzt um ein serverseitig eingebettetes
+// <script>-Block mit den Impressum-Daten aus SITE_CONFIG. Die Daten
+// verlassen den Worker dadurch nur als gerendertes HTML — nicht als JSON-API.
+export async function serveImpressum(req, env) {
+  const assetRes = await env.ASSETS.fetch(req);
+  if (!assetRes.ok) return assetRes;
+
+  const sc  = siteConfig(env);
+  const impr = sc.impressum || {};
+  const v   = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : "");
+
+  const injection =
+    `<script>(function(){` +
+    `var i=window.ATLAS_CONFIG.impressum=window.ATLAS_CONFIG.impressum||{};` +
+    `i.owner=${JSON.stringify(v(impr.owner))};` +
+    `i.address=${JSON.stringify(v(impr.address))};` +
+    `i.email=${JSON.stringify(v(impr.email))};` +
+    `}());</script>`;
+
+  const html = await assetRes.text();
+  const patched = html.replace(
+    '<script src="config.js"></script>',
+    `<script src="config.js"></script>\n${injection}`,
+  );
+
+  // Vorhandene Response-Header übernehmen (CSP etc.), Content-Type korrigieren
+  const headers = new Headers(assetRes.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.set("cache-control", "no-store");
+
+  return new Response(patched, { status: 200, headers });
+}
