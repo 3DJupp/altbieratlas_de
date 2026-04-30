@@ -71,7 +71,12 @@ window.ATLAS_CONFIG = {
     website: null,
   },
 
-  // Legal
+  // ============================================================
+  // Impressum-Daten — Fallback für lokale Entwicklung (Mock-Modus).
+  // Im Deployment injiziert der Worker die Werte aus SITE_CONFIG
+  // direkt als Inline-Skript in /impressum.html — sie werden NICHT
+  // über die JSON-API übertragen.
+  // ============================================================
   impressum: {
     owner: "Altbieratlas",
     address: "",
