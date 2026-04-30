@@ -167,7 +167,7 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 | `siteUrl` | Öffentliche URL der Site — wird in E-Mail-Links verwendet. Standard: `https://altbieratlas.de` |
 | `resendFrom` | Absenderadresse für alle Mails via Resend, z. B. `Altbieratlas <noreply@altbieratlas.de>` |
 | `author` | Footer-Angaben: `name`, `github`, `linkedin`, `website` |
-| `impressum` | Impressumsangaben (§ 5 TMG): `owner`, `address`, `email` |
+| `impressum` | Impressumsangaben (§ 5 TMG): `owner`, `address`, `email`. Der Worker injiziert die Werte serverseitig in `/impressum.html` — sie erscheinen nie in der JSON-API. Fehlt `impressum.email`, wird `contactEmail` als Fallback verwendet. |
 
 #### Secrets (immer einzeln im Dashboard setzen — nie in `SITE_CONFIG`)
 
@@ -246,7 +246,7 @@ Für reines UI-Testen (ohne Wrangler) einfach `index.html` im Browser öffnen �
 
 | Methode | Pfad | Zweck |
 |---|---|---|
-| GET | `/api/config` | Turnstile-Key, GA4-ID, Author-Infos, Impressum, priceSizes, highlightedSizes, requireModeration |
+| GET | `/api/config` | Turnstile-Key, GA4-ID, Author-Infos, priceSizes, highlightedSizes, requireModeration |
 | GET | `/api/stats` | Kennzahlen für Footer-Ticker |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |

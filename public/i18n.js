@@ -708,7 +708,8 @@ window.setLang = function (lang) {
   window.__atlasLang = lang;
   localStorage.setItem("atlas-lang", lang);
   document.documentElement.lang = lang;
-  document.dispatchEvent(new CustomEvent("atlas:lang-changed", { detail: lang }));
+  // DOM zuerst aktualisieren, danach Event feuern — damit Listener wie paintImpressum()
+  // bereits auf den neu gerenderten [data-i18n-html]-Elementen arbeiten können.
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const k = el.getAttribute("data-i18n");
     el.textContent = window.t(k);
@@ -726,6 +727,7 @@ window.setLang = function (lang) {
   // Wert in document.title gespiegelt)
   const titleKey = document.documentElement.getAttribute("data-i18n-title");
   if (titleKey) document.title = window.t(titleKey);
+  document.dispatchEvent(new CustomEvent("atlas:lang-changed", { detail: lang }));
 };
 
 // ---- Datumsformat ----
