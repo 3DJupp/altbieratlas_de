@@ -59,4 +59,4 @@ if [ "$DEMO" = true ]; then
 fi
 
 echo "▶ Worker deployen..."
-exec npx wrangler versions upload
+exec npx wrangler deploy

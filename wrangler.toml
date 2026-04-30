@@ -31,6 +31,9 @@ keep_vars = true
 [assets]
 directory = "./public"
 binding = "ASSETS"
+# Worker muss für alle Requests laufen, damit /impressum.html serverseitig
+# mit Betreiberdaten angereichert werden kann (Server-Side-Injection).
+run_worker_first = true
 
 # --- D1-Datenbank ---------------------------------------------
 # Platzhalter werden von scripts/deploy.sh via sed ersetzt.
