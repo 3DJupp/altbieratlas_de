@@ -28,10 +28,8 @@
 }
 .know-nav.is-stuck {
   position: fixed;
-  top: 0; /* wird per JS auf echte Header-Höhe gesetzt */
   left: 0;
   right: 0;
-  background: var(--bg);
 }
 .know-nav .container {
   display: flex;
@@ -265,53 +263,51 @@ function paintGlossary() {
   }
 })();
 
-// --- Leiste fixieren ---
 const knowNav = document.querySelector(".know-nav");
-// Sentinel: 1-px-Marker an der natürlichen Position der Leiste
+
+// Sentinel: markiert die natürliche Position der Nav im Dokument
 const sentinel = document.createElement("div");
-sentinel.style.cssText = "height:1px;pointer-events:none;";
+sentinel.style.cssText = "height:0;pointer-events:none;";
 knowNav.parentNode.insertBefore(sentinel, knowNav);
-// Spacer: füllt die Lücke wenn die Leiste fixed ist
+
+// Spacer: füllt die Lücke wenn die Nav aus dem Flow genommen wird
 const navSpacer = document.createElement("div");
 navSpacer.style.display = "none";
 knowNav.insertAdjacentElement("afterend", navSpacer);
 
-// Echte Header-Höhe zur Laufzeit messen (kein Hardcode)
-function headerH() {
-  return document.querySelector(".atlas-header")?.offsetHeight ?? 0;
+function headerBottom() {
+  const h = document.querySelector(".atlas-header");
+  return h ? h.getBoundingClientRect().bottom : 64;
 }
 
-let clickScrolling = false;
-
-function syncNavSticky() {
-  const hh = headerH();
+function syncSticky() {
+  const hb = headerBottom();
   const sentinelTop = sentinel.getBoundingClientRect().top;
-  const shouldStick = sentinelTop < hh;
   const isStuck = knowNav.classList.contains("is-stuck");
+  const shouldStick = sentinelTop <= hb;
+
   if (shouldStick && !isStuck) {
-    knowNav.classList.add("is-stuck");
-    knowNav.style.top = hh + "px";
     navSpacer.style.height = knowNav.offsetHeight + "px";
     navSpacer.style.display = "block";
-  } else if (!shouldStick && isStuck && !clickScrolling) {
+    knowNav.classList.add("is-stuck");
+  } else if (!shouldStick && isStuck) {
     knowNav.classList.remove("is-stuck");
-    knowNav.style.top = "";
     navSpacer.style.display = "none";
   }
+
+  knowNav.style.top = shouldStick || isStuck ? Math.max(0, hb) + "px" : "";
 }
-window.addEventListener("scroll", syncNavSticky, { passive: true });
-syncNavSticky();
+window.addEventListener("scroll", syncSticky, { passive: true });
+syncSticky();
 
 // --- Aktiver Tab beim Scrollen ---
 const sections = ["geschichte", "sorten", "koebes", "glossar"];
 const navLinks = document.querySelectorAll(".know-nav a");
-let clickLockTimer = null;
 
 function updateActive() {
-  if (clickScrolling) return;
-  const hh = headerH();
+  const hb = headerBottom();
   const navH = knowNav.offsetHeight;
-  const y = window.scrollY + hh + navH + 10;
+  const y = window.scrollY + hb + navH + 10;
   let active = sections[0];
   sections.forEach((id) => {
     const el = document.getElementById(id);
@@ -325,7 +321,7 @@ function updateActive() {
 window.addEventListener("scroll", updateActive, { passive: true });
 updateActive();
 
-// --- Klick-Handler: Leiste sofort fixieren + aktiv setzen ---
+// --- Klick-Handler ---
 navLinks.forEach((link) => {
   link.addEventListener("click", (e) => {
     e.preventDefault();
@@ -333,27 +329,12 @@ navLinks.forEach((link) => {
     const target = document.getElementById(id);
     if (!target) return;
 
-    // Leiste sofort fixieren
-    const hh = headerH();
-    knowNav.classList.add("is-stuck");
-    knowNav.style.top = hh + "px";
-    navSpacer.style.height = knowNav.offsetHeight + "px";
-    navSpacer.style.display = "block";
-
-    // Aktiv-Zustand sofort setzen, Scroll-Detektion kurz sperren
     navLinks.forEach((a) => a.classList.remove("active"));
     link.classList.add("active");
-    clickScrolling = true;
-    clearTimeout(clickLockTimer);
-    clickLockTimer = setTimeout(() => {
-      clickScrolling = false;
-      syncNavSticky();
-      updateActive();
-    }, 900);
 
-    // Zu Abschnitt scrollen (Offset: echter Header + Leiste)
+    const hb = headerBottom();
     const navH = knowNav.offsetHeight;
-    const scrollTop = target.getBoundingClientRect().top + window.scrollY - hh - navH;
+    const scrollTop = target.getBoundingClientRect().top + window.scrollY - Math.max(0, hb) - navH;
     window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
   });
 });
