@@ -14,7 +14,8 @@
 #   bash scripts/deploy.sh --seed --demo # Schema + Basis + Demo-Daten + Deploy
 #
 # --seed:  Schema (0001), Basisdaten/Stile/Glossar (0002_base),
-#          Untappd-Cache-Tabelle (0003), Event-Uhrzeit (0004) einspielen — idempotent, sicher
+#          Untappd-Cache-Tabelle (0003), Event-Uhrzeit (0004),
+#          Event-Ort/-URL (0005) einspielen — idempotent, sicher
 # --demo:  Zusätzlich Beispiel-Brauereien, Preise und Events (demo.sql)
 #          — nur für Staging/Dev sinnvoll
 # ============================================================

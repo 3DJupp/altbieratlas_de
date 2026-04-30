@@ -35,7 +35,7 @@ binding = "ASSETS"
 # --- D1-Datenbank ---------------------------------------------
 # Platzhalter werden von scripts/deploy.sh via sed ersetzt.
 # Deploy-Command im CF-Dashboard: bash scripts/deploy.sh
-# Benötigte Build-Umgebungsvariablen: D1_DATABASE_ID, D1_DATABASE_NAME
+# Benötigte Build-Umgebungsvariablen: database_id, database_name
 # Ersteinrichtung: `npx wrangler d1 create <dein-name>`
 [[d1_databases]]
 binding       = "DB"
