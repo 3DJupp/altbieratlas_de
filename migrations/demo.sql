@@ -1,71 +1,71 @@
 -- ============================================================
--- Altbieratlas — Demo-Daten (Brauereien, Preise, Events)
+-- Altbieratlas — Demo data (breweries, prices, events)
 -- ============================================================
--- NUR für Entwicklung / Staging / Demo-Instanzen.
--- Wird NICHT automatisch beim normalen Setup eingespielt.
--- Einspielen mit: bash scripts/db-setup.sh --demo [--remote]
+-- For development / staging / demo instances only.
+-- NOT applied during normal setup.
+-- Apply with: bash scripts/db-setup.sh --demo [--remote]
 -- ============================================================
 
--- Brauereien
+-- Breweries
 INSERT OR IGNORE INTO breweries (id, name, short_name, type, city, country, address, lat, lng, founded, website, description_de, description_en, verified, status) VALUES
-  ('uerige', 'Brauerei im Uerige', 'Uerige', 'hausbrauerei', 'Düsseldorf', 'DE',
+  ('uerige', 'Brauerei im Uerige', 'Uerige', 'brewery', 'Düsseldorf', 'DE',
     'Berger Straße 1, 40213 Düsseldorf', 51.2253, 6.7722, 1862, 'https://uerige.de',
     'Eine der vier klassischen Düsseldorfer Hausbrauereien in der Altstadt. Bekannt für kräftig-herbes, würziges Alt und die halbjährliche Sticke-Ausschank.',
     'One of the four classic Düsseldorf brewpubs in the old town. Known for a firm, bitter, spicy Alt and its biannual Sticke release.', 1, 'approved'),
-  ('fuechschen', 'Brauerei Füchschen', 'Füchschen', 'hausbrauerei', 'Düsseldorf', 'DE',
+  ('fuechschen', 'Brauerei Füchschen', 'Füchschen', 'brewery', 'Düsseldorf', 'DE',
     'Ratinger Straße 28, 40213 Düsseldorf', 51.2278, 6.7715, 1848, 'https://fuechschen.de',
     'Familiengeführte Hausbrauerei, bekannt für ein malzbetontes, vollmundiges Alt und die legendäre Weihnachts-Silvester-Stimmung.',
     'Family-run brewpub known for a malty, full-bodied Alt and its legendary Christmas-New-Year atmosphere.', 1, 'approved'),
-  ('schumacher', 'Brauerei Schumacher', 'Schumacher', 'hausbrauerei', 'Düsseldorf', 'DE',
+  ('schumacher', 'Brauerei Schumacher', 'Schumacher', 'brewery', 'Düsseldorf', 'DE',
     'Oststraße 123, 40210 Düsseldorf', 51.2224, 6.7912, 1838, 'https://schumacher-alt.de',
     'Die älteste der Düsseldorfer Hausbrauereien. Mildes, gut trinkbares Schumacher Alt seit 1838.',
     'The oldest of the Düsseldorf brewpubs. A mild, highly drinkable Schumacher Alt since 1838.', 1, 'approved'),
-  ('schluessel', 'Brauerei zum Schlüssel', 'Schlüssel', 'hausbrauerei', 'Düsseldorf', 'DE',
+  ('schluessel', 'Brauerei zum Schlüssel', 'Schlüssel', 'brewery', 'Düsseldorf', 'DE',
     'Bolkerstraße 41-47, 40213 Düsseldorf', 51.2268, 6.7728, 1850, 'https://zumschluessel.de',
     'Traditionsreiche Hausbrauerei an der Bolkerstraße, im Herzen der Altstadt. Ausgewogenes, leicht herbes Alt.',
     'Heritage brewpub on Bolker Straße, in the heart of the old town. A balanced, gently bitter Alt.', 1, 'approved'),
-  ('kuerzer', 'Brauerei Kürzer', 'Kürzer', 'hausbrauerei', 'Düsseldorf', 'DE',
+  ('kuerzer', 'Brauerei Kürzer', 'Kürzer', 'brewery', 'Düsseldorf', 'DE',
     'Kurze Straße 18-20, 40213 Düsseldorf', 51.2262, 6.7733, 2010, 'https://brauerei-kuerzer.de',
     'Die jüngste der Düsseldorfer Altstadt-Hausbrauereien. Offene Braukessel mitten im Gastraum.',
     'The youngest of Düsseldorf''s old-town brewpubs. Open brewing kettles right in the taproom.', 1, 'approved'),
-  ('zum-schlueffken', 'Zum Schlüffken', 'Schlüffken', 'gastronomie', 'Düsseldorf', 'DE',
+  ('zum-schlueffken', 'Zum Schlüffken', 'Schlüffken', 'pub', 'Düsseldorf', 'DE',
     'Flinger Straße 1, 40213 Düsseldorf', 51.2271, 6.774, NULL, NULL,
     'Urige Altstadt-Kneipe mit Uerige Alt vom Fass. Klassische Köbes-Bedienung.',
     'Classic old-town pub serving Uerige Alt on tap. Traditional Köbes service.', 1, 'approved'),
-  ('koenigshof', 'Privatbrauerei Königshof', 'Königshof', 'hausbrauerei', 'Krefeld', 'DE',
+  ('koenigshof', 'Privatbrauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
     'Untergath 70, 47805 Krefeld', 51.3172, 6.5603, 1830, 'https://privatbrauerei-koenigshof.de',
     'Niederrheinische Privatbrauerei mit einem milderen Alt im niederrheinischen Stil.',
     'Lower-Rhine private brewery with a milder Alt in the Niederrhein style.', 1, 'approved'),
-  ('hannen', 'Hannen Brauerei', 'Hannen', 'hausbrauerei', 'Mönchengladbach', 'DE',
+  ('hannen', 'Hannen Brauerei', 'Hannen', 'brewery', 'Mönchengladbach', 'DE',
     'Bismarckstraße 115, 41061 Mönchengladbach', 51.1805, 6.4428, 1725, NULL,
     'Traditionsmarke, heute unter Carlsberg-Dach. Eines der bekanntesten Alt-Biere außerhalb Düsseldorfs.',
     'Heritage brand, now under Carlsberg. One of the best-known Alts outside Düsseldorf.', 1, 'approved'),
-  ('malzmuehle-alt', 'Alt-Eck', 'Alt-Eck Köln', 'gastronomie', 'Köln', 'DE',
+  ('malzmuehle-alt', 'Alt-Eck', 'Alt-Eck Köln', 'pub', 'Köln', 'DE',
     'Weidengasse 20, 50668 Köln', 50.9452, 6.9606, NULL, NULL,
     'Exotisch im Kölsch-Land: eine Kneipe mit echtem Alt-Ausschank. Nicht jedermanns Sache.',
     'Exotic in Kölsch country: a pub actually serving Alt. Not for everyone.', 0, 'approved'),
-  ('alaskan-brewing', 'Alaskan Brewing Co.', 'Alaskan', 'hausbrauerei', 'Juneau', 'US',
+  ('alaskan-brewing', 'Alaskan Brewing Co.', 'Alaskan', 'brewery', 'Juneau', 'US',
     '5429 Shaune Drive, Juneau, AK', 58.358, -134.554, 1986, 'https://alaskanbeer.com',
     'US-Craft-Brauerei mit einem sehr gelungenen Alt nach Düsseldorfer Vorbild — mehrfach ausgezeichnet.',
     'US craft brewery with a highly regarded Alt in the Düsseldorf tradition — multiple award winner.', 1, 'approved'),
-  ('long-trail', 'Long Trail Brewing', 'Long Trail', 'hausbrauerei', 'Bridgewater Corners', 'US',
+  ('long-trail', 'Long Trail Brewing', 'Long Trail', 'brewery', 'Bridgewater Corners', 'US',
     '5520 US-4, Bridgewater Corners, VT', 43.6, -72.7614, 1989, 'https://longtrail.com',
     'Vermonter Brauerei mit einem Flagship-Altbier im rheinischen Stil.',
     'Vermont brewery whose flagship is a Rhenish-style Altbier.', 1, 'approved'),
-  ('bruery-terreux', 'The Bruery', 'Bruery', 'hausbrauerei', 'Placentia', 'US',
+  ('bruery-terreux', 'The Bruery', 'Bruery', 'brewery', 'Placentia', 'US',
     '717 Dunn Way, Placentia, CA', 33.8814, -117.8626, 2008, 'https://thebruery.com',
     'Kalifornische Craft-Brauerei mit gelegentlichen Altbier-Interpretationen.',
     'California craft brewery with occasional Altbier releases.', 0, 'approved'),
-  ('marble-nl', 'Brouwerij Rückerl', 'Rückerl', 'hausbrauerei', 'Arnhem', 'NL',
+  ('marble-nl', 'Brouwerij Rückerl', 'Rückerl', 'brewery', 'Arnhem', 'NL',
     'Westervoortsedijk 73, Arnhem', 51.9804, 5.9388, 2014, NULL,
     'Niederländische Hausbrauerei mit einem Altbier nach niederrheinischer Tradition.',
     'Dutch brewpub with an Altbier in the Niederrhein tradition.', 0, 'approved'),
-  ('tokyo-alt', 'Ushitora Brewery', 'Ushitora', 'hausbrauerei', 'Tokyo', 'JP',
+  ('tokyo-alt', 'Ushitora Brewery', 'Ushitora', 'brewery', 'Tokyo', 'JP',
     '2-9-3 Sangenjaya, Setagaya, Tokyo', 35.6434, 139.6713, 2014, NULL,
     'Tokioter Craft-Brauerei, die immer wieder ein Altbier ins Sortiment nimmt.',
     'Tokyo craft brewery that regularly puts an Altbier on the lineup.', 0, 'approved');
 
--- Stil-Zuordnungen
+-- Style assignments
 INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('uerige',          'uerige-alt'),
   ('uerige',          'sticke'),
@@ -81,31 +81,31 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('alaskan-brewing', 'alaskan-amber'),
   ('long-trail',      'long-trail-ale');
 
--- Beispielpreise
+-- Sample prices
 INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VALUES
-  ('uerige',         '2026-04-15', '0,25l', 2.7, 'vor Ort',  'approved'),
-  ('uerige',         '2026-04-10', '0,25l', 2.7, 'vor Ort',  'approved'),
-  ('uerige',         '2026-03-28', '0,25l', 2.7, 'Website',  'approved'),
-  ('uerige',         '2025-11-05', '0,25l', 2.5, 'vor Ort',  'approved'),
-  ('uerige',         '2025-06-20', '0,25l', 2.5, 'vor Ort',  'approved'),
-  ('fuechschen',     '2026-04-12', '0,25l', 2.6, 'vor Ort',  'approved'),
-  ('fuechschen',     '2026-02-14', '0,25l', 2.6, 'vor Ort',  'approved'),
-  ('fuechschen',     '2025-09-01', '0,25l', 2.4, 'vor Ort',  'approved'),
-  ('schumacher',     '2026-04-08', '0,25l', 2.5, 'vor Ort',  'approved'),
-  ('schumacher',     '2026-01-20', '0,25l', 2.5, 'vor Ort',  'approved'),
-  ('schluessel',     '2026-04-14', '0,25l', 2.6, 'vor Ort',  'approved'),
-  ('schluessel',     '2025-12-01', '0,25l', 2.5, 'vor Ort',  'approved'),
-  ('kuerzer',        '2026-04-16', '0,25l', 2.8, 'vor Ort',  'approved'),
-  ('kuerzer',        '2026-03-01', '0,25l', 2.7, 'vor Ort',  'approved'),
-  ('koenigshof',     '2026-04-02', '0,5l',  3.4, 'Handel',   'approved'),
-  ('hannen',         '2026-03-15', '0,5l',  2.9, 'Handel',   'approved'),
-  ('alaskan-brewing','2026-03-22', '0,5l',  5.2, 'Brewery',  'approved'),
-  ('long-trail',     '2026-03-18', '0,5l',  4.8, 'Brewery',  'approved'),
-  ('tokyo-alt',      '2026-04-01', '0,33l', 6.5, 'vor Ort',  'approved'),
-  ('zum-schlueffken','2026-04-12', '0,25l', 2.7, 'vor Ort',  'approved'),
-  ('malzmuehle-alt', '2026-03-05', '0,25l', 3.0, 'vor Ort',  'approved');
+  ('uerige',         '2026-04-15', '0.25l', 2.7, 'on-site',  'approved'),
+  ('uerige',         '2026-04-10', '0.25l', 2.7, 'on-site',  'approved'),
+  ('uerige',         '2026-03-28', '0.25l', 2.7, 'Website',  'approved'),
+  ('uerige',         '2025-11-05', '0.25l', 2.5, 'on-site',  'approved'),
+  ('uerige',         '2025-06-20', '0.25l', 2.5, 'on-site',  'approved'),
+  ('fuechschen',     '2026-04-12', '0.25l', 2.6, 'on-site',  'approved'),
+  ('fuechschen',     '2026-02-14', '0.25l', 2.6, 'on-site',  'approved'),
+  ('fuechschen',     '2025-09-01', '0.25l', 2.4, 'on-site',  'approved'),
+  ('schumacher',     '2026-04-08', '0.25l', 2.5, 'on-site',  'approved'),
+  ('schumacher',     '2026-01-20', '0.25l', 2.5, 'on-site',  'approved'),
+  ('schluessel',     '2026-04-14', '0.25l', 2.6, 'on-site',  'approved'),
+  ('schluessel',     '2025-12-01', '0.25l', 2.5, 'on-site',  'approved'),
+  ('kuerzer',        '2026-04-16', '0.25l', 2.8, 'on-site',  'approved'),
+  ('kuerzer',        '2026-03-01', '0.25l', 2.7, 'on-site',  'approved'),
+  ('koenigshof',     '2026-04-02', '0.5l',  3.4, 'retail',   'approved'),
+  ('hannen',         '2026-03-15', '0.5l',  2.9, 'retail',   'approved'),
+  ('alaskan-brewing','2026-03-22', '0.5l',  5.2, 'Brewery',  'approved'),
+  ('long-trail',     '2026-03-18', '0.5l',  4.8, 'Brewery',  'approved'),
+  ('tokyo-alt',      '2026-04-01', '0.33l', 6.5, 'on-site',  'approved'),
+  ('zum-schlueffken','2026-04-12', '0.25l', 2.7, 'on-site',  'approved'),
+  ('malzmuehle-alt', '2026-03-05', '0.25l', 3.0, 'on-site',  'approved');
 
--- Beispiel-Events
+-- Sample events
 INSERT OR IGNORE INTO events (id, title_de, title_en, brewery_id, date, description_de, description_en, status) VALUES
   ('sticke-herbst-2026', 'Sticke-Ausschank Uerige (Herbst)', 'Sticke release at Uerige (autumn)',
     'uerige', '2026-10-20',
