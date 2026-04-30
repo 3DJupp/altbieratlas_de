@@ -360,11 +360,22 @@ function _emailDataRows(type, data, de) {
     ...f("IBU", data.ibu),
     ...f(de ? "Beschreibung" : "Tasting", data.tasting),
   ];
-  if (type === "correction") return [
-    ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
-    ...f(de ? "Feld" : "Target", data.target),
-    ...f(de ? "Korrektur" : "Correction", data.correction),
-  ];
+  if (type === "correction") {
+    const corrTargetMap = {
+      address:     { de: "Adresse / Koordinaten", en: "Address / coordinates" },
+      website:     { de: "Website",               en: "Website" },
+      description: { de: "Beschreibung",          en: "Description" },
+      price:       { de: "Preis",                 en: "Price" },
+      style:       { de: "Sorte / Stil-Info",     en: "Style / style info" },
+      other:       { de: "Sonstiges",             en: "Other" },
+    };
+    const targetLabel = corrTargetMap[data.target]?.[de ? "de" : "en"] || data.target;
+    return [
+      ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
+      ...f(de ? "Feld" : "Target", targetLabel),
+      ...f(de ? "Korrektur" : "Correction", data.correction),
+    ];
+  }
   return Object.entries(data).filter(([k, v]) => v != null && v !== "" && !k.startsWith("_")).map(([k, v]) => [k, v]);
 }
 
