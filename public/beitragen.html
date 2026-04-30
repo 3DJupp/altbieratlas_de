@@ -641,9 +641,14 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
         apiType === "price"      ? `${brLabel} · € ${window.formatPrice(data.price)} ${window.formatSize(data.size)}`
       : apiType === "brewery"    ? `${data.name || ""} · ${data.city || ""}`
       : apiType === "style"      ? `${data.styleName || ""} · ${brLabel}`
-      : apiType === "correction" ? `${brLabel} → ${data.target || ""}`
-      :                            `${data.eventName || ""} · ${window.formatDate(data.eventDate || "")}`;
-    pushSubsCookie({ tp: apiType, sm: summary.trim(), dt: new Date().toISOString().slice(0, 10) });
+      : apiType === "correction" ? brLabel
+      :                            `${data.eventName || ""}`;
+    // tg: Korrektur-Ziel (roh, wird in renderRecent übersetzt)
+    // ed: Eventdatum (ISO, wird in renderRecent sprachspezifisch formatiert)
+    const cookieExtra = apiType === "correction" ? { tg: data.target || "" }
+                      : apiType === "event"      ? { ed: data.eventDate || "" }
+                      : {};
+    pushSubsCookie({ tp: apiType, sm: summary.trim(), dt: new Date().toISOString().slice(0, 10), ...cookieExtra });
 
     // Turnstile nach Erfolg zurücksetzen (Token ist einmalig)
     if (window.turnstile && document.querySelector(".cf-turnstile")) {
@@ -683,11 +688,14 @@ function renderRecent() {
   }
   el.innerHTML = list.map((c) => {
     const typeLabel = t("contrib.recent.typeLabel." + c.tp) || c.tp;
+    let summary = c.sm || "—";
+    if (c.tg) summary += ` → ${t("contrib.form.target." + c.tg) || c.tg}`;
+    else if (c.ed) summary += ` · ${window.formatDate(c.ed)}`;
     return `
       <div class="contrib-row">
         <span class="date">${window.formatDate(c.dt) || "—"}</span>
         <span class="typ">${typeLabel}</span>
-        <span class="summary">${c.sm || "—"}</span>
+        <span class="summary">${summary}</span>
         <span class="tag pending">${t("common.pending")}</span>
       </div>
     `;
