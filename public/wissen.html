@@ -24,13 +24,31 @@
 .know-nav {
   border-bottom: 1px solid var(--rule);
   background: var(--bg);
-  z-index: 30;
+  z-index: 50; /* über dem Hauptmenü (z-index:40) */
 }
 .know-nav.is-stuck {
   position: fixed;
+  top: 0;
   left: 0;
   right: 0;
 }
+/* "↑ Top"-Button: nur sichtbar wenn Nav angeheftet */
+.know-nav-top {
+  display: none;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--ink-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s;
+}
+.know-nav-top:hover { color: var(--ink); }
+.know-nav.is-stuck .know-nav-top { display: flex; align-items: center; }
 .know-nav .container {
   display: flex;
   gap: 4px;
@@ -139,6 +157,7 @@
       <a href="#sorten" data-i18n="know.nav.styles">Sorten</a>
       <a href="#koebes" data-i18n="know.nav.koebes">Köbes-Kultur</a>
       <a href="#glossar" data-i18n="know.nav.glossary">Glossar</a>
+      <button class="know-nav-top" id="know-nav-top" aria-label="Zum Seitenanfang">↑ Top</button>
     </div>
   </nav>
 
@@ -264,65 +283,51 @@ function paintGlossary() {
 })();
 
 // ---- Sticky Sub-Nav ----
-const knowNav   = document.querySelector(".know-nav");
-const sections  = ["geschichte", "sorten", "koebes", "glossar"];
-const navLinks  = document.querySelectorAll(".know-nav a");
+const knowNav  = document.querySelector(".know-nav");
+const knowHero = document.querySelector(".know-hero");
+const sections = ["geschichte", "sorten", "koebes", "glossar"];
+const navLinks = document.querySelectorAll(".know-nav a");
 
-// navPlaceholder hält den Platz wenn die Nav fixed wird
+// navPlaceholder hält den Layout-Platz wenn die Nav fixed wird
 const navPlaceholder = document.createElement("div");
 navPlaceholder.style.cssText = "height:0;pointer-events:none;";
 knowNav.parentNode.insertBefore(navPlaceholder, knowNav);
 
 let navIsStuck = false;
 
-function getHeaderBottom() {
-  const h = document.querySelector(".atlas-header");
-  return h ? h.getBoundingClientRect().bottom : 64;
-}
-
-function syncNav() {
-  const hb   = getHeaderBottom();
-  const phY  = navPlaceholder.getBoundingClientRect().top;
-  const stick = phY <= hb;
-
-  if (stick && !navIsStuck) {
-    // Reihenfolge: erst Platz reservieren, dann fixed machen → kein Layout-Sprung
-    navPlaceholder.style.height = knowNav.offsetHeight + "px";
-    knowNav.style.top           = hb + "px";
-    knowNav.classList.add("is-stuck");
-    navIsStuck = true;
-  } else if (!stick && navIsStuck) {
-    // Reihenfolge: erst aus fixed raus, dann Platz freigeben
-    knowNav.classList.remove("is-stuck");
-    knowNav.style.top           = "";
-    navPlaceholder.style.height = "0";
-    navIsStuck = false;
-  } else if (navIsStuck) {
-    // Header-Höhe kann sich ändern (z.B. mobile Nav offen)
-    knowNav.style.top = hb + "px";
-  }
-}
-
-window.addEventListener("scroll", syncNav, { passive: true });
-window.addEventListener("resize", syncNav, { passive: true });
-syncNav();
+// IntersectionObserver auf den Hero: wenn Hero komplett aus dem Viewport
+// gescrollt ist, klebt die Nav oben (top:0) — und überlagert das Hauptmenü.
+const heroObserver = new IntersectionObserver(
+  ([entry]) => {
+    const shouldStick = !entry.isIntersecting;
+    if (shouldStick && !navIsStuck) {
+      navPlaceholder.style.height = knowNav.offsetHeight + "px";
+      knowNav.classList.add("is-stuck");
+      navIsStuck = true;
+    } else if (!shouldStick && navIsStuck) {
+      knowNav.classList.remove("is-stuck");
+      navPlaceholder.style.height = "0";
+      navIsStuck = false;
+    }
+    updateActive();
+  },
+  { threshold: 0 }
+);
+heroObserver.observe(knowHero);
 
 // ---- Aktiver Tab beim Scrollen ----
 function updateActive() {
-  const hb       = getHeaderBottom();
-  const navH     = knowNav.offsetHeight;
-  // Schwellwert: welche Section ist schon über/an der Oberkante der sticky-Zone?
-  const threshold = window.scrollY + hb + navH + 2;
-
   let active = sections[0];
-  sections.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el && el.offsetTop <= threshold) active = id;
-  });
-
-  // Am Seitenende immer letzten Abschnitt aktivieren
-  if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 60) {
-    active = sections[sections.length - 1];
+  if (navIsStuck) {
+    const navH      = knowNav.offsetHeight;
+    const threshold = window.scrollY + navH + 2;
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && el.offsetTop <= threshold) active = id;
+    });
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 60) {
+      active = sections[sections.length - 1];
+    }
   }
   navLinks.forEach((a) =>
     a.classList.toggle("active", a.getAttribute("href") === "#" + active)
@@ -330,6 +335,11 @@ function updateActive() {
 }
 window.addEventListener("scroll", updateActive, { passive: true });
 updateActive();
+
+// ---- ↑ Top-Button ----
+document.getElementById("know-nav-top").addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 // ---- Klick-Handler ----
 navLinks.forEach((link) => {
@@ -342,12 +352,10 @@ navLinks.forEach((link) => {
     navLinks.forEach((a) => a.classList.remove("active"));
     link.classList.add("active");
 
-    const hb   = getHeaderBottom();
-    const navH = knowNav.offsetHeight;
-    // Section-padding ist 60px. Wir wollen ~20px davon sichtbar lassen,
-    // damit der Inhalt direkt unter der Nav erscheint ohne großen Leerraum.
-    // → 60 − 20 = 40 vom Offset abziehen.
-    const offset = hb + navH - 40;
+    // Nav ist bei top:0 (Höhe ~53px). Section-padding = 60px.
+    // Wir wollen ~20px sichtbares Padding → offset = navH − (60 − 20) = navH − 40.
+    const navH   = knowNav.offsetHeight;
+    const offset = navH - 40;
     const y = target.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   });
