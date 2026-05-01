@@ -903,21 +903,31 @@ html { scroll-behavior: smooth; }
   .hero-overlay { padding-bottom: 90px; }
 }
 
-/* Sticky Wissens-Nav auf Mobile horizontal scrollen, nicht umbrechen */
+/* Sticky Wissens-Nav auf Mobile: kompakter, damit alle 4 Tabs in beiden
+   Sprachen ohne horizontales Scrollen sichtbar bleiben. */
 @media (max-width: 700px) {
   .know-nav .container {
     overflow-x: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    gap: 0;
+    padding-left: 14px;
+    padding-right: 14px;
   }
   .know-nav .container::-webkit-scrollbar { display: none; }
   .know-nav a {
     flex: 0 0 auto;
-    padding: 12px 14px;
-    font-size: 13px;
+    padding: 12px 9px;
+    font-size: 12.5px;
+    letter-spacing: 0;
     white-space: nowrap;
   }
+}
+
+@media (max-width: 380px) {
+  .know-nav .container { padding-left: 10px; padding-right: 10px; }
+  .know-nav a { padding: 12px 7px; font-size: 12px; }
 }
 
 /* Hero-Copy auf Mobile nicht über Viewport hinausragen */
