@@ -24,13 +24,31 @@
 .know-nav {
   border-bottom: 1px solid var(--rule);
   background: var(--bg);
-  z-index: 30;
+  z-index: 50; /* über dem Hauptmenü (z-index:40) */
 }
 .know-nav.is-stuck {
   position: fixed;
+  top: 0;
   left: 0;
   right: 0;
 }
+/* "↑ Top"-Button: nur sichtbar wenn Nav angeheftet */
+.know-nav-top {
+  display: none;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--ink-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s;
+}
+.know-nav-top:hover { color: var(--ink); }
+.know-nav.is-stuck .know-nav-top { display: flex; align-items: center; }
 .know-nav .container {
   display: flex;
   gap: 4px;
@@ -139,6 +157,7 @@
       <a href="#sorten" data-i18n="know.nav.styles">Sorten</a>
       <a href="#koebes" data-i18n="know.nav.koebes">Köbes-Kultur</a>
       <a href="#glossar" data-i18n="know.nav.glossary">Glossar</a>
+      <button class="know-nav-top" id="know-nav-top" aria-label="Zum Seitenanfang">↑ Top</button>
     </div>
   </nav>
 
@@ -263,79 +282,82 @@ function paintGlossary() {
   }
 })();
 
-const knowNav = document.querySelector(".know-nav");
-
-// Sentinel: markiert die natürliche Position der Nav im Dokument
-const sentinel = document.createElement("div");
-sentinel.style.cssText = "height:0;pointer-events:none;";
-knowNav.parentNode.insertBefore(sentinel, knowNav);
-
-// Spacer: füllt die Lücke wenn die Nav aus dem Flow genommen wird
-const navSpacer = document.createElement("div");
-navSpacer.style.display = "none";
-knowNav.insertAdjacentElement("afterend", navSpacer);
-
-function headerBottom() {
-  const h = document.querySelector(".atlas-header");
-  return h ? h.getBoundingClientRect().bottom : 64;
-}
-
-function syncSticky() {
-  const hb = headerBottom();
-  const sentinelTop = sentinel.getBoundingClientRect().top;
-  const isStuck = knowNav.classList.contains("is-stuck");
-  const shouldStick = sentinelTop <= hb;
-
-  if (shouldStick && !isStuck) {
-    navSpacer.style.height = knowNav.offsetHeight + "px";
-    navSpacer.style.display = "block";
-    knowNav.classList.add("is-stuck");
-  } else if (!shouldStick && isStuck) {
-    knowNav.classList.remove("is-stuck");
-    navSpacer.style.display = "none";
-  }
-
-  knowNav.style.top = shouldStick || isStuck ? Math.max(0, hb) + "px" : "";
-}
-window.addEventListener("scroll", syncSticky, { passive: true });
-syncSticky();
-
-// --- Aktiver Tab beim Scrollen ---
+// ---- Sticky Sub-Nav ----
+const knowNav  = document.querySelector(".know-nav");
+const knowHero = document.querySelector(".know-hero");
 const sections = ["geschichte", "sorten", "koebes", "glossar"];
 const navLinks = document.querySelectorAll(".know-nav a");
 
+// navPlaceholder hält den Layout-Platz wenn die Nav fixed wird
+const navPlaceholder = document.createElement("div");
+navPlaceholder.style.cssText = "height:0;pointer-events:none;";
+knowNav.parentNode.insertBefore(navPlaceholder, knowNav);
+
+let navIsStuck = false;
+
+// IntersectionObserver auf den Hero: wenn Hero komplett aus dem Viewport
+// gescrollt ist, klebt die Nav oben (top:0) — und überlagert das Hauptmenü.
+const heroObserver = new IntersectionObserver(
+  ([entry]) => {
+    const shouldStick = !entry.isIntersecting;
+    if (shouldStick && !navIsStuck) {
+      navPlaceholder.style.height = knowNav.offsetHeight + "px";
+      knowNav.classList.add("is-stuck");
+      navIsStuck = true;
+    } else if (!shouldStick && navIsStuck) {
+      knowNav.classList.remove("is-stuck");
+      navPlaceholder.style.height = "0";
+      navIsStuck = false;
+    }
+    updateActive();
+  },
+  { threshold: 0 }
+);
+heroObserver.observe(knowHero);
+
+// ---- Aktiver Tab beim Scrollen ----
 function updateActive() {
-  const hb = headerBottom();
-  const navH = knowNav.offsetHeight;
-  const y = window.scrollY + hb + navH + 10;
   let active = sections[0];
-  sections.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el && el.offsetTop <= y) active = id;
-  });
-  if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 80) {
-    active = sections[sections.length - 1];
+  if (navIsStuck) {
+    const navH      = knowNav.offsetHeight;
+    const threshold = window.scrollY + navH + 2;
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && el.offsetTop <= threshold) active = id;
+    });
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 60) {
+      active = sections[sections.length - 1];
+    }
   }
-  navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + active));
+  navLinks.forEach((a) =>
+    a.classList.toggle("active", a.getAttribute("href") === "#" + active)
+  );
 }
 window.addEventListener("scroll", updateActive, { passive: true });
 updateActive();
 
-// --- Klick-Handler ---
+// ---- ↑ Top-Button ----
+document.getElementById("know-nav-top").addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// ---- Klick-Handler ----
 navLinks.forEach((link) => {
   link.addEventListener("click", (e) => {
     e.preventDefault();
-    const id = link.getAttribute("href").slice(1);
+    const id     = link.getAttribute("href").slice(1);
     const target = document.getElementById(id);
     if (!target) return;
 
     navLinks.forEach((a) => a.classList.remove("active"));
     link.classList.add("active");
 
-    const hb = headerBottom();
-    const navH = knowNav.offsetHeight;
-    const scrollTop = target.getBoundingClientRect().top + window.scrollY - Math.max(0, hb) - navH;
-    window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+    // Nav ist bei top:0 (Höhe ~53px). Section-padding = 60px.
+    // Wir wollen ~20px sichtbares Padding → offset = navH − (60 − 20) = navH − 40.
+    const navH   = knowNav.offsetHeight;
+    const offset = navH - 40;
+    const y = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   });
 });
 
