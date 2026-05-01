@@ -45,43 +45,31 @@ altbieratlas/
 
 ## 1 · Setup
 
-Gedeployed wird über **Workers Builds** (Cloudflare-Dashboard → GitHub-Integration). Es muss weder lokal noch in GitHub Actions `wrangler deploy` ausgeführt werden. Lokal brauchst du Wrangler nur für einmalige Admin-Aufgaben (D1 anlegen, Schema einspielen, Admin-User erzeugen).
+Gedeployed wird über **Workers Builds** (Cloudflare-Dashboard → GitHub-Integration). Schema-Setup und Deploys laufen vollständig im CI — **lokal brauchst du weder Wrangler noch eine installierte CLI**. Einzige Ausnahme: der Admin-User (dazu unten zwei Wege).
 
 ### Voraussetzungen
 
 - Cloudflare-Account mit verbundenem GitHub-Account
-- Node.js ≥ 20 (nur für die einmaligen Admin-Schritte)
+- Node.js ≥ 20 (nur für den Admin-User, falls ohne lokalen Wrangler)
 
-### 1.1 Einmalig: D1 anlegen, Schema, Admin-User
+### 1.1 Einmalig: D1 anlegen, Schema einspielen, Admin-User anlegen
 
+#### Schritt 1 — D1-Datenbank anlegen
+
+**Option A (Dashboard):** Workers & Pages → D1 → *Create database* → Name `altbieratlas` → die angezeigte `database_id` notieren.
+
+**Option B (CLI):**
 ```bash
-npm install
 npx wrangler login
-
-# D1-Datenbank anlegen
 npx wrangler d1 create altbieratlas
-#    → Ausgabe merken: database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+#  → Ausgabe merken: database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
-Die `database_id` kommt **nicht** in die `wrangler.toml` — sie wird als Build-Variable ins Cloudflare-Dashboard eingetragen (siehe 1.3). Für das einmalige Einspielen des Schemas brauchst du sie aber lokal. Trage sie temporär ein (nicht committen!):
+#### Schritt 2 — Schema und Basisdaten einspielen
 
-```bash
-# Temporär in wrangler.toml setzen (oder D1_DATABASE_NAME setzen), dann:
+Das geht am einfachsten **direkt beim ersten Deploy** über `deploy.sh --seed` (kein lokaler Wrangler nötig). Dazu im Dashboard den Deploy-Command einmalig auf `bash scripts/deploy.sh --seed` setzen, den ersten Commit pushen und danach wieder auf `bash scripts/deploy.sh` zurückstellen — oder nur diesen einen Build manuell anstoßen.
 
-# Produktion: nur Schema + Basisdaten (Stile, Glossar)
-D1_DATABASE_NAME=altbieratlas npm run db:setup:remote
-
-# Staging / Dev: Schema + Basisdaten + Beispiel-Brauereien/Preise/Events
-D1_DATABASE_NAME=altbieratlas npm run db:setup:demo:remote
-
-# Admin-User anlegen
-node scripts/create-admin.mjs admin <starkes-passwort> --remote
-
-# Danach database_id wieder auf Platzhalter zurücksetzen!
-git checkout wrangler.toml
-```
-
-Was die Migrations-Dateien enthalten:
+Was `--seed` einspielt:
 
 | Datei | Inhalt | Immer einspielen? |
 |---|---|---|
@@ -89,7 +77,49 @@ Was die Migrations-Dateien enthalten:
 | `0002_base.sql` | Bierstile + Glossar | **Ja** |
 | `demo.sql` | Brauereien, Preise, Events (Beispiele) | Nur Dev/Staging |
 
-> **Alternative (ohne lokalen Wrangler):** SQL direkt im Dashboard eingeben unter *Workers & Pages → D1 → altbieratlas → Console*. Die beiden Pflicht-Dateien (`0001_schema`, `0002_base`) nacheinander einfügen und ausführen. Für Demo-Daten zusätzlich `demo.sql`.
+> Beide Pflicht-Dateien sind idempotent (`CREATE TABLE IF NOT EXISTS`) — `--seed` kann bedenkenlos mehrfach ausgeführt werden.
+
+**Alternative (Dashboard-Console):** *Workers & Pages → D1 → altbieratlas → Console* — `0001_schema.sql` und `0002_base.sql` nacheinander einfügen und ausführen. Für Demo-Daten zusätzlich `demo.sql`.
+
+**Alternative (lokal):**
+```bash
+# Temporär database_id in wrangler.toml eintragen, dann:
+D1_DATABASE_NAME=altbieratlas npm run db:setup:remote
+# Danach wrangler.toml zurücksetzen: git checkout wrangler.toml
+```
+
+#### Schritt 3 — Admin-User anlegen
+
+Der Admin-User benötigt einen PBKDF2-Hash. Dafür gibt es zwei Wege:
+
+**Option A — mit lokalem Wrangler (einfachster Weg):**
+```bash
+npm run admin:create -- admin <starkes-passwort> --remote
+# oder direkt:
+node scripts/create-admin.mjs admin <starkes-passwort> --remote
+```
+
+**Option B — ohne Wrangler (nur Node.js + D1-Dashboard-Console):**
+
+Hash erzeugen und SQL ausgeben — kein Wrangler nötig:
+```bash
+node -e "
+const { webcrypto: c } = require('crypto');
+const user = 'admin', pass = 'DEIN-PASSWORT-HIER';
+(async () => {
+  const salt = c.getRandomValues(new Uint8Array(16));
+  const key  = await c.subtle.importKey('raw', new TextEncoder().encode(pass), { name: 'PBKDF2' }, false, ['deriveBits']);
+  const bits = await c.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, key, 256);
+  const b64  = b => Buffer.from(b).toString('base64');
+  const hash = 'pbkdf2\$120000\$' + b64(salt) + '\$' + b64(bits);
+  console.log(\"INSERT INTO admin_users (username, password_hash) VALUES ('\" + user + \"', '\" + hash + \"');\");
+})();
+"
+```
+
+Die Ausgabe (eine INSERT-Zeile) direkt in der D1-Dashboard-Console ausführen.
+
+> Das Passwort muss mindestens 10 Zeichen lang sein.
 
 ### 1.2 Workers-Build im Dashboard konfigurieren
 
@@ -103,7 +133,7 @@ Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
 | Root directory | `/` |
 | Production branch | `main` |
 
-Das `scripts/deploy.sh` ersetzt die Platzhalter in `wrangler.toml` und startet `wrangler versions upload`. Mit optionalen Flags können beim gleichen Lauf auch DB-Migrations eingespielt werden:
+Das `scripts/deploy.sh` ersetzt die Platzhalter in `wrangler.toml` und startet `wrangler deploy`. Mit optionalen Flags können beim gleichen Lauf auch DB-Migrations eingespielt werden:
 
 ```bash
 # Nur Worker deployen (Standard — jeder Push auf main)
