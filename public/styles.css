@@ -821,8 +821,8 @@ html { scroll-behavior: smooth; }
 #map-section {
   scroll-margin-top: 80px;
 }
-/* Header (64px) + Wissens-Nav (~48px) + 16px Puffer */
-.know-section { scroll-margin-top: 128px; }
+/* Header (~65px) + Wissens-Nav (~53px) − 40px (sichtbares Padding) = 78px */
+.know-section { scroll-margin-top: 78px; }
 
 /* ============================================================
    Mobile-Fixes — v0.2

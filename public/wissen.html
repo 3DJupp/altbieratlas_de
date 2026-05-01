@@ -22,11 +22,14 @@
 .know-hero .lede em { font-style: italic; color: var(--copper); }
 
 .know-nav {
-  position: sticky;
-  top: 64px; /* = atlas-header height */
   border-bottom: 1px solid var(--rule);
   background: var(--bg);
   z-index: 30;
+}
+.know-nav.is-stuck {
+  position: fixed;
+  left: 0;
+  right: 0;
 }
 .know-nav .container {
   display: flex;
@@ -260,51 +263,93 @@ function paintGlossary() {
   }
 })();
 
-const knowNav = document.querySelector(".know-nav");
+// ---- Sticky Sub-Nav ----
+const knowNav   = document.querySelector(".know-nav");
+const sections  = ["geschichte", "sorten", "koebes", "glossar"];
+const navLinks  = document.querySelectorAll(".know-nav a");
 
-function headerBottom() {
+// navPlaceholder hält den Platz wenn die Nav fixed wird
+const navPlaceholder = document.createElement("div");
+navPlaceholder.style.cssText = "height:0;pointer-events:none;";
+knowNav.parentNode.insertBefore(navPlaceholder, knowNav);
+
+let navIsStuck = false;
+
+function getHeaderBottom() {
   const h = document.querySelector(".atlas-header");
   return h ? h.getBoundingClientRect().bottom : 64;
 }
 
-// --- Aktiver Tab beim Scrollen ---
-const sections = ["geschichte", "sorten", "koebes", "glossar"];
-const navLinks = document.querySelectorAll(".know-nav a");
+function syncNav() {
+  const hb   = getHeaderBottom();
+  const phY  = navPlaceholder.getBoundingClientRect().top;
+  const stick = phY <= hb;
 
+  if (stick && !navIsStuck) {
+    // Reihenfolge: erst Platz reservieren, dann fixed machen → kein Layout-Sprung
+    navPlaceholder.style.height = knowNav.offsetHeight + "px";
+    knowNav.style.top           = hb + "px";
+    knowNav.classList.add("is-stuck");
+    navIsStuck = true;
+  } else if (!stick && navIsStuck) {
+    // Reihenfolge: erst aus fixed raus, dann Platz freigeben
+    knowNav.classList.remove("is-stuck");
+    knowNav.style.top           = "";
+    navPlaceholder.style.height = "0";
+    navIsStuck = false;
+  } else if (navIsStuck) {
+    // Header-Höhe kann sich ändern (z.B. mobile Nav offen)
+    knowNav.style.top = hb + "px";
+  }
+}
+
+window.addEventListener("scroll", syncNav, { passive: true });
+window.addEventListener("resize", syncNav, { passive: true });
+syncNav();
+
+// ---- Aktiver Tab beim Scrollen ----
 function updateActive() {
-  const hb = headerBottom();
-  const navH = knowNav.offsetHeight;
-  const y = window.scrollY + hb + navH + 10;
+  const hb       = getHeaderBottom();
+  const navH     = knowNav.offsetHeight;
+  // Schwellwert: welche Section ist schon über/an der Oberkante der sticky-Zone?
+  const threshold = window.scrollY + hb + navH + 2;
+
   let active = sections[0];
   sections.forEach((id) => {
     const el = document.getElementById(id);
-    if (el && el.offsetTop <= y) active = id;
+    if (el && el.offsetTop <= threshold) active = id;
   });
-  if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 80) {
+
+  // Am Seitenende immer letzten Abschnitt aktivieren
+  if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 60) {
     active = sections[sections.length - 1];
   }
-  navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + active));
+  navLinks.forEach((a) =>
+    a.classList.toggle("active", a.getAttribute("href") === "#" + active)
+  );
 }
 window.addEventListener("scroll", updateActive, { passive: true });
 updateActive();
 
-// --- Klick-Handler ---
+// ---- Klick-Handler ----
 navLinks.forEach((link) => {
   link.addEventListener("click", (e) => {
     e.preventDefault();
-    const id = link.getAttribute("href").slice(1);
+    const id     = link.getAttribute("href").slice(1);
     const target = document.getElementById(id);
     if (!target) return;
 
     navLinks.forEach((a) => a.classList.remove("active"));
     link.classList.add("active");
 
-    const hb = headerBottom();
+    const hb   = getHeaderBottom();
     const navH = knowNav.offsetHeight;
-    // Scroll so der Inhalt (nach 60px section-padding) direkt unter der Nav erscheint.
-    // 44 = padding(60) - Puffer(16) → section.top landet 44px oberhalb der Nav-Unterkante
-    const scrollTop = target.getBoundingClientRect().top + window.scrollY - hb - navH + 44;
-    window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+    // Section-padding ist 60px. Wir wollen ~20px davon sichtbar lassen,
+    // damit der Inhalt direkt unter der Nav erscheint ohne großen Leerraum.
+    // → 60 − 20 = 40 vom Offset abziehen.
+    const offset = hb + navH - 40;
+    const y = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   });
 });
 
