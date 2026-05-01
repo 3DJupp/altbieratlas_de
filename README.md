@@ -21,11 +21,17 @@ altbieratlas/
 │   ├── i18n.js              # DE/EN
 │   ├── shell.js             # Header / Footer / Cookie-Banner
 │   ├── styles.css
-│   └── data.js              # Seed-Daten für Mock-Fallback
+│   ├── data.js              # Seed-Daten für Mock-Fallback
+│   ├── manifest.webmanifest # PWA-Manifest
+│   ├── robots.txt
+│   ├── favicon.svg
+│   ├── favicon-32.png
+│   ├── apple-touch-icon.png
+│   ├── icon-192.png
+│   └── icon-512.png
 ├── migrations/
-│   ├── 0001_schema.sql      # Tabellen, Indizes, FK-Kaskaden
+│   ├── 0001_schema.sql      # Tabellen, Indizes, FK-Kaskaden (inkl. Untappd-Cache)
 │   ├── 0002_base.sql        # Basisdaten: Bierstile + Glossar (immer einspielen)
-│   ├── 0003_untappd_cache.sql  # Untappd-Cache-Tabelle
 │   └── demo.sql             # Demo-Daten: Brauereien, Preise, Events (optional)
 ├── scripts/
 │   ├── create-admin.mjs     # Admin-User anlegen
@@ -79,12 +85,11 @@ Was die Migrations-Dateien enthalten:
 
 | Datei | Inhalt | Immer einspielen? |
 |---|---|---|
-| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden | **Ja** |
+| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden (inkl. Untappd-Cache) | **Ja** |
 | `0002_base.sql` | Bierstile + Glossar | **Ja** |
-| `0003_untappd_cache.sql` | Untappd-Cache-Tabelle | **Ja** |
 | `demo.sql` | Brauereien, Preise, Events (Beispiele) | Nur Dev/Staging |
 
-> **Alternative (ohne lokalen Wrangler):** SQL direkt im Dashboard eingeben unter *Workers & Pages → D1 → altbieratlas → Console*. Die drei Pflicht-Dateien (`0001`, `0002_base`, `0003`) nacheinander einfügen und ausführen. Für Demo-Daten zusätzlich `demo.sql`.
+> **Alternative (ohne lokalen Wrangler):** SQL direkt im Dashboard eingeben unter *Workers & Pages → D1 → altbieratlas → Console*. Die beiden Pflicht-Dateien (`0001_schema`, `0002_base`) nacheinander einfügen und ausführen. Für Demo-Daten zusätzlich `demo.sql`.
 
 ### 1.2 Workers-Build im Dashboard konfigurieren
 
@@ -253,6 +258,8 @@ Für reines UI-Testen (ohne Wrangler) einfach `index.html` im Browser öffnen �
 | GET | `/api/prices` | Preismeldungen (max. 2000) |
 | POST | `/api/prices` | Preismeldung einreichen (Convenience-Wrapper) |
 | GET | `/api/events` | Events |
+| GET | `/api/events/calendar.ics` | Alle zukünftigen Events als iCal-Kalender |
+| GET | `/api/events/:id/calendar.ics` | Einzelnes Event als ICS-Datei |
 | GET | `/api/styles` | Bierstile |
 | GET | `/api/glossary` | Glossar-Einträge |
 | GET | `/api/geocode?q=…` | Nominatim-Proxy (Rate-Limit: 30/min/IP) |
@@ -276,7 +283,6 @@ Für reines UI-Testen (ohne Wrangler) einfach `index.html` im Browser öffnen �
 
 1. App auf [untappd.com/api/register](https://untappd.com/api/register) registrieren
 2. `untappdClientId` in `SITE_CONFIG` eintragen und `UNTAPPD_CLIENT_SECRET` als Secret im CF-Dashboard setzen
-3. Migration `0003_untappd_cache.sql` einspielen (falls noch nicht geschehen)
 
 Ohne diese Variablen antwortet `/api/untappd/brewery/:id` mit `{ "available": false }` — die Brauerei-Seite zeigt dann keine Untappd-Sektion.
 
