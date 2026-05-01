@@ -22,14 +22,11 @@
 .know-hero .lede em { font-style: italic; color: var(--copper); }
 
 .know-nav {
+  position: sticky;
+  top: 64px; /* = atlas-header height */
   border-bottom: 1px solid var(--rule);
   background: var(--bg);
   z-index: 30;
-}
-.know-nav.is-stuck {
-  position: fixed;
-  left: 0;
-  right: 0;
 }
 .know-nav .container {
   display: flex;
@@ -265,40 +262,10 @@ function paintGlossary() {
 
 const knowNav = document.querySelector(".know-nav");
 
-// Sentinel: markiert die natürliche Position der Nav im Dokument
-const sentinel = document.createElement("div");
-sentinel.style.cssText = "height:0;pointer-events:none;";
-knowNav.parentNode.insertBefore(sentinel, knowNav);
-
-// Spacer: füllt die Lücke wenn die Nav aus dem Flow genommen wird
-const navSpacer = document.createElement("div");
-navSpacer.style.display = "none";
-knowNav.insertAdjacentElement("afterend", navSpacer);
-
 function headerBottom() {
   const h = document.querySelector(".atlas-header");
   return h ? h.getBoundingClientRect().bottom : 64;
 }
-
-function syncSticky() {
-  const hb = headerBottom();
-  const sentinelTop = sentinel.getBoundingClientRect().top;
-  const isStuck = knowNav.classList.contains("is-stuck");
-  const shouldStick = sentinelTop <= hb;
-
-  if (shouldStick && !isStuck) {
-    navSpacer.style.height = knowNav.offsetHeight + "px";
-    navSpacer.style.display = "block";
-    knowNav.classList.add("is-stuck");
-  } else if (!shouldStick && isStuck) {
-    knowNav.classList.remove("is-stuck");
-    navSpacer.style.display = "none";
-  }
-
-  knowNav.style.top = shouldStick || isStuck ? Math.max(0, hb) + "px" : "";
-}
-window.addEventListener("scroll", syncSticky, { passive: true });
-syncSticky();
 
 // --- Aktiver Tab beim Scrollen ---
 const sections = ["geschichte", "sorten", "koebes", "glossar"];
@@ -334,7 +301,9 @@ navLinks.forEach((link) => {
 
     const hb = headerBottom();
     const navH = knowNav.offsetHeight;
-    const scrollTop = target.getBoundingClientRect().top + window.scrollY - Math.max(0, hb) - navH;
+    // Scroll so der Inhalt (nach 60px section-padding) direkt unter der Nav erscheint.
+    // 44 = padding(60) - Puffer(16) → section.top landet 44px oberhalb der Nav-Unterkante
+    const scrollTop = target.getBoundingClientRect().top + window.scrollY - hb - navH + 44;
     window.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
   });
 });
