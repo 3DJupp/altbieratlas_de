@@ -6,7 +6,7 @@ import {
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
-  clientIp, brewRow, sendConfirmationEmail,
+  clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail,
 } from "./utils.js";
 
 // Liest SITE_CONFIG JSON (falls gesetzt), fällt sonst auf {} zurück
@@ -511,6 +511,71 @@ export async function adminMe(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   return json({ username: auth.username });
+}
+
+// POST /api/admin/request-reset  { email }
+// Generiert einen 1h-gültigen Reset-Token und sendet ihn per E-Mail.
+// Gibt immer dieselbe Antwort zurück (kein User-Enumeration).
+export async function adminRequestReset(req, env) {
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const email = str(body.email, { max: 200 });
+  if (!email) return error(400, "email-required");
+
+  const ip = clientIp(req);
+  const rl = await rateLimit(env.DB, `reset:${ip}:${Math.floor(Date.now() / 900000)}`, 3, 900);
+  if (!rl.allowed) return error(429, "too-many-attempts");
+
+  // Aufräumen abgelaufener Tokens
+  await env.DB.prepare("DELETE FROM password_reset_tokens WHERE expires_at < datetime('now')").run();
+
+  const row = await env.DB.prepare(
+    "SELECT username FROM admin_users WHERE email = ?"
+  ).bind(email).first();
+
+  if (row) {
+    const token = randomToken(32);
+    const expires = new Date(Date.now() + 3600 * 1000).toISOString();
+    await env.DB.prepare(
+      "INSERT INTO password_reset_tokens (token, username, expires_at) VALUES (?, ?, ?)"
+    ).bind(token, row.username, expires).run();
+
+    const sc = (() => { try { return env.SITE_CONFIG ? JSON.parse(env.SITE_CONFIG) : {}; } catch { return {}; } })();
+    const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
+    const resetUrl = `${siteUrl}/admin.html?reset=${encodeURIComponent(token)}`;
+    await sendPasswordResetEmail(env, { to: email, resetUrl });
+  }
+
+  return json({ ok: true });
+}
+
+// POST /api/admin/reset-password  { token, password }
+export async function adminResetPassword(req, env) {
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const token = typeof body.token === "string" ? body.token.trim() : null;
+  const password = typeof body.password === "string" ? body.password : null;
+  if (!token || !password) return error(400, "token-and-password-required");
+  if (password.length < 10) return error(400, "password-too-short");
+
+  const row = await env.DB.prepare(
+    "SELECT username, expires_at FROM password_reset_tokens WHERE token = ?"
+  ).bind(token).first();
+
+  if (!row) return error(400, "invalid-or-expired-token");
+  if (new Date(row.expires_at).getTime() < Date.now()) {
+    await env.DB.prepare("DELETE FROM password_reset_tokens WHERE token = ?").bind(token).run();
+    return error(400, "invalid-or-expired-token");
+  }
+
+  const hash = await hashPassword(password);
+  await env.DB.batch([
+    env.DB.prepare("UPDATE admin_users SET password_hash = ? WHERE username = ?").bind(hash, row.username),
+    env.DB.prepare("DELETE FROM password_reset_tokens WHERE token = ?").bind(token),
+    env.DB.prepare("DELETE FROM admin_sessions WHERE username = ?").bind(row.username),
+  ]);
+
+  return json({ ok: true });
 }
 
 // GET /api/admin/contributions?status=pending

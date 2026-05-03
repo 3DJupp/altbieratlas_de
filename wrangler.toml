@@ -116,8 +116,16 @@ persist = true
 #   resendFrom:       Absenderadresse für alle Mails via Resend.
 #
 # Secrets (nie in SITE_CONFIG — immer einzeln im Dashboard setzen):
-#   TURNSTILE_SECRET_KEY — serverseitiger Turnstile-Key
-#   RESEND_API_KEY       — API-Key von resend.com (für alle Mails)
-#   ADMIN_EMAIL          — Empfänger des täglichen Beitrags-Digests
+#   TURNSTILE_SECRET_KEY  — serverseitiger Turnstile-Key
+#   RESEND_API_KEY        — API-Key von resend.com (für alle Mails)
+#   ADMIN_EMAIL           — Empfänger des täglichen Beitrags-Digests
 #   UNTAPPD_CLIENT_SECRET — Untappd-App-Secret (sensitiv)
+#
+#   INITIAL_ADMIN  (nur für die Ersteinrichtung, danach entfernen!)
+#     Legt beim ersten Request automatisch einen Admin-User an,
+#     sofern noch keine Admin-User in der Datenbank existieren.
+#     Format (JSON-String):
+#     {"username":"admin","password":"sicheres-passwort","email":"deine@email.de"}
+#     Setzen: wrangler secret put INITIAL_ADMIN
+#     Nach dem ersten Login im CF-Dashboard als Secret wieder löschen.
 # ============================================================

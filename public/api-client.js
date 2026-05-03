@@ -203,6 +203,8 @@
       listBreweries:  () => req("/admin/breweries"),
       updateBrewery:  (id, patch) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
       deleteBrewery:  (id) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
+      resetPassword:  (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
     },
   };
 

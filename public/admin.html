@@ -136,9 +136,50 @@
       <div class="admin-error" id="login-error" data-i18n="admin.loginFailed">Anmeldung fehlgeschlagen.</div>
       <button class="btn btn-primary" type="submit" style="width:100%;margin-top:8px" data-i18n="admin.login">Anmelden</button>
     </form>
-    <p style="color:var(--ink-muted);font-size:12px;margin-top:18px" data-i18n="admin.liveOnly">
+    <p style="margin-top:14px;text-align:center">
+      <button id="btn-forgot" class="btn btn-ghost" style="font-size:13px;padding:4px 10px" type="button">Passwort vergessen?</button>
+    </p>
+    <p style="color:var(--ink-muted);font-size:12px;margin-top:10px" data-i18n="admin.liveOnly">
       Die Admin-Funktionen sind nur im Live-Modus (Worker + D1) verfügbar.
     </p>
+  </section>
+
+  <!-- ============ PASSWORT VERGESSEN ============ -->
+  <section id="reset-request-section" class="admin-login" style="display:none">
+    <h1>Passwort zurücksetzen</h1>
+    <p class="hint">Gib deine E-Mail-Adresse ein. Falls ein Account hinterlegt ist, erhältst du einen Reset-Link.</p>
+    <form id="reset-request-form">
+      <div class="field">
+        <label>E-Mail-Adresse</label>
+        <input name="email" type="email" required autocomplete="email" />
+      </div>
+      <div class="admin-error" id="reset-request-error" style="display:none"></div>
+      <div id="reset-request-ok" style="display:none;color:#2d7a2d;font-size:14px;margin-bottom:8px">
+        E-Mail gesendet — prüfe dein Postfach (und den Spam-Ordner).
+      </div>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:8px">Reset-Link anfordern</button>
+    </form>
+    <p style="margin-top:14px;text-align:center">
+      <button id="btn-back-to-login" class="btn btn-ghost" style="font-size:13px;padding:4px 10px" type="button">Zurück zur Anmeldung</button>
+    </p>
+  </section>
+
+  <!-- ============ NEUES PASSWORT SETZEN ============ -->
+  <section id="reset-password-section" class="admin-login" style="display:none">
+    <h1>Neues Passwort setzen</h1>
+    <p class="hint">Mindestens 10 Zeichen. Du wirst danach automatisch ausgeloggt.</p>
+    <form id="reset-password-form">
+      <div class="field">
+        <label>Neues Passwort</label>
+        <input name="password" type="password" required autocomplete="new-password" minlength="10" />
+      </div>
+      <div class="field">
+        <label>Passwort wiederholen</label>
+        <input name="password2" type="password" required autocomplete="new-password" minlength="10" />
+      </div>
+      <div class="admin-error" id="reset-password-error" style="display:none"></div>
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:8px">Passwort speichern</button>
+    </form>
   </section>
 
   <!-- ============ DASHBOARD ============ -->
@@ -239,7 +280,9 @@ let me = null;
 
 // ============ Auth: Initialprüfung ============
 (async () => {
-  // Auf die API-Mode-Erkennung warten
+  // Reset-Token in URL → sofort Reset-Formular zeigen, kein Login-Check nötig
+  if (new URLSearchParams(location.search).get("reset")) return;
+
   await window.AtlasAPI.ready();
   if (window.AtlasAPI.mode() !== "live") {
     loginSection.style.display = "block";
@@ -330,6 +373,80 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
   try { await window.AtlasAPI.admin.logout(); } catch {}
   location.reload();
 });
+
+// ============ Passwort-Reset-Flows ============
+const resetRequestSection  = document.getElementById("reset-request-section");
+const resetPasswordSection = document.getElementById("reset-password-section");
+
+function showSection(id) {
+  [loginSection, resetRequestSection, resetPasswordSection].forEach((s) => { s.style.display = "none"; });
+  document.getElementById(id).style.display = "block";
+}
+
+document.getElementById("btn-forgot").addEventListener("click", () => {
+  showSection("reset-request-section");
+});
+document.getElementById("btn-back-to-login").addEventListener("click", () => {
+  showSection("login-section");
+});
+
+document.getElementById("reset-request-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("reset-request-error");
+  const okEl  = document.getElementById("reset-request-ok");
+  errEl.style.display = "none";
+  okEl.style.display  = "none";
+  const email = new FormData(e.target).get("email");
+  try {
+    await window.AtlasAPI.admin.requestReset(email);
+    okEl.style.display = "block";
+    e.target.reset();
+  } catch (err) {
+    errEl.textContent = err.status === 429
+      ? "Zu viele Versuche — bitte warte 15 Minuten."
+      : "Fehler beim Senden. Bitte versuche es erneut.";
+    errEl.style.display = "block";
+  }
+});
+
+document.getElementById("reset-password-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("reset-password-error");
+  errEl.style.display = "none";
+  const fd = new FormData(e.target);
+  const pw1 = fd.get("password");
+  const pw2 = fd.get("password2");
+  if (pw1 !== pw2) {
+    errEl.textContent = "Die Passwörter stimmen nicht überein.";
+    errEl.style.display = "block";
+    return;
+  }
+  const resetToken = new URLSearchParams(location.search).get("reset");
+  try {
+    await window.AtlasAPI.admin.resetPassword(resetToken, pw1);
+    // Token aus URL entfernen und zur Anmeldeseite
+    history.replaceState({}, "", location.pathname);
+    showSection("login-section");
+    loginSection.style.display = "block";
+    loginErr.textContent = "Passwort erfolgreich geändert — bitte melde dich an.";
+    loginErr.style.color = "#2d7a2d";
+    loginErr.classList.add("visible");
+  } catch (err) {
+    errEl.textContent = err.status === 400
+      ? "Link ungültig oder abgelaufen. Bitte fordere einen neuen an."
+      : "Fehler — bitte versuche es erneut.";
+    errEl.style.display = "block";
+  }
+});
+
+// Reset-Token in URL? → direkt Reset-Formular zeigen
+(async () => {
+  const resetToken = new URLSearchParams(location.search).get("reset");
+  if (resetToken) {
+    await window.AtlasAPI.ready();
+    showSection("reset-password-section");
+  }
+})();
 
 // ============ Tabs ============
 document.querySelectorAll(".admin-tabs button").forEach((btn) => {

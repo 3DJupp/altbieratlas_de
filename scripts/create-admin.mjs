@@ -37,9 +37,11 @@ async function hashPassword(password) {
 async function main() {
   const [, , username, password, ...rest] = process.argv;
   const remote = rest.includes("--remote");
+  const emailArg = rest.find((a) => a.startsWith("--email="));
+  const email = emailArg ? emailArg.slice("--email=".length) : null;
 
   if (!username || !password) {
-    console.error("Usage: node scripts/create-admin.mjs <username> <password> [--remote]");
+    console.error("Usage: node scripts/create-admin.mjs <username> <password> [--email=addr@example.com] [--remote]");
     process.exit(1);
   }
   if (password.length < 10) {
@@ -48,11 +50,14 @@ async function main() {
   }
 
   const hash = await hashPassword(password);
+  const esc = (s) => s.replace(/'/g, "''");
+  const emailValue = email ? `'${esc(email)}'` : "NULL";
   const sql = [
-    "DELETE FROM admin_users WHERE username = '" + username.replace(/'/g, "''") + "';",
-    "INSERT INTO admin_users (username, password_hash) VALUES (",
-    `  '${username.replace(/'/g, "''")}',`,
-    `  '${hash.replace(/'/g, "''")}'`,
+    `DELETE FROM admin_users WHERE username = '${esc(username)}';`,
+    `INSERT INTO admin_users (username, password_hash, email) VALUES (`,
+    `  '${esc(username)}',`,
+    `  '${esc(hash)}',`,
+    `  ${emailValue}`,
     ");",
   ].join("\n");
 
@@ -63,7 +68,7 @@ async function main() {
     const cmd = `wrangler d1 execute ${dbName} ${remote ? "--remote" : "--local"} --file=${tmp}`;
     console.log(`→ ${cmd}`);
     execSync(cmd, { stdio: "inherit" });
-    console.log(`✓ Admin '${username}' wurde ${remote ? "remote" : "lokal"} angelegt.`);
+    console.log(`✓ Admin '${username}' wurde ${remote ? "remote" : "lokal"} angelegt.${email ? ` (E-Mail: ${email})` : " (keine E-Mail — Passwort-Reset nicht möglich)"}`);
   } finally {
     try { unlinkSync(tmp); } catch {}
   }

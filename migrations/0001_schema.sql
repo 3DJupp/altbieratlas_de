@@ -114,6 +114,7 @@ CREATE INDEX IF NOT EXISTS idx_contributions_created ON contributions(created_at
 CREATE TABLE IF NOT EXISTS admin_users (
   username      TEXT PRIMARY KEY,
   password_hash TEXT NOT NULL,
+  email         TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -126,6 +127,16 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
   FOREIGN KEY (username) REFERENCES admin_users(username) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON admin_sessions(expires_at);
+
+-- Einmalige, zeitlich begrenzte Passwort-Reset-Token (1h Gültigkeit)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  token      TEXT PRIMARY KEY,
+  username   TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (username) REFERENCES admin_users(username) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_reset_expires ON password_reset_tokens(expires_at);
 
 -- Rate limiting (simple: count per IP + time window)
 CREATE TABLE IF NOT EXISTS rate_limits (
