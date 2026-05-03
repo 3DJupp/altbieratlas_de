@@ -6,7 +6,7 @@
 // ============================================================
 
 import * as R from "./routes.js";
-import { error, sendAdminDigest } from "./utils.js";
+import { error, hashPassword, sendAdminDigest } from "./utils.js";
 
 // Minimaler Router mit Pfad-Parameter-Matching (/x/:id)
 function match(pattern, path) {
@@ -22,6 +22,24 @@ function match(pattern, path) {
     }
   }
   return params;
+}
+
+// Legt den ersten Admin-User aus dem INITIAL_ADMIN-Secret an,
+// falls noch keine Admin-User existieren.
+// Secret-Format (JSON): {"username":"...","password":"...","email":"..."}
+// Nach dem ersten Login sollte das Secret im Dashboard entfernt werden.
+async function bootstrapInitialAdmin(env) {
+  if (!env.INITIAL_ADMIN) return;
+  let cfg;
+  try { cfg = JSON.parse(env.INITIAL_ADMIN); } catch { return; }
+  if (!cfg.username || !cfg.password || String(cfg.password).length < 10) return;
+  const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM admin_users").first();
+  if (row?.n > 0) return;
+  const hash = await hashPassword(String(cfg.password));
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)"
+  ).bind(String(cfg.username), hash, cfg.email ? String(cfg.email) : null).run();
+  console.log(`[bootstrap] Initialer Admin '${cfg.username}' angelegt.`);
 }
 
 const ROUTES = [
@@ -63,6 +81,9 @@ export default {
 
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // Initialen Admin aus Secret anlegen (nur solange INITIAL_ADMIN gesetzt und keine User existieren)
+    if (env.INITIAL_ADMIN) await bootstrapInitialAdmin(env);
 
     // API-Routen
     if (url.pathname.startsWith("/api/")) {
