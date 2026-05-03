@@ -73,7 +73,7 @@ Was `--seed` einspielt:
 
 | Datei | Inhalt | Immer einspielen? |
 |---|---|---|
-| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden (inkl. Untappd-Cache) | **Ja** |
+| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden (inkl. Admin-User, Sessions, Passwort-Reset-Token, Untappd-Cache) | **Ja** |
 | `0002_base.sql` | Bierstile + Glossar | **Ja** |
 | `demo.sql` | Brauereien, Preise, Events (Beispiele) | Nur Dev/Staging |
 
@@ -90,29 +90,41 @@ D1_DATABASE_NAME=altbieratlas npm run db:setup:remote
 
 #### Schritt 3 — Admin-User anlegen
 
-Der Admin-User benötigt einen PBKDF2-Hash. Dafür gibt es zwei Wege:
+Der erste Admin-User kann auf drei Wegen angelegt werden:
 
-**Option A — mit lokalem Wrangler (einfachster Weg):**
+**Option A — `INITIAL_ADMIN`-Secret (empfohlen, kein lokales Tool nötig):**
+
 ```bash
-npm run admin:create -- admin <starkes-passwort> --remote
-# oder direkt:
-node scripts/create-admin.mjs admin <starkes-passwort> --remote
+wrangler secret put INITIAL_ADMIN
+# Eingabe als JSON (einzeilig):
+# {"username":"admin","password":"sicheres-passwort","email":"deine@email.de"}
 ```
 
-**Option B — ohne Wrangler (nur Node.js + D1-Dashboard-Console):**
+Der Worker legt den User automatisch beim ersten Request an, sofern noch keine Admin-User existieren. **Das Secret nach dem ersten Login im CF-Dashboard löschen.**
+
+> `email` ist optional, aber notwendig für den Passwort-Reset per E-Mail.
+
+**Option B — mit lokalem Wrangler:**
+```bash
+npm run admin:create -- admin <starkes-passwort> --email=deine@email.de --remote
+# oder direkt:
+node scripts/create-admin.mjs admin <starkes-passwort> --email=deine@email.de --remote
+```
+
+**Option C — ohne Wrangler (nur Node.js + D1-Dashboard-Console):**
 
 Hash erzeugen und SQL ausgeben — kein Wrangler nötig:
 ```bash
 node -e "
 const { webcrypto: c } = require('crypto');
-const user = 'admin', pass = 'DEIN-PASSWORT-HIER';
+const user = 'admin', pass = 'DEIN-PASSWORT-HIER', email = 'deine@email.de';
 (async () => {
   const salt = c.getRandomValues(new Uint8Array(16));
   const key  = await c.subtle.importKey('raw', new TextEncoder().encode(pass), { name: 'PBKDF2' }, false, ['deriveBits']);
   const bits = await c.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, key, 256);
   const b64  = b => Buffer.from(b).toString('base64');
   const hash = 'pbkdf2\$120000\$' + b64(salt) + '\$' + b64(bits);
-  console.log(\"INSERT INTO admin_users (username, password_hash) VALUES ('\" + user + \"', '\" + hash + \"');\");
+  console.log(\"INSERT INTO admin_users (username, password_hash, email) VALUES ('\" + user + \"', '\" + hash + \"', '\" + email + \"');\");
 })();
 "
 ```
@@ -209,9 +221,10 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 | Name | Type | Zweck |
 |---|---|---|
 | `TURNSTILE_SECRET_KEY` | **Secret** | Serverseitiger Turnstile-Key |
-| `RESEND_API_KEY` | **Secret** | [Resend](https://resend.com)-API-Key für Bestätigungsmails |
+| `RESEND_API_KEY` | **Secret** | [Resend](https://resend.com)-API-Key für alle Mails (Beitrags-Bestätigung, Passwort-Reset, Digest) |
 | `ADMIN_EMAIL` | **Secret** | Empfänger des täglichen Beitrags-Digests |
 | `UNTAPPD_CLIENT_SECRET` | **Secret** | Untappd-App-Client-Secret (optional) |
+| `INITIAL_ADMIN` | **Secret** | Ersteinrichtung: JSON `{"username":"…","password":"…","email":"…"}` — nach erstem Login löschen |
 
 Dank `keep_vars = true` bleiben alle Runtime-Werte bei jedem Deploy erhalten.
 
@@ -250,6 +263,7 @@ Zusätzlich:
 - Übersicht-Tab mit Statistiken und neuesten offenen Beiträgen
 - Contributions-Tab: Approve / Reject mit optionaler Notiz; Approve schreibt direkt in die Zieltabelle (`price`, `brewery`, `event`, `style`)
 - Brauereien-Tab: Alle Einträge einsehen, verifizieren, löschen (mit FK-Kaskade)
+- **Passwort-Reset per E-Mail** (DE/EN): „Passwort vergessen?"-Link auf der Login-Seite → Reset-Link wird an die hinterlegte Admin-E-Mail geschickt (via Resend, 1h gültig, einmalig verwendbar)
 
 ### Ranglisten (`ranglisten.html`)
 - Günstigste Brauereien, neueste Preismeldungen, Preisindex
@@ -299,6 +313,8 @@ Für reines UI-Testen (ohne Wrangler) einfach `index.html` im Browser öffnen �
 | POST | `/api/admin/login` | Session-Cookie setzen |
 | POST | `/api/admin/logout` | Session löschen |
 | GET | `/api/admin/me` | Session prüfen |
+| POST | `/api/admin/request-reset` | Passwort-Reset-Mail anfordern |
+| POST | `/api/admin/reset-password` | Neues Passwort mit Token setzen |
 | GET | `/api/admin/stats` | Admin-Statistiken |
 | GET | `/api/admin/contributions?status=` | Contributions-Queue |
 | POST | `/api/admin/contributions/:id/approve` | Freigabe → Zieltabelle schreiben |
@@ -322,7 +338,17 @@ Ohne diese Variablen antwortet `/api/untappd/brewery/:id` mit `{ "available": fa
 
 ---
 
-## 6 · E-Mail-Bestätigung einrichten
+## 6 · E-Mail einrichten
+
+Der Worker versendet drei Typen von Mails — alle via [Resend](https://resend.com):
+
+| Mail | Auslöser | Empfänger |
+|---|---|---|
+| Beitrags-Bestätigung | Einreichung mit E-Mail-Angabe | Einsender |
+| Passwort-Reset | „Passwort vergessen?" im Admin-Login | Hinterlegte Admin-E-Mail |
+| Admin-Digest | Täglich 07:00 UTC (Cron) | `ADMIN_EMAIL` |
+
+**Einrichtung:**
 
 1. Account bei [resend.com](https://resend.com) anlegen (kostenlos bis 3.000 Mails/Monat)
 2. Domain verifizieren und API-Key erstellen
@@ -330,7 +356,9 @@ Ohne diese Variablen antwortet `/api/untappd/brewery/:id` mit `{ "available": fa
    - `RESEND_API_KEY` (Secret)
    - `resendFrom` und `siteUrl` in `SITE_CONFIG` eintragen
 
-Ohne `RESEND_API_KEY` werden keine Mails verschickt — das Einreichen funktioniert weiterhin normal.
+Damit Passwort-Reset funktioniert, muss die `email`-Adresse beim Admin-User hinterlegt sein (siehe Schritt 3 in 1.1).
+
+Ohne `RESEND_API_KEY` werden keine Mails verschickt — alle anderen Funktionen laufen normal weiter.
 
 ---
 
@@ -339,7 +367,8 @@ Ohne `RESEND_API_KEY` werden keine Mails verschickt — das Einreichen funktioni
 - Passwort-Hashing: PBKDF2-SHA256, 120 000 Iterationen, 16 B Salt, 32 B Hash
 - Sessions: 32 B zufälliges Token, HttpOnly · Secure · SameSite=Strict-Cookie, 8h TTL
 - Login: Konstant-Zeit-Vergleich (verhindert User-Enumeration), auch bei nicht-existierentem User
-- Rate-Limits (D1-basiert, IP-gebunden): Contributions 20/h, Geocode 30/min, Login 5/5min
+- Passwort-Reset: Token 32 B zufällig, 1h TTL, einmalig verwendbar; gleiche Antwort unabhängig davon ob E-Mail bekannt (kein User-Enumeration); alle Sessions werden beim Reset ungültig
+- Rate-Limits (D1-basiert, IP-gebunden): Contributions 20/h, Geocode 30/min, Login 5/5min, Reset-Anfragen 3/15min
 - Turnstile-Verifikation serverseitig gegen `challenges.cloudflare.com/siteverify`
 - Input-Validierung auf allen POST-Endpunkten (`str` / `num` / `oneOf` in `utils.js`)
 - FK-Kaskaden: Löschen einer Brauerei entfernt automatisch Preise, Style-Zuordnungen und Events
