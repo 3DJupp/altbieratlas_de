@@ -259,6 +259,29 @@ let me = null;
 
 // ============ Turnstile ============
 let turnstileToken = null;
+let turnstileWidgetId = null;
+let turnstileSiteKeyCache = null;
+
+function turnstileTheme() {
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+
+function renderTurnstileWidget() {
+  const host = document.getElementById("turnstile-widget");
+  if (!host || !turnstileSiteKeyCache || !window.turnstile) return;
+  if (turnstileWidgetId !== null) {
+    try { window.turnstile.remove(turnstileWidgetId); } catch {}
+    turnstileWidgetId = null;
+    turnstileToken = null;
+  }
+  turnstileWidgetId = window.turnstile.render(host, {
+    sitekey: turnstileSiteKeyCache,
+    theme: turnstileTheme(),
+    callback: (token) => { turnstileToken = token; },
+    "expired-callback": () => { turnstileToken = null; },
+  });
+}
+
 function initTurnstile() {
   const cfg = window.ATLAS_CONFIG;
   const siteKey = cfg.turnstileSiteKey;
@@ -268,29 +291,16 @@ function initTurnstile() {
     document.getElementById("turnstile-placeholder").style.display = "flex";
     return;
   }
-  window.turnstileCallback = (token) => { turnstileToken = token; };
-  window.turnstileExpired  = () => { turnstileToken = null; };
 
-  if (!document.querySelector('script[src*="turnstile/v0/api.js"]')) {
-    const s = document.createElement("script");
-    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-    s.async = true; s.defer = true;
-    document.head.appendChild(s);
-  }
-  const host = document.getElementById("turnstile-widget");
-  host.innerHTML = `<div class="cf-turnstile"
-    data-sitekey="${siteKey}"
-    data-callback="turnstileCallback"
-    data-expired-callback="turnstileExpired"></div>`;
+  turnstileSiteKeyCache = siteKey;
+  window.onTurnstileLoad = renderTurnstileWidget;
+  document.addEventListener("atlas:theme-changed", renderTurnstileWidget);
+
+  const s = document.createElement("script");
+  s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
 }
-
-// Server-Config kann asynchron kommen — Widget dann nachladen
-document.addEventListener("atlas:config-ready", () => {
-  if (loginSection.style.display !== "none" && !turnstileToken
-      && !document.querySelector(".cf-turnstile")) {
-    initTurnstile();
-  }
-});
 
 // ============ Login ============
 document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -309,8 +319,8 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
       : window.t("admin.loginFailed");
     loginErr.classList.add("visible");
     // Turnstile-Token ist einmalig → zurücksetzen
-    if (window.turnstile && document.querySelector(".cf-turnstile")) {
-      try { window.turnstile.reset(); } catch {}
+    if (window.turnstile && turnstileWidgetId !== null) {
+      try { window.turnstile.reset(turnstileWidgetId); } catch {}
       turnstileToken = null;
     }
   }
