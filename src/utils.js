@@ -379,6 +379,76 @@ function _emailDataRows(type, data, de) {
   return Object.entries(data).filter(([k, v]) => v != null && v !== "" && !k.startsWith("_")).map(([k, v]) => [k, v]);
 }
 
+// ---- Passwort-Reset-E-Mail via Resend API ----
+export async function sendPasswordResetEmail(env, { to, resetUrl }) {
+  if (!env.RESEND_API_KEY || !to) return;
+  const sc = getSiteConfig(env);
+  const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
+
+  const subject = "Altbieratlas: Passwort zurücksetzen";
+  const text = [
+    "Passwort zurücksetzen",
+    "",
+    "Jemand hat eine Passwort-Rücksetzung für deinen Altbieratlas-Account angefordert.",
+    "Klicke auf den folgenden Link, um ein neues Passwort zu setzen (gültig für 1 Stunde):",
+    "",
+    resetUrl,
+    "",
+    "Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.",
+    "Dein Passwort bleibt unverändert.",
+    "",
+    `Das Altbieratlas-Team\n${siteUrl}`,
+  ].join("\n");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"></head>
+<body style="margin:0;padding:0;background:#f9f5f0;font-family:system-ui,-apple-system,sans-serif;color:#222">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
+
+  <tr><td style="background:#fff;border:1px solid #e4d8cc;border-bottom:none;border-radius:8px 8px 0 0;padding:18px 28px">
+    <a href="${siteUrl}" style="text-decoration:none;display:inline-block">
+    <table cellpadding="0" cellspacing="0"><tr>
+      <td style="background:#b57a3a;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:13px;font-weight:700;width:28px;height:28px;text-align:center;border-radius:3px;line-height:28px">A</td>
+      <td style="padding-left:10px;font-family:Georgia,'Times New Roman',serif;font-size:18px;color:#1a1410;font-weight:600;vertical-align:middle">Altbieratlas</td>
+    </tr></table>
+    </a>
+  </td></tr>
+
+  <tr><td style="background:#b57a3a;height:3px;border-left:1px solid #e4d8cc;border-right:1px solid #e4d8cc"></td></tr>
+
+  <tr><td style="background:#fff;border:1px solid #e4d8cc;border-top:none;border-radius:0 0 8px 8px;padding:28px 28px 24px">
+    <p style="margin:0 0 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#b57a3a;font-family:'Courier New',monospace">Account</p>
+    <h2 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410;line-height:1.2">Passwort zurücksetzen</h2>
+    <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.65">Jemand hat eine Passwort-Rücksetzung für deinen Altbieratlas-Account angefordert. Klicke auf den Button, um ein neues Passwort zu setzen. Der Link ist <strong>1 Stunde</strong> gültig.</p>
+    <table cellpadding="0" cellspacing="0" style="margin-bottom:24px"><tr>
+      <td style="background:#b57a3a;border-radius:6px">
+        <a href="${_esc(resetUrl)}" style="display:inline-block;padding:12px 24px;color:#fff;font-size:14px;font-weight:500;text-decoration:none;font-family:system-ui,sans-serif">Neues Passwort setzen</a>
+      </td>
+    </tr></table>
+    <p style="margin:0 0 8px;font-size:12px;color:#aaa;line-height:1.5">Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:</p>
+    <p style="margin:0 0 20px;font-size:11px;color:#b57a3a;word-break:break-all;font-family:'Courier New',monospace">${_esc(resetUrl)}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc"><tr><td style="padding-top:16px">
+      <p style="margin:0;font-size:12px;color:#bbb">Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren. Dein Passwort bleibt unverändert.</p>
+    </td></tr></table>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: sc.resendFrom || env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        to, subject, text, html,
+      }),
+    });
+  } catch {}
+}
+
 // ---- Täglicher Admin-Digest via Resend API ----
 // Wird vom scheduled()-Handler aufgerufen (Cron: einmal täglich).
 // Benötigt env.RESEND_API_KEY (Secret) + env.ADMIN_EMAIL (Secret).

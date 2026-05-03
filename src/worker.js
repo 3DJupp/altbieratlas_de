@@ -45,6 +45,8 @@ const ROUTES = [
   ["POST",   "/api/admin/login",                           R.adminLogin],
   ["POST",   "/api/admin/logout",                          R.adminLogout],
   ["GET",    "/api/admin/me",                              R.adminMe],
+  ["POST",   "/api/admin/request-reset",                   R.adminRequestReset],
+  ["POST",   "/api/admin/reset-password",                  R.adminResetPassword],
   ["GET",    "/api/admin/stats",                           R.adminStats],
   ["GET",    "/api/admin/contributions",                   R.adminListContributions],
   ["POST",   "/api/admin/contributions/:id/approve",       R.adminApprove],
