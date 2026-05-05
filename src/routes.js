@@ -459,9 +459,13 @@ export async function adminLogin(req, env) {
 
   const ip = clientIp(req);
 
-  // Turnstile: schützt vor Brute-Force. Wird übersprungen, wenn kein
-  // Secret gesetzt ist (Dev-Modus).
-  const ts = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY, ip);
+  // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
+  // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
+  // Fehlt der Site-Key, wird kein Widget angezeigt und kein Token gesendet.
+  const loginSc = siteConfig(env);
+  const tsSiteKey = loginSc.turnstileSiteKey;
+  const tsActive = tsSiteKey && !String(tsSiteKey).includes("PLACEHOLDER");
+  const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, ip);
   if (!ts.success) return error(403, "turnstile-failed");
 
   // Rate-Limit Login (5 pro 5 min pro IP)
