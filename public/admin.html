@@ -30,13 +30,8 @@
   background: var(--bg); border: 1px solid var(--rule-strong);
   border-radius: var(--radius); color: var(--ink);
   font-family: var(--font-ui); font-size: 14px;
-  box-sizing: border-box;
 }
-.field input:focus, .field select:focus, .field textarea:focus {
-  outline: none; border-color: var(--copper);
-}
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.field input:focus { outline: none; border-color: var(--copper); }
 
 .admin-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -70,39 +65,9 @@
 .brewery-table .status-approved { color: #2d7a2d; }
 .brewery-table .status-pending  { color: #a07a20; }
 .brewery-table .status-rejected { color: #9b1f1f; }
-.brewery-table .actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.brewery-table .actions button { font-size: 11px; padding: 5px 10px; }
-
-.data-table {
-  width: 100%; border-collapse: collapse;
-  background: var(--bg-card);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.data-table th, .data-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--rule);
-  font-size: 13px; text-align: left;
-  vertical-align: top;
-}
-.data-table th {
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--ink-muted);
-  background: var(--bg-elev);
-  white-space: nowrap;
-}
-.data-table tr:last-child td { border-bottom: none; }
-.data-table .actions { display: flex; gap: 6px; }
-.data-table .actions button { font-size: 11px; padding: 4px 9px; }
-.data-table .status-approved { color: #2d7a2d; }
-.data-table .status-pending  { color: #a07a20; }
-.data-table .status-rejected { color: #9b1f1f; }
-
-.tab-toolbar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 16px;
+.brewery-table .actions { display: flex; gap: 6px; }
+.brewery-table .actions button {
+  font-size: 11px; padding: 5px 10px;
 }
 
 .subtab-bar {
@@ -118,70 +83,6 @@
 }
 .subtab-bar button.active { background: var(--copper); color: var(--accent-ink); border-color: var(--copper); }
 
-/* --- Overlay-Modal (shared) --- */
-.modal-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.45);
-  z-index: 1000;
-  align-items: flex-start; justify-content: center;
-  padding: 40px 16px;
-  overflow-y: auto;
-}
-.modal-overlay.visible { display: flex; }
-.modal-box {
-  background: var(--bg-card);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  padding: 28px 32px;
-  width: 100%; max-width: 680px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-}
-.modal-box.modal-wide { max-width: 860px; }
-.modal-box h3 {
-  font-family: var(--font-display); font-size: 1.3rem;
-  font-weight: 500; margin-bottom: 20px;
-}
-.modal-actions {
-  display: flex; justify-content: flex-end; gap: 10px;
-  margin-top: 20px; padding-top: 16px;
-  border-top: 1px solid var(--rule);
-}
-
-/* geocode dropdown */
-.geo-results {
-  position: absolute; z-index: 10;
-  background: var(--bg-card); border: 1px solid var(--rule-strong);
-  border-radius: var(--radius); margin-top: 4px;
-  max-height: 200px; overflow-y: auto;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  width: 100%;
-}
-.geo-results button {
-  display: block; width: 100%; text-align: left;
-  padding: 8px 12px; background: none; border: none;
-  border-bottom: 1px solid var(--rule); cursor: pointer;
-  font-size: 13px; color: var(--ink);
-}
-.geo-results button:hover { background: var(--bg-elev); }
-.geo-results button:last-child { border-bottom: none; }
-.geo-wrap { position: relative; }
-
-/* styles checkboxes */
-.styles-check-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 6px; max-height: 180px; overflow-y: auto;
-  border: 1px solid var(--rule-strong); border-radius: var(--radius);
-  padding: 10px 12px; background: var(--bg);
-}
-.styles-check-grid label {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 13px; font-family: var(--font-ui);
-  text-transform: none; letter-spacing: 0;
-  color: var(--ink); cursor: pointer;
-}
-
-/* reject dialog (unchanged) */
 .reject-dialog {
   display: none;
   position: fixed; inset: 0;
@@ -224,6 +125,7 @@
         <input name="password" type="password" required autocomplete="current-password" />
       </div>
 
+      <!-- Turnstile: echtes Widget wenn Site-Key gesetzt, sonst Platzhalter -->
       <div id="turnstile-widget" style="margin:12px 0 4px"></div>
       <div class="turnstile-box" id="turnstile-placeholder" style="display:none">
         <span class="cf-mark">CF</span>
@@ -294,14 +196,10 @@
         </div>
       </div>
 
-      <div class="admin-tabs" style="flex-wrap:wrap;gap:4px">
+      <div class="admin-tabs">
         <button class="active" data-tab="dashboard" data-i18n="admin.dashboard">Übersicht</button>
         <button data-tab="contribs" data-i18n="admin.pending">Offene Beiträge</button>
         <button data-tab="breweries" data-i18n="admin.breweries">Brauereien</button>
-        <button data-tab="prices">Preise</button>
-        <button data-tab="events">Events</button>
-        <button data-tab="styles">Stile</button>
-        <button data-tab="glossar">Glossar</button>
       </div>
 
       <div class="admin-tab-content">
@@ -314,6 +212,7 @@
             <div class="admin-stat"><div class="n" id="s-breweries">—</div><div class="lbl" data-i18n="admin.breweries">Brauereien</div></div>
             <div class="admin-stat"><div class="n" id="s-prices">—</div><div class="lbl" data-i18n="rank.statPrices">Preismeldungen</div></div>
           </div>
+
           <h2 style="font-family:var(--font-display);font-weight:500;margin:30px 0 10px" data-i18n="admin.pending">Offene Beiträge</h2>
           <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.dashboardPending">Die neuesten offenen Einreichungen im Schnellzugriff:</p>
           <div id="dashboard-pending"></div>
@@ -336,283 +235,16 @@
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th data-i18n="admin.colName">Name</th>
-                  <th data-i18n="admin.colCity">Stadt</th>
-                  <th data-i18n="admin.colType">Typ</th>
-                  <th data-i18n="admin.colStatus">Status</th>
-                  <th data-i18n="admin.colVerified">Verif.</th>
-                  <th></th>
+                  <th data-i18n="admin.colName">Name</th><th data-i18n="admin.colCity">Stadt</th><th data-i18n="admin.colType">Typ</th><th data-i18n="admin.colStatus">Status</th><th data-i18n="admin.colVerified">Verif.</th><th></th>
                 </tr>
               </thead>
               <tbody id="brewery-tbody"></tbody>
             </table>
           </div>
         </section>
-
-        <!-- Prices -->
-        <section id="tab-prices">
-          <div class="tab-toolbar">
-            <p style="color:var(--ink-muted);font-size:14px;margin:0">Alle Preiseinträge (max. 1000).</p>
-            <button class="btn btn-primary" id="btn-add-price">+ Preis hinzufügen</button>
-          </div>
-          <div style="overflow:auto">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Brauerei</th><th>Datum</th><th>Größe</th><th>Preis</th><th>Quelle</th><th>Status</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="prices-tbody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Events -->
-        <section id="tab-events">
-          <div class="tab-toolbar">
-            <p style="color:var(--ink-muted);font-size:14px;margin:0">Alle Events.</p>
-            <button class="btn btn-primary" id="btn-add-event">+ Event hinzufügen</button>
-          </div>
-          <div style="overflow:auto">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Titel</th><th>Brauerei</th><th>Datum</th><th>Status</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="events-tbody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Styles -->
-        <section id="tab-styles">
-          <div class="tab-toolbar">
-            <p style="color:var(--ink-muted);font-size:14px;margin:0">Bierstile / Kategorien.</p>
-            <button class="btn btn-primary" id="btn-add-style">+ Stil hinzufügen</button>
-          </div>
-          <div style="overflow:auto">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Name</th><th>ABV</th><th>IBU</th><th>Farbe</th><th>Beschreibung DE</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="styles-tbody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Glossar -->
-        <section id="tab-glossar">
-          <div class="tab-toolbar">
-            <p style="color:var(--ink-muted);font-size:14px;margin:0">Glossareinträge / Textbausteine.</p>
-            <button class="btn btn-primary" id="btn-add-glossar">+ Eintrag hinzufügen</button>
-          </div>
-          <div style="overflow:auto">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Begriff</th><th>Definition DE</th><th>Definition EN</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="glossar-tbody"></tbody>
-            </table>
-          </div>
-        </section>
       </div>
     </div>
   </main>
-
-  <!-- ============ BREWERY EDIT MODAL ============ -->
-  <div class="modal-overlay" id="brewery-edit-modal">
-    <div class="modal-box modal-wide">
-      <h3>Brauerei bearbeiten</h3>
-      <form id="brewery-edit-form">
-        <input type="hidden" id="be-id" />
-        <div class="field-row">
-          <div class="field"><label>Name *</label><input id="be-name" required /></div>
-          <div class="field"><label>Kurzname</label><input id="be-short" /></div>
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label>Typ</label>
-            <select id="be-type">
-              <option value="brewery">Brauerei</option>
-              <option value="pub">Kneipe / Gasthaus</option>
-              <option value="shop">Shop</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Status</label>
-            <select id="be-status">
-              <option value="approved">approved</option>
-              <option value="pending">pending</option>
-              <option value="rejected">rejected</option>
-            </select>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Stadt *</label><input id="be-city" required /></div>
-          <div class="field"><label>Land</label><input id="be-country" placeholder="DE" /></div>
-        </div>
-        <div class="field"><label>Adresse</label><input id="be-address" /></div>
-        <div class="field-row">
-          <div class="field"><label>Breitengrad (Lat)</label><input id="be-lat" type="number" step="any" /></div>
-          <div class="field"><label>Längengrad (Lng)</label><input id="be-lng" type="number" step="any" /></div>
-        </div>
-
-        <!-- Geocode Suche -->
-        <div class="field">
-          <label>Geocode suchen</label>
-          <div class="geo-wrap">
-            <div style="display:flex;gap:8px">
-              <input id="be-geo-query" placeholder="Adresse oder Name eingeben…" style="flex:1" />
-              <button type="button" id="be-geo-search" class="btn" style="white-space:nowrap">Suchen</button>
-            </div>
-            <div class="geo-results" id="be-geo-results" style="display:none"></div>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field"><label>Gegründet</label><input id="be-founded" type="number" min="1000" max="2100" /></div>
-          <div class="field"><label>Website</label><input id="be-website" type="url" placeholder="https://…" /></div>
-        </div>
-        <div class="field">
-          <label>Beschreibung DE</label>
-          <textarea id="be-desc-de" rows="3"></textarea>
-        </div>
-        <div class="field">
-          <label>Beschreibung EN</label>
-          <textarea id="be-desc-en" rows="3"></textarea>
-        </div>
-        <div class="field">
-          <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px">
-            <input id="be-verified" type="checkbox" style="width:auto;padding:0" />
-            Verifiziert
-          </label>
-        </div>
-        <div class="field">
-          <label>Bierstile</label>
-          <div class="styles-check-grid" id="be-styles-grid">
-            <span style="color:var(--ink-muted);font-size:13px">Lade Stile…</span>
-          </div>
-        </div>
-      </form>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="brewery-edit-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="brewery-edit-save">Speichern</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ PRICE MODAL ============ -->
-  <div class="modal-overlay" id="price-modal">
-    <div class="modal-box">
-      <h3 id="price-modal-title">Preis</h3>
-      <form id="price-form">
-        <input type="hidden" id="pm-id" />
-        <div class="field"><label>Brauerei-ID *</label><input id="pm-brewery-id" required /></div>
-        <div class="field-row">
-          <div class="field"><label>Datum *</label><input id="pm-date" type="date" required /></div>
-          <div class="field">
-            <label>Größe *</label>
-            <input id="pm-size" list="pm-size-list" required placeholder="0,33l" />
-            <datalist id="pm-size-list"></datalist>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Preis (€) *</label><input id="pm-price" type="number" step="0.01" min="0" max="100" required /></div>
-          <div class="field"><label>Quelle</label><input id="pm-source" /></div>
-        </div>
-        <div class="field"><label>Notizen</label><input id="pm-notes" /></div>
-        <div class="field">
-          <label>Status</label>
-          <select id="pm-status">
-            <option value="approved">approved</option>
-            <option value="pending">pending</option>
-            <option value="rejected">rejected</option>
-          </select>
-        </div>
-      </form>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="price-modal-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="price-modal-save">Speichern</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ EVENT MODAL ============ -->
-  <div class="modal-overlay" id="event-modal">
-    <div class="modal-box">
-      <h3 id="event-modal-title">Event</h3>
-      <form id="event-form">
-        <input type="hidden" id="em-id" />
-        <div class="field"><label>Titel DE *</label><input id="em-title-de" required /></div>
-        <div class="field"><label>Titel EN</label><input id="em-title-en" /></div>
-        <div class="field"><label>Brauerei-ID</label><input id="em-brewery-id" /></div>
-        <div class="field-row">
-          <div class="field"><label>Datum *</label><input id="em-date" type="date" required /></div>
-          <div class="field"><label>Uhrzeit</label><input id="em-time" type="time" /></div>
-        </div>
-        <div class="field"><label>Ort</label><input id="em-location" /></div>
-        <div class="field"><label>URL</label><input id="em-url" type="url" placeholder="https://…" /></div>
-        <div class="field"><label>Beschreibung DE</label><textarea id="em-desc-de" rows="3"></textarea></div>
-        <div class="field"><label>Beschreibung EN</label><textarea id="em-desc-en" rows="3"></textarea></div>
-        <div class="field">
-          <label>Status</label>
-          <select id="em-status">
-            <option value="approved">approved</option>
-            <option value="pending">pending</option>
-            <option value="rejected">rejected</option>
-          </select>
-        </div>
-      </form>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="event-modal-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="event-modal-save">Speichern</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ STYLE MODAL ============ -->
-  <div class="modal-overlay" id="style-modal">
-    <div class="modal-box">
-      <h3 id="style-modal-title">Bierstil</h3>
-      <form id="style-form">
-        <input type="hidden" id="sm-id" />
-        <div class="field"><label>Name *</label><input id="sm-name" required /></div>
-        <div class="field-row-3">
-          <div class="field"><label>ABV (%)</label><input id="sm-abv" type="number" step="0.1" min="0" max="30" /></div>
-          <div class="field"><label>IBU</label><input id="sm-ibu" type="number" min="0" max="300" /></div>
-          <div class="field"><label>Farbe (Hex)</label><input id="sm-color" type="color" style="height:42px;padding:4px" /></div>
-        </div>
-        <div class="field"><label>Beschreibung DE</label><textarea id="sm-tasting-de" rows="3"></textarea></div>
-        <div class="field"><label>Beschreibung EN</label><textarea id="sm-tasting-en" rows="3"></textarea></div>
-      </form>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="style-modal-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="style-modal-save">Speichern</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ GLOSSAR MODAL ============ -->
-  <div class="modal-overlay" id="glossar-modal">
-    <div class="modal-box">
-      <h3 id="glossar-modal-title">Glossareintrag</h3>
-      <form id="glossar-form">
-        <input type="hidden" id="gm-orig-term" />
-        <div class="field"><label>Begriff *</label><input id="gm-term" required /></div>
-        <div class="field"><label>Definition DE</label><textarea id="gm-def-de" rows="4"></textarea></div>
-        <div class="field"><label>Definition EN</label><textarea id="gm-def-en" rows="4"></textarea></div>
-      </form>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="glossar-modal-cancel">Abbrechen</button>
-        <button class="btn btn-primary" id="glossar-modal-save">Speichern</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Reject-Dialog -->
   <div class="reject-dialog" id="reject-dialog">
@@ -648,13 +280,8 @@ let me = null;
 
 // ============ Auth: Initialprüfung ============
 (async () => {
-  // Reset-Token in URL → Token validieren, dann Formular oder Fehler zeigen
-  const resetToken = new URLSearchParams(location.search).get("reset");
-  if (resetToken) {
-    await window.AtlasAPI.ready();
-    await validateAndShowResetForm(resetToken);
-    return;
-  }
+  // Reset-Token in URL → sofort Reset-Formular zeigen, kein Login-Check nötig
+  if (new URLSearchParams(location.search).get("reset")) return;
 
   await window.AtlasAPI.ready();
   if (window.AtlasAPI.mode() !== "live") {
@@ -672,21 +299,6 @@ let me = null;
     initTurnstile();
   }
 })();
-
-async function validateAndShowResetForm(token) {
-  const resetPasswordSection = document.getElementById("reset-password-section");
-  try {
-    await window.AtlasAPI.admin.validateResetToken(token);
-    // Token gültig — Formular anzeigen
-    showSection("reset-password-section");
-  } catch (e) {
-    // Token ungültig oder abgelaufen
-    loginSection.style.display = "block";
-    loginErr.textContent = window.t("admin.resetPassword.errorExpired") || "Der Reset-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.";
-    loginErr.style.color = "#9b1f1f";
-    loginErr.classList.add("visible");
-  }
-}
 
 // ============ Turnstile ============
 let turnstileToken = null;
@@ -717,13 +329,16 @@ function initTurnstile() {
   const cfg = window.ATLAS_CONFIG;
   const siteKey = cfg.turnstileSiteKey;
   const enabled = cfg.turnstileEnabled && siteKey && !String(siteKey).includes("PLACEHOLDER");
+
   if (!enabled) {
     document.getElementById("turnstile-placeholder").style.display = "flex";
     return;
   }
+
   turnstileSiteKeyCache = siteKey;
   window.onTurnstileLoad = renderTurnstileWidget;
   document.addEventListener("atlas:theme-changed", renderTurnstileWidget);
+
   const s = document.createElement("script");
   s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
   s.async = true; s.defer = true;
@@ -746,6 +361,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
       ? window.t("admin.botCheckFailed")
       : window.t("admin.loginFailed");
     loginErr.classList.add("visible");
+    // Turnstile-Token ist einmalig → zurücksetzen
     if (window.turnstile && turnstileWidgetId !== null) {
       try { window.turnstile.reset(turnstileWidgetId); } catch {}
       turnstileToken = null;
@@ -808,6 +424,7 @@ document.getElementById("reset-password-form").addEventListener("submit", async 
   const resetToken = new URLSearchParams(location.search).get("reset");
   try {
     await window.AtlasAPI.admin.resetPassword(resetToken, pw1);
+    // Token aus URL entfernen und zur Anmeldeseite
     history.replaceState({}, "", location.pathname);
     showSection("login-section");
     loginSection.style.display = "block";
@@ -822,6 +439,15 @@ document.getElementById("reset-password-form").addEventListener("submit", async 
   }
 });
 
+// Reset-Token in URL? → direkt Reset-Formular zeigen
+(async () => {
+  const resetToken = new URLSearchParams(location.search).get("reset");
+  if (resetToken) {
+    await window.AtlasAPI.ready();
+    showSection("reset-password-section");
+  }
+})();
+
 // ============ Tabs ============
 document.querySelectorAll(".admin-tabs button").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -829,13 +455,9 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     btn.classList.add("active");
     document.querySelectorAll(".admin-tab-content > section").forEach((s) => s.classList.remove("active"));
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    if (btn.dataset.tab === "contribs")  loadContributions(currentStatus);
+    if (btn.dataset.tab === "contribs") loadContributions(currentStatus);
     if (btn.dataset.tab === "breweries") loadBreweriesTable();
     if (btn.dataset.tab === "dashboard") loadDashboard();
-    if (btn.dataset.tab === "prices")    loadPricesTable();
-    if (btn.dataset.tab === "events")    loadEventsTable();
-    if (btn.dataset.tab === "styles")    loadStylesTable();
-    if (btn.dataset.tab === "glossar")   loadGlossarTable();
   });
 });
 
@@ -844,10 +466,6 @@ async function showAdmin() {
   loginSection.style.display = "none";
   adminSection.style.display = "block";
   document.getElementById("admin-username").textContent = me.username;
-  // Preisgrößen für Datalist befüllen
-  const sizes = window.ATLAS_CONFIG.priceSizes || ["0,25l","0,33l","0,4l","0,5l"];
-  const dl = document.getElementById("pm-size-list");
-  sizes.forEach((s) => { const o = document.createElement("option"); o.value = s; dl.appendChild(o); });
   await loadDashboard();
 }
 
@@ -863,9 +481,12 @@ async function loadDashboard() {
     document.getElementById("s-rejected").textContent  = stats.rejected;
     document.getElementById("s-breweries").textContent = stats.breweries;
     document.getElementById("s-prices").textContent    = stats.prices;
+
     const host = document.getElementById("dashboard-pending");
     renderContribCards(pending.contributions.slice(0, 5), host, "pending");
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 // ============ Contributions ============
@@ -918,6 +539,7 @@ function renderContribCards(items, host, status) {
     `;
   }).join("");
   window.setLang(window.__atlasLang);
+
   host.querySelectorAll(".contrib-card").forEach((card) => {
     const id = card.dataset.id;
     card.querySelectorAll("button[data-action]").forEach((b) => {
@@ -969,37 +591,30 @@ rejectDialog.addEventListener("click", (e) => {
 });
 
 // ============ Breweries Table ============
-let allStyles = []; // cache für Stil-Auswahl
-
 async function loadBreweriesTable() {
   const t = window.t;
   const tbody = document.getElementById("brewery-tbody");
   tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
   try {
-    const [brewRes, stylesRes] = await Promise.all([
-      window.AtlasAPI.admin.listBreweries(),
-      window.AtlasAPI.admin.listStyles().catch(() => ({ styles: [] })),
-    ]);
-    allStyles = stylesRes.styles || [];
-    tbody.innerHTML = (brewRes.breweries || []).map((b) => `
+    const r = await window.AtlasAPI.admin.listBreweries();
+    tbody.innerHTML = (r.breweries || []).map((b) => `
       <tr data-id="${b.id}">
-        <td><a href="brauerei.html?id=${b.id}" target="_blank">${esc(b.name)}</a></td>
-        <td>${esc(b.city)}${b.country && b.country !== "DE" ? " · " + esc(b.country) : ""}</td>
+        <td><a href="brauerei.html?id=${b.id}" target="_blank">${b.name}</a></td>
+        <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${t("type." + b.type) || b.type}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
         <td>${b.verified ? "✓" : "—"}</td>
         <td class="actions">
-          <button class="btn" data-act="edit">${t("admin.actionEdit") || "Bearbeiten"}</button>
-          <button class="btn" data-act="toggle-verified">${b.verified ? (t("admin.actionUnverify") || "Unverifizieren") : (t("admin.actionVerify") || "Verifizieren")}</button>
-          <button class="btn btn-reject" data-act="delete">${t("admin.actionDelete") || "Löschen"}</button>
+          <button class="btn" data-act="toggle-verified">${b.verified ? t("admin.actionUnverify") : t("admin.actionVerify")}</button>
+          <button class="btn btn-reject" data-act="delete">${t("admin.actionDelete")}</button>
         </td>
       </tr>
-    `).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noTableEntries") || "Keine Einträge."}</td></tr>`;
+    `).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noTableEntries")}</td></tr>`;
 
     tbody.querySelectorAll("tr[data-id]").forEach((row) => {
       const id = row.dataset.id;
       row.querySelectorAll("button[data-act]").forEach((b) => {
-        b.addEventListener("click", () => handleBreweryAction(id, b.dataset.act, row, brewRes.breweries));
+        b.addEventListener("click", () => handleBreweryAction(id, b.dataset.act, row));
       });
     });
   } catch (e) {
@@ -1007,492 +622,31 @@ async function loadBreweriesTable() {
   }
 }
 
-async function handleBreweryAction(id, act, rowEl, breweries) {
+async function handleBreweryAction(id, act, rowEl) {
   const t = window.t;
   if (act === "delete") {
-    if (!confirm(t("admin.confirmDelete") || "Wirklich löschen?")) return;
+    if (!confirm(t("admin.confirmDelete"))) return;
     try {
       await window.AtlasAPI.admin.deleteBrewery(id);
       rowEl.remove();
       loadDashboard();
-    } catch (e) { alert((t("admin.errorPrefix") || "Fehler: ") + e.message); }
+    } catch (e) { alert(t("admin.errorPrefix") + e.message); }
   } else if (act === "toggle-verified") {
-    const curTxt = rowEl.querySelector("td:nth-child(5)").textContent.trim();
-    const nowVerified = curTxt === "✓" ? 0 : 1;
+    const currentBadge = rowEl.querySelector("td:nth-child(5)").textContent.trim();
+    const nowVerified = currentBadge === "✓" ? 0 : 1;
     try {
       await window.AtlasAPI.admin.updateBrewery(id, { verified: nowVerified });
       rowEl.querySelector("td:nth-child(5)").textContent = nowVerified ? "✓" : "—";
-      rowEl.querySelector("button[data-act='toggle-verified']").textContent =
-        nowVerified ? (t("admin.actionUnverify") || "Unverifizieren") : (t("admin.actionVerify") || "Verifizieren");
-    } catch (e) { alert((t("admin.errorPrefix") || "Fehler: ") + e.message); }
-  } else if (act === "edit") {
-    const b = breweries.find((x) => x.id === id);
-    if (b) openBreweryEditModal(b);
+      rowEl.querySelector("button[data-act='toggle-verified']").textContent = nowVerified ? t("admin.actionUnverify") : t("admin.actionVerify");
+    } catch (e) { alert(t("admin.errorPrefix") + e.message); }
   }
 }
 
-// ============ Brewery Edit Modal ============
-const breweryEditModal = document.getElementById("brewery-edit-modal");
-
-async function openBreweryEditModal(b) {
-  document.getElementById("be-id").value         = b.id;
-  document.getElementById("be-name").value       = b.name || "";
-  document.getElementById("be-short").value      = b.short || b.shortName || "";
-  document.getElementById("be-type").value       = b.type || "brewery";
-  document.getElementById("be-status").value     = b.status || "approved";
-  document.getElementById("be-city").value       = b.city || "";
-  document.getElementById("be-country").value    = b.country || "DE";
-  document.getElementById("be-address").value    = b.address || "";
-  document.getElementById("be-lat").value        = b.coords?.[0] ?? b.lat ?? "";
-  document.getElementById("be-lng").value        = b.coords?.[1] ?? b.lng ?? "";
-  document.getElementById("be-founded").value    = b.founded || "";
-  document.getElementById("be-website").value    = b.website || "";
-  document.getElementById("be-desc-de").value    = b.description?.de || b.descriptionDe || "";
-  document.getElementById("be-desc-en").value    = b.description?.en || b.descriptionEn || "";
-  document.getElementById("be-verified").checked = !!b.verified;
-  document.getElementById("be-geo-results").style.display = "none";
-  document.getElementById("be-geo-query").value  = "";
-
-  // Stile laden
-  const grid = document.getElementById("be-styles-grid");
-  grid.innerHTML = `<span style="color:var(--ink-muted);font-size:13px">Lade…</span>`;
-  breweryEditModal.classList.add("visible");
-
-  try {
-    const [stylesRes, brewStylesRes] = await Promise.all([
-      allStyles.length ? Promise.resolve({ styles: allStyles }) : window.AtlasAPI.admin.listStyles(),
-      window.AtlasAPI.admin.getBreweryStyles(b.id),
-    ]);
-    if (!allStyles.length) allStyles = stylesRes.styles;
-    const selected = new Set(brewStylesRes.styles || []);
-    grid.innerHTML = stylesRes.styles.map((s) => `
-      <label>
-        <input type="checkbox" name="style" value="${esc(s.id)}" ${selected.has(s.id) ? "checked" : ""} />
-        ${esc(s.name)}
-      </label>
-    `).join("") || "<span style='color:var(--ink-muted);font-size:13px'>Keine Stile vorhanden.</span>";
-  } catch {
-    grid.innerHTML = "<span style='color:#9b1f1f;font-size:13px'>Stile konnten nicht geladen werden.</span>";
-  }
-}
-
-document.getElementById("brewery-edit-cancel").addEventListener("click", () => {
-  breweryEditModal.classList.remove("visible");
-});
-breweryEditModal.addEventListener("click", (e) => {
-  if (e.target === breweryEditModal) breweryEditModal.classList.remove("visible");
-});
-
-document.getElementById("brewery-edit-save").addEventListener("click", async () => {
-  const id = document.getElementById("be-id").value;
-  const patch = {
-    name:           document.getElementById("be-name").value.trim(),
-    short:          document.getElementById("be-short").value.trim() || null,
-    type:           document.getElementById("be-type").value,
-    status:         document.getElementById("be-status").value,
-    city:           document.getElementById("be-city").value.trim(),
-    country:        document.getElementById("be-country").value.trim() || "DE",
-    address:        document.getElementById("be-address").value.trim() || null,
-    lat:            parseFloat(document.getElementById("be-lat").value) || null,
-    lng:            parseFloat(document.getElementById("be-lng").value) || null,
-    founded:        parseInt(document.getElementById("be-founded").value, 10) || null,
-    website:        document.getElementById("be-website").value.trim() || null,
-    description_de: document.getElementById("be-desc-de").value.trim() || null,
-    description_en: document.getElementById("be-desc-en").value.trim() || null,
-    verified:       document.getElementById("be-verified").checked ? 1 : 0,
-  };
-  if (!patch.name || !patch.city) { alert("Name und Stadt sind Pflichtfelder."); return; }
-
-  const checkedStyles = [...document.querySelectorAll("#be-styles-grid input[type=checkbox]:checked")]
-    .map((cb) => cb.value);
-
-  try {
-    await window.AtlasAPI.admin.updateBrewery(id, patch);
-    await window.AtlasAPI.admin.setBreweryStyles(id, checkedStyles);
-    breweryEditModal.classList.remove("visible");
-    loadBreweriesTable();
-  } catch (e) {
-    alert("Fehler beim Speichern: " + (e.detail?.detail || e.message));
-  }
-});
-
-// Geocode-Suche im Brewery-Edit-Modal
-document.getElementById("be-geo-search").addEventListener("click", async () => {
-  const q = document.getElementById("be-geo-query").value.trim();
-  if (q.length < 2) return;
-  const resBox = document.getElementById("be-geo-results");
-  resBox.innerHTML = "<button disabled style='color:var(--ink-muted)'>Suche läuft…</button>";
-  resBox.style.display = "block";
-  try {
-    const r = await window.AtlasAPI.geocode(q);
-    if (!r.results?.length) {
-      resBox.innerHTML = "<button disabled style='color:var(--ink-muted)'>Keine Ergebnisse.</button>";
-      return;
-    }
-    resBox.innerHTML = r.results.map((res, i) => `
-      <button type="button" data-idx="${i}">${esc(res.name)}</button>
-    `).join("");
-    resBox.querySelectorAll("button[data-idx]").forEach((btn, i) => {
-      btn.addEventListener("click", () => {
-        const res = r.results[i];
-        document.getElementById("be-lat").value = res.lat;
-        document.getElementById("be-lng").value = res.lng;
-        if (res.city) document.getElementById("be-city").value = res.city;
-        resBox.style.display = "none";
-        document.getElementById("be-geo-query").value = "";
-      });
-    });
-  } catch {
-    resBox.innerHTML = "<button disabled style='color:#9b1f1f'>Fehler bei der Suche.</button>";
-  }
-});
-document.getElementById("be-geo-query").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") { e.preventDefault(); document.getElementById("be-geo-search").click(); }
-});
-
-// ============ Prices Tab ============
-async function loadPricesTable() {
-  const tbody = document.getElementById("prices-tbody");
-  tbody.innerHTML = `<tr><td colspan="7" style="color:var(--ink-muted);text-align:center;padding:30px">Lade…</td></tr>`;
-  try {
-    const r = await window.AtlasAPI.admin.listPrices();
-    tbody.innerHTML = (r.prices || []).map((p) => `
-      <tr data-price-id="${p.id}">
-        <td>${esc(p.breweryName || p.breweryId)}</td>
-        <td>${esc(p.date)}</td>
-        <td>${esc(p.size)}</td>
-        <td>${Number(p.price).toFixed(2)} €</td>
-        <td>${esc(p.source || "")}</td>
-        <td><span class="status-${p.status}">${p.status}</span></td>
-        <td class="actions">
-          <button class="btn" data-act="edit">Bearbeiten</button>
-          <button class="btn btn-reject" data-act="delete">Löschen</button>
-        </td>
-      </tr>
-    `).join("") || `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Einträge.</td></tr>`;
-
-    tbody.querySelectorAll("tr[data-price-id]").forEach((row) => {
-      const id = row.dataset.priceId;
-      row.querySelector("[data-act='edit']").addEventListener("click", () => {
-        const p = r.prices.find((x) => String(x.id) === id);
-        if (p) openPriceModal(p);
-      });
-      row.querySelector("[data-act='delete']").addEventListener("click", async () => {
-        if (!confirm("Preis wirklich löschen?")) return;
-        try {
-          await window.AtlasAPI.admin.deletePrice(id);
-          row.remove();
-        } catch (e) { alert("Fehler: " + e.message); }
-      });
-    });
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
-  }
-}
-
-document.getElementById("btn-add-price").addEventListener("click", () => openPriceModal(null));
-
-const priceModal = document.getElementById("price-modal");
-let _currentPriceId = null;
-
-function openPriceModal(p) {
-  _currentPriceId = p ? p.id : null;
-  document.getElementById("price-modal-title").textContent = p ? "Preis bearbeiten" : "Preis hinzufügen";
-  document.getElementById("pm-brewery-id").value = p?.breweryId || "";
-  document.getElementById("pm-date").value        = p?.date || new Date().toISOString().slice(0, 10);
-  document.getElementById("pm-size").value        = p?.size || "";
-  document.getElementById("pm-price").value       = p?.price ?? "";
-  document.getElementById("pm-source").value      = p?.source || "";
-  document.getElementById("pm-notes").value       = p?.notes || "";
-  document.getElementById("pm-status").value      = p?.status || "approved";
-  priceModal.classList.add("visible");
-}
-
-document.getElementById("price-modal-cancel").addEventListener("click", () => priceModal.classList.remove("visible"));
-priceModal.addEventListener("click", (e) => { if (e.target === priceModal) priceModal.classList.remove("visible"); });
-
-document.getElementById("price-modal-save").addEventListener("click", async () => {
-  const data = {
-    breweryId: document.getElementById("pm-brewery-id").value.trim(),
-    date:      document.getElementById("pm-date").value,
-    size:      document.getElementById("pm-size").value.trim(),
-    price:     parseFloat(document.getElementById("pm-price").value),
-    source:    document.getElementById("pm-source").value.trim() || null,
-    notes:     document.getElementById("pm-notes").value.trim() || null,
-    status:    document.getElementById("pm-status").value,
-  };
-  if (!data.breweryId || !data.date || !data.size || isNaN(data.price)) {
-    alert("Brauerei-ID, Datum, Größe und Preis sind Pflichtfelder.");
-    return;
-  }
-  try {
-    if (_currentPriceId) {
-      await window.AtlasAPI.admin.updatePrice(_currentPriceId, data);
-    } else {
-      await window.AtlasAPI.admin.createPrice(data);
-    }
-    priceModal.classList.remove("visible");
-    loadPricesTable();
-  } catch (e) { alert("Fehler: " + (e.detail?.detail || e.message)); }
-});
-
-// ============ Events Tab ============
-async function loadEventsTable() {
-  const tbody = document.getElementById("events-tbody");
-  tbody.innerHTML = `<tr><td colspan="5" style="color:var(--ink-muted);text-align:center;padding:30px">Lade…</td></tr>`;
-  try {
-    const r = await window.AtlasAPI.admin.listEvents();
-    tbody.innerHTML = (r.events || []).map((ev) => `
-      <tr data-event-id="${esc(ev.id)}">
-        <td>${esc(ev.title_de)}</td>
-        <td>${esc(ev.breweryName || ev.breweryId || "—")}</td>
-        <td>${esc(ev.date)}</td>
-        <td><span class="status-${ev.status}">${ev.status}</span></td>
-        <td class="actions">
-          <button class="btn" data-act="edit">Bearbeiten</button>
-          <button class="btn btn-reject" data-act="delete">Löschen</button>
-        </td>
-      </tr>
-    `).join("") || `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Einträge.</td></tr>`;
-
-    tbody.querySelectorAll("tr[data-event-id]").forEach((row) => {
-      const id = row.dataset.eventId;
-      row.querySelector("[data-act='edit']").addEventListener("click", () => {
-        const ev = r.events.find((x) => x.id === id);
-        if (ev) openEventModal(ev);
-      });
-      row.querySelector("[data-act='delete']").addEventListener("click", async () => {
-        if (!confirm("Event wirklich löschen?")) return;
-        try {
-          await window.AtlasAPI.admin.deleteEvent(id);
-          row.remove();
-        } catch (e) { alert("Fehler: " + e.message); }
-      });
-    });
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
-  }
-}
-
-document.getElementById("btn-add-event").addEventListener("click", () => openEventModal(null));
-
-const eventModal = document.getElementById("event-modal");
-let _currentEventId = null;
-
-function openEventModal(ev) {
-  _currentEventId = ev ? ev.id : null;
-  document.getElementById("event-modal-title").textContent = ev ? "Event bearbeiten" : "Event hinzufügen";
-  document.getElementById("em-title-de").value    = ev?.title_de || "";
-  document.getElementById("em-title-en").value    = ev?.title_en || "";
-  document.getElementById("em-brewery-id").value  = ev?.breweryId || "";
-  document.getElementById("em-date").value        = ev?.date || new Date().toISOString().slice(0, 10);
-  document.getElementById("em-time").value        = ev?.time || "";
-  document.getElementById("em-location").value    = ev?.location || "";
-  document.getElementById("em-url").value         = ev?.url || "";
-  document.getElementById("em-desc-de").value     = ev?.description_de || "";
-  document.getElementById("em-desc-en").value     = ev?.description_en || "";
-  document.getElementById("em-status").value      = ev?.status || "approved";
-  eventModal.classList.add("visible");
-}
-
-document.getElementById("event-modal-cancel").addEventListener("click", () => eventModal.classList.remove("visible"));
-eventModal.addEventListener("click", (e) => { if (e.target === eventModal) eventModal.classList.remove("visible"); });
-
-document.getElementById("event-modal-save").addEventListener("click", async () => {
-  const data = {
-    title_de:      document.getElementById("em-title-de").value.trim(),
-    title_en:      document.getElementById("em-title-en").value.trim() || null,
-    brewery_id:    document.getElementById("em-brewery-id").value.trim() || null,
-    date:          document.getElementById("em-date").value,
-    time:          document.getElementById("em-time").value || null,
-    location:      document.getElementById("em-location").value.trim() || null,
-    url:           document.getElementById("em-url").value.trim() || null,
-    description_de:document.getElementById("em-desc-de").value.trim() || null,
-    description_en:document.getElementById("em-desc-en").value.trim() || null,
-    status:        document.getElementById("em-status").value,
-  };
-  if (!data.title_de || !data.date) { alert("Titel DE und Datum sind Pflichtfelder."); return; }
-  try {
-    if (_currentEventId) {
-      await window.AtlasAPI.admin.updateEvent(_currentEventId, data);
-    } else {
-      await window.AtlasAPI.admin.createEvent(data);
-    }
-    eventModal.classList.remove("visible");
-    loadEventsTable();
-  } catch (e) { alert("Fehler: " + (e.detail?.detail || e.message)); }
-});
-
-// ============ Styles Tab ============
-async function loadStylesTable() {
-  const tbody = document.getElementById("styles-tbody");
-  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">Lade…</td></tr>`;
-  try {
-    const r = await window.AtlasAPI.admin.listStyles();
-    allStyles = r.styles || [];
-    tbody.innerHTML = allStyles.map((s) => `
-      <tr data-style-id="${esc(s.id)}">
-        <td>${esc(s.name)}</td>
-        <td>${s.abv != null ? s.abv + " %" : "—"}</td>
-        <td>${s.ibu != null ? s.ibu : "—"}</td>
-        <td><span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:${esc(s.color || "#8b4513")};vertical-align:middle;margin-right:4px"></span>${esc(s.color || "")}</td>
-        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.tasting_de || "")}</td>
-        <td class="actions">
-          <button class="btn" data-act="edit">Bearbeiten</button>
-          <button class="btn btn-reject" data-act="delete">Löschen</button>
-        </td>
-      </tr>
-    `).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Stile vorhanden.</td></tr>`;
-
-    tbody.querySelectorAll("tr[data-style-id]").forEach((row) => {
-      const id = row.dataset.styleId;
-      row.querySelector("[data-act='edit']").addEventListener("click", () => {
-        const s = allStyles.find((x) => x.id === id);
-        if (s) openStyleModal(s);
-      });
-      row.querySelector("[data-act='delete']").addEventListener("click", async () => {
-        if (!confirm("Stil wirklich löschen? Alle Brauerei-Zuordnungen werden ebenfalls entfernt.")) return;
-        try {
-          await window.AtlasAPI.admin.deleteStyle(id);
-          row.remove();
-          allStyles = allStyles.filter((x) => x.id !== id);
-        } catch (e) { alert("Fehler: " + e.message); }
-      });
-    });
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
-  }
-}
-
-document.getElementById("btn-add-style").addEventListener("click", () => openStyleModal(null));
-
-const styleModal = document.getElementById("style-modal");
-let _currentStyleId = null;
-
-function openStyleModal(s) {
-  _currentStyleId = s ? s.id : null;
-  document.getElementById("style-modal-title").textContent = s ? "Stil bearbeiten" : "Stil hinzufügen";
-  document.getElementById("sm-name").value       = s?.name || "";
-  document.getElementById("sm-abv").value        = s?.abv ?? "";
-  document.getElementById("sm-ibu").value        = s?.ibu ?? "";
-  document.getElementById("sm-color").value      = s?.color || "#8b4513";
-  document.getElementById("sm-tasting-de").value = s?.tasting_de || "";
-  document.getElementById("sm-tasting-en").value = s?.tasting_en || "";
-  styleModal.classList.add("visible");
-}
-
-document.getElementById("style-modal-cancel").addEventListener("click", () => styleModal.classList.remove("visible"));
-styleModal.addEventListener("click", (e) => { if (e.target === styleModal) styleModal.classList.remove("visible"); });
-
-document.getElementById("style-modal-save").addEventListener("click", async () => {
-  const data = {
-    name:       document.getElementById("sm-name").value.trim(),
-    abv:        document.getElementById("sm-abv").value !== "" ? parseFloat(document.getElementById("sm-abv").value) : null,
-    ibu:        document.getElementById("sm-ibu").value !== "" ? parseInt(document.getElementById("sm-ibu").value, 10) : null,
-    color:      document.getElementById("sm-color").value,
-    tasting_de: document.getElementById("sm-tasting-de").value.trim() || null,
-    tasting_en: document.getElementById("sm-tasting-en").value.trim() || null,
-  };
-  if (!data.name) { alert("Name ist ein Pflichtfeld."); return; }
-  try {
-    if (_currentStyleId) {
-      await window.AtlasAPI.admin.updateStyle(_currentStyleId, data);
-    } else {
-      await window.AtlasAPI.admin.createStyle(data);
-    }
-    styleModal.classList.remove("visible");
-    loadStylesTable();
-  } catch (e) { alert("Fehler: " + (e.detail?.detail || e.message)); }
-});
-
-// ============ Glossar Tab ============
-async function loadGlossarTable() {
-  const tbody = document.getElementById("glossar-tbody");
-  tbody.innerHTML = `<tr><td colspan="4" style="color:var(--ink-muted);text-align:center;padding:30px">Lade…</td></tr>`;
-  try {
-    const r = await window.AtlasAPI.admin.listGlossary();
-    tbody.innerHTML = (r.glossary || []).map((g) => `
-      <tr data-term="${esc(g.term)}">
-        <td><strong>${esc(g.term)}</strong></td>
-        <td style="max-width:260px;white-space:pre-wrap;font-size:12px">${esc(g.definition_de || "")}</td>
-        <td style="max-width:260px;white-space:pre-wrap;font-size:12px">${esc(g.definition_en || "")}</td>
-        <td class="actions">
-          <button class="btn" data-act="edit">Bearbeiten</button>
-          <button class="btn btn-reject" data-act="delete">Löschen</button>
-        </td>
-      </tr>
-    `).join("") || `<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Einträge.</td></tr>`;
-
-    tbody.querySelectorAll("tr[data-term]").forEach((row) => {
-      const term = row.dataset.term;
-      row.querySelector("[data-act='edit']").addEventListener("click", () => {
-        const g = r.glossary.find((x) => x.term === term);
-        if (g) openGlossarModal(g);
-      });
-      row.querySelector("[data-act='delete']").addEventListener("click", async () => {
-        if (!confirm(`Eintrag "${term}" wirklich löschen?`)) return;
-        try {
-          await window.AtlasAPI.admin.deleteGlossaryEntry(term);
-          row.remove();
-        } catch (e) { alert("Fehler: " + e.message); }
-      });
-    });
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
-  }
-}
-
-document.getElementById("btn-add-glossar").addEventListener("click", () => openGlossarModal(null));
-
-const glossarModal = document.getElementById("glossar-modal");
-let _currentGlossarTerm = null;
-
-function openGlossarModal(g) {
-  _currentGlossarTerm = g ? g.term : null;
-  document.getElementById("glossar-modal-title").textContent = g ? "Eintrag bearbeiten" : "Eintrag hinzufügen";
-  document.getElementById("gm-orig-term").value = g?.term || "";
-  document.getElementById("gm-term").value      = g?.term || "";
-  document.getElementById("gm-def-de").value    = g?.definition_de || "";
-  document.getElementById("gm-def-en").value    = g?.definition_en || "";
-  glossarModal.classList.add("visible");
-}
-
-document.getElementById("glossar-modal-cancel").addEventListener("click", () => glossarModal.classList.remove("visible"));
-glossarModal.addEventListener("click", (e) => { if (e.target === glossarModal) glossarModal.classList.remove("visible"); });
-
-document.getElementById("glossar-modal-save").addEventListener("click", async () => {
-  const term = document.getElementById("gm-term").value.trim();
-  const origTerm = document.getElementById("gm-orig-term").value;
-  const data = {
-    definition_de: document.getElementById("gm-def-de").value.trim() || null,
-    definition_en: document.getElementById("gm-def-en").value.trim() || null,
-  };
-  if (!term) { alert("Begriff ist ein Pflichtfeld."); return; }
-  try {
-    if (_currentGlossarTerm) {
-      await window.AtlasAPI.admin.updateGlossaryEntry(origTerm, data);
-    } else {
-      await window.AtlasAPI.admin.createGlossaryEntry({ term, ...data });
-    }
-    glossarModal.classList.remove("visible");
-    loadGlossarTable();
-  } catch (e) { alert("Fehler: " + (e.detail?.detail || e.message)); }
-});
-
-// ============ Utilities ============
-function esc(s) {
-  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-// Bei Sprachwechsel dynamische Bereiche neu zeichnen
+// Bei Sprachwechsel die dynamisch gerenderten Bereiche neu zeichnen
 document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-breweries.active")) loadBreweriesTable();
   if (document.querySelector("#tab-contribs.active")) loadContributions(currentStatus);
   if (document.querySelector("#tab-dashboard.active") && me) loadDashboard();
-  if (document.querySelector("#tab-prices.active")) loadPricesTable();
-  if (document.querySelector("#tab-events.active")) loadEventsTable();
-  if (document.querySelector("#tab-styles.active")) loadStylesTable();
-  if (document.querySelector("#tab-glossar.active")) loadGlossarTable();
 });
 </script>
 </body>
