@@ -104,6 +104,30 @@
   display: flex; justify-content: flex-end; gap: 10px;
   margin-top: 16px;
 }
+
+.edit-dialog {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.edit-dialog.visible { display: flex; }
+.edit-dialog .box {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  max-width: 480px; width: 100%;
+}
+.edit-dialog h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; margin-bottom: 16px; }
+.edit-dialog .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.edit-dialog .edit-actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  margin-top: 16px;
+}
+.edit-dialog .edit-msg { font-size: 13px; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -339,6 +363,44 @@
       <div class="actions">
         <button class="btn btn-ghost" id="reject-cancel" data-i18n="common.cancel">Abbrechen</button>
         <button class="btn btn-reject" id="reject-confirm" data-i18n="admin.reject">Ablehnen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit-Dialog -->
+  <div class="edit-dialog" id="edit-dialog">
+    <div class="box">
+      <h3 data-i18n="admin.editTitle">Brauerei bearbeiten</h3>
+      <div class="edit-grid">
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.editName">Name</label>
+          <input id="edit-name" type="text" maxlength="200" />
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.editCity">Stadt</label>
+          <input id="edit-city" type="text" maxlength="100" />
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.editType">Typ</label>
+          <select id="edit-type">
+            <option value="brewery" data-i18n="type.brewery">Hausbrauerei</option>
+            <option value="pub" data-i18n="type.pub">Gastronomie</option>
+            <option value="shop" data-i18n="type.shop">Handel</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.editStatus">Status</label>
+          <select id="edit-status">
+            <option value="pending" data-i18n="common.pending">In Prüfung</option>
+            <option value="approved" data-i18n="admin.approved">Freigegeben</option>
+            <option value="rejected" data-i18n="admin.rejected">Abgelehnt</option>
+          </select>
+        </div>
+      </div>
+      <div class="edit-msg" id="edit-msg" style="display:none"></div>
+      <div class="edit-actions">
+        <button class="btn btn-ghost" id="edit-cancel" data-i18n="common.cancel">Abbrechen</button>
+        <button class="btn btn-approve" id="edit-save" data-i18n="admin.editSave">Speichern</button>
       </div>
     </div>
   </div>
@@ -595,9 +657,8 @@ async function loadContributions(status) {
 }
 
 function renderContribCards(items, host, status) {
-  if (!items.length) {
-    host.innerHTML = `<div class="admin-empty" data-i18n="admin.noPending">Keine offenen Beiträge.</div>`;
-    window.setLang(window.__atlasLang);
+  if (!items || !items.length) {
+    host.innerHTML = `<div class="admin-empty" data-i18n="admin.noPendingContribs">${window.t("admin.noPendingContribs")}</div>`;
     return;
   }
   host.innerHTML = items.map((c) => {
@@ -681,14 +742,20 @@ async function loadBreweriesTable() {
   tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
   try {
     const r = await window.AtlasAPI.admin.listBreweries();
+    const typeLabel = (type) => {
+      const key = "type." + (type || "");
+      const val = t(key);
+      return val !== key ? val : (type || "—");
+    };
     tbody.innerHTML = (r.breweries || []).map((b) => `
-      <tr data-id="${b.id}">
+      <tr data-id="${b.id}" data-name="${(b.name || "").replace(/"/g, "&quot;")}" data-city="${(b.city || "").replace(/"/g, "&quot;")}" data-type="${b.type || ""}" data-status="${b.status || ""}">
         <td><a href="brauerei.html?id=${b.id}" target="_blank">${b.name}</a></td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
-        <td>${t("type." + b.type) || b.type}</td>
+        <td>${typeLabel(b.type)}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
         <td>${b.verified ? "✓" : "—"}</td>
         <td class="actions">
+          <button class="btn" data-act="edit">${t("admin.actionEdit")}</button>
           <button class="btn" data-act="toggle-verified">${b.verified ? t("admin.actionUnverify") : t("admin.actionVerify")}</button>
           <button class="btn btn-reject" data-act="delete">${t("admin.actionDelete")}</button>
         </td>
@@ -708,7 +775,9 @@ async function loadBreweriesTable() {
 
 async function handleBreweryAction(id, act, rowEl) {
   const t = window.t;
-  if (act === "delete") {
+  if (act === "edit") {
+    openEditDialog(id, rowEl);
+  } else if (act === "delete") {
     if (!confirm(t("admin.confirmDelete"))) return;
     try {
       await window.AtlasAPI.admin.deleteBrewery(id);
@@ -725,6 +794,68 @@ async function handleBreweryAction(id, act, rowEl) {
     } catch (e) { alert(t("admin.errorPrefix") + e.message); }
   }
 }
+
+// Edit-Dialog
+const editDialog = document.getElementById("edit-dialog");
+let pendingEdit = null;
+
+function openEditDialog(id, rowEl) {
+  pendingEdit = { id, rowEl };
+  document.getElementById("edit-name").value = rowEl.dataset.name || "";
+  document.getElementById("edit-city").value = rowEl.dataset.city || "";
+  document.getElementById("edit-type").value = rowEl.dataset.type || "brewery";
+  document.getElementById("edit-status").value = rowEl.dataset.status || "pending";
+  const msg = document.getElementById("edit-msg");
+  msg.style.display = "none";
+  msg.textContent = "";
+  window.setLang(window.__atlasLang);
+  editDialog.classList.add("visible");
+}
+
+document.getElementById("edit-cancel").addEventListener("click", () => {
+  editDialog.classList.remove("visible");
+  pendingEdit = null;
+});
+editDialog.addEventListener("click", (e) => {
+  if (e.target === editDialog) { editDialog.classList.remove("visible"); pendingEdit = null; }
+});
+
+document.getElementById("edit-save").addEventListener("click", async () => {
+  if (!pendingEdit) return;
+  const t = window.t;
+  const msg = document.getElementById("edit-msg");
+  const name   = document.getElementById("edit-name").value.trim();
+  const city   = document.getElementById("edit-city").value.trim();
+  const type   = document.getElementById("edit-type").value;
+  const status = document.getElementById("edit-status").value;
+  msg.style.display = "none";
+  try {
+    await window.AtlasAPI.admin.updateBrewery(pendingEdit.id, { name, city, type, status });
+    const row = pendingEdit.rowEl;
+    row.dataset.name   = name;
+    row.dataset.city   = city;
+    row.dataset.type   = type;
+    row.dataset.status = status;
+    // Update visible cells
+    row.querySelector("td:nth-child(1) a").textContent = name;
+    const cityCell = row.querySelector("td:nth-child(2)");
+    cityCell.textContent = city;
+    const typeKey = "type." + type;
+    const typeVal = t(typeKey);
+    row.querySelector("td:nth-child(3)").textContent = typeVal !== typeKey ? typeVal : type;
+    const statusSpan = row.querySelector("td:nth-child(4) span");
+    statusSpan.className = "status-" + status;
+    statusSpan.textContent = status;
+    msg.textContent = t("admin.editSaved");
+    msg.style.color = "#2d7a2d";
+    msg.style.display = "block";
+    setTimeout(() => { editDialog.classList.remove("visible"); pendingEdit = null; }, 900);
+  } catch (e) {
+    msg.textContent = t("admin.editError") + (e.detail?.detail || e.message);
+    msg.style.color = "#9b1f1f";
+    msg.style.display = "block";
+  }
+});
 
 // ============ Events Table ============
 async function loadEventsTab() {
@@ -859,6 +990,10 @@ document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-dashboard.active") && me) loadDashboard();
   if (document.querySelector("#tab-events.active"))    loadEventsTab();
   if (document.querySelector("#tab-prices.active"))    loadPricesTab();
+  // Edit-Dialog-Options (type, status) neu beschriften
+  document.querySelectorAll("#edit-dialog [data-i18n]").forEach((el) => {
+    el.textContent = window.t(el.getAttribute("data-i18n"));
+  });
 });
 </script>
 </body>
