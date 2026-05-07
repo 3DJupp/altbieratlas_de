@@ -200,6 +200,8 @@
         <button class="active" data-tab="dashboard" data-i18n="admin.dashboard">Übersicht</button>
         <button data-tab="contribs" data-i18n="admin.pending">Offene Beiträge</button>
         <button data-tab="breweries" data-i18n="admin.breweries">Brauereien</button>
+        <button data-tab="styles" data-i18n="admin.styles">Bierstile</button>
+        <button data-tab="venue-types" data-i18n="admin.venueTypes">Venue-Typen</button>
       </div>
 
       <div class="admin-tab-content">
@@ -242,9 +244,86 @@
             </table>
           </div>
         </section>
+
+        <!-- Beer Styles -->
+        <section id="tab-styles">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.stylesSub">Alle Bierstile.</p>
+          <div style="overflow:auto">
+            <table class="brewery-table" id="styles-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin.colId">ID</th>
+                  <th data-i18n="admin.colName">Name</th>
+                  <th data-i18n="admin.colAbv">ABV</th>
+                  <th data-i18n="admin.colIbu">IBU</th>
+                  <th data-i18n="admin.colTastingDe">Geschmack DE</th>
+                  <th data-i18n="admin.colTastingEn">Geschmack EN</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="styles-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Venue Types -->
+        <section id="tab-venue-types">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.venueTypesSub">Anzeigebezeichnungen bearbeiten.</p>
+          <div style="overflow:auto">
+            <table class="brewery-table" id="venue-types-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin.colId">ID</th>
+                  <th data-i18n="admin.colLabelDe">Label DE</th>
+                  <th data-i18n="admin.colLabelEn">Label EN</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="venue-types-tbody"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </div>
   </main>
+
+  <!-- Brewery-Edit-Dialog -->
+  <div class="reject-dialog" id="edit-dialog">
+    <div class="box" style="max-width:560px">
+      <h3 data-i18n="admin.editTitle">Eintrag bearbeiten</h3>
+      <form id="edit-brewery-form">
+        <input type="hidden" name="id" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field"><label>Name</label><input name="name" required /></div>
+          <div class="field"><label data-i18n="admin.colCity">Stadt</label><input name="city" required /></div>
+          <div class="field"><label>Website</label><input name="website" type="url" /></div>
+          <div class="field"><label data-i18n="admin.colType">Typ</label>
+            <select name="type">
+              <option value="brewery" data-i18n="type.brewery">Hausbrauerei</option>
+              <option value="pub" data-i18n="type.pub">Gastronomie</option>
+              <option value="shop" data-i18n="type.shop">Handel</option>
+            </select>
+          </div>
+          <div class="field"><label>Lat</label><input name="lat" type="number" step="any" /></div>
+          <div class="field"><label>Lng</label><input name="lng" type="number" step="any" /></div>
+        </div>
+        <div class="field"><label>Beschreibung (DE)</label><textarea name="description_de" rows="2"></textarea></div>
+        <div class="field"><label>Description (EN)</label><textarea name="description_en" rows="2"></textarea></div>
+        <div class="field"><label data-i18n="admin.colStatus">Status</label>
+          <select name="status">
+            <option value="approved" data-i18n="admin.approved">Freigegeben</option>
+            <option value="pending" data-i18n="common.pending">In Prüfung</option>
+            <option value="rejected" data-i18n="admin.rejected">Abgelehnt</option>
+          </select>
+        </div>
+        <div id="edit-error" class="admin-error" style="display:none"></div>
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" id="edit-cancel" data-i18n="admin.editCancel">Abbrechen</button>
+          <button class="btn btn-primary" type="submit" data-i18n="admin.editSave">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Reject-Dialog -->
   <div class="reject-dialog" id="reject-dialog">
@@ -325,6 +404,7 @@ function renderTurnstileWidget() {
   });
 }
 
+let turnstileScriptLoaded = false;
 function initTurnstile() {
   const cfg = window.ATLAS_CONFIG;
   const siteKey = cfg.turnstileSiteKey;
@@ -336,6 +416,13 @@ function initTurnstile() {
   }
 
   turnstileSiteKeyCache = siteKey;
+
+  // Wenn das Widget bereits geladen ist, nur neu rendern
+  if (turnstileScriptLoaded) {
+    if (window.turnstile) renderTurnstileWidget();
+    return;
+  }
+  turnstileScriptLoaded = true;
   window.onTurnstileLoad = renderTurnstileWidget;
   document.addEventListener("atlas:theme-changed", renderTurnstileWidget);
 
@@ -387,7 +474,13 @@ document.getElementById("btn-forgot").addEventListener("click", () => {
   showSection("reset-request-section");
 });
 document.getElementById("btn-back-to-login").addEventListener("click", () => {
+  // URL-Parameter entfernen falls noch vorhanden
+  if (location.search.includes("reset=")) {
+    history.replaceState({}, "", location.pathname);
+  }
   showSection("login-section");
+  // Turnstile nachinit wenn noch nicht geschehen (kann passieren nach Reset-Link-Aufruf)
+  if (!turnstileSiteKeyCache) initTurnstile();
 });
 
 document.getElementById("reset-request-form").addEventListener("submit", async (e) => {
@@ -432,10 +525,18 @@ document.getElementById("reset-password-form").addEventListener("submit", async 
     loginErr.style.color = "#2d7a2d";
     loginErr.classList.add("visible");
   } catch (err) {
-    errEl.textContent = err.status === 400
-      ? window.t("admin.resetPassword.errorExpired")
-      : window.t("admin.resetPassword.error");
-    errEl.style.display = "block";
+    if (err.status === 400) {
+      // Ungültiger oder abgelaufener Token → Login-Seite zeigen mit Hinweis
+      history.replaceState({}, "", location.pathname);
+      showSection("login-section");
+      loginSection.style.display = "block";
+      loginErr.textContent = window.t("admin.resetPassword.errorExpired");
+      loginErr.classList.add("visible");
+      initTurnstile();
+    } else {
+      errEl.textContent = window.t("admin.resetPassword.error");
+      errEl.style.display = "block";
+    }
   }
 });
 
@@ -455,9 +556,11 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     btn.classList.add("active");
     document.querySelectorAll(".admin-tab-content > section").forEach((s) => s.classList.remove("active"));
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    if (btn.dataset.tab === "contribs") loadContributions(currentStatus);
-    if (btn.dataset.tab === "breweries") loadBreweriesTable();
-    if (btn.dataset.tab === "dashboard") loadDashboard();
+    if (btn.dataset.tab === "contribs")    loadContributions(currentStatus);
+    if (btn.dataset.tab === "breweries")   loadBreweriesTable();
+    if (btn.dataset.tab === "dashboard")   loadDashboard();
+    if (btn.dataset.tab === "styles")      loadStylesTable();
+    if (btn.dataset.tab === "venue-types") loadVenueTypesTable();
   });
 });
 
@@ -472,20 +575,22 @@ async function showAdmin() {
 // ============ Dashboard ============
 async function loadDashboard() {
   try {
-    const [stats, pending] = await Promise.all([
-      window.AtlasAPI.admin.stats(),
-      window.AtlasAPI.admin.listContribs("pending"),
-    ]);
+    const stats = await window.AtlasAPI.admin.stats();
     document.getElementById("s-pending").textContent   = stats.pending;
     document.getElementById("s-approved").textContent  = stats.approved;
     document.getElementById("s-rejected").textContent  = stats.rejected;
     document.getElementById("s-breweries").textContent = stats.breweries;
     document.getElementById("s-prices").textContent    = stats.prices;
-
-    const host = document.getElementById("dashboard-pending");
+  } catch (e) {
+    console.error("[dashboard] stats:", e);
+  }
+  const host = document.getElementById("dashboard-pending");
+  try {
+    const pending = await window.AtlasAPI.admin.listContribs("pending");
     renderContribCards(pending.contributions.slice(0, 5), host, "pending");
   } catch (e) {
-    console.error(e);
+    console.error("[dashboard] contribs:", e);
+    host.innerHTML = `<div class="admin-error visible">${e.message}</div>`;
   }
 }
 
@@ -605,6 +710,7 @@ async function loadBreweriesTable() {
         <td><span class="status-${b.status}">${b.status}</span></td>
         <td>${b.verified ? "✓" : "—"}</td>
         <td class="actions">
+          <button class="btn" data-act="edit">${t("admin.actionEdit")}</button>
           <button class="btn" data-act="toggle-verified">${b.verified ? t("admin.actionUnverify") : t("admin.actionVerify")}</button>
           <button class="btn btn-reject" data-act="delete">${t("admin.actionDelete")}</button>
         </td>
@@ -624,7 +730,9 @@ async function loadBreweriesTable() {
 
 async function handleBreweryAction(id, act, rowEl) {
   const t = window.t;
-  if (act === "delete") {
+  if (act === "edit") {
+    openEditBrewery(id, rowEl);
+  } else if (act === "delete") {
     if (!confirm(t("admin.confirmDelete"))) return;
     try {
       await window.AtlasAPI.admin.deleteBrewery(id);
@@ -642,11 +750,177 @@ async function handleBreweryAction(id, act, rowEl) {
   }
 }
 
+// ============ Brewery Edit Dialog ============
+const editDialog  = document.getElementById("edit-dialog");
+const editForm    = document.getElementById("edit-brewery-form");
+const editErrEl   = document.getElementById("edit-error");
+let editRowRef    = null;
+
+function openEditBrewery(id, rowEl) {
+  editRowRef = rowEl;
+  editErrEl.style.display = "none";
+  // Pre-fill from row data (crude but avoids an extra API call)
+  editForm.querySelector('[name="id"]').value = id;
+  editForm.querySelector('[name="name"]').value = rowEl.querySelector("td:nth-child(1)").textContent.trim();
+  editForm.querySelector('[name="city"]').value = rowEl.querySelector("td:nth-child(2)").textContent.split("·")[0].trim();
+  const typeText = rowEl.querySelector("td:nth-child(3)").textContent.trim();
+  // Map label back to DB value
+  const typeMap = { [window.t("type.brewery")]: "brewery", [window.t("type.pub")]: "pub", [window.t("type.shop")]: "shop" };
+  editForm.querySelector('[name="type"]').value = typeMap[typeText] || "brewery";
+  const statusSpan = rowEl.querySelector("td:nth-child(4) span");
+  editForm.querySelector('[name="status"]').value = statusSpan ? statusSpan.className.replace("status-", "") : "approved";
+  // Clear optional fields
+  editForm.querySelector('[name="website"]').value = "";
+  editForm.querySelector('[name="lat"]').value = "";
+  editForm.querySelector('[name="lng"]').value = "";
+  editForm.querySelector('[name="description_de"]').value = "";
+  editForm.querySelector('[name="description_en"]').value = "";
+  window.setLang(window.__atlasLang);
+  editDialog.classList.add("visible");
+}
+
+document.getElementById("edit-cancel").addEventListener("click", () => {
+  editDialog.classList.remove("visible");
+  editRowRef = null;
+});
+editDialog.addEventListener("click", (e) => {
+  if (e.target === editDialog) { editDialog.classList.remove("visible"); editRowRef = null; }
+});
+editForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  editErrEl.style.display = "none";
+  const fd = new FormData(editForm);
+  const id = fd.get("id");
+  const patch = {};
+  ["name","city","type","status","website","lat","lng","description_de","description_en"].forEach((k) => {
+    const v = fd.get(k);
+    if (v && v.trim()) patch[k] = (k === "lat" || k === "lng") ? parseFloat(v) : v.trim();
+  });
+  try {
+    await window.AtlasAPI.admin.updateBrewery(id, patch);
+    editDialog.classList.remove("visible");
+    editRowRef = null;
+    loadBreweriesTable();
+  } catch (err) {
+    editErrEl.textContent = window.t("admin.errorPrefix") + err.message;
+    editErrEl.style.display = "block";
+  }
+});
+
+// ============ Styles Table ============
+async function loadStylesTable() {
+  const tbody = document.getElementById("styles-tbody");
+  const t = window.t;
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--ink-muted)">${t("common.loading")}</td></tr>`;
+  try {
+    const r = await window.AtlasAPI.admin.listStyles();
+    tbody.innerHTML = (r.styles || []).map((s) => `
+      <tr data-id="${s.id}">
+        <td><code style="font-size:11px">${s.id}</code></td>
+        <td>${s.name}</td>
+        <td>${s.abv != null ? s.abv + " %" : "—"}</td>
+        <td>${s.ibu != null ? s.ibu : "—"}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(s.tasting?.de || "").replace(/"/g, "&quot;")}">${s.tasting?.de || "—"}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(s.tasting?.en || "").replace(/"/g, "&quot;")}">${s.tasting?.en || "—"}</td>
+        <td class="actions">
+          <button class="btn" data-act="edit-style">${t("admin.actionEdit")}</button>
+          <button class="btn btn-reject" data-act="delete-style">${t("admin.actionDelete")}</button>
+        </td>
+      </tr>
+    `).join("") || `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--ink-muted)">${t("admin.noTableEntries")}</td></tr>`;
+
+    tbody.querySelectorAll("tr[data-id]").forEach((row) => {
+      const id = row.dataset.id;
+      row.querySelectorAll("button[data-act]").forEach((b) => {
+        b.addEventListener("click", () => handleStyleAction(id, b.dataset.act, row, r.styles.find((s) => s.id === id)));
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+async function handleStyleAction(id, act, rowEl, styleData) {
+  const t = window.t;
+  if (act === "delete-style") {
+    if (!confirm(`Stil „${styleData?.name || id}" wirklich löschen?`)) return;
+    try {
+      await window.AtlasAPI.admin.deleteStyle(id);
+      rowEl.remove();
+    } catch (e) { alert(t("admin.errorPrefix") + e.message); }
+  } else if (act === "edit-style") {
+    const name      = prompt("Name:", styleData?.name || "");
+    if (name === null) return;
+    const abv       = prompt("ABV (%):", styleData?.abv ?? "");
+    const ibu       = prompt("IBU:", styleData?.ibu ?? "");
+    const tastingDe = prompt("Geschmack (DE):", styleData?.tasting?.de || "");
+    if (tastingDe === null) return;
+    const tastingEn = prompt("Tasting (EN):", styleData?.tasting?.en || "");
+    if (tastingEn === null) return;
+    const patch = {};
+    if (name)      patch.name       = name;
+    if (abv !== "") patch.abv       = abv ? parseFloat(abv) : null;
+    if (ibu !== "") patch.ibu       = ibu ? parseInt(ibu, 10) : null;
+    patch.tasting_de = tastingDe;
+    patch.tasting_en = tastingEn;
+    try {
+      await window.AtlasAPI.admin.updateStyle(id, patch);
+      loadStylesTable();
+    } catch (e) { alert(t("admin.errorPrefix") + e.message); }
+  }
+}
+
+// ============ Venue Types Table ============
+async function loadVenueTypesTable() {
+  const tbody = document.getElementById("venue-types-tbody");
+  const t = window.t;
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--ink-muted)">${t("common.loading")}</td></tr>`;
+  try {
+    const r = await window.AtlasAPI.admin.listVenueTypes();
+    tbody.innerHTML = (r.venueTypes || []).map((vt) => `
+      <tr data-id="${vt.id}">
+        <td><code style="font-size:11px">${vt.id}</code></td>
+        <td id="vt-de-${vt.id}">${vt.label.de}</td>
+        <td id="vt-en-${vt.id}">${vt.label.en}</td>
+        <td class="actions">
+          <button class="btn" data-act="edit-vt" data-de="${vt.label.de.replace(/"/g,"&quot;")}" data-en="${vt.label.en.replace(/"/g,"&quot;")}">${t("admin.actionEdit")}</button>
+        </td>
+      </tr>
+    `).join("") || `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--ink-muted)">${t("admin.noTableEntries")}</td></tr>`;
+
+    tbody.querySelectorAll("tr[data-id]").forEach((row) => {
+      const id = row.dataset.id;
+      row.querySelectorAll("button[data-act='edit-vt']").forEach((b) => {
+        b.addEventListener("click", () => handleVenueTypeEdit(id, b.dataset.de, b.dataset.en, row));
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+async function handleVenueTypeEdit(id, currentDe, currentEn, rowEl) {
+  const t = window.t;
+  const newDe = prompt(`Label (DE) für „${id}":`, currentDe);
+  if (newDe === null) return;
+  const newEn = prompt(`Label (EN) für „${id}":`, currentEn);
+  if (newEn === null) return;
+  try {
+    await window.AtlasAPI.admin.updateVenueType(id, { label_de: newDe, label_en: newEn });
+    document.getElementById(`vt-de-${id}`).textContent = newDe;
+    document.getElementById(`vt-en-${id}`).textContent = newEn;
+    rowEl.querySelector("button[data-act='edit-vt']").dataset.de = newDe;
+    rowEl.querySelector("button[data-act='edit-vt']").dataset.en = newEn;
+  } catch (e) { alert(t("admin.errorPrefix") + e.message); }
+}
+
 // Bei Sprachwechsel die dynamisch gerenderten Bereiche neu zeichnen
 document.addEventListener("atlas:lang-changed", () => {
-  if (document.querySelector("#tab-breweries.active")) loadBreweriesTable();
-  if (document.querySelector("#tab-contribs.active")) loadContributions(currentStatus);
+  if (document.querySelector("#tab-breweries.active"))   loadBreweriesTable();
+  if (document.querySelector("#tab-contribs.active"))    loadContributions(currentStatus);
   if (document.querySelector("#tab-dashboard.active") && me) loadDashboard();
+  if (document.querySelector("#tab-styles.active"))      loadStylesTable();
+  if (document.querySelector("#tab-venue-types.active")) loadVenueTypesTable();
 });
 </script>
 </body>

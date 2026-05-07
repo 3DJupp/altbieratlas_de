@@ -58,6 +58,7 @@ export async function getPublicConfig(req, env) {
     : null;
 
   const author = sc.author || {};
+  const currency = v(sc.currency) || "EUR";
 
   return json({
     // App-Version
@@ -66,6 +67,8 @@ export async function getPublicConfig(req, env) {
     priceSizes,
     // Hervorgehobene Größen in Ranglisten (Teilmenge von priceSizes)
     highlightedSizes,
+    // Währung (ISO 4217, z.B. "EUR")
+    currency,
     // Turnstile
     turnstileSiteKey: siteKey,
     turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
@@ -167,6 +170,7 @@ export async function listEvents(req, env) {
       title: { de: e.title_de, en: e.title_en },
       breweryId: e.brewery_id,
       date: e.date,
+      endDate: e.end_date || null,
       time: e.time || null,
       location: e.location || null,
       url: e.url || null,
@@ -191,11 +195,31 @@ function icsFoldLine(line) {
   if (cur) out.push(cur);
   return out.join("\r\n");
 }
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
 function buildVEvent(e, base, lang) {
   const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z/, "Z");
-  const dtstart = e.time
-    ? `DTSTART;TZID=Europe/Berlin:${e.date.replace(/-/g, "")}T${e.time.replace(":", "")}00`
-    : `DTSTART;VALUE=DATE:${e.date.replace(/-/g, "")}`;
+  const allDay = !e.time;
+  const dtstart = allDay
+    ? `DTSTART;VALUE=DATE:${e.date.replace(/-/g, "")}`
+    : `DTSTART;TZID=Europe/Berlin:${e.date.replace(/-/g, "")}T${e.time.replace(":", "")}00`;
+
+  // DTEND: für mehrtägige Events das Enddatum (all-day: exklusiv → +1 Tag)
+  let dtend = null;
+  if (e.end_date && e.end_date !== e.date) {
+    if (allDay) {
+      dtend = `DTEND;VALUE=DATE:${addDays(e.end_date, 1)}`;
+    } else {
+      dtend = `DTEND;TZID=Europe/Berlin:${e.end_date.replace(/-/g, "")}T${e.time.replace(":", "")}00`;
+    }
+  } else if (allDay) {
+    // RFC 5545: bei all-day ohne Enddatum DTEND = DTSTART + 1
+    dtend = `DTEND;VALUE=DATE:${addDays(e.date, 1)}`;
+  }
+
   const title   = lang === "en" ? (e.title_en || e.title_de) : (e.title_de || e.title_en);
   const descRaw = lang === "en" ? (e.description_en || e.description_de) : (e.description_de || e.description_en);
   const summary  = icsEscape(title || "Event");
@@ -203,17 +227,17 @@ function buildVEvent(e, base, lang) {
     ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
     : (e.location ? icsEscape(e.location) : "");
   const desc = icsEscape(descRaw || "");
-  const eventUrl = e.url || `${base}/`;
   const lines = [
     "BEGIN:VEVENT",
     icsFoldLine(`UID:${e.id}@altbieratlas.de`),
     `DTSTAMP:${dtstamp}`,
     icsFoldLine(dtstart),
-    icsFoldLine(`SUMMARY:${summary}`),
   ];
+  if (dtend) lines.push(icsFoldLine(dtend));
+  lines.push(icsFoldLine(`SUMMARY:${summary}`));
   if (location) lines.push(icsFoldLine(`LOCATION:${location}`));
   if (desc)     lines.push(icsFoldLine(`DESCRIPTION:${desc}`));
-  lines.push(icsFoldLine(`URL:${eventUrl}`));
+  if (e.url)    lines.push(icsFoldLine(`URL:${icsEscape(e.url)}`));
   lines.push("END:VEVENT");
   return lines.join("\r\n");
 }
@@ -378,6 +402,7 @@ export async function postContribution(req, env, _params, ctx) {
     } else if (type === "event") {
       str(data.eventName, { required: true, max: 200, name: "eventName" });
       str(data.eventDate, { required: true, max: 20, name: "eventDate" });
+      if (data.eventEndDate != null) str(data.eventEndDate, { max: 20, name: "eventEndDate" });
       if (data.eventTime != null) str(data.eventTime, { max: 10, name: "eventTime" });
       if (data.eventLocation != null) str(data.eventLocation, { max: 300, name: "eventLocation" });
       if (data.eventUrl != null) str(data.eventUrl, { max: 500, name: "eventUrl" });
@@ -652,12 +677,13 @@ export async function adminApprove(req, env, { id }) {
       ).run();
     } else if (c.type === "event") {
       await env.DB.prepare(
-        `INSERT INTO events (id, title_de, title_en, brewery_id, date, time, location, url, description_de, description_en, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')`
+        `INSERT INTO events (id, title_de, title_en, brewery_id, date, end_date, time, location, url, description_de, description_en, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')`
       ).bind(
         "ev_" + Math.random().toString(36).slice(2, 10),
         payload.eventName, payload.eventName, // en fallback
         payload.breweryId || null, payload.eventDate,
+        payload.eventEndDate || null,
         payload.eventTime || null,
         payload.eventLocation || null,
         payload.eventUrl || null,
@@ -752,6 +778,71 @@ export async function adminDeleteBrewery(req, env, { id }) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   await env.DB.prepare("DELETE FROM breweries WHERE id = ?").bind(id).run();
+  return json({ ok: true });
+}
+
+// GET /api/venue-types  — öffentlich (für Formulare)
+export async function listVenueTypes(req, env) {
+  const res = await env.DB.prepare(
+    "SELECT id, label_de, label_en FROM venue_types ORDER BY sort_order ASC"
+  ).all();
+  return json({ venueTypes: res.results.map((r) => ({ id: r.id, label: { de: r.label_de, en: r.label_en } })) });
+}
+
+// PUT /api/admin/venue-types/:id
+export async function adminUpdateVenueType(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const label_de = str(body.label_de, { max: 100, name: "label_de" });
+  const label_en = str(body.label_en, { max: 100, name: "label_en" });
+  if (!label_de && !label_en) return error(400, "no-fields");
+  const fields = [];
+  const values = [];
+  if (label_de) { fields.push("label_de = ?"); values.push(label_de); }
+  if (label_en) { fields.push("label_en = ?"); values.push(label_en); }
+  values.push(id);
+  await env.DB.prepare(`UPDATE venue_types SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  return json({ ok: true });
+}
+
+// GET /api/admin/styles  — alle Bierstile (für Admin-Tabelle)
+export async function adminListStyles(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("SELECT * FROM styles ORDER BY name").all();
+  return json({
+    styles: res.results.map((s) => ({
+      id: s.id, name: s.name, abv: s.abv, ibu: s.ibu, color: s.color,
+      tasting: { de: s.tasting_de, en: s.tasting_en },
+    })),
+  });
+}
+
+// PUT /api/admin/styles/:id
+export async function adminUpdateStyle(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const allow = { name: "name", abv: "abv", ibu: "ibu", color: "color", tasting_de: "tasting_de", tasting_en: "tasting_en" };
+  const fields = [];
+  const values = [];
+  for (const [k, col] of Object.entries(allow)) {
+    if (k in body) { fields.push(`${col} = ?`); values.push(body[k]); }
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(id);
+  await env.DB.prepare(`UPDATE styles SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/styles/:id
+export async function adminDeleteStyle(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  await env.DB.prepare("DELETE FROM styles WHERE id = ?").bind(id).run();
   return json({ ok: true });
 }
 

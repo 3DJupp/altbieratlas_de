@@ -38,6 +38,7 @@
         if (srv.author[k]) cfg.author[k] = srv.author[k];
       }
     }
+    if (srv.currency) cfg.currency = srv.currency;
   }
 
   async function probe() {
@@ -128,6 +129,13 @@
     async listPrices() { return { prices: window.ATLAS_DATA.prices }; },
     async listEvents() { return { events: window.ATLAS_DATA.events }; },
     async listGlossary() { return { glossary: window.ATLAS_DATA.glossary }; },
+    async listVenueTypes() {
+      return { venueTypes: [
+        { id: "brewery", label: { de: "Hausbrauerei", en: "Brewpub" } },
+        { id: "pub",     label: { de: "Gastronomie",  en: "Bar / Restaurant" } },
+        { id: "shop",    label: { de: "Handel",       en: "Retail" } },
+      ]};
+    },
     async geocode(q) {
       if (!q || q.length < 2) return { results: [] };
       try {
@@ -189,22 +197,28 @@
     listPrices:       () => req("/prices"),
     listEvents:       () => req("/events"),
     listGlossary:     () => req("/glossary"),
+    listVenueTypes:   () => req("/venue-types"),
     geocode:          async (q) => { try { return await req(`/geocode?q=${encodeURIComponent(q)}`); } catch { return { results: [] }; } },
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
     // Admin
     admin: {
-      login:          (username, password, turnstileToken) => req("/admin/login", { method: "POST", body: { username, password, turnstileToken } }),
-      logout:         () => req("/admin/logout", { method: "POST" }),
-      me:             () => req("/admin/me"),
-      stats:          () => req("/admin/stats"),
-      listContribs:   (status = "pending") => req(`/admin/contributions?status=${encodeURIComponent(status)}`),
-      approve:        (id) => req(`/admin/contributions/${encodeURIComponent(id)}/approve`, { method: "POST" }),
-      reject:         (id, notes) => req(`/admin/contributions/${encodeURIComponent(id)}/reject`, { method: "POST", body: { notes } }),
-      listBreweries:  () => req("/admin/breweries"),
-      updateBrewery:  (id, patch) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
-      deleteBrewery:  (id) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "DELETE" }),
-      requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
-      resetPassword:  (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
+      login:            (username, password, turnstileToken) => req("/admin/login", { method: "POST", body: { username, password, turnstileToken } }),
+      logout:           () => req("/admin/logout", { method: "POST" }),
+      me:               () => req("/admin/me"),
+      stats:            () => req("/admin/stats"),
+      listContribs:     (status = "pending") => req(`/admin/contributions?status=${encodeURIComponent(status)}`),
+      approve:          (id) => req(`/admin/contributions/${encodeURIComponent(id)}/approve`, { method: "POST" }),
+      reject:           (id, notes) => req(`/admin/contributions/${encodeURIComponent(id)}/reject`, { method: "POST", body: { notes } }),
+      listBreweries:    () => req("/admin/breweries"),
+      updateBrewery:    (id, patch) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      deleteBrewery:    (id) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      requestReset:     (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
+      resetPassword:    (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
+      listVenueTypes:   () => req("/venue-types"),
+      updateVenueType:  (id, patch) => req(`/admin/venue-types/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      listStyles:       () => req("/admin/styles"),
+      updateStyle:      (id, patch) => req(`/admin/styles/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      deleteStyle:      (id) => req(`/admin/styles/${encodeURIComponent(id)}`, { method: "DELETE" }),
     },
   };
 
@@ -229,6 +243,7 @@
     listPrices:         () => call("listPrices"),
     listEvents:         () => call("listEvents"),
     listGlossary:       () => call("listGlossary"),
+    listVenueTypes:     () => call("listVenueTypes"),
     geocode:            (q) => call("geocode", q),
     submitContribution: (body) => call("submitContribution", body),
 
@@ -243,16 +258,25 @@
         }
         return LIVE.admin[fn].apply(LIVE.admin, args);
       },
-      login:          (u, p, t) => window.AtlasAPI.admin._gate("login", u, p, t),
-      logout:         () => window.AtlasAPI.admin._gate("logout"),
-      me:             () => window.AtlasAPI.admin._gate("me"),
-      stats:          () => window.AtlasAPI.admin._gate("stats"),
-      listContribs:   (s) => window.AtlasAPI.admin._gate("listContribs", s),
-      approve:        (id) => window.AtlasAPI.admin._gate("approve", id),
-      reject:         (id, n) => window.AtlasAPI.admin._gate("reject", id, n),
-      listBreweries:  () => window.AtlasAPI.admin._gate("listBreweries"),
-      updateBrewery:  (id, p) => window.AtlasAPI.admin._gate("updateBrewery", id, p),
-      deleteBrewery:  (id) => window.AtlasAPI.admin._gate("deleteBrewery", id),
+      login:           (u, p, t) => window.AtlasAPI.admin._gate("login", u, p, t),
+      logout:          () => window.AtlasAPI.admin._gate("logout"),
+      me:              () => window.AtlasAPI.admin._gate("me"),
+      stats:           () => window.AtlasAPI.admin._gate("stats"),
+      listContribs:    (s) => window.AtlasAPI.admin._gate("listContribs", s),
+      approve:         (id) => window.AtlasAPI.admin._gate("approve", id),
+      reject:          (id, n) => window.AtlasAPI.admin._gate("reject", id, n),
+      listBreweries:   () => window.AtlasAPI.admin._gate("listBreweries"),
+      updateBrewery:   (id, p) => window.AtlasAPI.admin._gate("updateBrewery", id, p),
+      deleteBrewery:   (id) => window.AtlasAPI.admin._gate("deleteBrewery", id),
+      // Passwort-Reset benötigt keine Session — direkt an LIVE delegieren
+      requestReset:    (email) => LIVE.admin.requestReset(email),
+      resetPassword:   (token, pw) => LIVE.admin.resetPassword(token, pw),
+      // Venue types + styles (erfordern Session)
+      listVenueTypes:  () => window.AtlasAPI.admin._gate("listVenueTypes"),
+      updateVenueType: (id, p) => window.AtlasAPI.admin._gate("updateVenueType", id, p),
+      listStyles:      () => window.AtlasAPI.admin._gate("listStyles"),
+      updateStyle:     (id, p) => window.AtlasAPI.admin._gate("updateStyle", id, p),
+      deleteStyle:     (id) => window.AtlasAPI.admin._gate("deleteStyle", id),
     },
   };
 

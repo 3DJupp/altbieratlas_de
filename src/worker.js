@@ -57,6 +57,8 @@ const ROUTES = [
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],
   ["POST",   "/api/contributions",                         R.postContribution],
+  // --- Venue types ---
+  ["GET",    "/api/venue-types",                            R.listVenueTypes],
   // --- Untappd ---
   ["GET",    "/api/untappd/brewery/:id",                   R.getUntappdBrewery],
   // --- Admin ---
@@ -72,6 +74,10 @@ const ROUTES = [
   ["GET",    "/api/admin/breweries",                       R.adminListBreweries],
   ["PUT",    "/api/admin/breweries/:id",                   R.adminUpdateBrewery],
   ["DELETE", "/api/admin/breweries/:id",                   R.adminDeleteBrewery],
+  ["PUT",    "/api/admin/venue-types/:id",                 R.adminUpdateVenueType],
+  ["GET",    "/api/admin/styles",                          R.adminListStyles],
+  ["PUT",    "/api/admin/styles/:id",                      R.adminUpdateStyle],
+  ["DELETE", "/api/admin/styles/:id",                      R.adminDeleteStyle],
 ];
 
 export default {

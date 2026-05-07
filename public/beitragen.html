@@ -491,14 +491,20 @@ function forms(typ) {
         <label>${t("field.eventDate")}</label>
         <input name="eventDate" type="date" required min="${today}" />
       </div>
+      <div class="field">
+        <label>${t("field.eventEndDate")}</label>
+        <input name="eventEndDate" type="date" min="${today}" />
+      </div>
+    </div>
+    <div class="grid-2">
       <div class="field" id="event-time-field">
         <label>${t("field.eventTime")}</label>
         <input name="eventTime" id="eventTime" type="time" />
       </div>
-    </div>
-    <div class="field field-inline">
-      <input type="checkbox" name="eventAllDay" id="eventAllDay" value="yes" />
-      <label for="eventAllDay">${t("field.eventAllDay")}</label>
+      <div class="field field-inline" style="align-self:flex-end;padding-bottom:12px">
+        <input type="checkbox" name="eventAllDay" id="eventAllDay" value="yes" />
+        <label for="eventAllDay">${t("field.eventAllDay")}</label>
+      </div>
     </div>
     <div class="field">
       <label>${t("field.eventLocation")}</label>
@@ -545,6 +551,16 @@ function renderForm(typ) {
       timeField.style.opacity = isAllDay ? "0.35" : "";
     }
     allDayChk.addEventListener("change", toggleTimeField);
+  }
+
+  // Enddatum darf nicht vor Startdatum liegen
+  const startInput = document.querySelector('[name="eventDate"]');
+  const endInput   = document.querySelector('[name="eventEndDate"]');
+  if (startInput && endInput) {
+    startInput.addEventListener("change", () => {
+      if (startInput.value) endInput.min = startInput.value;
+      if (endInput.value && endInput.value < startInput.value) endInput.value = startInput.value;
+    });
   }
 
   // Autocomplete für Brauerei-Name
