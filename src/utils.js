@@ -564,13 +564,15 @@ export async function sendAdminDigest(env) {
 }
 
 // ---- Brewery-Assembler (wandelt DB-Zeile in API-Shape) ----
+const LEGACY_TYPE = { brewery: "hausbrauerei", pub: "gastronomie", shop: "handel" };
+
 export function brewRow(r, styles = []) {
   if (!r) return null;
   return {
     id: r.id,
     name: r.name,
     short: r.short_name,
-    type: r.type,
+    type: LEGACY_TYPE[r.type] || r.type,
     city: r.city,
     country: r.country,
     address: r.address,

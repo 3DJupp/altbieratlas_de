@@ -192,12 +192,14 @@ window.ATLAS_I18N = {
     "rank.reportsShort": " Meld.",
     "rank.sinceYear": "seit ",
     "rank.loadError": "Fehler beim Laden der Ranglisten.",
-    // Types (Brauereiarten) — DB-Werte und Legacy-Keys
+    // Types (Venue-Arten) — aktuelle DB-Werte
+    "type.hausbrauerei": "Hausbrauerei",
+    "type.gastronomie":  "Gastronomie",
+    "type.handel":       "Handel",
+    // Legacy-Keys (vor Migration 0003)
     "type.brewery":      "Hausbrauerei",
     "type.pub":          "Gastronomie",
     "type.shop":         "Handel",
-    "type.hausbrauerei": "Hausbrauerei",
-    "type.gastronomie":  "Gastronomie",
     // Knowledge page
     "know.heroEyebrow": "Altbier-Wissen",
     "know.heroTitleHtml": "Ein obergäriges Bier, eine Stadt, eine <em>Kultur</em>.",
@@ -247,7 +249,9 @@ window.ATLAS_I18N = {
     "brewery.backToMap": "← Zur Karte",
     "brewery.current": "Aktuell · ",
     "brewery.reported": "gemeldet ",
-    "brewery.stylesTitle": "Was hier gebraut wird",
+    "brewery.stylesTitle":            "Was hier gebraut wird",
+    "brewery.stylesTitleGastronomie": "Was hier ausgeschenkt wird",
+    "brewery.stylesTitleHandel":      "Was hier erhältlich ist",
     "brewery.pricesOverTime": "Preis über Zeit",
     "brewery.noPriceReports": "Noch keine Meldungen.",
     "brewery.insufficientChart": "Zu wenig Datenpunkte für einen Verlauf.",
@@ -582,12 +586,14 @@ window.ATLAS_I18N = {
     "rank.reportsShort": " rpts",
     "rank.sinceYear": "since ",
     "rank.loadError": "Failed to load rankings.",
-    // Types — DB values and legacy keys
+    // Types — current DB values
+    "type.hausbrauerei": "Brewpub",
+    "type.gastronomie":  "Gastronomy",
+    "type.handel":       "Retail",
+    // Legacy keys (before migration 0003)
     "type.brewery":      "Brewpub",
     "type.pub":          "Pub",
     "type.shop":         "Retail",
-    "type.hausbrauerei": "Brewpub",
-    "type.gastronomie":  "Gastronomy",
     // Knowledge page
     "know.heroEyebrow": "Altbier knowledge",
     "know.heroTitleHtml": "A top-fermented beer, a city, a <em>culture</em>.",
@@ -637,7 +643,9 @@ window.ATLAS_I18N = {
     "brewery.backToMap": "← To the map",
     "brewery.current": "Current · ",
     "brewery.reported": "reported ",
-    "brewery.stylesTitle": "What's brewed here",
+    "brewery.stylesTitle":            "What's brewed here",
+    "brewery.stylesTitleGastronomie": "What's served here",
+    "brewery.stylesTitleHandel":      "What's available here",
     "brewery.pricesOverTime": "Price over time",
     "brewery.noPriceReports": "No reports yet.",
     "brewery.insufficientChart": "Not enough data points for a trend.",

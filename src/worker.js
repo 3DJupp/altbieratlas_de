@@ -83,6 +83,10 @@ const ROUTES = [
   ["POST",   "/api/admin/styles",                          R.adminCreateStyle],
   ["PUT",    "/api/admin/styles/:id",                      R.adminUpdateStyle],
   ["DELETE", "/api/admin/styles/:id",                      R.adminDeleteStyle],
+  ["GET",    "/api/admin/glossary",                        R.adminListGlossary],
+  ["POST",   "/api/admin/glossary",                        R.adminCreateGlossary],
+  ["PUT",    "/api/admin/glossary/:term",                  R.adminUpdateGlossary],
+  ["DELETE", "/api/admin/glossary/:term",                  R.adminDeleteGlossary],
 ];
 
 export default {

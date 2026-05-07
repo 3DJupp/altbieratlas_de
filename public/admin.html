@@ -227,6 +227,7 @@
         <button data-tab="styles">Stile</button>
         <button data-tab="events" data-i18n="admin.events">Events</button>
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
+        <button data-tab="glossary">Glossar</button>
       </div>
 
       <div class="admin-tab-content">
@@ -405,6 +406,46 @@
             </table>
           </div>
         </section>
+
+        <!-- Glossar -->
+        <section id="tab-glossary">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Glossareinträge verwalten.</p>
+
+          <!-- Begriff hinzufügen -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Begriff hinzufügen</h3>
+            <form id="add-glossary-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:end">
+              <div class="field" style="margin:0">
+                <label>Begriff</label>
+                <input name="term" type="text" maxlength="200" required placeholder="Sticke" />
+              </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label>Definition (DE)</label>
+                <textarea name="definition_de" rows="2" maxlength="4000" required style="resize:vertical"></textarea>
+              </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label>Definition (EN)</label>
+                <textarea name="definition_en" rows="2" maxlength="4000" style="resize:vertical"></textarea>
+              </div>
+              <div>
+                <button class="btn btn-approve" type="submit" style="white-space:nowrap">Begriff hinzufügen</button>
+              </div>
+            </form>
+            <div id="add-glossary-msg" style="display:none;margin-top:10px;font-size:13px"></div>
+          </div>
+
+          <!-- Glossar-Tabelle -->
+          <div style="overflow:auto">
+            <table class="brewery-table">
+              <thead>
+                <tr>
+                  <th>Begriff</th><th>Definition (DE)</th><th>Definition (EN)</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="glossary-tbody"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </div>
   </main>
@@ -440,9 +481,9 @@
         <div class="field" style="margin:0">
           <label data-i18n="admin.editType">Typ</label>
           <select id="edit-type">
-            <option value="brewery" data-i18n="type.brewery">Hausbrauerei</option>
-            <option value="pub" data-i18n="type.pub">Gastronomie</option>
-            <option value="shop" data-i18n="type.shop">Handel</option>
+            <option value="hausbrauerei" data-i18n="type.hausbrauerei">Hausbrauerei</option>
+            <option value="gastronomie" data-i18n="type.gastronomie">Gastronomie</option>
+            <option value="handel" data-i18n="type.handel">Handel</option>
           </select>
         </div>
         <div class="field" style="margin:0">
@@ -790,6 +831,7 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     if (btn.dataset.tab === "styles")    loadStylesTab();
     if (btn.dataset.tab === "events")    loadEventsTab();
     if (btn.dataset.tab === "prices")    loadPricesTab();
+    if (btn.dataset.tab === "glossary")  loadGlossaryTab();
   });
 });
 
@@ -1556,6 +1598,119 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
   }
 });
 
+// ============ Glossar Tab ============
+async function loadGlossaryTab() {
+  const tbody = document.getElementById("glossary-tbody");
+  tbody.innerHTML = `<tr><td colspan="4" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
+  try {
+    const r = await window.AtlasAPI.admin.listGlossary();
+    const items = r.glossary || [];
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Einträge.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = items.map((g) => `
+      <tr data-term="${g.term.replace(/"/g, "&quot;")}"
+          data-def-de="${(g.definition?.de || "").replace(/"/g, "&quot;")}"
+          data-def-en="${(g.definition?.en || "").replace(/"/g, "&quot;")}">
+        <td style="font-family:var(--font-mono);font-size:12px;white-space:nowrap">${g.term}</td>
+        <td style="font-size:13px;max-width:300px">${g.definition?.de || "—"}</td>
+        <td style="font-size:13px;max-width:300px;color:var(--ink-muted)">${g.definition?.en || "—"}</td>
+        <td class="actions">
+          <button class="btn" data-act="edit-glossary">Bearbeiten</button>
+          <button class="btn btn-reject" data-act="delete-glossary">Löschen</button>
+        </td>
+      </tr>
+    `).join("");
+
+    tbody.querySelectorAll("tr[data-term]").forEach((row) => {
+      const term = row.dataset.term;
+      row.querySelector("button[data-act='edit-glossary']").addEventListener("click", () => openGlossaryEditInline(term, row));
+      row.querySelector("button[data-act='delete-glossary']").addEventListener("click", async () => {
+        if (!confirm(`Begriff "${term}" wirklich löschen?`)) return;
+        try {
+          await window.AtlasAPI.admin.deleteGlossaryTerm(term);
+          row.remove();
+        } catch (e) { alert("Fehler: " + e.message); }
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+let pendingGlossaryEdit = null;
+function openGlossaryEditInline(term, rowEl) {
+  if (pendingGlossaryEdit) {
+    pendingGlossaryEdit.editRow.remove();
+    pendingGlossaryEdit = null;
+  }
+  const editRow = document.createElement("tr");
+  editRow.innerHTML = `
+    <td colspan="4" style="padding:16px;background:var(--bg-elev)">
+      <div style="display:grid;grid-template-columns:1fr;gap:10px">
+        <div class="field" style="margin:0"><label>Definition (DE)</label><textarea id="ge-def-de" rows="3" maxlength="4000" style="resize:vertical">${rowEl.dataset.defDe || ""}</textarea></div>
+        <div class="field" style="margin:0"><label>Definition (EN)</label><textarea id="ge-def-en" rows="3" maxlength="4000" style="resize:vertical">${rowEl.dataset.defEn || ""}</textarea></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-approve" id="ge-save">Speichern</button>
+          <button class="btn btn-ghost" id="ge-cancel">Abbrechen</button>
+        </div>
+        <div id="ge-msg" style="font-size:13px;display:none"></div>
+      </div>
+    </td>
+  `;
+  rowEl.parentNode.insertBefore(editRow, rowEl.nextSibling);
+  pendingGlossaryEdit = { term, rowEl, editRow };
+
+  editRow.querySelector("#ge-cancel").addEventListener("click", () => {
+    editRow.remove();
+    pendingGlossaryEdit = null;
+  });
+  editRow.querySelector("#ge-save").addEventListener("click", async () => {
+    const msg = editRow.querySelector("#ge-msg");
+    const patch = {
+      definition_de: editRow.querySelector("#ge-def-de").value.trim(),
+      definition_en: editRow.querySelector("#ge-def-en").value.trim() || null,
+    };
+    try {
+      await window.AtlasAPI.admin.updateGlossaryTerm(term, patch);
+      rowEl.dataset.defDe = patch.definition_de;
+      rowEl.dataset.defEn = patch.definition_en || "";
+      rowEl.cells[1].textContent = patch.definition_de || "—";
+      rowEl.cells[2].textContent = patch.definition_en || "—";
+      editRow.remove();
+      pendingGlossaryEdit = null;
+    } catch (e) {
+      msg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      msg.style.color = "#9b1f1f";
+      msg.style.display = "block";
+    }
+  });
+}
+
+document.getElementById("add-glossary-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("add-glossary-msg");
+  msg.style.display = "none";
+  const fd = new FormData(e.target);
+  try {
+    await window.AtlasAPI.admin.createGlossaryTerm({
+      term:          fd.get("term").trim(),
+      definition_de: fd.get("definition_de").trim(),
+      definition_en: fd.get("definition_en").trim() || null,
+    });
+    msg.textContent = "Begriff gespeichert.";
+    msg.style.color = "#2d7a2d";
+    msg.style.display = "block";
+    e.target.reset();
+    loadGlossaryTab();
+  } catch (err) {
+    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+    msg.style.color = "#9b1f1f";
+    msg.style.display = "block";
+  }
+});
+
 // Bei Sprachwechsel die dynamisch gerenderten Bereiche neu zeichnen
 document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-breweries.active")) loadBreweriesTable();
@@ -1564,6 +1719,7 @@ document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-styles.active"))    loadStylesTab();
   if (document.querySelector("#tab-events.active"))    loadEventsTab();
   if (document.querySelector("#tab-prices.active"))    loadPricesTab();
+  if (document.querySelector("#tab-glossary.active"))  loadGlossaryTab();
   document.querySelectorAll("#edit-dialog [data-i18n]").forEach((el) => {
     el.textContent = window.t(el.getAttribute("data-i18n"));
   });

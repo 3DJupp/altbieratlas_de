@@ -216,6 +216,10 @@
       createStyle:    (body) => req("/admin/styles", { method: "POST", body }),
       updateStyle:    (id, patch) => req(`/admin/styles/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
       deleteStyle:    (id) => req(`/admin/styles/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      listGlossary:        () => req("/admin/glossary"),
+      createGlossaryTerm:  (body) => req("/admin/glossary", { method: "POST", body }),
+      updateGlossaryTerm:  (term, patch) => req(`/admin/glossary/${encodeURIComponent(term)}`, { method: "PUT", body: patch }),
+      deleteGlossaryTerm:  (term) => req(`/admin/glossary/${encodeURIComponent(term)}`, { method: "DELETE" }),
     },
   };
 
@@ -275,6 +279,10 @@
       createStyle:    (b) => window.AtlasAPI.admin._gate("createStyle", b),
       updateStyle:    (id, p) => window.AtlasAPI.admin._gate("updateStyle", id, p),
       deleteStyle:    (id) => window.AtlasAPI.admin._gate("deleteStyle", id),
+      listGlossary:        () => window.AtlasAPI.admin._gate("listGlossary"),
+      createGlossaryTerm:  (b) => window.AtlasAPI.admin._gate("createGlossaryTerm", b),
+      updateGlossaryTerm:  (t, p) => window.AtlasAPI.admin._gate("updateGlossaryTerm", t, p),
+      deleteGlossaryTerm:  (t) => window.AtlasAPI.admin._gate("deleteGlossaryTerm", t),
     },
   };
 

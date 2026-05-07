@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS breweries (
   id             TEXT PRIMARY KEY,
   name           TEXT NOT NULL,
   short_name     TEXT,
-  type           TEXT NOT NULL CHECK (type IN ('brewery','pub','shop')),
+  type           TEXT NOT NULL CHECK (type IN ('hausbrauerei','gastronomie','handel')),
   city           TEXT NOT NULL,
   country        TEXT NOT NULL DEFAULT 'DE',
   address        TEXT,
