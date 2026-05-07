@@ -733,6 +733,18 @@ export async function adminUpdateBrewery(req, env, { id }) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
 
+  // Optionale ID-Umbenennung
+  let newId = null;
+  if ("new_id" in body) {
+    const candidate = str(body.new_id, { max: 80, name: "new_id" });
+    if (candidate && candidate !== id) {
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(candidate)) return error(400, "invalid-id-format");
+      const exists = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(candidate).first();
+      if (exists) return error(409, "id-already-exists");
+      newId = candidate;
+    }
+  }
+
   const fields = [];
   const values = [];
   const allow = {
@@ -747,7 +759,33 @@ export async function adminUpdateBrewery(req, env, { id }) {
       values.push(body[k]);
     }
   }
-  if (!fields.length && !("styles" in body)) return error(400, "no-fields");
+  if (!fields.length && !("styles" in body) && !newId) return error(400, "no-fields");
+
+  const effectiveId = newId || id;
+
+  if (newId) {
+    // ID-Umbenennung: alle Felder + id in einem Batch
+    const allFields = [...fields, "id = ?", "updated_at = datetime('now')"];
+    const allValues = [...values, newId, id];
+    const styleIds = "styles" in body
+      ? (Array.isArray(body.styles) ? body.styles.filter((s) => s && typeof s === "string") : [])
+      : null;
+    const stmts = [
+      env.DB.prepare(`UPDATE breweries SET ${allFields.join(", ")} WHERE id = ?`).bind(...allValues),
+      env.DB.prepare("UPDATE brewery_styles SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
+      env.DB.prepare("UPDATE prices SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
+      env.DB.prepare("UPDATE events SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
+    ];
+    if (styleIds !== null) {
+      stmts.push(env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(newId));
+      for (const sid of styleIds) {
+        stmts.push(env.DB.prepare("INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES (?, ?)").bind(newId, sid));
+      }
+    }
+    await env.DB.batch(stmts);
+    return json({ ok: true, new_id: newId });
+  }
+
   if (fields.length) {
     fields.push("updated_at = datetime('now')");
     values.push(id);
@@ -757,11 +795,11 @@ export async function adminUpdateBrewery(req, env, { id }) {
   }
   if ("styles" in body) {
     const styleIds = Array.isArray(body.styles) ? body.styles.filter((s) => s && typeof s === "string") : [];
-    await env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(id).run();
+    await env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(effectiveId).run();
     for (const sid of styleIds) {
       await env.DB.prepare(
         "INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES (?, ?)"
-      ).bind(id, sid).run();
+      ).bind(effectiveId, sid).run();
     }
   }
   return json({ ok: true });
@@ -781,7 +819,7 @@ export async function adminListEvents(req, env) {
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare(
     `SELECT e.id, e.title_de, e.title_en, e.brewery_id, b.name AS brewery_name,
-            e.date, e.time, e.location, e.url, e.status, e.created_at
+            e.date, e.time, e.location, e.url, e.description_de, e.description_en, e.status, e.created_at
      FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
      ORDER BY e.date ASC, e.created_at DESC LIMIT 200`
   ).all();
@@ -790,6 +828,7 @@ export async function adminListEvents(req, env) {
       id: r.id, titleDe: r.title_de, titleEn: r.title_en,
       breweryId: r.brewery_id, breweryName: r.brewery_name,
       date: r.date, time: r.time, location: r.location, url: r.url,
+      descriptionDe: r.description_de, descriptionEn: r.description_en,
       status: r.status, createdAt: r.created_at,
     })),
   });
@@ -801,6 +840,29 @@ export async function adminDeleteEvent(req, env, { id }) {
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare("DELETE FROM events WHERE id = ?").bind(id).run();
   if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// PUT /api/admin/events/:id
+export async function adminUpdateEvent(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+
+  const fields = [];
+  const values = [];
+  const allow = {
+    title_de: "title_de", title_en: "title_en", brewery_id: "brewery_id",
+    date: "date", time: "time", location: "location", url: "url",
+    description_de: "description_de", description_en: "description_en", status: "status",
+  };
+  for (const [k, col] of Object.entries(allow)) {
+    if (k in body) { fields.push(`${col} = ?`); values.push(body[k]); }
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(id);
+  await env.DB.prepare(`UPDATE events SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
   return json({ ok: true });
 }
 
@@ -856,6 +918,109 @@ export async function adminDeletePrice(req, env, { id }) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare("DELETE FROM prices WHERE id = ?").bind(parseInt(id, 10)).run();
+  if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// PUT /api/admin/prices/:id
+export async function adminUpdatePrice(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+
+  const fields = [];
+  const values = [];
+  const strAllow = { brewery_id: "brewery_id", date: "date", size: "size", source: "source", notes: "notes", status: "status" };
+  for (const [k, col] of Object.entries(strAllow)) {
+    if (k in body) { fields.push(`${col} = ?`); values.push(body[k]); }
+  }
+  if ("price" in body) {
+    try {
+      const priceVal = num(body.price, { min: 0, max: 100, required: true, name: "price" });
+      fields.push("price = ?");
+      values.push(priceVal);
+    } catch (e) {
+      return error(400, "validation-failed", { detail: e.message });
+    }
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(parseInt(id, 10));
+  await env.DB.prepare(`UPDATE prices SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  return json({ ok: true });
+}
+
+// GET /api/admin/styles
+export async function adminListStyles(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("SELECT * FROM styles ORDER BY name").all();
+  return json({
+    styles: res.results.map((s) => ({
+      id: s.id, name: s.name, abv: s.abv, ibu: s.ibu, color: s.color,
+      tasting: { de: s.tasting_de, en: s.tasting_en },
+    })),
+  });
+}
+
+// POST /api/admin/styles
+export async function adminCreateStyle(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+
+  let styleId, name, abv, ibu, color, tasting_de, tasting_en;
+  try {
+    styleId    = str(body.id,         { required: true, max: 80,   name: "id" });
+    name       = str(body.name,       { required: true, max: 200,  name: "name" });
+    abv        = body.abv  != null ? num(body.abv,  { min: 0, max: 100,  name: "abv" })  : null;
+    ibu        = body.ibu  != null ? num(body.ibu,  { min: 0, max: 1000, name: "ibu" })  : null;
+    color      = str(body.color,      { max: 20,   name: "color" });
+    tasting_de = str(body.tasting_de, { max: 2000, name: "tasting_de" });
+    tasting_en = str(body.tasting_en, { max: 2000, name: "tasting_en" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(styleId)) return error(400, "invalid-id-format");
+  const existing = await env.DB.prepare("SELECT id FROM styles WHERE id = ?").bind(styleId).first();
+  if (existing) return error(409, "id-already-exists");
+  await env.DB.prepare(
+    "INSERT INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(styleId, name, abv, ibu, color, tasting_de, tasting_en).run();
+  return json({ ok: true }, { status: 201 });
+}
+
+// PUT /api/admin/styles/:id
+export async function adminUpdateStyle(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+
+  const fields = [];
+  const values = [];
+  try {
+    if ("name"       in body) { fields.push("name = ?");       values.push(str(body.name,       { max: 200,  name: "name" })); }
+    if ("color"      in body) { fields.push("color = ?");      values.push(str(body.color,      { max: 20,   name: "color" })); }
+    if ("tasting_de" in body) { fields.push("tasting_de = ?"); values.push(str(body.tasting_de, { max: 2000, name: "tasting_de" })); }
+    if ("tasting_en" in body) { fields.push("tasting_en = ?"); values.push(str(body.tasting_en, { max: 2000, name: "tasting_en" })); }
+    if ("abv"        in body) { fields.push("abv = ?");        values.push(body.abv != null ? num(body.abv, { min: 0, max: 100,  name: "abv" })  : null); }
+    if ("ibu"        in body) { fields.push("ibu = ?");        values.push(body.ibu != null ? num(body.ibu, { min: 0, max: 1000, name: "ibu" })  : null); }
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(id);
+  await env.DB.prepare(`UPDATE styles SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/styles/:id
+export async function adminDeleteStyle(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("DELETE FROM styles WHERE id = ?").bind(id).run();
   if (!res.meta.changes) return error(404, "not-found");
   return json({ ok: true });
 }
