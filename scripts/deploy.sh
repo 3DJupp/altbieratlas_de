@@ -9,16 +9,11 @@
 #   database_name  — Name der D1-Datenbank
 #
 # Verwendung:
-#   bash scripts/deploy.sh              # nur Worker deployen (Standard)
-#   bash scripts/deploy.sh --seed       # Schema + Basisdaten + Deploy
-#   bash scripts/deploy.sh --seed --demo # Schema + Basis + Demo-Daten + Deploy
+#   bash scripts/deploy.sh          # nur Worker deployen (Standard)
+#   bash scripts/deploy.sh --seed   # Schema + Seed-Daten + Deploy
 #
-# --seed:  Schema (0001), base data / styles / glossary (0002_base).
-#          Idempotent — safe to re-run.
-#          0001 already includes all columns (time, location, url).
-#          0004/0005 are legacy upgrade migrations for pre-existing DBs.
-# --demo:  Additionally seed example breweries, prices and events (demo.sql).
-#          Only useful for staging / development.
+# --seed: Spielt 0001_schema.sql + 0002_seed.sql ein.
+#         Idempotent — kann mehrfach ausgeführt werden.
 # ============================================================
 set -euo pipefail
 
@@ -26,12 +21,10 @@ set -euo pipefail
 : "${database_name:?Bitte database_name als Build-Umgebungsvariable setzen}"
 
 SEED=false
-DEMO=false
 
 for arg in "$@"; do
   case "$arg" in
     --seed) SEED=true ;;
-    --demo) DEMO=true ;;
     *) echo "Unbekanntes Argument: $arg" >&2; exit 1 ;;
   esac
 done
@@ -42,18 +35,11 @@ sed -i \
   -e "s/REPLACE_WITH_YOUR_D1_NAME/${database_name}/g" \
   wrangler.toml
 
-# Apply DB migrations (--yes skips the interactive confirmation prompt).
-# 0004/0005 are intentionally excluded: 0001 already defines all columns.
 if [ "$SEED" = true ]; then
   echo "▶ Applying schema..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
-  echo "▶ Seeding base data (styles, glossary)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_base.sql
-fi
-
-if [ "$DEMO" = true ]; then
-  echo "▶ Seeding demo data (breweries, prices, events)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/demo.sql
+  echo "▶ Seeding data (styles, glossary, breweries, prices, events)..."
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_seed.sql
 fi
 
 echo "▶ Worker deployen..."

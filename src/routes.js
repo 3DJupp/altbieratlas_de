@@ -755,6 +755,35 @@ export async function adminDeleteBrewery(req, env, { id }) {
   return json({ ok: true });
 }
 
+// GET /api/admin/events
+export async function adminListEvents(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare(
+    `SELECT e.id, e.title_de, e.title_en, e.brewery_id, b.name AS brewery_name,
+            e.date, e.time, e.location, e.url, e.status, e.created_at
+     FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+     ORDER BY e.date ASC, e.created_at DESC LIMIT 200`
+  ).all();
+  return json({
+    events: res.results.map((r) => ({
+      id: r.id, titleDe: r.title_de, titleEn: r.title_en,
+      breweryId: r.brewery_id, breweryName: r.brewery_name,
+      date: r.date, time: r.time, location: r.location, url: r.url,
+      status: r.status, createdAt: r.created_at,
+    })),
+  });
+}
+
+// DELETE /api/admin/events/:id
+export async function adminDeleteEvent(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("DELETE FROM events WHERE id = ?").bind(id).run();
+  if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
 // GET /api/admin/prices
 export async function adminListPrices(req, env) {
   const auth = await requireAdmin(req, env);

@@ -200,6 +200,7 @@
         <button class="active" data-tab="dashboard" data-i18n="admin.dashboard">Übersicht</button>
         <button data-tab="contribs" data-i18n="admin.pending">Offene Beiträge</button>
         <button data-tab="breweries" data-i18n="admin.breweries">Brauereien</button>
+        <button data-tab="events" data-i18n="admin.events">Events</button>
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
       </div>
 
@@ -240,6 +241,25 @@
                 </tr>
               </thead>
               <tbody id="brewery-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Events -->
+        <section id="tab-events">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.eventsSub">Alle gespeicherten Events.</p>
+          <div style="overflow:auto">
+            <table class="brewery-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin.colTitle">Titel</th>
+                  <th data-i18n="admin.colName">Brauerei</th>
+                  <th data-i18n="admin.colDate">Datum</th>
+                  <th data-i18n="admin.colStatus">Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="events-tbody"></tbody>
             </table>
           </div>
         </section>
@@ -517,10 +537,11 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     btn.classList.add("active");
     document.querySelectorAll(".admin-tab-content > section").forEach((s) => s.classList.remove("active"));
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    if (btn.dataset.tab === "contribs") loadContributions(currentStatus);
+    if (btn.dataset.tab === "contribs")  loadContributions(currentStatus);
     if (btn.dataset.tab === "breweries") loadBreweriesTable();
     if (btn.dataset.tab === "dashboard") loadDashboard();
-    if (btn.dataset.tab === "prices") loadPricesTab();
+    if (btn.dataset.tab === "events")    loadEventsTab();
+    if (btn.dataset.tab === "prices")    loadPricesTab();
   });
 });
 
@@ -705,6 +726,47 @@ async function handleBreweryAction(id, act, rowEl) {
   }
 }
 
+// ============ Events Table ============
+async function loadEventsTab() {
+  const t = window.t;
+  const tbody = document.getElementById("events-tbody");
+  tbody.innerHTML = `<tr><td colspan="5" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
+  try {
+    const r = await window.AtlasAPI.admin.listEvents();
+    const rows = r.events || [];
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noEvents")}</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((ev) => `
+      <tr data-event-id="${ev.id}">
+        <td>${ev.titleDe}${ev.titleEn && ev.titleEn !== ev.titleDe ? `<br><span style="font-size:11px;color:var(--ink-muted)">${ev.titleEn}</span>` : ""}</td>
+        <td>${ev.breweryName || "—"}</td>
+        <td>${ev.date}${ev.time ? " " + ev.time : ""}</td>
+        <td><span class="status-${ev.status}">${ev.status}</span></td>
+        <td class="actions">
+          <button class="btn btn-reject" data-act="delete-event">${t("admin.actionDelete")}</button>
+        </td>
+      </tr>
+    `).join("");
+    window.setLang(window.__atlasLang);
+
+    tbody.querySelectorAll("tr[data-event-id]").forEach((row) => {
+      const id = row.dataset.eventId;
+      row.querySelector("button[data-act='delete-event']").addEventListener("click", async () => {
+        if (!confirm(t("admin.confirmDeleteEvent"))) return;
+        try {
+          await window.AtlasAPI.admin.deleteEvent(id);
+          row.remove();
+          loadDashboard();
+        } catch (e) { alert(t("admin.errorPrefix") + e.message); }
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
 // ============ Prices Table ============
 async function loadPricesTab() {
   const t = window.t;
@@ -793,9 +855,10 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
 // Bei Sprachwechsel die dynamisch gerenderten Bereiche neu zeichnen
 document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-breweries.active")) loadBreweriesTable();
-  if (document.querySelector("#tab-contribs.active")) loadContributions(currentStatus);
+  if (document.querySelector("#tab-contribs.active"))  loadContributions(currentStatus);
   if (document.querySelector("#tab-dashboard.active") && me) loadDashboard();
-  if (document.querySelector("#tab-prices.active")) loadPricesTab();
+  if (document.querySelector("#tab-events.active"))    loadEventsTab();
+  if (document.querySelector("#tab-prices.active"))    loadPricesTab();
 });
 </script>
 </body>
