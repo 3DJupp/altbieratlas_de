@@ -712,9 +712,18 @@ export async function adminListBreweries(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare(
-    "SELECT * FROM breweries ORDER BY created_at DESC LIMIT 500"
+    `SELECT b.*, GROUP_CONCAT(bs.style_id) AS style_ids
+     FROM breweries b
+     LEFT JOIN brewery_styles bs ON bs.brewery_id = b.id
+     GROUP BY b.id
+     ORDER BY b.created_at DESC LIMIT 500`
   ).all();
-  return json({ breweries: res.results.map((r) => brewRow(r, [])) });
+  return json({
+    breweries: res.results.map((r) => {
+      const styles = r.style_ids ? r.style_ids.split(",").filter(Boolean) : [];
+      return brewRow(r, styles);
+    }),
+  });
 }
 
 // PUT /api/admin/breweries/:id
@@ -738,12 +747,23 @@ export async function adminUpdateBrewery(req, env, { id }) {
       values.push(body[k]);
     }
   }
-  if (!fields.length) return error(400, "no-fields");
-  fields.push("updated_at = datetime('now')");
-  values.push(id);
-  await env.DB.prepare(
-    `UPDATE breweries SET ${fields.join(", ")} WHERE id = ?`
-  ).bind(...values).run();
+  if (!fields.length && !("styles" in body)) return error(400, "no-fields");
+  if (fields.length) {
+    fields.push("updated_at = datetime('now')");
+    values.push(id);
+    await env.DB.prepare(
+      `UPDATE breweries SET ${fields.join(", ")} WHERE id = ?`
+    ).bind(...values).run();
+  }
+  if ("styles" in body) {
+    const styleIds = Array.isArray(body.styles) ? body.styles.filter((s) => s && typeof s === "string") : [];
+    await env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(id).run();
+    for (const sid of styleIds) {
+      await env.DB.prepare(
+        "INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES (?, ?)"
+      ).bind(id, sid).run();
+    }
+  }
   return json({ ok: true });
 }
 

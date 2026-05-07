@@ -396,6 +396,8 @@ window.ATLAS_I18N = {
     "admin.editSave": "Speichern",
     "admin.editSaved": "Gespeichert.",
     "admin.editError": "Fehler beim Speichern: ",
+    "admin.editDescription": "Beschreibung (DE)",
+    "admin.editStyles": "Stile (IDs, kommagetrennt)",
     "admin.noPendingContribs": "Keine offenen Beiträge.",
     // Rank sub
     "rank.hero.eyebrow": "Ranglisten",
@@ -784,6 +786,8 @@ window.ATLAS_I18N = {
     "admin.editSave": "Save",
     "admin.editSaved": "Saved.",
     "admin.editError": "Save failed: ",
+    "admin.editDescription": "Description (DE)",
+    "admin.editStyles": "Styles (IDs, comma-separated)",
     "admin.noPendingContribs": "No pending submissions.",
     // Rank sub
     "rank.hero.eyebrow": "Rankings",
