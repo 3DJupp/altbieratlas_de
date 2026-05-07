@@ -369,7 +369,7 @@
 
   <!-- Edit-Dialog -->
   <div class="edit-dialog" id="edit-dialog">
-    <div class="box">
+    <div class="box" style="max-width:560px">
       <h3 data-i18n="admin.editTitle">Brauerei bearbeiten</h3>
       <div class="edit-grid">
         <div class="field" style="margin:0">
@@ -395,6 +395,14 @@
             <option value="approved" data-i18n="admin.approved">Freigegeben</option>
             <option value="rejected" data-i18n="admin.rejected">Abgelehnt</option>
           </select>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.editDescription">Beschreibung (DE)</label>
+          <textarea id="edit-description" rows="3" maxlength="2000" style="resize:vertical"></textarea>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.editStyles">Stile (IDs, kommagetrennt)</label>
+          <input id="edit-styles" type="text" maxlength="500" placeholder="z.B. uerige-alt, sticke" />
         </div>
       </div>
       <div class="edit-msg" id="edit-msg" style="display:none"></div>
@@ -677,13 +685,12 @@ function renderContribCards(items, host, status) {
         </div>
         ${status === "pending" ? `
           <div class="contrib-actions">
-            <button class="btn btn-approve" data-action="approve" data-i18n="admin.approve">Freigeben</button>
-            <button class="btn btn-reject"  data-action="reject"  data-i18n="admin.reject">Ablehnen</button>
+            <button class="btn btn-approve" data-action="approve">${window.t("admin.approve")}</button>
+            <button class="btn btn-reject"  data-action="reject">${window.t("admin.reject")}</button>
           </div>` : ""}
       </div>
     `;
   }).join("");
-  window.setLang(window.__atlasLang);
 
   host.querySelectorAll(".contrib-card").forEach((card) => {
     const id = card.dataset.id;
@@ -748,7 +755,13 @@ async function loadBreweriesTable() {
       return val !== key ? val : (type || "—");
     };
     tbody.innerHTML = (r.breweries || []).map((b) => `
-      <tr data-id="${b.id}" data-name="${(b.name || "").replace(/"/g, "&quot;")}" data-city="${(b.city || "").replace(/"/g, "&quot;")}" data-type="${b.type || ""}" data-status="${b.status || ""}">
+      <tr data-id="${b.id}"
+          data-name="${(b.name || "").replace(/"/g, "&quot;")}"
+          data-city="${(b.city || "").replace(/"/g, "&quot;")}"
+          data-type="${b.type || ""}"
+          data-status="${b.status || ""}"
+          data-description="${(b.description?.de || "").replace(/"/g, "&quot;")}"
+          data-styles="${(b.styles || []).join(",")}">
         <td><a href="brauerei.html?id=${b.id}" target="_blank">${b.name}</a></td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
@@ -805,10 +818,14 @@ function openEditDialog(id, rowEl) {
   document.getElementById("edit-city").value = rowEl.dataset.city || "";
   document.getElementById("edit-type").value = rowEl.dataset.type || "brewery";
   document.getElementById("edit-status").value = rowEl.dataset.status || "pending";
+  document.getElementById("edit-description").value = rowEl.dataset.description || "";
+  document.getElementById("edit-styles").value = rowEl.dataset.styles || "";
   const msg = document.getElementById("edit-msg");
   msg.style.display = "none";
   msg.textContent = "";
-  window.setLang(window.__atlasLang);
+  document.querySelectorAll("#edit-dialog [data-i18n]").forEach((el) => {
+    el.textContent = window.t(el.getAttribute("data-i18n"));
+  });
   editDialog.classList.add("visible");
 }
 
@@ -824,18 +841,23 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   if (!pendingEdit) return;
   const t = window.t;
   const msg = document.getElementById("edit-msg");
-  const name   = document.getElementById("edit-name").value.trim();
-  const city   = document.getElementById("edit-city").value.trim();
-  const type   = document.getElementById("edit-type").value;
-  const status = document.getElementById("edit-status").value;
+  const name        = document.getElementById("edit-name").value.trim();
+  const city        = document.getElementById("edit-city").value.trim();
+  const type        = document.getElementById("edit-type").value;
+  const status      = document.getElementById("edit-status").value;
+  const description = document.getElementById("edit-description").value.trim();
+  const stylesRaw   = document.getElementById("edit-styles").value.trim();
+  const styles      = stylesRaw ? stylesRaw.split(",").map((s) => s.trim()).filter(Boolean) : [];
   msg.style.display = "none";
   try {
-    await window.AtlasAPI.admin.updateBrewery(pendingEdit.id, { name, city, type, status });
+    await window.AtlasAPI.admin.updateBrewery(pendingEdit.id, { name, city, type, status, description_de: description, styles });
     const row = pendingEdit.rowEl;
-    row.dataset.name   = name;
-    row.dataset.city   = city;
-    row.dataset.type   = type;
-    row.dataset.status = status;
+    row.dataset.name        = name;
+    row.dataset.city        = city;
+    row.dataset.type        = type;
+    row.dataset.status      = status;
+    row.dataset.description = description;
+    row.dataset.styles      = styles.join(",");
     // Update visible cells
     row.querySelector("td:nth-child(1) a").textContent = name;
     const cityCell = row.querySelector("td:nth-child(2)");
@@ -880,7 +902,6 @@ async function loadEventsTab() {
         </td>
       </tr>
     `).join("");
-    window.setLang(window.__atlasLang);
 
     tbody.querySelectorAll("tr[data-event-id]").forEach((row) => {
       const id = row.dataset.eventId;
@@ -938,7 +959,6 @@ async function loadPricesTab() {
         </td>
       </tr>
     `).join("");
-    window.setLang(window.__atlasLang);
 
     tbody.querySelectorAll("tr[data-price-id]").forEach((row) => {
       const id = row.dataset.priceId;
