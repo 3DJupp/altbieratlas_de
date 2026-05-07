@@ -846,6 +846,170 @@ export async function adminDeleteStyle(req, env, { id }) {
   return json({ ok: true });
 }
 
+// POST /api/admin/styles
+export async function adminCreateStyle(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const name = str(body.name, { required: true, max: 200, name: "name" });
+  const rawId = str(body.id, { max: 80, name: "id" });
+  const id = rawId || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50);
+  await env.DB.prepare(
+    "INSERT INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(
+    id, name,
+    body.abv != null ? parseFloat(body.abv) : null,
+    body.ibu != null ? parseInt(body.ibu, 10) : null,
+    str(body.color, { max: 20 }) || "#8b4513",
+    str(body.tasting_de, { max: 4000 }) || null,
+    str(body.tasting_en, { max: 4000 }) || null,
+  ).run();
+  return json({ ok: true, id }, { status: 201 });
+}
+
+// GET /api/admin/breweries/:id
+export async function adminGetBrewery(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const row = await env.DB.prepare("SELECT * FROM breweries WHERE id = ?").bind(id).first();
+  if (!row) return error(404, "not-found");
+  return json({ brewery: brewRow(row, []) });
+}
+
+// GET /api/admin/events
+export async function adminListEvents(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status");
+  let sql = "SELECT e.*, b.name AS brewery_name FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id";
+  const params = [];
+  if (status) { sql += " WHERE e.status = ?"; params.push(status); }
+  sql += " ORDER BY e.date DESC, e.created_at DESC LIMIT 500";
+  const res = params.length
+    ? await env.DB.prepare(sql).bind(...params).all()
+    : await env.DB.prepare(sql).all();
+  return json({
+    events: res.results.map((e) => ({
+      id: e.id, titleDe: e.title_de, titleEn: e.title_en,
+      breweryId: e.brewery_id, breweryName: e.brewery_name,
+      date: e.date, endDate: e.end_date || null, time: e.time || null,
+      location: e.location || null, url: e.url || null,
+      descriptionDe: e.description_de || null, descriptionEn: e.description_en || null,
+      status: e.status, createdAt: e.created_at,
+    })),
+  });
+}
+
+// POST /api/admin/events
+export async function adminCreateEvent(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  try {
+    const id = "ev_" + Math.random().toString(36).slice(2, 12);
+    await env.DB.prepare(
+      `INSERT INTO events (id, title_de, title_en, brewery_id, date, end_date, time, location, url, description_de, description_en, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      id,
+      str(body.title_de, { required: true, max: 300, name: "title_de" }),
+      str(body.title_en, { max: 300, name: "title_en" }) || null,
+      str(body.brewery_id, { max: 80, name: "brewery_id" }) || null,
+      str(body.date, { required: true, max: 20, name: "date" }),
+      str(body.end_date, { max: 20, name: "end_date" }) || null,
+      str(body.time, { max: 10, name: "time" }) || null,
+      str(body.location, { max: 300, name: "location" }) || null,
+      str(body.url, { max: 500, name: "url" }) || null,
+      str(body.description_de, { max: 4000, name: "description_de" }) || null,
+      str(body.description_en, { max: 4000, name: "description_en" }) || null,
+      oneOf(body.status, ["pending", "approved", "rejected"], { name: "status" }) || "approved",
+    ).run();
+    return json({ ok: true, id }, { status: 201 });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+}
+
+// PUT /api/admin/events/:id
+export async function adminUpdateEvent(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const allow = {
+    title_de: "title_de", title_en: "title_en", brewery_id: "brewery_id",
+    date: "date", end_date: "end_date", time: "time", location: "location",
+    url: "url", description_de: "description_de", description_en: "description_en",
+    status: "status",
+  };
+  const fields = [], values = [];
+  for (const [k, col] of Object.entries(allow)) {
+    if (k in body) { fields.push(`${col} = ?`); values.push(body[k]); }
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(id);
+  await env.DB.prepare(`UPDATE events SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/events/:id
+export async function adminDeleteEvent(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  await env.DB.prepare("DELETE FROM events WHERE id = ?").bind(id).run();
+  return json({ ok: true });
+}
+
+// GET /api/admin/prices
+export async function adminListPrices(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const url = new URL(req.url);
+  const breweryId = url.searchParams.get("brewery_id");
+  let sql = "SELECT p.*, b.name AS brewery_name, b.city AS brewery_city FROM prices p LEFT JOIN breweries b ON b.id = p.brewery_id";
+  const params = [];
+  if (breweryId) { sql += " WHERE p.brewery_id = ?"; params.push(breweryId); }
+  sql += " ORDER BY p.created_at DESC LIMIT 500";
+  const res = params.length
+    ? await env.DB.prepare(sql).bind(...params).all()
+    : await env.DB.prepare(sql).all();
+  return json({
+    prices: res.results.map((p) => ({
+      id: p.id, breweryId: p.brewery_id, breweryName: p.brewery_name, breweryCity: p.brewery_city,
+      date: p.date, size: p.size, price: p.price, source: p.source || null, notes: p.notes || null,
+      status: p.status, createdAt: p.created_at,
+    })),
+  });
+}
+
+// PUT /api/admin/prices/:id
+export async function adminUpdatePrice(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const allow = { date: "date", size: "size", price: "price", source: "source", notes: "notes", status: "status" };
+  const fields = [], values = [];
+  for (const [k, col] of Object.entries(allow)) {
+    if (k in body) { fields.push(`${col} = ?`); values.push(body[k]); }
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(id);
+  await env.DB.prepare(`UPDATE prices SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/prices/:id
+export async function adminDeletePrice(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  await env.DB.prepare("DELETE FROM prices WHERE id = ?").bind(id).run();
+  return json({ ok: true });
+}
+
 // GET /api/admin/stats
 export async function adminStats(req, env) {
   const auth = await requireAdmin(req, env);
