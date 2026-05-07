@@ -206,10 +206,16 @@
       requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
       resetPassword:  (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
       listEvents:     () => req("/admin/events"),
+      updateEvent:    (id, patch) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
       deleteEvent:    (id) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
       listPrices:     () => req("/admin/prices"),
       addPrice:       (body) => req("/admin/prices", { method: "POST", body }),
+      updatePrice:    (id, patch) => req(`/admin/prices/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
       deletePrice:    (id) => req(`/admin/prices/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      listStyles:     () => req("/admin/styles"),
+      createStyle:    (body) => req("/admin/styles", { method: "POST", body }),
+      updateStyle:    (id, patch) => req(`/admin/styles/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      deleteStyle:    (id) => req(`/admin/styles/${encodeURIComponent(id)}`, { method: "DELETE" }),
     },
   };
 
@@ -259,10 +265,16 @@
       updateBrewery:  (id, p) => window.AtlasAPI.admin._gate("updateBrewery", id, p),
       deleteBrewery:  (id) => window.AtlasAPI.admin._gate("deleteBrewery", id),
       listEvents:     () => window.AtlasAPI.admin._gate("listEvents"),
+      updateEvent:    (id, p) => window.AtlasAPI.admin._gate("updateEvent", id, p),
       deleteEvent:    (id) => window.AtlasAPI.admin._gate("deleteEvent", id),
       listPrices:     () => window.AtlasAPI.admin._gate("listPrices"),
       addPrice:       (b) => window.AtlasAPI.admin._gate("addPrice", b),
+      updatePrice:    (id, p) => window.AtlasAPI.admin._gate("updatePrice", id, p),
       deletePrice:    (id) => window.AtlasAPI.admin._gate("deletePrice", id),
+      listStyles:     () => window.AtlasAPI.admin._gate("listStyles"),
+      createStyle:    (b) => window.AtlasAPI.admin._gate("createStyle", b),
+      updateStyle:    (id, p) => window.AtlasAPI.admin._gate("updateStyle", id, p),
+      deleteStyle:    (id) => window.AtlasAPI.admin._gate("deleteStyle", id),
     },
   };
 

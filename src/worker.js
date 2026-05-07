@@ -73,10 +73,16 @@ const ROUTES = [
   ["PUT",    "/api/admin/breweries/:id",                   R.adminUpdateBrewery],
   ["DELETE", "/api/admin/breweries/:id",                   R.adminDeleteBrewery],
   ["GET",    "/api/admin/events",                          R.adminListEvents],
+  ["PUT",    "/api/admin/events/:id",                      R.adminUpdateEvent],
   ["DELETE", "/api/admin/events/:id",                      R.adminDeleteEvent],
   ["GET",    "/api/admin/prices",                          R.adminListPrices],
   ["POST",   "/api/admin/prices",                          R.adminAddPrice],
+  ["PUT",    "/api/admin/prices/:id",                      R.adminUpdatePrice],
   ["DELETE", "/api/admin/prices/:id",                      R.adminDeletePrice],
+  ["GET",    "/api/admin/styles",                          R.adminListStyles],
+  ["POST",   "/api/admin/styles",                          R.adminCreateStyle],
+  ["PUT",    "/api/admin/styles/:id",                      R.adminUpdateStyle],
+  ["DELETE", "/api/admin/styles/:id",                      R.adminDeleteStyle],
 ];
 
 export default {
