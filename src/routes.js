@@ -755,6 +755,62 @@ export async function adminDeleteBrewery(req, env, { id }) {
   return json({ ok: true });
 }
 
+// GET /api/admin/prices
+export async function adminListPrices(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare(
+    `SELECT p.id, p.brewery_id, b.name AS brewery_name, p.date, p.size, p.price, p.source, p.notes, p.status, p.created_at
+     FROM prices p LEFT JOIN breweries b ON b.id = p.brewery_id
+     ORDER BY p.date DESC, p.created_at DESC LIMIT 500`
+  ).all();
+  return json({
+    prices: res.results.map((r) => ({
+      id: r.id, breweryId: r.brewery_id, breweryName: r.brewery_name,
+      date: r.date, size: r.size, price: r.price,
+      source: r.source, notes: r.notes, status: r.status, createdAt: r.created_at,
+    })),
+  });
+}
+
+// POST /api/admin/prices  { breweryId, date, size, price, source?, notes? }
+export async function adminAddPrice(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+
+  let breweryId, date, size, priceVal, source, notes;
+  try {
+    breweryId = str(body.breweryId, { required: true, max: 80, name: "breweryId" });
+    date      = str(body.date,      { required: true, max: 20, name: "date" });
+    size      = str(body.size,      { required: true, max: 20, name: "size" });
+    priceVal  = num(body.price,     { min: 0, max: 100, required: true, name: "price" });
+    source    = str(body.source,    { max: 100, name: "source" });
+    notes     = str(body.notes,     { max: 1000, name: "notes" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+
+  const brewery = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(breweryId).first();
+  if (!brewery) return error(404, "brewery-not-found");
+
+  await env.DB.prepare(
+    "INSERT INTO prices (brewery_id, date, size, price, source, notes, status) VALUES (?, ?, ?, ?, ?, ?, 'approved')"
+  ).bind(breweryId, date, size, priceVal, source, notes).run();
+
+  return json({ ok: true }, { status: 201 });
+}
+
+// DELETE /api/admin/prices/:id
+export async function adminDeletePrice(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("DELETE FROM prices WHERE id = ?").bind(parseInt(id, 10)).run();
+  if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
 // GET /api/admin/stats
 export async function adminStats(req, env) {
   const auth = await requireAdmin(req, env);

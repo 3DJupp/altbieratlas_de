@@ -72,6 +72,9 @@ const ROUTES = [
   ["GET",    "/api/admin/breweries",                       R.adminListBreweries],
   ["PUT",    "/api/admin/breweries/:id",                   R.adminUpdateBrewery],
   ["DELETE", "/api/admin/breweries/:id",                   R.adminDeleteBrewery],
+  ["GET",    "/api/admin/prices",                          R.adminListPrices],
+  ["POST",   "/api/admin/prices",                          R.adminAddPrice],
+  ["DELETE", "/api/admin/prices/:id",                      R.adminDeletePrice],
 ];
 
 export default {

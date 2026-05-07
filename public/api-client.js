@@ -205,6 +205,9 @@
       deleteBrewery:  (id) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "DELETE" }),
       requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
       resetPassword:  (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
+      listPrices:     () => req("/admin/prices"),
+      addPrice:       (body) => req("/admin/prices", { method: "POST", body }),
+      deletePrice:    (id) => req(`/admin/prices/${encodeURIComponent(id)}`, { method: "DELETE" }),
     },
   };
 
@@ -253,6 +256,9 @@
       listBreweries:  () => window.AtlasAPI.admin._gate("listBreweries"),
       updateBrewery:  (id, p) => window.AtlasAPI.admin._gate("updateBrewery", id, p),
       deleteBrewery:  (id) => window.AtlasAPI.admin._gate("deleteBrewery", id),
+      listPrices:     () => window.AtlasAPI.admin._gate("listPrices"),
+      addPrice:       (b) => window.AtlasAPI.admin._gate("addPrice", b),
+      deletePrice:    (id) => window.AtlasAPI.admin._gate("deletePrice", id),
     },
   };
 

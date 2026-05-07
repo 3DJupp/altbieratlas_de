@@ -47,7 +47,7 @@ window.ATLAS_CONFIG = {
   // Dezimalzahlen ohne Einheit; UI formatiert locale-aware mit "l"
   priceSizes: [0.2, 0.25, 0.4, 0.5],
   // Teilmenge von priceSizes, die in Ranglisten hervorgehoben wird (leer = keine Hervorhebung)
-  highlightedSizes: [],
+  highlightedSizes: [0.25],
   requireModeration: true,
 
   // ============================================================
