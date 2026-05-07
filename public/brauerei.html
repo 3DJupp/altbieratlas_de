@@ -255,7 +255,7 @@ const root = document.getElementById("brewery-root");
     ${styles.length ? `
       <section class="container" style="padding-bottom:40px">
         <div class="eyebrow" data-i18n="brewery.style">Stil</div>
-        <h2 style="margin-top:8px" data-i18n="brewery.stylesTitle">Was hier gebraut wird</h2>
+        <h2 style="margin-top:8px" id="b-styles-title">${window.t(b.type === 'gastronomie' ? 'brewery.stylesTitleGastronomie' : b.type === 'handel' ? 'brewery.stylesTitleHandel' : 'brewery.stylesTitle')}</h2>
         <div class="style-grid">
           ${styles.map((s) => `
             <article class="card style-card">
@@ -414,6 +414,8 @@ const root = document.getElementById("brewery-root");
     }
     const elType = document.getElementById('b-type');
     if (elType) elType.textContent = window.t('type.' + b.type);
+    const elStylesTitle = document.getElementById('b-styles-title');
+    if (elStylesTitle) elStylesTitle.textContent = window.t(b.type === 'gastronomie' ? 'brewery.stylesTitleGastronomie' : b.type === 'handel' ? 'brewery.stylesTitleHandel' : 'brewery.stylesTitle');
     const elSince = document.getElementById('b-since');
     if (elSince) elSince.textContent = window.t('rank.sinceYear') + b.founded;
     if (latest) {

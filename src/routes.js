@@ -771,6 +771,9 @@ export async function adminUpdateBrewery(req, env, { id }) {
       ? (Array.isArray(body.styles) ? body.styles.filter((s) => s && typeof s === "string") : [])
       : null;
     const stmts = [
+      // Defer FK checks to end of transaction so the PK rename doesn't
+      // temporarily violate child-table FK constraints.
+      env.DB.prepare("PRAGMA defer_foreign_keys = ON"),
       env.DB.prepare(`UPDATE breweries SET ${allFields.join(", ")} WHERE id = ?`).bind(...allValues),
       env.DB.prepare("UPDATE brewery_styles SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE prices SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
@@ -1021,6 +1024,71 @@ export async function adminDeleteStyle(req, env, { id }) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare("DELETE FROM styles WHERE id = ?").bind(id).run();
+  if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// GET /api/admin/glossary
+export async function adminListGlossary(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("SELECT * FROM glossary ORDER BY term").all();
+  return json({
+    glossary: res.results.map((g) => ({
+      term: g.term,
+      definition: { de: g.definition_de, en: g.definition_en },
+    })),
+  });
+}
+
+// POST /api/admin/glossary  { term, definition_de, definition_en? }
+export async function adminCreateGlossary(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  let term, definition_de, definition_en;
+  try {
+    term          = str(body.term,          { required: true, max: 200,  name: "term" });
+    definition_de = str(body.definition_de, { required: true, max: 4000, name: "definition_de" });
+    definition_en = str(body.definition_en, { max: 4000, name: "definition_en" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  const existing = await env.DB.prepare("SELECT term FROM glossary WHERE term = ?").bind(term).first();
+  if (existing) return error(409, "term-already-exists");
+  await env.DB.prepare(
+    "INSERT INTO glossary (term, definition_de, definition_en) VALUES (?, ?, ?)"
+  ).bind(term, definition_de, definition_en || null).run();
+  return json({ ok: true }, { status: 201 });
+}
+
+// PUT /api/admin/glossary/:term
+export async function adminUpdateGlossary(req, env, { term }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const fields = [];
+  const values = [];
+  try {
+    if ("definition_de" in body) { fields.push("definition_de = ?"); values.push(str(body.definition_de, { max: 4000, name: "definition_de" })); }
+    if ("definition_en" in body) { fields.push("definition_en = ?"); values.push(str(body.definition_en, { max: 4000, name: "definition_en" }) || null); }
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(term);
+  const res = await env.DB.prepare(`UPDATE glossary SET ${fields.join(", ")} WHERE term = ?`).bind(...values).run();
+  if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/glossary/:term
+export async function adminDeleteGlossary(req, env, { term }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("DELETE FROM glossary WHERE term = ?").bind(term).run();
   if (!res.meta.changes) return error(404, "not-found");
   return json({ ok: true });
 }
