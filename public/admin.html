@@ -200,6 +200,8 @@
         <button class="active" data-tab="dashboard" data-i18n="admin.dashboard">Übersicht</button>
         <button data-tab="contribs" data-i18n="admin.pending">Offene Beiträge</button>
         <button data-tab="breweries" data-i18n="admin.breweries">Brauereien</button>
+        <button data-tab="events" data-i18n="admin.events">Events</button>
+        <button data-tab="prices" data-i18n="admin.prices">Preise</button>
       </div>
 
       <div class="admin-tab-content">
@@ -239,6 +241,86 @@
                 </tr>
               </thead>
               <tbody id="brewery-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Events -->
+        <section id="tab-events">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.eventsSub">Alle gespeicherten Events.</p>
+          <div style="overflow:auto">
+            <table class="brewery-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin.colTitle">Titel</th>
+                  <th data-i18n="admin.colName">Brauerei</th>
+                  <th data-i18n="admin.colDate">Datum</th>
+                  <th data-i18n="admin.colStatus">Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="events-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Preise -->
+        <section id="tab-prices">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.pricesSub">Alle gespeicherten Preismeldungen.</p>
+
+          <!-- Formular: Preis hinzufügen -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.addPrice">Preis hinzufügen</h3>
+            <form id="add-price-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
+              <div class="field" style="margin:0">
+                <label data-i18n="field.brewery">Brauerei</label>
+                <select name="breweryId" required id="price-brewery-select">
+                  <option value="">—</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="field.date">Datum</label>
+                <input name="date" type="date" required />
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="field.size">Größe</label>
+                <select name="size" required id="price-size-select">
+                  <option value="0.25l">0,25 l</option>
+                  <option value="0.33l">0,33 l</option>
+                  <option value="0.4l">0,4 l</option>
+                  <option value="0.5l">0,5 l</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="field.price">Preis (€)</label>
+                <input name="price" type="number" min="0" max="100" step="0.01" required placeholder="2.50" />
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="field.source">Quelle (optional)</label>
+                <input name="source" type="text" maxlength="100" placeholder="vor Ort" />
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:8px">
+                <button class="btn btn-approve" type="submit" data-i18n="admin.addPrice" style="white-space:nowrap">Preis hinzufügen</button>
+              </div>
+            </form>
+            <div id="add-price-msg" style="display:none;margin-top:10px;font-size:13px"></div>
+          </div>
+
+          <!-- Preistabelle -->
+          <div style="overflow:auto">
+            <table class="brewery-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin.colName">Name</th>
+                  <th data-i18n="admin.colDate">Datum</th>
+                  <th data-i18n="admin.colSize">Größe</th>
+                  <th data-i18n="rank.colPrice">Preis</th>
+                  <th data-i18n="admin.colSource">Quelle</th>
+                  <th data-i18n="admin.colStatus">Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="prices-tbody"></tbody>
             </table>
           </div>
         </section>
@@ -455,9 +537,11 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     btn.classList.add("active");
     document.querySelectorAll(".admin-tab-content > section").forEach((s) => s.classList.remove("active"));
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-    if (btn.dataset.tab === "contribs") loadContributions(currentStatus);
+    if (btn.dataset.tab === "contribs")  loadContributions(currentStatus);
     if (btn.dataset.tab === "breweries") loadBreweriesTable();
     if (btn.dataset.tab === "dashboard") loadDashboard();
+    if (btn.dataset.tab === "events")    loadEventsTab();
+    if (btn.dataset.tab === "prices")    loadPricesTab();
   });
 });
 
@@ -642,11 +726,139 @@ async function handleBreweryAction(id, act, rowEl) {
   }
 }
 
+// ============ Events Table ============
+async function loadEventsTab() {
+  const t = window.t;
+  const tbody = document.getElementById("events-tbody");
+  tbody.innerHTML = `<tr><td colspan="5" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
+  try {
+    const r = await window.AtlasAPI.admin.listEvents();
+    const rows = r.events || [];
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noEvents")}</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((ev) => `
+      <tr data-event-id="${ev.id}">
+        <td>${ev.titleDe}${ev.titleEn && ev.titleEn !== ev.titleDe ? `<br><span style="font-size:11px;color:var(--ink-muted)">${ev.titleEn}</span>` : ""}</td>
+        <td>${ev.breweryName || "—"}</td>
+        <td>${ev.date}${ev.time ? " " + ev.time : ""}</td>
+        <td><span class="status-${ev.status}">${ev.status}</span></td>
+        <td class="actions">
+          <button class="btn btn-reject" data-act="delete-event">${t("admin.actionDelete")}</button>
+        </td>
+      </tr>
+    `).join("");
+    window.setLang(window.__atlasLang);
+
+    tbody.querySelectorAll("tr[data-event-id]").forEach((row) => {
+      const id = row.dataset.eventId;
+      row.querySelector("button[data-act='delete-event']").addEventListener("click", async () => {
+        if (!confirm(t("admin.confirmDeleteEvent"))) return;
+        try {
+          await window.AtlasAPI.admin.deleteEvent(id);
+          row.remove();
+          loadDashboard();
+        } catch (e) { alert(t("admin.errorPrefix") + e.message); }
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+// ============ Prices Table ============
+async function loadPricesTab() {
+  const t = window.t;
+  const tbody = document.getElementById("prices-tbody");
+  tbody.innerHTML = `<tr><td colspan="7" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
+
+  // Brauerei-Dropdown befüllen (nur einmal)
+  const sel = document.getElementById("price-brewery-select");
+  if (sel.options.length <= 1) {
+    try {
+      const br = await window.AtlasAPI.admin.listBreweries();
+      (br.breweries || []).forEach((b) => {
+        const opt = document.createElement("option");
+        opt.value = b.id;
+        opt.textContent = `${b.name} · ${b.city}`;
+        sel.appendChild(opt);
+      });
+    } catch {}
+  }
+
+  try {
+    const r = await window.AtlasAPI.admin.listPrices();
+    const rows = r.prices || [];
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noPrices")}</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((p) => `
+      <tr data-price-id="${p.id}">
+        <td>${p.breweryName || p.breweryId}</td>
+        <td>${p.date}</td>
+        <td>${window.formatSize ? window.formatSize(String(p.size)) : p.size}</td>
+        <td style="font-family:var(--font-mono);color:var(--copper)">€ ${window.formatPrice ? window.formatPrice(p.price) : p.price.toFixed(2)}</td>
+        <td>${p.source || "—"}</td>
+        <td><span class="status-${p.status}">${p.status}</span></td>
+        <td class="actions">
+          <button class="btn btn-reject" data-act="delete-price">${t("admin.actionDelete")}</button>
+        </td>
+      </tr>
+    `).join("");
+    window.setLang(window.__atlasLang);
+
+    tbody.querySelectorAll("tr[data-price-id]").forEach((row) => {
+      const id = row.dataset.priceId;
+      row.querySelector("button[data-act='delete-price']").addEventListener("click", async () => {
+        if (!confirm(t("admin.confirmDeletePrice"))) return;
+        try {
+          await window.AtlasAPI.admin.deletePrice(id);
+          row.remove();
+          loadDashboard();
+        } catch (e) { alert(t("admin.errorPrefix") + e.message); }
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+document.getElementById("add-price-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = window.t;
+  const msg = document.getElementById("add-price-msg");
+  msg.style.display = "none";
+  const fd = new FormData(e.target);
+  try {
+    await window.AtlasAPI.admin.addPrice({
+      breweryId: fd.get("breweryId"),
+      date:      fd.get("date"),
+      size:      fd.get("size"),
+      price:     parseFloat(fd.get("price")),
+      source:    fd.get("source") || null,
+    });
+    msg.textContent = t("admin.priceAdded");
+    msg.style.color = "#2d7a2d";
+    msg.style.display = "block";
+    e.target.reset();
+    loadPricesTab();
+    loadDashboard();
+  } catch (err) {
+    msg.textContent = t("admin.errorPrefix") + (err.detail?.detail || err.message);
+    msg.style.color = "#9b1f1f";
+    msg.style.display = "block";
+  }
+});
+
 // Bei Sprachwechsel die dynamisch gerenderten Bereiche neu zeichnen
 document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-breweries.active")) loadBreweriesTable();
-  if (document.querySelector("#tab-contribs.active")) loadContributions(currentStatus);
+  if (document.querySelector("#tab-contribs.active"))  loadContributions(currentStatus);
   if (document.querySelector("#tab-dashboard.active") && me) loadDashboard();
+  if (document.querySelector("#tab-events.active"))    loadEventsTab();
+  if (document.querySelector("#tab-prices.active"))    loadPricesTab();
 });
 </script>
 </body>
