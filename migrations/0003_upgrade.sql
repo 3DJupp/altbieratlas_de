@@ -11,12 +11,18 @@
 --   • breweries: neues Feld maps_url wird ergänzt; der hardcodierte
 --     CHECK (type IN (...)) wird durch einen FK auf venue_types ersetzt;
 --     alte Typ-IDs (brewery/pub/shop) werden migriert.
+--
+-- WICHTIG: Cloudflare D1 setzt PRAGMA foreign_keys = ON pro Verbindung.
+-- Um einen unbeabsichtigten ON DELETE CASCADE auf prices/brewery_styles
+-- beim Ersetzen der breweries-Tabelle zu verhindern, werden alle
+-- Kind-Tabellen vor dem DROP temporär umbenannt und danach zurückbenannt.
 -- ============================================================
 
-PRAGMA foreign_keys = OFF;
-PRAGMA defer_foreign_keys = ON;
+-- ---- 1. Kind-Tabellen sichern (verhindert Cascade-Verlust) ----
+ALTER TABLE prices          RENAME TO prices_bak;
+ALTER TABLE brewery_styles  RENAME TO brewery_styles_bak;
 
--- ---- 1. Neue venue_types anlegen ----
+-- ---- 2. Neue venue_types anlegen ----
 DROP TABLE IF EXISTS venue_types;
 CREATE TABLE venue_types (
   id        TEXT PRIMARY KEY,
@@ -26,11 +32,11 @@ CREATE TABLE venue_types (
   header_en TEXT
 );
 INSERT INTO venue_types (id, name_de, name_en, header_de, header_en) VALUES
-  ('hausbrauerei', 'Hausbrauerei', 'Brewery',        'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here'),
-  ('gastronomie',  'Gastronomie',  'Bar / Restaurant','Was hier ausgeschenkt wird',             'What is served here'),
-  ('handel',       'Handel',       'Retail',          'Was hier erhältlich ist',                'What is available here');
+  ('hausbrauerei', 'Hausbrauerei', 'Brewery',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here'),
+  ('gastronomie',  'Gastronomie',  'Bar / Restaurant', 'Was hier ausgeschenkt wird',             'What is served here'),
+  ('handel',       'Handel',       'Retail',           'Was hier erhältlich ist',                'What is available here');
 
--- ---- 2. Breweries neu anlegen (maps_url + FK statt CHECK) ----
+-- ---- 3. Breweries neu anlegen (maps_url + FK statt CHECK) ----
 CREATE TABLE breweries_new (
   id             TEXT PRIMARY KEY,
   name           TEXT NOT NULL,
@@ -76,4 +82,6 @@ CREATE INDEX IF NOT EXISTS idx_breweries_city    ON breweries(city);
 CREATE INDEX IF NOT EXISTS idx_breweries_status  ON breweries(status);
 CREATE INDEX IF NOT EXISTS idx_breweries_country ON breweries(country);
 
-PRAGMA foreign_keys = ON;
+-- ---- 4. Kind-Tabellen zurückbenennen ----
+ALTER TABLE prices_bak         RENAME TO prices;
+ALTER TABLE brewery_styles_bak RENAME TO brewery_styles;
