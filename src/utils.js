@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.4.0";
+export const APP_VERSION = "0.4.1";
 
 export const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -576,6 +576,7 @@ export function brewRow(r, styles = []) {
     city: r.city,
     country: r.country,
     address: r.address,
+    mapsUrl: r.maps_url || null,
     coords: [r.lat, r.lng],
     founded: r.founded,
     website: r.website,
