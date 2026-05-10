@@ -1,16 +1,9 @@
 -- ============================================================
 -- Altbieratlas — Seed data
 -- ============================================================
--- Venue types, styles, glossary, breweries, prices and events
--- for every deployment (dev, staging and production).
+-- Styles, glossary, breweries, prices and events for every
+-- deployment (dev, staging and production).
 -- All statements are idempotent (INSERT OR IGNORE).
--- ============================================================
-
--- Venue types (must come before breweries due to FK)
-INSERT OR IGNORE INTO venue_types (id, name_de, name_en, header_de, header_en) VALUES
-  ('hausbrauerei', 'Hausbrauerei', 'Brewery',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here'),
-  ('gastronomie',  'Gastronomie',  'Bar / Restaurant', 'Was hier ausgeschenkt wird',             'What is served here'),
-  ('handel',       'Handel',       'Retail',           'Was hier erhältlich ist',                'What is available here');
 -- ============================================================
 
 -- Beer styles

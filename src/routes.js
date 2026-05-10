@@ -749,8 +749,8 @@ export async function adminUpdateBrewery(req, env, { id }) {
   const values = [];
   const allow = {
     name: "name", short: "short_name", type: "type", city: "city", country: "country",
-    address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
-    website: "website", description_de: "description_de", description_en: "description_en",
+    address: "address", lat: "lat", lng: "lng", founded: "founded", website: "website",
+    description_de: "description_de", description_en: "description_en",
     verified: "verified", status: "status",
   };
   for (const [k, col] of Object.entries(allow)) {
@@ -853,17 +853,6 @@ export async function adminUpdateEvent(req, env, { id }) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
 
-  // Optionale ID-Umbenennung
-  let newId = null;
-  if ("new_id" in body) {
-    const candidate = str(body.new_id, { max: 100, name: "new_id" });
-    if (candidate && candidate !== id) {
-      const exists = await env.DB.prepare("SELECT id FROM events WHERE id = ?").bind(candidate).first();
-      if (exists) return error(409, "id-already-exists");
-      newId = candidate;
-    }
-  }
-
   const fields = [];
   const values = [];
   const allow = {
@@ -874,12 +863,10 @@ export async function adminUpdateEvent(req, env, { id }) {
   for (const [k, col] of Object.entries(allow)) {
     if (k in body) { fields.push(`${col} = ?`); values.push(body[k]); }
   }
-
-  if (newId) fields.push("id = ?"), values.push(newId);
   if (!fields.length) return error(400, "no-fields");
   values.push(id);
   await env.DB.prepare(`UPDATE events SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
-  return json({ ok: true, new_id: newId || undefined });
+  return json({ ok: true });
 }
 
 // GET /api/admin/prices
@@ -1104,171 +1091,6 @@ export async function adminDeleteGlossary(req, env, { term }) {
   const res = await env.DB.prepare("DELETE FROM glossary WHERE term = ?").bind(term).run();
   if (!res.meta.changes) return error(404, "not-found");
   return json({ ok: true });
-}
-
-// ============================================================
-//  VENUE TYPES (Admin)
-// ============================================================
-
-// GET /api/admin/venue-types
-export async function adminListVenueTypes(req, env) {
-  const auth = await requireAdmin(req, env);
-  if (!auth.ok) return auth.res;
-  const res = await env.DB.prepare("SELECT * FROM venue_types ORDER BY id").all();
-  return json({
-    venueTypes: res.results.map((r) => ({
-      id: r.id, nameDe: r.name_de, nameEn: r.name_en,
-      headerDe: r.header_de, headerEn: r.header_en,
-    })),
-  });
-}
-
-// POST /api/admin/venue-types  { id, name_de, name_en?, header_de?, header_en? }
-export async function adminCreateVenueType(req, env) {
-  const auth = await requireAdmin(req, env);
-  if (!auth.ok) return auth.res;
-  const body = await req.json().catch(() => null);
-  if (!body) return error(400, "invalid-json");
-
-  let id, name_de, name_en, header_de, header_en;
-  try {
-    id        = str(body.id,        { required: true, max: 50,   name: "id" });
-    name_de   = str(body.name_de,   { required: true, max: 200,  name: "name_de" });
-    name_en   = str(body.name_en,   { max: 200,  name: "name_en" });
-    header_de = str(body.header_de, { max: 1000, name: "header_de" });
-    header_en = str(body.header_en, { max: 1000, name: "header_en" });
-  } catch (e) {
-    return error(400, "validation-failed", { detail: e.message });
-  }
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return error(400, "invalid-id-format");
-  const exists = await env.DB.prepare("SELECT id FROM venue_types WHERE id = ?").bind(id).first();
-  if (exists) return error(409, "id-already-exists");
-  await env.DB.prepare(
-    "INSERT INTO venue_types (id, name_de, name_en, header_de, header_en) VALUES (?, ?, ?, ?, ?)"
-  ).bind(id, name_de, name_en || null, header_de || null, header_en || null).run();
-  return json({ ok: true }, { status: 201 });
-}
-
-// PUT /api/admin/venue-types/:id
-export async function adminUpdateVenueType(req, env, { id }) {
-  const auth = await requireAdmin(req, env);
-  if (!auth.ok) return auth.res;
-  const body = await req.json().catch(() => null);
-  if (!body) return error(400, "invalid-json");
-
-  const fields = [];
-  const values = [];
-  try {
-    if ("name_de"   in body) { fields.push("name_de = ?");   values.push(str(body.name_de,   { required: true, max: 200,  name: "name_de" })); }
-    if ("name_en"   in body) { fields.push("name_en = ?");   values.push(str(body.name_en,   { max: 200,  name: "name_en" }) || null); }
-    if ("header_de" in body) { fields.push("header_de = ?"); values.push(str(body.header_de, { max: 1000, name: "header_de" }) || null); }
-    if ("header_en" in body) { fields.push("header_en = ?"); values.push(str(body.header_en, { max: 1000, name: "header_en" }) || null); }
-  } catch (e) {
-    return error(400, "validation-failed", { detail: e.message });
-  }
-  if (!fields.length) return error(400, "no-fields");
-  values.push(id);
-  const res = await env.DB.prepare(`UPDATE venue_types SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
-  if (!res.meta.changes) return error(404, "not-found");
-  return json({ ok: true });
-}
-
-// DELETE /api/admin/venue-types/:id
-export async function adminDeleteVenueType(req, env, { id }) {
-  const auth = await requireAdmin(req, env);
-  if (!auth.ok) return auth.res;
-  const inUse = await env.DB.prepare("SELECT COUNT(*) AS n FROM breweries WHERE type = ?").bind(id).first();
-  if (inUse?.n > 0) return error(409, "type-in-use", { count: inUse.n });
-  const res = await env.DB.prepare("DELETE FROM venue_types WHERE id = ?").bind(id).run();
-  if (!res.meta.changes) return error(404, "not-found");
-  return json({ ok: true });
-}
-
-// ============================================================
-//  BREWERY CREATE (Admin)
-// ============================================================
-
-// POST /api/admin/breweries
-export async function adminCreateBrewery(req, env) {
-  const auth = await requireAdmin(req, env);
-  if (!auth.ok) return auth.res;
-  const body = await req.json().catch(() => null);
-  if (!body) return error(400, "invalid-json");
-
-  let id, name, shortName, type, city, country, address, mapsUrl, lat, lng, founded, website, descDe, descEn;
-  try {
-    id        = str(body.id,             { required: true, max: 80,   name: "id" });
-    name      = str(body.name,           { required: true, max: 200,  name: "name" });
-    shortName = str(body.short,          { max: 100,  name: "short" });
-    type      = str(body.type,           { required: true, max: 50,   name: "type" });
-    city      = str(body.city,           { required: true, max: 100,  name: "city" });
-    country   = str(body.country,        { max: 5,    name: "country" }) || "DE";
-    address   = str(body.address,        { max: 300,  name: "address" });
-    mapsUrl   = str(body.maps_url,       { max: 1000, name: "maps_url" });
-    lat       = num(body.lat,            { required: true, min: -90,  max: 90,  name: "lat" });
-    lng       = num(body.lng,            { required: true, min: -180, max: 180, name: "lng" });
-    founded   = body.founded != null && body.founded !== "" ? parseInt(body.founded, 10) : null;
-    website   = str(body.website,        { max: 500,  name: "website" });
-    descDe    = str(body.description_de, { max: 2000, name: "description_de" });
-    descEn    = str(body.description_en, { max: 2000, name: "description_en" });
-  } catch (e) {
-    return error(400, "validation-failed", { detail: e.message });
-  }
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return error(400, "invalid-id-format");
-  const exists = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(id).first();
-  if (exists) return error(409, "id-already-exists");
-
-  await env.DB.prepare(
-    `INSERT INTO breweries
-       (id, name, short_name, type, city, country, address, maps_url, lat, lng,
-        founded, website, description_de, description_en, verified, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'approved')`
-  ).bind(id, name, shortName || null, type, city, country, address || null, mapsUrl || null,
-         lat, lng, founded, website || null, descDe || null, descEn || null).run();
-  return json({ ok: true, id }, { status: 201 });
-}
-
-// ============================================================
-//  EVENT CREATE (Admin)
-// ============================================================
-
-// POST /api/admin/events  { id, title_de, title_en?, brewery_id?, date, time?, location?, url?, description_de?, description_en?, status? }
-export async function adminCreateEvent(req, env) {
-  const auth = await requireAdmin(req, env);
-  if (!auth.ok) return auth.res;
-  const body = await req.json().catch(() => null);
-  if (!body) return error(400, "invalid-json");
-
-  let id, titleDe, titleEn, breweryId, date, time, location, url, descDe, descEn, status;
-  try {
-    id        = str(body.id,             { required: true, max: 100,  name: "id" });
-    titleDe   = str(body.title_de,       { required: true, max: 200,  name: "title_de" });
-    titleEn   = str(body.title_en,       { max: 200,  name: "title_en" });
-    breweryId = str(body.brewery_id,     { max: 80,   name: "brewery_id" });
-    date      = str(body.date,           { required: true, max: 20,   name: "date" });
-    time      = str(body.time,           { max: 10,   name: "time" });
-    location  = str(body.location,       { max: 300,  name: "location" });
-    url       = str(body.url,            { max: 500,  name: "url" });
-    descDe    = str(body.description_de, { max: 2000, name: "description_de" });
-    descEn    = str(body.description_en, { max: 2000, name: "description_en" });
-    status    = oneOf(body.status, ["pending", "approved", "rejected"]) || "approved";
-  } catch (e) {
-    return error(400, "validation-failed", { detail: e.message });
-  }
-  const exists = await env.DB.prepare("SELECT id FROM events WHERE id = ?").bind(id).first();
-  if (exists) return error(409, "id-already-exists");
-
-  await env.DB.prepare(
-    `INSERT INTO events
-       (id, title_de, title_en, brewery_id, date, time, location, url,
-        description_de, description_en, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(
-    id, titleDe, titleEn || titleDe, breweryId || null, date,
-    time || null, location || null, url || null,
-    descDe || null, descEn || null, status,
-  ).run();
-  return json({ ok: true, id }, { status: 201 });
 }
 
 // GET /api/admin/stats

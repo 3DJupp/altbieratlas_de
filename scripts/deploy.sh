@@ -40,8 +40,6 @@ if [ "$SEED" = true ]; then
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
   echo "▶ Seeding data (styles, glossary, breweries, prices, events)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_seed.sql
-  echo "▶ Applying upgrade (venue_types schema, breweries maps_url + FK)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
 fi
 
 echo "▶ Worker deployen..."

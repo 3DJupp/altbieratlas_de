@@ -1,29 +1,16 @@
 -- ============================================================
--- Altbieratlas — D1 Schema (SQLite) · Final state
+-- Altbieratlas — D1 Schema (SQLite)
 -- ============================================================
--- Idempotent: CREATE TABLE IF NOT EXISTS + CREATE INDEX IF NOT EXISTS.
--- Für bestehende Installationen zusätzlich 0003_upgrade.sql anwenden.
--- ============================================================
-
--- Venue-Typen (Hausbrauerei, Gastronomie, Handel …)
-CREATE TABLE IF NOT EXISTS venue_types (
-  id        TEXT PRIMARY KEY,
-  name_de   TEXT NOT NULL,
-  name_en   TEXT,
-  header_de TEXT,
-  header_en TEXT
-);
 
 -- Breweries / taprooms / retail
 CREATE TABLE IF NOT EXISTS breweries (
   id             TEXT PRIMARY KEY,
   name           TEXT NOT NULL,
   short_name     TEXT,
-  type           TEXT NOT NULL REFERENCES venue_types(id),
+  type           TEXT NOT NULL CHECK (type IN ('hausbrauerei','gastronomie','handel')),
   city           TEXT NOT NULL,
   country        TEXT NOT NULL DEFAULT 'DE',
   address        TEXT,
-  maps_url       TEXT,
   lat            REAL NOT NULL,
   lng            REAL NOT NULL,
   founded        INTEGER,
@@ -75,6 +62,9 @@ CREATE TABLE IF NOT EXISTS prices (
 CREATE INDEX IF NOT EXISTS idx_prices_brewery ON prices(brewery_id);
 CREATE INDEX IF NOT EXISTS idx_prices_date    ON prices(date DESC);
 CREATE INDEX IF NOT EXISTS idx_prices_status  ON prices(status);
+-- Dedup for idempotent seeding: same price on the same day from the same source
+-- is not inserted twice. User contributions are rarely identical and usually have
+-- their own "source" value.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_prices_seed
   ON prices(brewery_id, date, size, price, COALESCE(source, ''));
 
@@ -106,9 +96,9 @@ CREATE TABLE IF NOT EXISTS glossary (
 
 -- Contribution queue (moderation pipeline)
 CREATE TABLE IF NOT EXISTS contributions (
-  id              TEXT PRIMARY KEY,
+  id              TEXT PRIMARY KEY,              -- UUID
   type            TEXT NOT NULL CHECK (type IN ('price','brewery','style','correction','event')),
-  payload         TEXT NOT NULL,
+  payload         TEXT NOT NULL,                 -- JSON string
   submitter_email TEXT,
   submitter_ip    TEXT,
   status          TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
@@ -138,7 +128,7 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON admin_sessions(expires_at);
 
--- Password reset tokens (1h TTL)
+-- Einmalige, zeitlich begrenzte Passwort-Reset-Token (1h Gültigkeit)
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   token      TEXT PRIMARY KEY,
   username   TEXT NOT NULL,
@@ -148,17 +138,17 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_reset_expires ON password_reset_tokens(expires_at);
 
--- Rate limiting (IP + time window)
+-- Rate limiting (simple: count per IP + time window)
 CREATE TABLE IF NOT EXISTS rate_limits (
-  bucket     TEXT PRIMARY KEY,
+  bucket     TEXT PRIMARY KEY,  -- e.g. "contrib:<ip>:<YYYYMMDDHH>"
   counter    INTEGER NOT NULL DEFAULT 0,
   expires_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_rate_expires ON rate_limits(expires_at);
 
--- Untappd cache (24h TTL per brewery)
+-- Untappd cache (24 h TTL per brewery)
 CREATE TABLE IF NOT EXISTS untappd_cache (
   atlas_id  TEXT PRIMARY KEY,
-  data      TEXT NOT NULL,
+  data      TEXT NOT NULL,       -- JSON: { found, untappdId, name, rating, beerCount, ... }
   cached_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
