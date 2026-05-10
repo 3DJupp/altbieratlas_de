@@ -1,4 +1,4 @@
-# Altbieratlas · v0.4.0
+# Altbieratlas · v0.4.1
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -26,11 +26,12 @@ altbieratlas/
 │   ├── robots.txt
 │   └── favicon.svg …
 ├── migrations/
-│   ├── 0001_schema.sql      # Alle Tabellen, Indizes, FK-Kaskaden
-│   └── 0002_seed.sql        # Alle Seed-Daten (Stile, Glossar, Brauereien, Preise, Events)
+│   ├── 0001_schema.sql      # Alle Tabellen, Indizes, FK-Kaskaden (Neuinstallation)
+│   ├── 0002_seed.sql        # Stile, Glossar, Venue-Typen, Brauereien, Preise, Events
+│   └── 0003_upgrade.sql     # Upgrade bestehender Installationen (venue_types + maps_url)
 ├── scripts/
 │   ├── create-admin.mjs     # Admin-User anlegen
-│   ├── db-setup.sh          # DB-Setup (Schema + Seed)
+│   ├── db-setup.sh          # DB-Setup (Schema + Seed + Upgrade)
 │   └── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen)
 ├── wrangler.toml
 └── package.json
@@ -65,7 +66,6 @@ npx wrangler d1 create altbieratlas
 Am einfachsten **direkt beim ersten Deploy** über `deploy.sh --seed`:
 
 ```bash
-# Ersteinrichtung: Schema + Seed-Daten + Deploy
 bash scripts/deploy.sh --seed
 ```
 
@@ -78,11 +78,12 @@ bash scripts/db-setup.sh [--remote]
 | Datei | Inhalt |
 |---|---|
 | `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden |
-| `0002_seed.sql` | Bierstile, Glossar, Brauereien, Preise, Events |
+| `0002_seed.sql` | Venue-Typen, Bierstile, Glossar, Brauereien, Preise, Events |
+| `0003_upgrade.sql` | Upgrade für bestehende Installationen (neues `venue_types`-Schema, `maps_url`-Spalte) |
 
-Beide Dateien sind idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`) — das Setup kann mehrfach ausgeführt werden.
+`0001` und `0002` sind idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). `0003` ist für bestehende Installationen gedacht und kann wiederholt ausgeführt werden.
 
-**Alternative (D1-Dashboard-Console):** *Workers & Pages → D1 → altbieratlas → Console* — beide SQL-Dateien nacheinander einfügen und ausführen.
+**Alternative (D1-Dashboard-Console):** *Workers & Pages → D1 → altbieratlas → Console* — die SQL-Dateien nacheinander einfügen und ausführen.
 
 #### Schritt 3 — Admin-User anlegen
 
@@ -138,7 +139,7 @@ Deploy-Flags:
 
 ```bash
 bash scripts/deploy.sh          # Standard — jeder Push auf main
-bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
+bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
 ```
 
 ### 1.3 Build-Variablen setzen
@@ -222,9 +223,12 @@ Fünf Einreichungstypen mit Moderation:
 ### Moderations-Dashboard (`admin.html`)
 - **Übersicht** — Statistiken + neueste offene Beiträge
 - **Beiträge** — Approve / Reject mit optionaler Notiz
-- **Brauereien** — Alle Einträge, verifizieren, löschen
-- **Events** — Alle Events einsehen und löschen
+- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL), verifizieren, löschen; neue Brauereien direkt anlegen
+- **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung), löschen; neue Events direkt anlegen
 - **Preise** — Alle Preise einsehen, löschen; neue Preise direkt eintragen
+- **Stile** — Bierstile anlegen, bearbeiten, löschen
+- **Glossar** — Einträge anlegen, bearbeiten, löschen
+- **Typen** — Venue-Typen (Hausbrauerei, Gastronomie, Handel) anlegen, bearbeiten, löschen (inkl. ID, Namen DE/EN, Header-Text DE/EN)
 - **Passwort-Reset per E-Mail** (DE/EN)
 - Mobile-optimierte Tab-Navigation
 
@@ -290,13 +294,29 @@ Für reines UI-Testen einfach `index.html` im Browser öffnen — `api-client.js
 | POST | `/api/admin/contributions/:id/approve` | Freigabe |
 | POST | `/api/admin/contributions/:id/reject` | Ablehnen |
 | GET | `/api/admin/breweries` | Alle Brauereien |
+| POST | `/api/admin/breweries` | Neue Brauerei anlegen |
 | PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten |
 | DELETE | `/api/admin/breweries/:id` | Brauerei löschen |
 | GET | `/api/admin/events` | Alle Events |
+| POST | `/api/admin/events` | Neues Event anlegen |
+| PUT | `/api/admin/events/:id` | Event bearbeiten (inkl. ID-Umbenennung via `new_id`) |
 | DELETE | `/api/admin/events/:id` | Event löschen |
 | GET | `/api/admin/prices` | Alle Preise |
 | POST | `/api/admin/prices` | Preis direkt anlegen |
+| PUT | `/api/admin/prices/:id` | Preis bearbeiten |
 | DELETE | `/api/admin/prices/:id` | Preis löschen |
+| GET | `/api/admin/styles` | Alle Bierstile |
+| POST | `/api/admin/styles` | Stil anlegen |
+| PUT | `/api/admin/styles/:id` | Stil bearbeiten |
+| DELETE | `/api/admin/styles/:id` | Stil löschen |
+| GET | `/api/admin/glossary` | Alle Glossar-Einträge |
+| POST | `/api/admin/glossary` | Eintrag anlegen |
+| PUT | `/api/admin/glossary/:term` | Eintrag bearbeiten |
+| DELETE | `/api/admin/glossary/:term` | Eintrag löschen |
+| GET | `/api/admin/venue-types` | Alle Venue-Typen |
+| POST | `/api/admin/venue-types` | Venue-Typ anlegen |
+| PUT | `/api/admin/venue-types/:id` | Venue-Typ bearbeiten |
+| DELETE | `/api/admin/venue-types/:id` | Venue-Typ löschen |
 
 ---
 
