@@ -1,4 +1,4 @@
-# Altbieratlas · v0.4.1
+# Altbieratlas · v0.4.2
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
