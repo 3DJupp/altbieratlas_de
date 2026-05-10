@@ -576,6 +576,7 @@ export function brewRow(r, styles = []) {
     city: r.city,
     country: r.country,
     address: r.address,
+    mapsUrl: r.maps_url || null,
     coords: [r.lat, r.lng],
     founded: r.founded,
     website: r.website,

@@ -220,6 +220,12 @@
       createGlossaryTerm:  (body) => req("/admin/glossary", { method: "POST", body }),
       updateGlossaryTerm:  (term, patch) => req(`/admin/glossary/${encodeURIComponent(term)}`, { method: "PUT", body: patch }),
       deleteGlossaryTerm:  (term) => req(`/admin/glossary/${encodeURIComponent(term)}`, { method: "DELETE" }),
+      createBrewery:       (body) => req("/admin/breweries", { method: "POST", body }),
+      createEvent:         (body) => req("/admin/events", { method: "POST", body }),
+      listVenueTypes:      () => req("/admin/venue-types"),
+      createVenueType:     (body) => req("/admin/venue-types", { method: "POST", body }),
+      updateVenueType:     (id, patch) => req(`/admin/venue-types/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      deleteVenueType:     (id) => req(`/admin/venue-types/${encodeURIComponent(id)}`, { method: "DELETE" }),
     },
   };
 
@@ -283,6 +289,12 @@
       createGlossaryTerm:  (b) => window.AtlasAPI.admin._gate("createGlossaryTerm", b),
       updateGlossaryTerm:  (t, p) => window.AtlasAPI.admin._gate("updateGlossaryTerm", t, p),
       deleteGlossaryTerm:  (t) => window.AtlasAPI.admin._gate("deleteGlossaryTerm", t),
+      createBrewery:       (b) => window.AtlasAPI.admin._gate("createBrewery", b),
+      createEvent:         (b) => window.AtlasAPI.admin._gate("createEvent", b),
+      listVenueTypes:      () => window.AtlasAPI.admin._gate("listVenueTypes"),
+      createVenueType:     (b) => window.AtlasAPI.admin._gate("createVenueType", b),
+      updateVenueType:     (id, p) => window.AtlasAPI.admin._gate("updateVenueType", id, p),
+      deleteVenueType:     (id) => window.AtlasAPI.admin._gate("deleteVenueType", id),
     },
   };
 
