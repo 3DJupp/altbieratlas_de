@@ -561,12 +561,8 @@
               </div>
               <div class="field" style="margin:0">
                 <label data-i18n="field.size">Größe</label>
-                <select name="size" required id="price-size-select">
-                  <option value="0.25l">0,25 l</option>
-                  <option value="0.33l">0,33 l</option>
-                  <option value="0.4l">0,4 l</option>
-                  <option value="0.5l">0,5 l</option>
-                </select>
+                <select name="size" required id="price-size-select" onchange="handleAdminSizeChange(this)"></select>
+                <input id="price-size-custom" type="text" maxlength="20" placeholder="z. B. 1l" style="display:none;margin-top:6px" />
               </div>
               <div class="field" style="margin:0">
                 <label data-i18n="field.price">Preis (€)</label>
@@ -1102,6 +1098,30 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     if (btn.dataset.tab === "glossary")    loadGlossaryTab();
   });
 });
+
+// ============ Size Select ============
+function buildAdminSizeSelect() {
+  const sel = document.getElementById("price-size-select");
+  if (!sel) return;
+  const sizes = window.ATLAS_CONFIG.priceSizes || [0.2, 0.25, 0.4, 0.5];
+  const otherLabel = window.__atlasLang === "en" ? "Other…" : "Andere…";
+  sel.innerHTML = sizes.map((s) => {
+    const num = typeof s === "number" ? s : parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+    const val = String(num);
+    const label = window.formatSize ? window.formatSize(val) : val + " l";
+    const isDefault = Math.abs(num - 0.25) < 0.001;
+    return `<option value="${val}"${isDefault ? " selected" : ""}>${label}</option>`;
+  }).join("") + `<option value="custom">${otherLabel}</option>`;
+}
+
+function handleAdminSizeChange(sel) {
+  const custom = document.getElementById("price-size-custom");
+  if (!custom) return;
+  custom.style.display = sel.value === "custom" ? "" : "none";
+  if (sel.value === "custom") custom.focus();
+}
+
+buildAdminSizeSelect();
 
 // ============ Show Admin ============
 async function showAdmin() {
@@ -1965,11 +1985,18 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
   const msg = document.getElementById("add-price-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
+  let size = fd.get("size");
+  if (size === "custom") {
+    const raw = document.getElementById("price-size-custom").value.trim();
+    if (!raw) { msg.textContent = "Bitte Größe eingeben."; msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
+    const n = parseFloat(raw.replace(",", ".").replace(/\s*l$/i, ""));
+    size = isNaN(n) ? raw : n + "l";
+  }
   try {
     await window.AtlasAPI.admin.addPrice({
       breweryId: fd.get("breweryId"),
       date:      fd.get("date"),
-      size:      fd.get("size"),
+      size,
       price:     parseFloat(fd.get("price")),
       source:    fd.get("source") || null,
     });
@@ -1977,6 +2004,7 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
+    document.getElementById("price-size-custom").style.display = "none";
     loadPricesTab();
     loadDashboard();
   } catch (err) {

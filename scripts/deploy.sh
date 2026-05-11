@@ -10,14 +10,14 @@
 #
 # Verwendung:
 #   bash scripts/deploy.sh              # nur Worker deployen (Standard)
-#   bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + alle Upgrades + Deploy
-#   bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003 + 0004) + Deploy
+#   bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
+#   bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (nur 0003) + Deploy
 #
-# --seed:    Spielt 0001 (Schema), 0002 (Seed), 0003 + 0004 (Upgrades) ein.
+# --seed:    Spielt 0001 (Schema inkl. Events/Event-Biere), 0002 (Seed), 0003 (Upgrade) ein.
 #            Für Erstinstallationen oder vollständige Neueinrichtung.
-# --migrate: Spielt nur die Upgrade-Migrationen 0003 + 0004 ein (idempotent).
-#            Für bestehende Installationen, die auf den aktuellen Stand gebracht
-#            werden sollen, ohne Seed-Daten zu verändern.
+# --migrate: Spielt nur 0003 (venue_types + maps_url) ein (idempotent).
+#            Für bestehende Installationen ohne Seed-Daten zu verändern.
+#            Hinweis: end_date/end_time + event_beers ggf. manuell per ALTER TABLE ergänzen.
 # ============================================================
 set -euo pipefail
 
@@ -42,21 +42,17 @@ sed -i \
   wrangler.toml
 
 if [ "$SEED" = true ]; then
-  echo "▶ Applying schema..."
+  echo "▶ Applying schema (inkl. Events, Event-Biere)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
   echo "▶ Seeding data (styles, glossary, breweries, prices, events)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_seed.sql
   echo "▶ Applying upgrade 0003 (venue_types schema, breweries maps_url + FK)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
-  echo "▶ Applying upgrade 0004 (mehrtägige Events + Event-Biere)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_multiday_events.sql
 fi
 
 if [ "$MIGRATE" = true ]; then
   echo "▶ Applying upgrade 0003 (venue_types schema, breweries maps_url + FK)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
-  echo "▶ Applying upgrade 0004 (mehrtägige Events + Event-Biere)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_multiday_events.sql
 fi
 
 echo "▶ Worker deployen..."

@@ -80,9 +80,10 @@ bash scripts/db-setup.sh [--remote]
 | `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden (Neuinstallation) |
 | `0002_seed.sql` | Venue-Typen, Bierstile, Glossar, Brauereien, Preise, Events |
 | `0003_upgrade.sql` | Upgrade für bestehende Installationen (neues `venue_types`-Schema, `maps_url`-Spalte) |
-| `0004_multiday_events.sql` | Upgrade für bestehende Installationen (mehrtägige Events, `event_beers`-Tabelle) |
 
-`0001` und `0002` sind idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). `0003` und `0004` sind für bestehende Installationen gedacht und können wiederholt ausgeführt werden.
+`0001` und `0002` sind idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). `0003` ist für bestehende Installationen gedacht und kann wiederholt ausgeführt werden.
+
+> **Mehrtägige Events & Event-Biere** (`end_date`, `end_time`, `event_beers`) sind seit `0001` im Schema enthalten — Neuinstallationen benötigen keinen separaten Upgrade-Schritt. Bestehende Installationen, die diese Spalten noch nicht haben, fügen sie manuell per `ALTER TABLE events ADD COLUMN end_date TEXT; ALTER TABLE events ADD COLUMN end_time TEXT;` und `CREATE TABLE IF NOT EXISTS event_beers (…)` hinzu.
 
 > ⚠️ **Wichtig: FK-Kaskaden und Datenverlust**
 >
@@ -148,11 +149,9 @@ Deploy-Flags:
 
 ```bash
 bash scripts/deploy.sh              # Standard — jeder Push auf main (nur Worker)
-bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + alle Upgrades + Deploy
-bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003 + 0004) + Deploy
+bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
+bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003) + Deploy
 ```
-
-> Beim ersten Deployment nach diesem Update `--migrate` verwenden, damit `end_date`, `end_time` und die `event_beers`-Tabelle angelegt werden.
 
 ### 1.3 Build-Variablen setzen
 
