@@ -236,6 +236,8 @@
       createVenueType:     (body) => req("/admin/venue-types", { method: "POST", body }),
       updateVenueType:     (id, patch) => req(`/admin/venue-types/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
       deleteVenueType:     (id) => req(`/admin/venue-types/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      getSettings:         () => req("/admin/settings"),
+      updateSettings:      (body) => req("/admin/settings", { method: "PUT", body }),
     },
   };
 
@@ -310,6 +312,8 @@
       createVenueType:     (b) => window.AtlasAPI.admin._gate("createVenueType", b),
       updateVenueType:     (id, p) => window.AtlasAPI.admin._gate("updateVenueType", id, p),
       deleteVenueType:     (id) => window.AtlasAPI.admin._gate("deleteVenueType", id),
+      getSettings:         () => window.AtlasAPI.admin._gate("getSettings"),
+      updateSettings:      (b) => window.AtlasAPI.admin._gate("updateSettings", b),
     },
   };
 

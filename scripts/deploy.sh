@@ -11,13 +11,12 @@
 # Verwendung:
 #   bash scripts/deploy.sh              # nur Worker deployen (Standard)
 #   bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
-#   bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (nur 0003) + Deploy
+#   bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003 + 0004) + Deploy
 #
-# --seed:    Spielt 0001 (Schema inkl. Events/Event-Biere), 0002 (Seed), 0003 (Upgrade) ein.
-#            Für Erstinstallationen oder vollständige Neueinrichtung.
-# --migrate: Spielt nur 0003 (venue_types + maps_url) ein (idempotent).
+# --seed:    Spielt 0001 (Schema inkl. Events/Event-Biere), 0002 (Seed), 0003 (Upgrade),
+#            0004 (site_settings) ein. Für Erstinstallationen oder vollständige Neueinrichtung.
+# --migrate: Spielt 0003 (venue_types + maps_url) und 0004 (site_settings) ein (idempotent).
 #            Für bestehende Installationen ohne Seed-Daten zu verändern.
-#            Hinweis: end_date/end_time + event_beers ggf. manuell per ALTER TABLE ergänzen.
 # ============================================================
 set -euo pipefail
 
@@ -48,11 +47,15 @@ if [ "$SEED" = true ]; then
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_seed.sql
   echo "▶ Applying upgrade 0003 (venue_types schema, breweries maps_url + FK)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
+  echo "▶ Applying 0004 (site_settings table)..."
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_site_settings.sql
 fi
 
 if [ "$MIGRATE" = true ]; then
   echo "▶ Applying upgrade 0003 (venue_types schema, breweries maps_url + FK)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
+  echo "▶ Applying 0004 (site_settings table)..."
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_site_settings.sql
 fi
 
 echo "▶ Worker deployen..."

@@ -98,6 +98,8 @@ const ROUTES = [
   ["POST",   "/api/admin/glossary",                        R.adminCreateGlossary],
   ["PUT",    "/api/admin/glossary/:term",                  R.adminUpdateGlossary],
   ["DELETE", "/api/admin/glossary/:term",                  R.adminDeleteGlossary],
+  ["GET",    "/api/admin/settings",                        R.adminGetSettings],
+  ["PUT",    "/api/admin/settings",                        R.adminUpdateSettings],
 ];
 
 export default {

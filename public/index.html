@@ -260,7 +260,8 @@
 .event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .event-card { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
 .event-date { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--copper); }
-.event-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
+.event-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; color: var(--ink); text-decoration: none; }
+.event-title:hover { color: var(--copper); }
 .event-desc { color: var(--ink-soft); font-size: 14px; }
 .event-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
 .event-loc { font-size: 12px; color: var(--ink-muted); font-family: var(--font-mono); }
@@ -656,7 +657,7 @@ function renderEvents(events) {
       return `
         <article class="card event-card">
           <div class="event-date">${dateText}${timeText}</div>
-          <div class="event-title">${ev.title[lang] || ev.title.de}</div>
+          <a class="event-title" href="/event.html?id=${encodeURIComponent(ev.id)}">${ev.title[lang] || ev.title.de}</a>
           <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
           <div class="event-card-foot">
             <span class="event-loc">${locText}</span>

@@ -229,6 +229,7 @@
         <button data-tab="events" data-i18n="admin.events">Events</button>
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
         <button data-tab="glossary">Glossar</button>
+        <button data-tab="settings">Einstellungen</button>
       </div>
 
       <div class="admin-tab-content">
@@ -635,6 +636,33 @@
               </thead>
               <tbody id="glossary-tbody"></tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- Einstellungen -->
+        <section id="tab-settings">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.</p>
+
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Impressum</h3>
+            <form id="settings-impressum-form" style="display:grid;gap:12px">
+              <div class="field" style="margin:0">
+                <label>Name / Betreiber</label>
+                <input id="imp-owner" name="impressum.owner" type="text" maxlength="200" placeholder="Vorname Nachname" />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Adresse <span style="color:var(--ink-muted);font-size:12px">(Straße, PLZ Ort — mit Komma trennen)</span></label>
+                <input id="imp-address" name="impressum.address" type="text" maxlength="500" placeholder="Musterstraße 1, 40000 Düsseldorf" />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Kontakt-E-Mail</label>
+                <input id="imp-email" name="impressum.email" type="email" maxlength="200" placeholder="kontakt@example.de" />
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <button class="btn btn-approve" type="submit">Speichern</button>
+                <span id="settings-impressum-msg" style="font-size:13px;display:none"></span>
+              </div>
+            </form>
           </div>
         </section>
       </div>
@@ -1096,6 +1124,7 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     if (btn.dataset.tab === "events")      loadEventsTab();
     if (btn.dataset.tab === "prices")      loadPricesTab();
     if (btn.dataset.tab === "glossary")    loadGlossaryTab();
+    if (btn.dataset.tab === "settings")   loadSettingsTab();
   });
 });
 
@@ -2127,6 +2156,41 @@ document.getElementById("add-glossary-form").addEventListener("submit", async (e
   }
 });
 
+// ============ Einstellungen Tab ============
+async function loadSettingsTab() {
+  try {
+    const r = await window.AtlasAPI.admin.getSettings();
+    const s = r.settings || {};
+    const imp = s["impressum"] || {};
+    document.getElementById("imp-owner").value   = imp.owner   || s["impressum.owner"]   || "";
+    document.getElementById("imp-address").value = imp.address || s["impressum.address"] || "";
+    document.getElementById("imp-email").value   = imp.email   || s["impressum.email"]   || "";
+  } catch (e) {
+    console.warn("[settings] load failed:", e.message);
+  }
+}
+
+document.getElementById("settings-impressum-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("settings-impressum-msg");
+  msg.style.display = "none";
+  const fd = new FormData(e.target);
+  try {
+    await window.AtlasAPI.admin.updateSettings({
+      "impressum.owner":   fd.get("impressum.owner").trim(),
+      "impressum.address": fd.get("impressum.address").trim(),
+      "impressum.email":   fd.get("impressum.email").trim(),
+    });
+    msg.textContent = "Gespeichert.";
+    msg.style.color = "#2d7a2d";
+    msg.style.display = "block";
+  } catch (err) {
+    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+    msg.style.color = "#9b1f1f";
+    msg.style.display = "block";
+  }
+});
+
 // ============ Venue-Typen Tab ============
 async function loadVenueTypesTab() {
   const tbody = document.getElementById("vtype-tbody");
@@ -2398,6 +2462,7 @@ document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-events.active"))       loadEventsTab();
   if (document.querySelector("#tab-prices.active"))       loadPricesTab();
   if (document.querySelector("#tab-glossary.active"))     loadGlossaryTab();
+  if (document.querySelector("#tab-settings.active"))    loadSettingsTab();
   document.querySelectorAll("#edit-dialog [data-i18n]").forEach((el) => {
     el.textContent = window.t(el.getAttribute("data-i18n"));
   });
