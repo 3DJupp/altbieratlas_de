@@ -54,7 +54,7 @@ export function setCookieHeader(name, value, opts = {}) {
 }
 
 // ---- PBKDF2 Password Hashing ----
-const PBKDF2_ITERATIONS = 120000;
+const PBKDF2_ITERATIONS = 100000;
 const SALT_BYTES = 16;
 const HASH_BYTES = 32;
 

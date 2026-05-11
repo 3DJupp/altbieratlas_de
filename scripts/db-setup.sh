@@ -39,7 +39,7 @@ run() {
   npx wrangler d1 execute "$DB" $REMOTE_FLAG --file="$1"
 }
 
-echo "[1/3] Schema"
+echo "[1/3] Schema (inkl. Events, Event-Biere)"
 run migrations/0001_schema.sql
 
 echo "[2/3] Seed data (styles, glossary, breweries, prices, events)"

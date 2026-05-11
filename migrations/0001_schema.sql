@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS events (
   brewery_id     TEXT,
   date           TEXT NOT NULL,
   time           TEXT,
+  end_date       TEXT,
+  end_time       TEXT,
   location       TEXT,
   url            TEXT,
   description_de TEXT,
@@ -96,6 +98,19 @@ CREATE TABLE IF NOT EXISTS events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_date   ON events(date);
 CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
+
+-- Event-Biere (werden vom Preis-Ranking ausgenommen)
+CREATE TABLE IF NOT EXISTS event_beers (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id   TEXT    NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  name_de    TEXT,
+  name_en    TEXT,
+  size       TEXT    NOT NULL,
+  price      REAL,
+  notes      TEXT,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_event_beers_event ON event_beers(event_id);
 
 -- Glossary
 CREATE TABLE IF NOT EXISTS glossary (

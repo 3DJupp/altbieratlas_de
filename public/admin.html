@@ -472,12 +472,20 @@
                 <input name="title_en" type="text" maxlength="200" placeholder="Altbier Festival Düsseldorf" />
               </div>
               <div class="field" style="margin:0">
-                <label>Datum *</label>
+                <label>Datum (Start) *</label>
                 <input name="date" type="date" required />
               </div>
               <div class="field" style="margin:0">
-                <label>Uhrzeit</label>
+                <label>Uhrzeit Start</label>
                 <input name="time" type="time" />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Datum Ende</label>
+                <input name="end_date" type="date" />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Uhrzeit Ende</label>
+                <input name="end_time" type="time" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
                 <label>Brauerei</label>
@@ -553,12 +561,8 @@
               </div>
               <div class="field" style="margin:0">
                 <label data-i18n="field.size">Größe</label>
-                <select name="size" required id="price-size-select">
-                  <option value="0.25l">0,25 l</option>
-                  <option value="0.33l">0,33 l</option>
-                  <option value="0.4l">0,4 l</option>
-                  <option value="0.5l">0,5 l</option>
-                </select>
+                <select name="size" required id="price-size-select" onchange="handleAdminSizeChange(this)"></select>
+                <input id="price-size-custom" type="text" maxlength="20" placeholder="z. B. 1l" style="display:none;margin-top:6px" />
               </div>
               <div class="field" style="margin:0">
                 <label data-i18n="field.price">Preis (€)</label>
@@ -757,12 +761,20 @@
           <input id="ev-title-en" type="text" maxlength="200" />
         </div>
         <div class="field" style="margin:0">
-          <label>Datum</label>
+          <label>Datum (Start)</label>
           <input id="ev-date" type="date" />
         </div>
         <div class="field" style="margin:0">
-          <label>Uhrzeit</label>
+          <label>Uhrzeit Start</label>
           <input id="ev-time" type="time" />
+        </div>
+        <div class="field" style="margin:0">
+          <label>Datum Ende</label>
+          <input id="ev-end-date" type="date" />
+        </div>
+        <div class="field" style="margin:0">
+          <label>Uhrzeit Ende</label>
+          <input id="ev-end-time" type="time" />
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label>Brauerei</label>
@@ -795,6 +807,36 @@
           <textarea id="ev-desc-en" rows="3" maxlength="2000" style="resize:vertical"></textarea>
         </div>
       </div>
+
+      <!-- Biere am Event -->
+      <div style="margin-top:20px;border-top:1px solid var(--rule);padding-top:16px">
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px">
+          Biere (vom Ranking ausgenommen)
+        </div>
+        <div id="ev-beers-list" style="margin-bottom:12px;font-size:13px"></div>
+        <form id="ev-beer-form" style="display:grid;grid-template-columns:1fr 80px 80px;gap:8px;align-items:end">
+          <div class="field" style="margin:0">
+            <label style="font-size:11px">Name (DE)</label>
+            <input id="eb-name-de" type="text" maxlength="200" placeholder="z. B. Sticke" />
+          </div>
+          <div class="field" style="margin:0">
+            <label style="font-size:11px">Größe *</label>
+            <input id="eb-size" type="text" maxlength="20" placeholder="0,25l" required />
+          </div>
+          <div class="field" style="margin:0">
+            <label style="font-size:11px">Preis (€)</label>
+            <input id="eb-price" type="number" min="0" max="100" step="0.01" placeholder="2.80" />
+          </div>
+          <div class="field" style="margin:0;grid-column:1/-1">
+            <label style="font-size:11px">Hinweis</label>
+            <input id="eb-notes" type="text" maxlength="500" placeholder="optional" />
+          </div>
+          <div style="grid-column:1/-1">
+            <button class="btn btn-approve" type="submit" style="font-size:12px;padding:6px 12px">Bier hinzufügen</button>
+          </div>
+        </form>
+      </div>
+
       <div class="edit-msg" id="event-edit-msg" style="display:none"></div>
       <div class="edit-actions">
         <button class="btn btn-ghost" id="event-edit-cancel">Abbrechen</button>
@@ -1056,6 +1098,30 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     if (btn.dataset.tab === "glossary")    loadGlossaryTab();
   });
 });
+
+// ============ Size Select ============
+function buildAdminSizeSelect() {
+  const sel = document.getElementById("price-size-select");
+  if (!sel) return;
+  const sizes = window.ATLAS_CONFIG.priceSizes || [0.2, 0.25, 0.4, 0.5];
+  const otherLabel = window.__atlasLang === "en" ? "Other…" : "Andere…";
+  sel.innerHTML = sizes.map((s) => {
+    const num = typeof s === "number" ? s : parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+    const val = String(num);
+    const label = window.formatSize ? window.formatSize(val) : val + " l";
+    const isDefault = Math.abs(num - 0.25) < 0.001;
+    return `<option value="${val}"${isDefault ? " selected" : ""}>${label}</option>`;
+  }).join("") + `<option value="custom">${otherLabel}</option>`;
+}
+
+function handleAdminSizeChange(sel) {
+  const custom = document.getElementById("price-size-custom");
+  if (!custom) return;
+  custom.style.display = sel.value === "custom" ? "" : "none";
+  if (sel.value === "custom") custom.focus();
+}
+
+buildAdminSizeSelect();
 
 // ============ Show Admin ============
 async function showAdmin() {
@@ -1571,6 +1637,8 @@ async function loadEventsTab() {
           data-brewery-id="${ev.breweryId || ""}"
           data-date="${ev.date || ""}"
           data-time="${ev.time || ""}"
+          data-end-date="${ev.endDate || ""}"
+          data-end-time="${ev.endTime || ""}"
           data-location="${(ev.location || "").replace(/"/g, "&quot;")}"
           data-url="${(ev.url || "").replace(/"/g, "&quot;")}"
           data-status="${ev.status || ""}"
@@ -1616,11 +1684,15 @@ async function openEventEditDialog(id, rowEl) {
   document.getElementById("ev-title-en").value  = rowEl.dataset.titleEn || "";
   document.getElementById("ev-date").value       = rowEl.dataset.date || "";
   document.getElementById("ev-time").value       = rowEl.dataset.time || "";
+  document.getElementById("ev-end-date").value   = rowEl.dataset.endDate || "";
+  document.getElementById("ev-end-time").value   = rowEl.dataset.endTime || "";
   document.getElementById("ev-location").value   = rowEl.dataset.location || "";
   document.getElementById("ev-url").value        = rowEl.dataset.url || "";
   document.getElementById("ev-status").value     = rowEl.dataset.status || "pending";
   document.getElementById("ev-desc-de").value    = rowEl.dataset.descDe || "";
   document.getElementById("ev-desc-en").value    = rowEl.dataset.descEn || "";
+  // Biere laden
+  loadEventBeers(id);
   const msg = document.getElementById("event-edit-msg");
   msg.style.display = "none";
 
@@ -1657,6 +1729,8 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
     brewery_id:     document.getElementById("ev-brewery-select").value || null,
     date:           document.getElementById("ev-date").value,
     time:           document.getElementById("ev-time").value || null,
+    end_date:       document.getElementById("ev-end-date").value || null,
+    end_time:       document.getElementById("ev-end-time").value || null,
     location:       document.getElementById("ev-location").value.trim() || null,
     url:            document.getElementById("ev-url").value.trim() || null,
     status:         document.getElementById("ev-status").value,
@@ -1674,6 +1748,8 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
     row.dataset.breweryId = patch.brewery_id || "";
     row.dataset.date      = patch.date;
     row.dataset.time      = patch.time || "";
+    row.dataset.endDate   = patch.end_date || "";
+    row.dataset.endTime   = patch.end_time || "";
     row.dataset.location  = patch.location || "";
     row.dataset.url       = patch.url || "";
     row.dataset.status    = patch.status;
@@ -1705,6 +1781,62 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }
+});
+
+// ============ Event Beers ============
+async function loadEventBeers(eventId) {
+  const list = document.getElementById("ev-beers-list");
+  list.innerHTML = "<em style='color:var(--ink-muted)'>Lade…</em>";
+  try {
+    const r = await window.AtlasAPI.admin.listEventBeers(eventId);
+    const beers = r.beers || [];
+    if (!beers.length) {
+      list.innerHTML = "<span style='color:var(--ink-muted)'>Noch keine Biere eingetragen.</span>";
+      return;
+    }
+    list.innerHTML = beers.map((b) => {
+      const name = b.name?.de || b.name?.en || "—";
+      const price = b.price != null ? "€ " + Number(b.price).toFixed(2) : "—";
+      const size = b.size || "";
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--rule)">
+        <span style="flex:1">${name}</span>
+        <span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted)">${size}</span>
+        <span style="font-family:var(--font-mono);font-size:13px;color:var(--copper)">${price}</span>
+        <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}">✕</button>
+      </div>`;
+    }).join("");
+    list.querySelectorAll("button[data-beer-id]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Bier entfernen?")) return;
+        try {
+          await window.AtlasAPI.admin.deleteEventBeer(eventId, btn.dataset.beerId);
+          loadEventBeers(eventId);
+        } catch (e) { alert("Fehler: " + e.message); }
+      });
+    });
+  } catch (e) {
+    list.innerHTML = "<span style='color:#9b1f1f'>Fehler: " + e.message + "</span>";
+  }
+}
+
+document.getElementById("ev-beer-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!pendingEventEdit) return;
+  const nameDe  = document.getElementById("eb-name-de").value.trim() || null;
+  const sizeRaw = document.getElementById("eb-size").value.trim().replace(",", ".");
+  const n = parseFloat(sizeRaw.replace(/\s*l$/i, ""));
+  const size = isNaN(n) ? sizeRaw : (n + "l");
+  const priceRaw = document.getElementById("eb-price").value;
+  const price = priceRaw ? parseFloat(priceRaw) : null;
+  const notes = document.getElementById("eb-notes").value.trim() || null;
+  try {
+    await window.AtlasAPI.admin.addEventBeer(pendingEventEdit.id, { name_de: nameDe, size, price, notes });
+    document.getElementById("eb-name-de").value = "";
+    document.getElementById("eb-size").value = "";
+    document.getElementById("eb-price").value = "";
+    document.getElementById("eb-notes").value = "";
+    loadEventBeers(pendingEventEdit.id);
+  } catch (e) { alert("Fehler: " + e.message); }
 });
 
 // ============ Prices Table ============
@@ -1853,11 +1985,18 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
   const msg = document.getElementById("add-price-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
+  let size = fd.get("size");
+  if (size === "custom") {
+    const raw = document.getElementById("price-size-custom").value.trim();
+    if (!raw) { msg.textContent = "Bitte Größe eingeben."; msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
+    const n = parseFloat(raw.replace(",", ".").replace(/\s*l$/i, ""));
+    size = isNaN(n) ? raw : n + "l";
+  }
   try {
     await window.AtlasAPI.admin.addPrice({
       breweryId: fd.get("breweryId"),
       date:      fd.get("date"),
-      size:      fd.get("size"),
+      size,
       price:     parseFloat(fd.get("price")),
       source:    fd.get("source") || null,
     });
@@ -1865,6 +2004,7 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
+    document.getElementById("price-size-custom").style.display = "none";
     loadPricesTab();
     loadDashboard();
   } catch (err) {
@@ -2213,6 +2353,8 @@ document.getElementById("add-event-form").addEventListener("submit", async (e) =
       brewery_id:     fd.get("brewery_id") || null,
       date:           fd.get("date"),
       time:           fd.get("time") || null,
+      end_date:       fd.get("end_date") || null,
+      end_time:       fd.get("end_time") || null,
       location:       fd.get("location").trim() || null,
       url:            fd.get("url").trim() || null,
       status:         fd.get("status"),

@@ -127,6 +127,11 @@
     async listStyles() { return { styles: window.ATLAS_DATA.styles }; },
     async listPrices() { return { prices: window.ATLAS_DATA.prices }; },
     async listEvents() { return { events: window.ATLAS_DATA.events }; },
+    async getEvent(id) {
+      const ev = (window.ATLAS_DATA.events || []).find((e) => e.id === id);
+      if (!ev) return { error: "not-found" };
+      return { event: { ...ev, breweryName: null, breweryCity: null }, beers: [] };
+    },
     async listGlossary() { return { glossary: window.ATLAS_DATA.glossary }; },
     async geocode(q) {
       if (!q || q.length < 2) return { results: [] };
@@ -188,6 +193,7 @@
     listStyles:       () => req("/styles"),
     listPrices:       () => req("/prices"),
     listEvents:       () => req("/events"),
+    getEvent:         (id) => req(`/events/${encodeURIComponent(id)}`),
     listGlossary:     () => req("/glossary"),
     geocode:          async (q) => { try { return await req(`/geocode?q=${encodeURIComponent(q)}`); } catch { return { results: [] }; } },
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
@@ -205,9 +211,13 @@
       deleteBrewery:  (id) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "DELETE" }),
       requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
       resetPassword:  (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
-      listEvents:     () => req("/admin/events"),
-      updateEvent:    (id, patch) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
-      deleteEvent:    (id) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      listEvents:        () => req("/admin/events"),
+      updateEvent:       (id, patch) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      deleteEvent:       (id) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      listEventBeers:    (id) => req(`/admin/events/${encodeURIComponent(id)}/beers`),
+      addEventBeer:      (id, body) => req(`/admin/events/${encodeURIComponent(id)}/beers`, { method: "POST", body }),
+      updateEventBeer:   (id, beerId, body) => req(`/admin/events/${encodeURIComponent(id)}/beers/${encodeURIComponent(beerId)}`, { method: "PUT", body }),
+      deleteEventBeer:   (id, beerId) => req(`/admin/events/${encodeURIComponent(id)}/beers/${encodeURIComponent(beerId)}`, { method: "DELETE" }),
       listPrices:     () => req("/admin/prices"),
       addPrice:       (body) => req("/admin/prices", { method: "POST", body }),
       updatePrice:    (id, patch) => req(`/admin/prices/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
@@ -249,6 +259,7 @@
     listStyles:         () => call("listStyles"),
     listPrices:         () => call("listPrices"),
     listEvents:         () => call("listEvents"),
+    getEvent:           (id) => call("getEvent", id),
     listGlossary:       () => call("listGlossary"),
     geocode:            (q) => call("geocode", q),
     submitContribution: (body) => call("submitContribution", body),
@@ -291,6 +302,10 @@
       deleteGlossaryTerm:  (t) => window.AtlasAPI.admin._gate("deleteGlossaryTerm", t),
       createBrewery:       (b) => window.AtlasAPI.admin._gate("createBrewery", b),
       createEvent:         (b) => window.AtlasAPI.admin._gate("createEvent", b),
+      listEventBeers:      (id) => window.AtlasAPI.admin._gate("listEventBeers", id),
+      addEventBeer:        (id, b) => window.AtlasAPI.admin._gate("addEventBeer", id, b),
+      updateEventBeer:     (id, bid, b) => window.AtlasAPI.admin._gate("updateEventBeer", id, bid, b),
+      deleteEventBeer:     (id, bid) => window.AtlasAPI.admin._gate("deleteEventBeer", id, bid),
       listVenueTypes:      () => window.AtlasAPI.admin._gate("listVenueTypes"),
       createVenueType:     (b) => window.AtlasAPI.admin._gate("createVenueType", b),
       updateVenueType:     (id, p) => window.AtlasAPI.admin._gate("updateVenueType", id, p),

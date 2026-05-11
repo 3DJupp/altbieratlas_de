@@ -77,11 +77,21 @@ bash scripts/db-setup.sh [--remote]
 
 | Datei | Inhalt |
 |---|---|
-| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden |
+| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden (Neuinstallation) |
 | `0002_seed.sql` | Venue-Typen, Bierstile, Glossar, Brauereien, Preise, Events |
 | `0003_upgrade.sql` | Upgrade für bestehende Installationen (neues `venue_types`-Schema, `maps_url`-Spalte) |
 
 `0001` und `0002` sind idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). `0003` ist für bestehende Installationen gedacht und kann wiederholt ausgeführt werden.
+
+> **Mehrtägige Events & Event-Biere** (`end_date`, `end_time`, `event_beers`) sind seit `0001` im Schema enthalten — Neuinstallationen benötigen keinen separaten Upgrade-Schritt. Bestehende Installationen, die diese Spalten noch nicht haben, fügen sie manuell per `ALTER TABLE events ADD COLUMN end_date TEXT; ALTER TABLE events ADD COLUMN end_time TEXT;` und `CREATE TABLE IF NOT EXISTS event_beers (…)` hinzu.
+
+> ⚠️ **Wichtig: FK-Kaskaden und Datenverlust**
+>
+> Das Schema setzt überall auf `ON DELETE CASCADE` / `ON DELETE SET NULL`. Das bedeutet:
+> - **Brauerei löschen** → alle Preise, Stil-Zuordnungen (`brewery_styles`) und Events dieser Brauerei werden ebenfalls gelöscht.
+> - **Stil löschen** → alle Zuordnungen in `brewery_styles` für diesen Stil werden gelöscht.
+> - **Event löschen** → alle Event-Biere (`event_beers`) dieses Events werden gelöscht.
+> - **Brauerei-ID umbenennen** → der Worker-Code aktualisiert per Batch alle FK-Referenzen (Preise, Stile, Events). Bei unbeabsichtigter Umbenennung (z. B. Tippfehler in der ID) können Daten verloren gehen, wenn das Rollback nicht rechtzeitig erfolgt. **Vor ID-Änderungen immer ein DB-Snapshot erstellen** (D1-Dashboard → *Export* oder `wrangler d1 export`).
 
 **Alternative (D1-Dashboard-Console):** *Workers & Pages → D1 → altbieratlas → Console* — die SQL-Dateien nacheinander einfügen und ausführen.
 
@@ -113,9 +123,9 @@ const user = 'admin', pass = 'DEIN-PASSWORT-HIER', email = 'deine@email.de';
 (async () => {
   const salt = c.getRandomValues(new Uint8Array(16));
   const key  = await c.subtle.importKey('raw', new TextEncoder().encode(pass), { name: 'PBKDF2' }, false, ['deriveBits']);
-  const bits = await c.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, key, 256);
+  const bits = await c.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, key, 256);
   const b64  = b => Buffer.from(b).toString('base64');
-  const hash = 'pbkdf2\$120000\$' + b64(salt) + '\$' + b64(bits);
+  const hash = 'pbkdf2\$100000\$' + b64(salt) + '\$' + b64(bits);
   console.log(\"INSERT INTO admin_users (username, password_hash, email) VALUES ('\" + user + \"', '\" + hash + \"', '\" + email + \"');\");
 })();
 "
@@ -138,8 +148,9 @@ Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
 Deploy-Flags:
 
 ```bash
-bash scripts/deploy.sh          # Standard — jeder Push auf main
-bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
+bash scripts/deploy.sh              # Standard — jeder Push auf main (nur Worker)
+bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
+bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003) + Deploy
 ```
 
 ### 1.3 Build-Variablen setzen
@@ -224,7 +235,7 @@ Fünf Einreichungstypen mit Moderation:
 - **Übersicht** — Statistiken + neueste offene Beiträge
 - **Beiträge** — Approve / Reject mit optionaler Notiz
 - **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL), verifizieren, löschen; neue Brauereien direkt anlegen
-- **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung), löschen; neue Events direkt anlegen
+- **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
 - **Preise** — Alle Preise einsehen, löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten, löschen
 - **Glossar** — Einträge anlegen, bearbeiten, löschen
@@ -270,8 +281,9 @@ Für reines UI-Testen einfach `index.html` im Browser öffnen — `api-client.js
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |
 | GET | `/api/prices` | Preismeldungen (max. 2000) |
 | POST | `/api/prices` | Preismeldung einreichen (Wrapper) |
-| GET | `/api/events` | Events |
-| GET | `/api/events/calendar.ics` | Alle zukünftigen Events als iCal |
+| GET | `/api/events` | Events (inkl. `endDate`, `endTime`) |
+| GET | `/api/events/:id` | Event-Detail + Biere |
+| GET | `/api/events/calendar.ics` | Alle zukünftigen Events als iCal (URL → Detailseite) |
 | GET | `/api/events/:id/calendar.ics` | Einzelnes Event als ICS |
 | GET | `/api/styles` | Bierstile |
 | GET | `/api/glossary` | Glossar |
@@ -298,9 +310,13 @@ Für reines UI-Testen einfach `index.html` im Browser öffnen — `api-client.js
 | PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten |
 | DELETE | `/api/admin/breweries/:id` | Brauerei löschen |
 | GET | `/api/admin/events` | Alle Events |
-| POST | `/api/admin/events` | Neues Event anlegen |
+| POST | `/api/admin/events` | Neues Event anlegen (inkl. `end_date`, `end_time`) |
 | PUT | `/api/admin/events/:id` | Event bearbeiten (inkl. ID-Umbenennung via `new_id`) |
 | DELETE | `/api/admin/events/:id` | Event löschen |
+| GET | `/api/admin/events/:id/beers` | Biere eines Events abrufen |
+| POST | `/api/admin/events/:id/beers` | Bier zu Event hinzufügen |
+| PUT | `/api/admin/events/:id/beers/:beerId` | Event-Bier bearbeiten |
+| DELETE | `/api/admin/events/:id/beers/:beerId` | Event-Bier löschen |
 | GET | `/api/admin/prices` | Alle Preise |
 | POST | `/api/admin/prices` | Preis direkt anlegen |
 | PUT | `/api/admin/prices/:id` | Preis bearbeiten |
@@ -322,11 +338,11 @@ Für reines UI-Testen einfach `index.html` im Browser öffnen — `api-client.js
 
 ## 5 · Sicherheits-Hinweise
 
-- Passwort-Hashing: PBKDF2-SHA256, 120 000 Iterationen, 16 B Salt
+- Passwort-Hashing: PBKDF2-SHA256, 100 000 Iterationen, 16 B Salt
 - Sessions: 32 B Token, HttpOnly · Secure · SameSite=Strict, 8h TTL
 - Rate-Limits (D1-basiert, IP-gebunden): Contributions 20/h, Login 5/5min, Reset 3/15min
 - Turnstile-Verifikation serverseitig
-- FK-Kaskaden: Löschen einer Brauerei entfernt Preise, Style-Zuordnungen und Events
+- FK-Kaskaden: Löschen einer Brauerei entfernt Preise, Stil-Zuordnungen, Events und Event-Biere — Details und Datenverlust-Risiken siehe [Warnung oben](#11-einmalig-d1-anlegen-schema-einspielen-admin-user-anlegen)
 - D1-Credentials niemals im Repo
 
 ---
