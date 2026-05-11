@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
+<title>Event · Altbieratlas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css" />
+<style>
+.event-hero { padding: 40px 0 30px; border-bottom: 1px solid var(--rule); }
+.breadcrumb {
+  display: flex; gap: 8px;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-muted); margin-bottom: 14px;
+}
+.breadcrumb a { border: none; color: var(--ink-muted); }
+.breadcrumb a:hover { color: var(--copper); }
+.event-title { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 500; margin-bottom: 16px; }
+.event-meta {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  color: var(--ink-soft); font-size: 14px;
+}
+.event-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.event-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-muted); }
+.event-body { padding: 36px 0; }
+.event-desc { max-width: 72ch; line-height: 1.65; color: var(--ink-soft); margin-bottom: 28px; }
+.beer-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+.beer-table th {
+  text-align: left; padding: 8px 12px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-muted); border-bottom: 1px solid var(--rule);
+}
+.beer-table td { padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+.beer-table tr:last-child td { border-bottom: none; }
+.beer-price { font-family: var(--font-mono); color: var(--copper); font-weight: 500; }
+.beer-size  { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); }
+.ics-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
+  background: var(--bg-card); border: 1px solid var(--rule); color: var(--ink);
+  text-decoration: none; cursor: pointer;
+}
+.ics-btn:hover { border-color: var(--copper); color: var(--copper); }
+.card {
+  background: var(--bg-card); border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: 20px 24px;
+}
+.section-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+<div id="shell-header"></div>
+
+<div class="wrap">
+  <section class="event-hero">
+    <div class="breadcrumb">
+      <a href="/">Altbieratlas</a>
+      <span>›</span>
+      <span id="bc-events">Events</span>
+    </div>
+    <h1 class="event-title" id="ev-title">…</h1>
+    <div class="event-meta" id="ev-meta"></div>
+  </section>
+
+  <div class="event-body">
+    <div id="ev-desc" class="event-desc" style="display:none"></div>
+
+    <div id="ev-beers-wrap" style="display:none;margin-bottom:32px">
+      <div class="section-label" id="ev-beers-label">Biere auf dem Event</div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="beer-table">
+          <thead>
+            <tr>
+              <th id="th-name">Bier</th>
+              <th id="th-size">Größe</th>
+              <th id="th-price">Preis</th>
+              <th id="th-notes">Hinweis</th>
+            </tr>
+          </thead>
+          <tbody id="beers-tbody"></tbody>
+        </table>
+      </div>
+      <p style="font-size:12px;color:var(--ink-muted);margin-top:8px" id="ev-prices-note">
+        Event-Preise fließen nicht in die Ranglisten ein.
+      </p>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <a id="ev-ics-link" href="#" class="ics-btn" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="3" width="12" height="11" rx="1.5"/>
+          <path d="M5 1v4M11 1v4M2 7h12"/>
+        </svg>
+        <span id="ics-label">Kalender (.ics)</span>
+      </a>
+      <a id="ev-ext-link" href="#" target="_blank" rel="noopener" class="ics-btn" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9M10 2h4v4M14 2 8 8"/>
+        </svg>
+        <span id="ext-label">Website</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div id="shell-footer"></div>
+<div id="shell-cookie"></div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="api-client.js"></script>
+<script src="shell.js"></script>
+<script>
+renderShell({ activeNav: "" });
+
+const lang = window.__atlasLang || "de";
+const isEn = lang === "en";
+
+function formatDate(d) {
+  if (!d) return "";
+  try {
+    return new Date(d + "T00:00:00").toLocaleDateString(isEn ? "en-GB" : "de-DE", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+  } catch { return d; }
+}
+
+function formatTime(t) {
+  if (!t) return "";
+  return t.slice(0, 5) + " Uhr";
+}
+
+function formatSize(s) {
+  if (!s) return "";
+  const n = parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+  if (isNaN(n)) return s;
+  return (isEn ? n.toFixed(n % 1 === 0 ? 0 : 2) : n.toFixed(n % 1 === 0 ? 0 : 2).replace(".", ",")) + " l";
+}
+
+function formatPrice(p) {
+  if (p == null) return "—";
+  return "€ " + Number(p).toFixed(2).replace(".", isEn ? "." : ",");
+}
+
+const params = new URLSearchParams(location.search);
+const eventId = params.get("id");
+
+if (!eventId) {
+  document.getElementById("ev-title").textContent = isEn ? "Event not found" : "Event nicht gefunden";
+} else {
+  (async () => {
+    try {
+      const data = await fetch(`/api/events/${encodeURIComponent(eventId)}`).then((r) => {
+        if (!r.ok) throw new Error("not-found");
+        return r.json();
+      });
+      const ev = data.event;
+      const beers = data.beers || [];
+
+      // Title
+      const title = (isEn ? (ev.title?.en || ev.title?.de) : (ev.title?.de || ev.title?.en)) || "";
+      document.title = title + " · Altbieratlas";
+      document.getElementById("ev-title").textContent = title;
+
+      // Meta
+      const meta = document.getElementById("ev-meta");
+      const parts = [];
+
+      // Datumsbereich
+      let dateStr = formatDate(ev.date);
+      if (ev.endDate && ev.endDate !== ev.date) dateStr += " – " + formatDate(ev.endDate);
+      parts.push(`<span>📅 ${dateStr}</span>`);
+
+      // Uhrzeit
+      if (ev.time) {
+        let timeStr = formatTime(ev.time);
+        if (ev.endTime) timeStr += " – " + formatTime(ev.endTime);
+        parts.push(`<span class="dot"></span><span>🕐 ${timeStr}</span>`);
+      }
+
+      // Ort
+      const location = ev.breweryName
+        ? (ev.breweryName + (ev.breweryCity ? ", " + ev.breweryCity : ""))
+        : ev.location;
+      if (location) parts.push(`<span class="dot"></span><span>📍 ${location}</span>`);
+
+      meta.innerHTML = parts.join("");
+
+      // Beschreibung
+      const descEl = document.getElementById("ev-desc");
+      const desc = (isEn ? (ev.description?.en || ev.description?.de) : (ev.description?.de || ev.description?.en)) || "";
+      if (desc) {
+        descEl.textContent = desc;
+        descEl.style.display = "";
+      }
+
+      // Biere
+      if (beers.length > 0) {
+        const wrap = document.getElementById("ev-beers-wrap");
+        const tbody = document.getElementById("beers-tbody");
+        wrap.style.display = "";
+        tbody.innerHTML = beers.map((b) => {
+          const name = (isEn ? (b.name?.en || b.name?.de) : (b.name?.de || b.name?.en)) || "—";
+          return `<tr>
+            <td>${name}</td>
+            <td class="beer-size">${formatSize(b.size)}</td>
+            <td class="beer-price">${formatPrice(b.price)}</td>
+            <td style="font-size:13px;color:var(--ink-muted)">${b.notes || ""}</td>
+          </tr>`;
+        }).join("");
+      }
+
+      // ICS-Link
+      const icsLink = document.getElementById("ev-ics-link");
+      icsLink.href = `/api/events/${encodeURIComponent(eventId)}/calendar.ics?lang=${lang}`;
+      icsLink.style.display = "";
+
+      // Externer Link
+      if (ev.url) {
+        const extLink = document.getElementById("ev-ext-link");
+        extLink.href = ev.url;
+        extLink.style.display = "";
+      }
+
+    } catch (e) {
+      document.getElementById("ev-title").textContent = isEn ? "Event not found" : "Event nicht gefunden";
+      document.getElementById("ev-meta").textContent = isEn ? "This event does not exist or is no longer available." : "Dieses Event existiert nicht oder ist nicht mehr verfügbar.";
+    }
+  })();
+}
+</script>
+</body>
+</html>

@@ -169,14 +169,21 @@ function normSize(s) {
   return parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
 }
 
-// Konfigurierte Größen (Zahlen, ohne Einheit)
+// Alle konfigurierten Größen (für Stats, Durchschnitt etc.)
 function configSizes() {
   return window.ATLAS_CONFIG.priceSizes || [0.2, 0.25, 0.4, 0.5];
 }
 
-// Gehört eine Größe zu den konfigurierten Größen?
+// Hervorgehobene Größen — erscheinen als eigene Buttons im Toggle
+function highlightedSizes() {
+  const hl = window.ATLAS_CONFIG.highlightedSizes || [];
+  return hl.length > 0 ? hl : configSizes();
+}
+
+// Gehört eine Größe zu den hervorgehobenen Größen?
+// Nicht-hervorgehobene Größen landen in "Andere".
 function isConfigSize(num) {
-  return configSizes().some((c) => Math.abs(c - num) < 0.001);
+  return highlightedSizes().some((c) => Math.abs(c - num) < 0.001);
 }
 
 function avgPrice(sizeNum) {
@@ -211,11 +218,9 @@ let currentSize = null; // wird von initSizeToggle gesetzt (Zahl oder null für 
 let currentDir = "asc";
 
 function initSizeToggle(sizes) {
-  const t = window.t;
   const toggle = document.getElementById("size-toggle");
   const otherLabel = window.__atlasLang === "en" ? "Other" : "Andere";
-  const hl = window.ATLAS_CONFIG.highlightedSizes || [];
-  const defaultSize = hl.length > 0 ? hl[0] : sizes[0];
+  const defaultSize = sizes[0];
   toggle.innerHTML =
     sizes.map((n) =>
       `<button data-size="${n}"${Math.abs(n - defaultSize) < 0.001 ? ' class="active"' : ''}>${window.formatSize(String(n))}</button>`
@@ -250,7 +255,7 @@ function initSizeToggle(sizes) {
     if (cfg?.priceSizes?.length)              window.ATLAS_CONFIG.priceSizes      = cfg.priceSizes;
     if (Array.isArray(cfg?.highlightedSizes)) window.ATLAS_CONFIG.highlightedSizes = cfg.highlightedSizes;
 
-    initSizeToggle(configSizes());
+    initSizeToggle(highlightedSizes());
     updateToggleLabels();
     renderStats();
     document.getElementById("st-br").textContent = breweries.length;

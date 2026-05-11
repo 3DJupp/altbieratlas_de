@@ -168,9 +168,44 @@ export async function listEvents(req, env) {
       breweryId: e.brewery_id,
       date: e.date,
       time: e.time || null,
+      endDate: e.end_date || null,
+      endTime: e.end_time || null,
       location: e.location || null,
       url: e.url || null,
       description: { de: e.description_de, en: e.description_en },
+    })),
+  });
+}
+
+// GET /api/events/:id
+export async function getEvent(req, env, { id }) {
+  const e = await env.DB.prepare(
+    `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
+     FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+     WHERE e.id = ? AND e.status = 'approved'`
+  ).bind(id).first();
+  if (!e) return error(404, "not-found");
+  const beers = await env.DB.prepare(
+    "SELECT id, name_de, name_en, size, price, notes FROM event_beers WHERE event_id = ? ORDER BY id"
+  ).bind(id).all();
+  return json({
+    event: {
+      id: e.id,
+      title: { de: e.title_de, en: e.title_en },
+      breweryId: e.brewery_id,
+      breweryName: e.brewery_name || null,
+      breweryCity: e.brewery_city || null,
+      date: e.date,
+      time: e.time || null,
+      endDate: e.end_date || null,
+      endTime: e.end_time || null,
+      location: e.location || null,
+      url: e.url || null,
+      description: { de: e.description_de, en: e.description_en },
+    },
+    beers: beers.results.map((b) => ({
+      id: b.id, name: { de: b.name_de, en: b.name_en },
+      size: b.size, price: b.price, notes: b.notes,
     })),
   });
 }
@@ -191,11 +226,29 @@ function icsFoldLine(line) {
   if (cur) out.push(cur);
   return out.join("\r\n");
 }
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
 function buildVEvent(e, base, lang) {
   const dtstamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z/, "Z");
-  const dtstart = e.time
+  const hasTime = !!e.time;
+  const dtstart = hasTime
     ? `DTSTART;TZID=Europe/Berlin:${e.date.replace(/-/g, "")}T${e.time.replace(":", "")}00`
     : `DTSTART;VALUE=DATE:${e.date.replace(/-/g, "")}`;
+
+  let dtend = null;
+  if (hasTime) {
+    // Endzeitpunkt: end_date + end_time, oder end_date mit gleicher Uhrzeit, oder nur end_time selber Tag
+    const endDateStr = e.end_date || e.date;
+    const endTimeStr = e.end_time || e.time;
+    dtend = `DTEND;TZID=Europe/Berlin:${endDateStr.replace(/-/g, "")}T${endTimeStr.replace(":", "")}00`;
+  } else if (e.end_date) {
+    // Ganztägig mehrtägig: DTEND = end_date + 1 Tag (RFC 5545 exklusives Ende)
+    dtend = `DTEND;VALUE=DATE:${addDays(e.end_date, 1)}`;
+  }
+
   const title   = lang === "en" ? (e.title_en || e.title_de) : (e.title_de || e.title_en);
   const descRaw = lang === "en" ? (e.description_en || e.description_de) : (e.description_de || e.description_en);
   const summary  = icsEscape(title || "Event");
@@ -203,17 +256,19 @@ function buildVEvent(e, base, lang) {
     ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
     : (e.location ? icsEscape(e.location) : "");
   const desc = icsEscape(descRaw || "");
-  const eventUrl = e.url || `${base}/`;
+  // ICS URL zeigt immer auf die Detail-Seite
+  const detailUrl = `${base}/event.html?id=${encodeURIComponent(e.id)}`;
   const lines = [
     "BEGIN:VEVENT",
     icsFoldLine(`UID:${e.id}@altbieratlas.de`),
     `DTSTAMP:${dtstamp}`,
     icsFoldLine(dtstart),
-    icsFoldLine(`SUMMARY:${summary}`),
   ];
+  if (dtend) lines.push(icsFoldLine(dtend));
+  lines.push(icsFoldLine(`SUMMARY:${summary}`));
   if (location) lines.push(icsFoldLine(`LOCATION:${location}`));
   if (desc)     lines.push(icsFoldLine(`DESCRIPTION:${desc}`));
-  lines.push(icsFoldLine(`URL:${eventUrl}`));
+  lines.push(icsFoldLine(`URL:${detailUrl}`));
   lines.push("END:VEVENT");
   return lines.join("\r\n");
 }
@@ -822,7 +877,8 @@ export async function adminListEvents(req, env) {
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare(
     `SELECT e.id, e.title_de, e.title_en, e.brewery_id, b.name AS brewery_name,
-            e.date, e.time, e.location, e.url, e.description_de, e.description_en, e.status, e.created_at
+            e.date, e.time, e.end_date, e.end_time,
+            e.location, e.url, e.description_de, e.description_en, e.status, e.created_at
      FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
      ORDER BY e.date ASC, e.created_at DESC LIMIT 200`
   ).all();
@@ -830,7 +886,8 @@ export async function adminListEvents(req, env) {
     events: res.results.map((r) => ({
       id: r.id, titleDe: r.title_de, titleEn: r.title_en,
       breweryId: r.brewery_id, breweryName: r.brewery_name,
-      date: r.date, time: r.time, location: r.location, url: r.url,
+      date: r.date, time: r.time, endDate: r.end_date, endTime: r.end_time,
+      location: r.location, url: r.url,
       descriptionDe: r.description_de, descriptionEn: r.description_en,
       status: r.status, createdAt: r.created_at,
     })),
@@ -868,7 +925,8 @@ export async function adminUpdateEvent(req, env, { id }) {
   const values = [];
   const allow = {
     title_de: "title_de", title_en: "title_en", brewery_id: "brewery_id",
-    date: "date", time: "time", location: "location", url: "url",
+    date: "date", time: "time", end_date: "end_date", end_time: "end_time",
+    location: "location", url: "url",
     description_de: "description_de", description_en: "description_en", status: "status",
   };
   for (const [k, col] of Object.entries(allow)) {
@@ -1239,7 +1297,7 @@ export async function adminCreateEvent(req, env) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
 
-  let id, titleDe, titleEn, breweryId, date, time, location, url, descDe, descEn, status;
+  let id, titleDe, titleEn, breweryId, date, time, endDate, endTime, location, url, descDe, descEn, status;
   try {
     id        = str(body.id,             { required: true, max: 100,  name: "id" });
     titleDe   = str(body.title_de,       { required: true, max: 200,  name: "title_de" });
@@ -1247,6 +1305,8 @@ export async function adminCreateEvent(req, env) {
     breweryId = str(body.brewery_id,     { max: 80,   name: "brewery_id" });
     date      = str(body.date,           { required: true, max: 20,   name: "date" });
     time      = str(body.time,           { max: 10,   name: "time" });
+    endDate   = str(body.end_date,       { max: 20,   name: "end_date" });
+    endTime   = str(body.end_time,       { max: 10,   name: "end_time" });
     location  = str(body.location,       { max: 300,  name: "location" });
     url       = str(body.url,            { max: 500,  name: "url" });
     descDe    = str(body.description_de, { max: 2000, name: "description_de" });
@@ -1260,15 +1320,101 @@ export async function adminCreateEvent(req, env) {
 
   await env.DB.prepare(
     `INSERT INTO events
-       (id, title_de, title_en, brewery_id, date, time, location, url,
-        description_de, description_en, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (id, title_de, title_en, brewery_id, date, time, end_date, end_time,
+        location, url, description_de, description_en, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, titleDe, titleEn || titleDe, breweryId || null, date,
-    time || null, location || null, url || null,
+    time || null, endDate || null, endTime || null,
+    location || null, url || null,
     descDe || null, descEn || null, status,
   ).run();
   return json({ ok: true, id }, { status: 201 });
+}
+
+// GET /api/admin/events/:id/beers
+export async function adminListEventBeers(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const exists = await env.DB.prepare("SELECT id FROM events WHERE id = ?").bind(id).first();
+  if (!exists) return error(404, "event-not-found");
+  const res = await env.DB.prepare(
+    "SELECT * FROM event_beers WHERE event_id = ? ORDER BY id"
+  ).bind(id).all();
+  return json({
+    beers: res.results.map((b) => ({
+      id: b.id, eventId: b.event_id,
+      name: { de: b.name_de, en: b.name_en },
+      size: b.size, price: b.price, notes: b.notes, createdAt: b.created_at,
+    })),
+  });
+}
+
+// POST /api/admin/events/:id/beers  { name_de?, name_en?, size, price?, notes? }
+export async function adminAddEventBeer(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+
+  let nameDe, nameEn, size, priceVal, notes;
+  try {
+    nameDe   = str(body.name_de, { max: 200, name: "name_de" });
+    nameEn   = str(body.name_en, { max: 200, name: "name_en" });
+    size     = str(body.size,    { required: true, max: 20, name: "size" });
+    priceVal = body.price != null ? num(body.price, { min: 0, max: 100, name: "price" }) : null;
+    notes    = str(body.notes,   { max: 500, name: "notes" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  const event = await env.DB.prepare("SELECT id FROM events WHERE id = ?").bind(id).first();
+  if (!event) return error(404, "event-not-found");
+
+  const res = await env.DB.prepare(
+    "INSERT INTO event_beers (event_id, name_de, name_en, size, price, notes) VALUES (?, ?, ?, ?, ?, ?)"
+  ).bind(id, nameDe || null, nameEn || null, size, priceVal, notes || null).run();
+  return json({ ok: true, id: res.meta.last_row_id }, { status: 201 });
+}
+
+// PUT /api/admin/events/:id/beers/:beerId
+export async function adminUpdateEventBeer(req, env, { id, beerId }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+
+  const fields = [];
+  const values = [];
+  if ("name_de" in body) { fields.push("name_de = ?"); values.push(body.name_de || null); }
+  if ("name_en" in body) { fields.push("name_en = ?"); values.push(body.name_en || null); }
+  if ("size"    in body) { fields.push("size = ?");    values.push(body.size); }
+  if ("notes"   in body) { fields.push("notes = ?");   values.push(body.notes || null); }
+  if ("price"   in body) {
+    try {
+      const priceVal = body.price != null ? num(body.price, { min: 0, max: 100, name: "price" }) : null;
+      fields.push("price = ?"); values.push(priceVal);
+    } catch (e) {
+      return error(400, "validation-failed", { detail: e.message });
+    }
+  }
+  if (!fields.length) return error(400, "no-fields");
+  values.push(parseInt(beerId, 10), id);
+  const res = await env.DB.prepare(
+    `UPDATE event_beers SET ${fields.join(", ")} WHERE id = ? AND event_id = ?`
+  ).bind(...values).run();
+  if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/events/:id/beers/:beerId
+export async function adminDeleteEventBeer(req, env, { id, beerId }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare(
+    "DELETE FROM event_beers WHERE id = ? AND event_id = ?"
+  ).bind(parseInt(beerId, 10), id).run();
+  if (!res.meta.changes) return error(404, "not-found");
+  return json({ ok: true });
 }
 
 // GET /api/admin/stats

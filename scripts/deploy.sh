@@ -42,6 +42,8 @@ if [ "$SEED" = true ]; then
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_seed.sql
   echo "▶ Applying upgrade (venue_types schema, breweries maps_url + FK)..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
+  echo "▶ Applying upgrade (mehrtägige Events + Event-Biere)..."
+  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_multiday_events.sql
 fi
 
 echo "▶ Worker deployen..."

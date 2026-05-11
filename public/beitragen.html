@@ -301,13 +301,21 @@ function buildSizeOptions() {
   const sizes = (remoteCfg && Array.isArray(remoteCfg.priceSizes) && remoteCfg.priceSizes.length > 0)
     ? remoteCfg.priceSizes
     : window.ATLAS_CONFIG.priceSizes;
+  const otherLabel = window.__atlasLang === "en" ? "Other…" : "Andere…";
   return sizes.map((s) => {
     const num = typeof s === "number" ? s : parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
     const val = String(num);
     const label = window.formatSize(val);
     const isDefault = Math.abs(num - 0.25) < 0.001;
     return `<option value="${val}"${isDefault ? " selected" : ""}>${label}</option>`;
-  }).join("");
+  }).join("") + `<option value="custom">${otherLabel}</option>`;
+}
+
+function handleSizeChange(sel) {
+  const customInput = document.getElementById("size-custom-input");
+  if (!customInput) return;
+  customInput.style.display = sel.value === "custom" ? "" : "none";
+  if (sel.value === "custom") customInput.focus();
 }
 
 // ============ Submissions-Cookie ============
@@ -383,7 +391,9 @@ function forms(typ) {
       </div>
       <div class="field">
         <label>${t("field.size")}</label>
-        <select name="size">${buildSizeOptions()}</select>
+        <select name="size" onchange="handleSizeChange(this)">${buildSizeOptions()}</select>
+        <input id="size-custom-input" name="sizeCustom" type="text" style="display:none;margin-top:6px"
+          placeholder="${window.__atlasLang === "en" ? "e.g. 0.33l or 1l" : "z. B. 0,33l oder 1l"}" />
       </div>
     </div>
     <div class="field">
@@ -633,6 +643,15 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     else data[k] = v;
   });
   const email = (fd.get("email") || "").toString().trim() || null;
+
+  // Normalisiere Größe bei freier Eingabe
+  if (currentTyp === "preis" && data.size === "custom") {
+    const raw = (data.sizeCustom || "").trim().replace(",", ".");
+    if (!raw) { btn.disabled = false; errBox.textContent = window.__atlasLang === "en" ? "Please enter a size." : "Bitte Größe eingeben."; errBox.classList.add("visible"); return; }
+    const n = parseFloat(raw.replace(/\s*l$/i, ""));
+    data.size = isNaN(n) ? raw : (n + "l");
+  }
+  delete data.sizeCustom;
 
   // Normalisiere preis → float, type
   if (currentTyp === "preis") data.price = parseFloat(String(data.price).replace(",", "."));

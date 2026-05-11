@@ -15,7 +15,7 @@ import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const ITER = 120000;
+const ITER = 100000;
 
 function b64(buf) {
   return Buffer.from(buf).toString("base64");
