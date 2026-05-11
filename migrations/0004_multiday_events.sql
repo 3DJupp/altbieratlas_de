@@ -3,12 +3,14 @@
 -- Mehrtägige Events + Event-Biere
 -- ============================================================
 -- Für bestehende Installationen nach 0001–0003 anwenden.
--- Idempotent (ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS).
+-- HINWEIS: D1 unterstützt kein ALTER TABLE ADD COLUMN IF NOT EXISTS.
+-- Vor Ausführung prüfen, ob end_date/end_time bereits existieren
+-- (z. B. via PRAGMA table_info(events)); ggf. nur CREATE TABLE/INDEX.
 -- ============================================================
 
 -- Enddatum + Endzeit für mehrtägige Events
-ALTER TABLE events ADD COLUMN IF NOT EXISTS end_date TEXT;
-ALTER TABLE events ADD COLUMN IF NOT EXISTS end_time TEXT;
+ALTER TABLE events ADD COLUMN end_date TEXT;
+ALTER TABLE events ADD COLUMN end_time TEXT;
 
 -- Event-Biere (werden vom Preis-Ranking ausgenommen)
 CREATE TABLE IF NOT EXISTS event_beers (
