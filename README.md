@@ -147,9 +147,12 @@ Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
 Deploy-Flags:
 
 ```bash
-bash scripts/deploy.sh          # Standard — jeder Push auf main
-bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
+bash scripts/deploy.sh              # Standard — jeder Push auf main (nur Worker)
+bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + alle Upgrades + Deploy
+bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003 + 0004) + Deploy
 ```
+
+> Beim ersten Deployment nach diesem Update `--migrate` verwenden, damit `end_date`, `end_time` und die `event_beers`-Tabelle angelegt werden.
 
 ### 1.3 Build-Variablen setzen
 
