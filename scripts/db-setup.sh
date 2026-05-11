@@ -48,5 +48,8 @@ run migrations/0002_seed.sql
 echo "[3/3] Upgrade (venue_types schema, breweries maps_url + FK)"
 run migrations/0003_upgrade.sql
 
+echo "[4/4] Site settings table"
+run migrations/0004_site_settings.sql
+
 echo ""
 echo "✓ Done."

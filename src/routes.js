@@ -1554,20 +1554,63 @@ export async function sitemap(req, env) {
   });
 }
 
+// GET /api/admin/settings
+export async function adminGetSettings(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const rows = await env.DB.prepare("SELECT key, value FROM site_settings").all();
+  const settings = {};
+  for (const r of rows.results) {
+    try { settings[r.key] = JSON.parse(r.value); } catch { settings[r.key] = r.value; }
+  }
+  return json({ settings });
+}
+
+// PUT /api/admin/settings  { key: value, ... }
+export async function adminUpdateSettings(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => ({}));
+  if (!body || typeof body !== "object") return error(400, "invalid-body");
+
+  const allowed = ["impressum.owner", "impressum.address", "impressum.email"];
+  const stmts = [];
+  for (const key of allowed) {
+    if (!(key in body)) continue;
+    const val = body[key] == null ? "" : String(body[key]).trim();
+    stmts.push(
+      env.DB.prepare(
+        "INSERT INTO site_settings (key, value, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
+      ).bind(key, JSON.stringify(val))
+    );
+  }
+  if (stmts.length) await env.DB.batch(stmts);
+  return json({ ok: true });
+}
+
 // GET /impressum.html
 // Liefert die statische Seite, ergänzt um ein serverseitig eingebettetes
-// <script>-Block mit den Impressum-Daten aus SITE_CONFIG. Die Daten
-// verlassen den Worker dadurch nur als gerendertes HTML — nicht als JSON-API.
+// <script>-Block mit den Impressum-Daten. D1 hat Vorrang vor SITE_CONFIG.
 export async function serveImpressum(req, env) {
   const assetRes = await env.ASSETS.fetch(req);
   if (!assetRes.ok) return assetRes;
 
-  const sc   = siteConfig(env);
-  const impr = sc.impressum || {};
-  const v    = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : "");
+  const sc = siteConfig(env);
+  const v  = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : "");
 
-  // Nur gesetzte Werte injizieren — leere Strings würden die config.js-Fallbacks überschreiben.
-  // E-Mail fällt auf den allgemeinen contactEmail zurück, wenn impressum.email fehlt.
+  // D1-Werte laden (Vorrang vor SITE_CONFIG)
+  const dbImpr = {};
+  try {
+    const rows = await env.DB.prepare(
+      "SELECT key, value FROM site_settings WHERE key IN ('impressum.owner','impressum.address','impressum.email')"
+    ).all();
+    for (const r of rows.results) {
+      const k = r.key.replace("impressum.", "");
+      try { dbImpr[k] = JSON.parse(r.value); } catch { dbImpr[k] = r.value; }
+    }
+  } catch { /* Tabelle fehlt bei alten Instanzen — ignorieren */ }
+
+  const impr = { ...(sc.impressum || {}), ...dbImpr };
   const emailVal = v(impr.email) || v(sc.contactEmail);
   const parts = [];
   if (v(impr.owner))   parts.push(`i.owner=${JSON.stringify(v(impr.owner))};`);
@@ -1585,7 +1628,6 @@ export async function serveImpressum(req, env) {
       )
     : html;
 
-  // Vorhandene Response-Header übernehmen (CSP etc.), Content-Type korrigieren
   const headers = new Headers(assetRes.headers);
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "no-store");
