@@ -69,7 +69,13 @@ window.ATLAS_CONFIG = {
     github: null,
     linkedin: null,
     website: null,
+    instagram: null,
+    mastodon: null,
+    kofi: null,
   },
+
+  // Banner (null = deaktiviert)
+  banner: null,
 
   // ============================================================
   // Impressum-Daten — Fallback für lokale Entwicklung (Mock-Modus).

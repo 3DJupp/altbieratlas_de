@@ -55,6 +55,7 @@ const ROUTES = [
   ["GET",    "/api/events/calendar.ics",                  R.eventsIcs],
   ["GET",    "/api/events/:id/calendar.ics",              R.eventIcs],
   ["GET",    "/api/events/:id",                           R.getEvent],
+  ["GET",    "/api/venue-types",                            R.listVenueTypes],
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],
   ["POST",   "/api/contributions",                         R.postContribution],
@@ -151,10 +152,26 @@ export default {
       }
     }
 
+    // Extensionless URL → redirect to .html equivalent
+    const PAGES = ["index", "ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
+    if (request.method === "GET" && !url.pathname.includes(".")) {
+      const bare = url.pathname.replace(/\/$/, "") || "/index";
+      const name = bare.slice(1); // strip leading /
+      if (PAGES.includes(name)) {
+        const target = new URL(request.url);
+        target.pathname = `/${name}.html`;
+        return Response.redirect(target.toString(), 301);
+      }
+    }
+
     // Impressum: Daten serverseitig ins HTML eingebettet (nicht via JSON-API)
-    if (url.pathname === "/impressum.html" && request.method === "GET" && env.ASSETS) {
+    if ((url.pathname === "/impressum.html" || url.pathname === "/impressum") && request.method === "GET" && env.ASSETS) {
       try {
-        return await R.serveImpressum(request, env);
+        // Kanonische URL immer mit .html aufrufen
+        const assetReq = url.pathname === "/impressum"
+          ? new Request(request.url.replace("/impressum", "/impressum.html"), request)
+          : request;
+        return await R.serveImpressum(assetReq, env);
       } catch (e) {
         console.error("[worker] impressum threw:", e?.stack || e);
         // bei Fehler: statische Datei unverändert ausliefern

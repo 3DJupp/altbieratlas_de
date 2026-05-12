@@ -34,10 +34,11 @@
     if (typeof srv.requireModeration === "boolean")                cfg.requireModeration   = srv.requireModeration;
     if (srv.author && typeof srv.author === "object") {
       cfg.author = cfg.author || {};
-      for (const k of ["name", "github", "linkedin", "website"]) {
+      for (const k of ["name", "github", "linkedin", "website", "instagram", "mastodon", "kofi"]) {
         if (srv.author[k]) cfg.author[k] = srv.author[k];
       }
     }
+    if (srv.banner) cfg.banner = srv.banner;
   }
 
   async function probe() {

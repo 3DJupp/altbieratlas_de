@@ -9,6 +9,19 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#b57a3a" />
 <title>Beitragen · Altbieratlas</title>
+<meta name="description" content="Preis melden, Brauerei eintragen oder Korrektur einreichen — hilf den Altbieratlas aktuell zu halten." />
+<link rel="canonical" href="https://altbieratlas.de/beitragen.html" />
+<link rel="alternate" hreflang="de" href="https://altbieratlas.de/beitragen.html" />
+<link rel="alternate" hreflang="en" href="https://altbieratlas.de/beitragen.html?lang=en" />
+<link rel="alternate" hreflang="x-default" href="https://altbieratlas.de/beitragen.html" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Beitragen · Altbieratlas" />
+<meta property="og:description" content="Preis melden, Brauerei eintragen oder Korrektur einreichen — hilf den Altbieratlas aktuell zu halten." />
+<meta property="og:url" content="https://altbieratlas.de/beitragen.html" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Beitragen · Altbieratlas" />
+<meta name="twitter:description" content="Preis melden, Brauerei eintragen oder Korrektur einreichen." />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,6 +178,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 </head>
 <body>
 <div class="page">
+  <div id="shell-banner" hidden></div>
   <div id="shell-header"></div>
 
   <section class="contrib-hero">
@@ -269,19 +283,41 @@ const TYP_TO_API = {
 let breweries = [];
 let sizeOptions = "";
 let breweryOptions = "";
+let venueTypes = [];
 let remoteCfg = null;
 let turnstileToken = null;
 let turnstileWidgetId = null;
 let turnstileSiteKeyCache = null;
 
+const DEFAULT_VENUE_TYPES = [
+  { id: "brewery",        nameDe: "Brauerei",     nameEn: "Brewery" },
+  { id: "brewpub",        nameDe: "Hausbrauerei", nameEn: "Brewpub" },
+  { id: "pub",            nameDe: "Kneipe",       nameEn: "Pub" },
+  { id: "restaurant",     nameDe: "Restaurant",   nameEn: "Restaurant" },
+  { id: "kiosk",          nameDe: "Kiosk",        nameEn: "Kiosk" },
+  { id: "supermarket",    nameDe: "Supermarkt",   nameEn: "Supermarket" },
+  { id: "beverage_store", nameDe: "Getränkeshop", nameEn: "Beverage store" },
+];
+
+function buildVenueTypeOptions() {
+  const lang = window.__atlasLang || "de";
+  const types = venueTypes.length ? venueTypes : DEFAULT_VENUE_TYPES;
+  return types.map((vt) => {
+    const label = lang === "en" ? (vt.nameEn || vt.nameDe) : (vt.nameDe || vt.nameEn);
+    return `<option value="${vt.id}">${label}</option>`;
+  }).join("");
+}
+
 (async () => {
   try {
-    const [brewResp, apiCfg] = await Promise.all([
+    const [brewResp, apiCfg, vtResp] = await Promise.all([
       window.AtlasAPI.listBreweries(),
       window.AtlasAPI.getConfig().catch(() => null),
+      fetch("/api/venue-types").then((r) => r.ok ? r.json() : null).catch(() => null),
     ]);
     breweries = brewResp.breweries || [];
     remoteCfg = apiCfg || {};
+    venueTypes = vtResp?.venueTypes || [];
   } catch (e) {
     console.warn("[atlas] Laden fehlgeschlagen, Seed wird genutzt:", e);
     breweries = (window.ATLAS_DATA && window.ATLAS_DATA.breweries) || [];
@@ -420,11 +456,7 @@ function forms(typ) {
       </div>
       <div class="field">
         <label>${t("field.type")}</label>
-        <select name="type">
-          <option value="brewery">${t("type.brewery")}</option>
-          <option value="pub">${t("type.pub")}</option>
-          <option value="shop">${t("type.shop")}</option>
-        </select>
+        <select name="type">${buildVenueTypeOptions()}</select>
       </div>
     </div>
     <div class="field">

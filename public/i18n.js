@@ -25,6 +25,7 @@ window.ATLAS_I18N = {
     "map.filter.brauerei":     "Brauerei / Brewpub",
     "map.filter.gastronomie":  "Gastronomie",
     "map.filter.handel":       "Handel",
+    "map.filter.historisch":   "Historisch",
     // Legacy
     "map.filter.hausbrauerei": "Brauerei / Brewpub",
     "map.filter.shop":         "Handel",
@@ -267,6 +268,7 @@ window.ATLAS_I18N = {
     "brewery.noPriceReports": "Noch keine Meldungen.",
     "brewery.insufficientChart": "Zu wenig Datenpunkte für einen Verlauf.",
     "brewery.noPrice": "Noch keine Preismeldung",
+    "brewery.historical": "Historisch / nicht mehr in Betrieb",
     // Map popups / geocode
     "popup.details": "Details →",
     // Rank sub
@@ -439,6 +441,7 @@ window.ATLAS_I18N = {
     "map.filter.brauerei":     "Brewery / Brewpub",
     "map.filter.gastronomie":  "Gastronomy",
     "map.filter.handel":       "Retail",
+    "map.filter.historisch":   "Historical",
     // Legacy
     "map.filter.hausbrauerei": "Brewery / Brewpub",
     "map.filter.shop":         "Retail",
@@ -672,6 +675,7 @@ window.ATLAS_I18N = {
     "brewery.noPriceReports": "No reports yet.",
     "brewery.insufficientChart": "Not enough data points for a trend.",
     "brewery.noPrice": "No price report yet",
+    "brewery.historical": "Historical / no longer operating",
     // Map popups
     "popup.details": "Details →",
     // Rank sub

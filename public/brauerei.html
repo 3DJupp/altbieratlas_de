@@ -134,6 +134,7 @@
 </head>
 <body>
 <div class="page">
+  <div id="shell-banner" hidden></div>
   <div id="shell-header"></div>
 
   <main id="brewery-root">
@@ -224,6 +225,7 @@ const root = document.getElementById("brewery-root");
             <div class="brewery-meta">
               <span id="b-status" class="tag ${b.verified ? 'verified' : 'pending'}">${b.verified ? window.t('common.verified') : window.t('common.pending')}</span>
               <span id="b-type">${typeLabel}</span>
+              ${b.isHistorical ? `<span class="tag" style="color:#888;border-color:#888;font-size:11px">${window.t('brewery.historical')}</span>` : ''}
               <span class="dot"></span>
               <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
               ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}

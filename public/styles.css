@@ -335,6 +335,32 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
 /* ============================================================
    Cookie banner
    ============================================================ */
+/* Site banner (configurable announcement) */
+.site-banner {
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 8px 16px;
+  font-size: 13px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.site-banner span { flex: 1; }
+.banner-close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.banner-close:hover { opacity: 1; }
+
 .cookie-banner {
   position: fixed;
   bottom: 16px;
@@ -440,10 +466,36 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   border-radius: 50%;
   box-shadow: 0 0 0 3px rgba(217, 163, 91, 0.25), 0 2px 6px rgba(0,0,0,0.4);
   position: relative;
+  cursor: pointer;
+  transition: transform 0.1s ease;
 }
+.atlas-pin:hover { transform: scale(1.25); }
+/* type-specific colours */
+.atlas-pin.brewpub    { background: var(--copper-glow); }
+.atlas-pin.brewery    { background: #b57a3a; }
+.atlas-pin.pub        { background: #c47a3a; }
+.atlas-pin.restaurant { background: #a0623a; }
+.atlas-pin.kiosk,
+.atlas-pin.supermarket,
+.atlas-pin.beverage_store { background: #9b7b4e; }
+/* legacy class aliases */
 .atlas-pin.hausbrauerei { background: var(--copper-glow); }
-.atlas-pin.gastronomie { background: #c47a3a; }
-.atlas-pin.shop { background: #9b7b4e; }
+.atlas-pin.gastronomie  { background: #c47a3a; }
+.atlas-pin.shop         { background: #9b7b4e; }
+/* historical — grey, smaller */
+.atlas-pin.historical {
+  background: #6b6055;
+  border-color: #b0a898;
+  box-shadow: 0 0 0 2px rgba(176,168,152,0.2), 0 1px 4px rgba(0,0,0,0.3);
+  width: 16px; height: 16px;
+  opacity: 0.7;
+}
+/* highlighted / sponsored — golden glow */
+.atlas-pin.highlighted,
+.atlas-pin.sponsored {
+  box-shadow: 0 0 0 4px rgba(217, 163, 91, 0.5), 0 0 12px rgba(217, 163, 91, 0.4), 0 2px 6px rgba(0,0,0,0.4);
+  border-color: #ffd700;
+}
 .atlas-pin.pending {
   background: transparent;
   border: 2px dashed var(--copper);
@@ -475,6 +527,18 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   border-color: var(--copper-glow);
   font-size: 12px;
 }
+.leaflet-tooltip.atlas-tooltip {
+  background: #22180e;
+  border: 1px solid rgba(217, 163, 91, 0.4);
+  color: #f3ead8;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.leaflet-tooltip.atlas-tooltip::before { display: none; }
 
 /* Tables */
 .table {
