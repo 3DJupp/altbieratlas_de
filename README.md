@@ -85,7 +85,9 @@ bash scripts/db-setup.sh [--remote]
 | `0004_site_settings.sql` | `site_settings`-Tabelle |
 | `0005_prod_cleanup.sql` | v0.6.0: 7 Venue-Typen, neue Brauereien (Hellers, Kürzer Flingern, Altus), Test-Daten entfernen |
 
-`0001` und `0002` sind idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). `0003`–`0005` sind für bestehende Installationen gedacht und können wiederholt ausgeführt werden.
+**Neuinstallation:** nur `0001` + `0002` nötig — `db-setup.sh` führt genau diese zwei Schritte aus.
+
+`0003`–`0005` sind Upgrade-Pfade für bestehende Installationen (idempotent, können wiederholt ausgeführt werden).
 
 > **Mehrtägige Events & Event-Biere** (`end_date`, `end_time`, `event_beers`) sind seit `0001` im Schema enthalten — Neuinstallationen benötigen keinen separaten Upgrade-Schritt. Bestehende Installationen, die diese Spalten noch nicht haben, fügen sie manuell per `ALTER TABLE events ADD COLUMN end_date TEXT; ALTER TABLE events ADD COLUMN end_time TEXT;` und `CREATE TABLE IF NOT EXISTS event_beers (…)` hinzu.
 
