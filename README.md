@@ -1,4 +1,4 @@
-# Altbieratlas · v0.4.2
+# Altbieratlas · v0.6.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -27,8 +27,10 @@ altbieratlas/
 │   └── favicon.svg …
 ├── migrations/
 │   ├── 0001_schema.sql      # Alle Tabellen, Indizes, FK-Kaskaden (Neuinstallation)
-│   ├── 0002_seed.sql        # Stile, Glossar, Venue-Typen, Brauereien, Preise, Events
-│   └── 0003_upgrade.sql     # Upgrade bestehender Installationen (venue_types + maps_url)
+│   ├── 0002_seed.sql        # Stile, Glossar, Venue-Typen (7), Brauereien, Preise, Events
+│   ├── 0003_upgrade.sql     # Upgrade bestehender Installationen (venue_types + maps_url)
+│   ├── 0004_site_settings.sql # site_settings-Tabelle
+│   └── 0005_prod_cleanup.sql  # v0.6.0: 7 Venue-Typen, neue Brauereien, Test-Daten bereinigen
 ├── scripts/
 │   ├── create-admin.mjs     # Admin-User anlegen
 │   ├── db-setup.sh          # DB-Setup (Schema + Seed + Upgrade)
@@ -78,10 +80,14 @@ bash scripts/db-setup.sh [--remote]
 | Datei | Inhalt |
 |---|---|
 | `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden (Neuinstallation) |
-| `0002_seed.sql` | Venue-Typen, Bierstile, Glossar, Brauereien, Preise, Events |
+| `0002_seed.sql` | Venue-Typen (7), Bierstile, Glossar, Brauereien, Preise, Events |
 | `0003_upgrade.sql` | Upgrade für bestehende Installationen (neues `venue_types`-Schema, `maps_url`-Spalte) |
+| `0004_site_settings.sql` | `site_settings`-Tabelle |
+| `0005_prod_cleanup.sql` | v0.6.0: 7 Venue-Typen, neue Brauereien (Hellers, Kürzer Flingern, Altus), Test-Daten entfernen |
 
-`0001` und `0002` sind idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). `0003` ist für bestehende Installationen gedacht und kann wiederholt ausgeführt werden.
+**Neuinstallation:** nur `0001` + `0002` nötig — `db-setup.sh` führt genau diese zwei Schritte aus.
+
+`0003`–`0005` sind Upgrade-Pfade für bestehende Installationen (idempotent, können wiederholt ausgeführt werden).
 
 > **Mehrtägige Events & Event-Biere** (`end_date`, `end_time`, `event_beers`) sind seit `0001` im Schema enthalten — Neuinstallationen benötigen keinen separaten Upgrade-Schritt. Bestehende Installationen, die diese Spalten noch nicht haben, fügen sie manuell per `ALTER TABLE events ADD COLUMN end_date TEXT; ALTER TABLE events ADD COLUMN end_time TEXT;` und `CREATE TABLE IF NOT EXISTS event_beers (…)` hinzu.
 
@@ -149,8 +155,8 @@ Deploy-Flags:
 
 ```bash
 bash scripts/deploy.sh              # Standard — jeder Push auf main (nur Worker)
-bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
-bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003) + Deploy
+bash scripts/deploy.sh --seed       # Ersteinrichtung: 0001–0005 + Deploy
+bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003–0005) + Deploy
 ```
 
 ### 1.3 Build-Variablen setzen

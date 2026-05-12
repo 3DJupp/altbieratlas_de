@@ -177,3 +177,10 @@ CREATE TABLE IF NOT EXISTS untappd_cache (
   data      TEXT NOT NULL,
   cached_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Site settings (key-value config, editable via admin)
+CREATE TABLE IF NOT EXISTS site_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

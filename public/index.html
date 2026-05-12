@@ -60,9 +60,9 @@
 
     <div class="map-filters">
       <button class="filter-btn active" data-filter="all" data-i18n="map.filter.all">Alle</button>
-      <button class="filter-btn" data-filter="hausbrauerei" data-i18n="map.filter.hausbrauerei">Hausbrauerei</button>
+      <button class="filter-btn" data-filter="brauerei" data-i18n="map.filter.brauerei">Brauerei / Brewpub</button>
       <button class="filter-btn" data-filter="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</button>
-      <button class="filter-btn" data-filter="shop" data-i18n="map.filter.shop">Handel</button>
+      <button class="filter-btn" data-filter="handel" data-i18n="map.filter.handel">Handel</button>
       <div class="map-search-wrap">
         <input type="search" id="map-search" class="filter-search" placeholder="Stadt, Brauerei, Ort…" data-i18n-placeholder="map.search" autocomplete="off" />
         <div class="map-search-suggest" id="map-search-suggest"></div>
@@ -335,7 +335,15 @@ function renderMarkers(filter = "all", search = "") {
   const q = search.trim().toLowerCase();
 
   allBreweries.forEach((b) => {
-    if (filter !== "all" && b.type !== filter) return;
+    if (filter !== "all") {
+      const groups = {
+        brauerei:   ["brewery", "brewpub"],
+        gastronomie:["pub", "restaurant"],
+        handel:     ["kiosk", "supermarket", "beverage_store"],
+      };
+      const allowed = groups[filter] || [filter];
+      if (!allowed.includes(b.type)) return;
+    }
     if (q && !((b.name + " " + b.city).toLowerCase().includes(q))) return;
 
     const marker = L.marker(b.coords, { icon: pinIcon(b.type, b.pending) }).addTo(map);

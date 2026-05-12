@@ -1,6 +1,5 @@
-// Altbieratlas — Seed-Daten
-// Enthält echte Düsseldorfer Hausbrauereien und international relevante Altbier-Produzenten.
-// Alle Zahlen sind Platzhalter für den PoC.
+// Altbieratlas — Mock-Seed-Daten  v0.6.0
+// Spiegelt migrations/0002_seed.sql für den Mock-Modus (kein Backend).
 
 window.ATLAS_DATA = {
   breweries: [
@@ -9,10 +8,11 @@ window.ATLAS_DATA = {
       id: "uerige",
       name: "Brauerei im Uerige",
       short: "Uerige",
-      type: "hausbrauerei",
+      type: "brewpub",
       city: "Düsseldorf",
       country: "DE",
       address: "Berger Straße 1, 40213 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Berger+Stra%C3%9Fe+1,+40213+D%C3%BCsseldorf",
       coords: [51.2253, 6.7722],
       founded: 1862,
       website: "https://uerige.de",
@@ -27,10 +27,11 @@ window.ATLAS_DATA = {
       id: "fuechschen",
       name: "Brauerei Füchschen",
       short: "Füchschen",
-      type: "hausbrauerei",
+      type: "brewpub",
       city: "Düsseldorf",
       country: "DE",
       address: "Ratinger Straße 28, 40213 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Ratinger+Stra%C3%9Fe+28,+40213+D%C3%BCsseldorf",
       coords: [51.2278, 6.7715],
       founded: 1848,
       website: "https://fuechschen.de",
@@ -38,17 +39,18 @@ window.ATLAS_DATA = {
         de: "Familiengeführte Hausbrauerei, bekannt für ein malzbetontes, vollmundiges Alt und die legendäre Weihnachts-Silvester-Stimmung.",
         en: "Family-run brewpub known for a malty, full-bodied Alt and its legendary Christmas-New-Year atmosphere.",
       },
-      styles: ["fuechschen-alt", "weizen"],
+      styles: ["fuechschen-alt"],
       verified: true,
     },
     {
       id: "schumacher",
       name: "Brauerei Schumacher",
       short: "Schumacher",
-      type: "hausbrauerei",
+      type: "brewpub",
       city: "Düsseldorf",
       country: "DE",
       address: "Oststraße 123, 40210 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Ostra%C3%9Fe+123,+40210+D%C3%BCsseldorf",
       coords: [51.2224, 6.7912],
       founded: 1838,
       website: "https://schumacher-alt.de",
@@ -56,17 +58,18 @@ window.ATLAS_DATA = {
         de: "Die älteste der Düsseldorfer Hausbrauereien. Mildes, gut trinkbares Schumacher Alt seit 1838.",
         en: "The oldest of the Düsseldorf brewpubs. A mild, highly drinkable Schumacher Alt since 1838.",
       },
-      styles: ["schumacher-alt", "latzenbier"],
+      styles: ["schumacher-alt"],
       verified: true,
     },
     {
       id: "schluessel",
       name: "Brauerei zum Schlüssel",
       short: "Schlüssel",
-      type: "hausbrauerei",
+      type: "brewpub",
       city: "Düsseldorf",
       country: "DE",
       address: "Bolkerstraße 41-47, 40213 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Bolkerstra%C3%9Fe+41,+40213+D%C3%BCsseldorf",
       coords: [51.2268, 6.7728],
       founded: 1850,
       website: "https://zumschluessel.de",
@@ -74,17 +77,18 @@ window.ATLAS_DATA = {
         de: "Traditionsreiche Hausbrauerei an der Bolkerstraße, im Herzen der Altstadt. Ausgewogenes, leicht herbes Alt.",
         en: "Heritage brewpub on Bolker Straße, in the heart of the old town. A balanced, gently bitter Alt.",
       },
-      styles: ["schluessel-alt", "stike-alt"],
+      styles: ["schluessel-alt"],
       verified: true,
     },
     {
       id: "kuerzer",
       name: "Brauerei Kürzer",
       short: "Kürzer",
-      type: "hausbrauerei",
+      type: "brewpub",
       city: "Düsseldorf",
       country: "DE",
       address: "Kurze Straße 18-20, 40213 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Kurze+Stra%C3%9Fe+18,+40213+D%C3%BCsseldorf",
       coords: [51.2262, 6.7733],
       founded: 2010,
       website: "https://brauerei-kuerzer.de",
@@ -95,15 +99,35 @@ window.ATLAS_DATA = {
       styles: ["kuerzer-alt"],
       verified: true,
     },
-    // ========== Düsseldorf Umland ==========
+    {
+      id: "kuerzer-flingern",
+      name: "Brauerei Kürzer Flingern",
+      short: "Kürzer Flingern",
+      type: "brewpub",
+      city: "Düsseldorf",
+      country: "DE",
+      address: "Fichtenstraße 21, 40233 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Fichtenstra%C3%9Fe+21,+40233+D%C3%BCsseldorf",
+      coords: [51.2337, 6.8151],
+      founded: 2020,
+      website: "https://brauerei-kuerzer.de",
+      description: {
+        de: "Zweiter Kürzer-Standort in Düsseldorf-Flingern. Vollwertige Produktionsbrauerei mit Taproom, Biergarten und sechs Spezialbieren, die ausschließlich hier ausgeschenkt werden.",
+        en: "Second Kürzer site in Düsseldorf-Flingern. Full production brewery with taproom, beer garden and six specialty beers available only here.",
+      },
+      styles: ["kuerzer-alt"],
+      verified: true,
+    },
+    // ========== Düsseldorf — Gastronomie ==========
     {
       id: "zum-schlueffken",
       name: "Zum Schlüffken",
       short: "Schlüffken",
-      type: "gastronomie",
+      type: "pub",
       city: "Düsseldorf",
       country: "DE",
       address: "Flinger Straße 1, 40213 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Flinger+Stra%C3%9Fe+1,+40213+D%C3%BCsseldorf",
       coords: [51.2271, 6.774],
       founded: null,
       website: null,
@@ -114,15 +138,36 @@ window.ATLAS_DATA = {
       styles: ["uerige-alt"],
       verified: true,
     },
+    // ========== Düsseldorf — Marke / Lohnbrauen ==========
+    {
+      id: "altus",
+      name: "Altus bräu",
+      short: "Altus",
+      type: "brewery",
+      city: "Düsseldorf",
+      country: "DE",
+      address: "Sonnbornstr. 2, 40625 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Sonnbornstr.+2,+40625+D%C3%BCsseldorf",
+      coords: [51.2157, 6.8633],
+      founded: 2021,
+      website: "https://altus-braeu.de",
+      description: {
+        de: "Erstes Bio-Altbier aus Düsseldorf. Gebraut nach biologischen Standards mit Malz und Hopfen aus ökologischem Anbau — im Lohnbrauen-Verfahren bei einer Partnerbrauerei.",
+        en: "The first certified organic Altbier from Düsseldorf, contract-brewed to organic standards using ecologically grown malt and hops.",
+      },
+      styles: ["altus-alt"],
+      verified: true,
+    },
     // ========== Krefeld ==========
     {
       id: "koenigshof",
       name: "Privatbrauerei Königshof",
       short: "Königshof",
-      type: "hausbrauerei",
+      type: "brewery",
       city: "Krefeld",
       country: "DE",
       address: "Untergath 70, 47805 Krefeld",
+      mapsUrl: "https://maps.google.com/maps?q=Untergath+70,+47805+Krefeld",
       coords: [51.3172, 6.5603],
       founded: 1830,
       website: "https://privatbrauerei-koenigshof.de",
@@ -138,10 +183,11 @@ window.ATLAS_DATA = {
       id: "hannen",
       name: "Hannen Brauerei",
       short: "Hannen",
-      type: "hausbrauerei",
+      type: "brewery",
       city: "Mönchengladbach",
       country: "DE",
       address: "Bismarckstraße 115, 41061 Mönchengladbach",
+      mapsUrl: "https://maps.google.com/maps?q=Bismarckstra%C3%9Fe+115,+41061+M%C3%B6nchengladbach",
       coords: [51.1805, 6.4428],
       founded: 1725,
       website: null,
@@ -152,34 +198,36 @@ window.ATLAS_DATA = {
       styles: ["hannen-alt"],
       verified: true,
     },
-    // ========== Köln (ja, es gibt dort Alt-Ausschank...) ==========
+    // ========== Köln ==========
     {
-      id: "malzmuehle-alt",
-      name: "Alt-Eck",
-      short: "Alt-Eck Köln",
-      type: "gastronomie",
+      id: "hellers",
+      name: "Hellers Brauhaus",
+      short: "Hellers",
+      type: "brewpub",
       city: "Köln",
       country: "DE",
-      address: "Weidengasse 20, 50668 Köln",
-      coords: [50.9452, 6.9606],
-      founded: null,
-      website: null,
+      address: "Roonstraße 33, 50674 Köln",
+      mapsUrl: "https://maps.google.com/maps?q=Roonstra%C3%9Fe+33,+50674+K%C3%B6ln",
+      coords: [50.9284, 6.9408],
+      founded: 1996,
+      website: "https://www.hellers.koeln",
       description: {
-        de: "Exotisch im Kölsch-Land: eine Kneipe mit echtem Alt-Ausschank. Nicht jedermanns Sache.",
-        en: "Exotic in Kölsch country: a pub actually serving Alt. Not for everyone.",
+        de: "Bio-Hausbrauerei im Kwartier Latäng, Köln. Die einzige Kölner Hausbrauerei in Bio-Qualität — braut Kölsch, naturtrübes Wiess und Altbier.",
+        en: "Organic brewpub in Cologne's Kwartier Latäng. The city's only brewpub producing its beers — Kölsch, naturally cloudy Wiess and Altbier — to certified organic standards.",
       },
-      styles: ["fuechschen-alt"],
-      verified: false,
+      styles: ["hellers-alt"],
+      verified: true,
     },
     // ========== International ==========
     {
       id: "alaskan-brewing",
       name: "Alaskan Brewing Co.",
       short: "Alaskan",
-      type: "hausbrauerei",
+      type: "brewery",
       city: "Juneau",
       country: "US",
       address: "5429 Shaune Drive, Juneau, AK",
+      mapsUrl: "https://maps.google.com/maps?q=5429+Shaune+Drive,+Juneau,+AK",
       coords: [58.358, -134.554],
       founded: 1986,
       website: "https://alaskanbeer.com",
@@ -194,10 +242,11 @@ window.ATLAS_DATA = {
       id: "long-trail",
       name: "Long Trail Brewing",
       short: "Long Trail",
-      type: "hausbrauerei",
+      type: "brewery",
       city: "Bridgewater Corners",
       country: "US",
       address: "5520 US-4, Bridgewater Corners, VT",
+      mapsUrl: "https://maps.google.com/maps?q=5520+US-4,+Bridgewater+Corners,+VT",
       coords: [43.6, -72.7614],
       founded: 1989,
       website: "https://longtrail.com",
@@ -207,60 +256,6 @@ window.ATLAS_DATA = {
       },
       styles: ["long-trail-ale"],
       verified: true,
-    },
-    {
-      id: "bruery-terreux",
-      name: "The Bruery",
-      short: "Bruery",
-      type: "hausbrauerei",
-      city: "Placentia",
-      country: "US",
-      address: "717 Dunn Way, Placentia, CA",
-      coords: [33.8814, -117.8626],
-      founded: 2008,
-      website: "https://thebruery.com",
-      description: {
-        de: "Kalifornische Craft-Brauerei mit gelegentlichen Altbier-Interpretationen.",
-        en: "California craft brewery with occasional Altbier releases.",
-      },
-      styles: ["humulus-alt"],
-      verified: false,
-    },
-    {
-      id: "marble-nl",
-      name: "Brouwerij Rückerl",
-      short: "Rückerl",
-      type: "hausbrauerei",
-      city: "Arnhem",
-      country: "NL",
-      address: "Westervoortsedijk 73, Arnhem",
-      coords: [51.9804, 5.9388],
-      founded: 2014,
-      website: null,
-      description: {
-        de: "Niederländische Hausbrauerei mit einem Altbier nach niederrheinischer Tradition.",
-        en: "Dutch brewpub with an Altbier in the Niederrhein tradition.",
-      },
-      styles: ["rueckerl-alt"],
-      verified: false,
-    },
-    {
-      id: "tokyo-alt",
-      name: "Ushitora Brewery",
-      short: "Ushitora",
-      type: "hausbrauerei",
-      city: "Tokyo",
-      country: "JP",
-      address: "2-9-3 Sangenjaya, Setagaya, Tokyo",
-      coords: [35.6434, 139.6713],
-      founded: 2014,
-      website: null,
-      description: {
-        de: "Tokioter Craft-Brauerei, die immer wieder ein Altbier ins Sortiment nimmt.",
-        en: "Tokyo craft brewery that regularly puts an Altbier on the lineup.",
-      },
-      styles: ["ushitora-alt"],
-      verified: false,
     },
   ],
 
@@ -353,71 +348,104 @@ window.ATLAS_DATA = {
         en: "American take on Alt: malt-forward, caramel, softer than the Düsseldorf originals.",
       },
     },
+    {
+      id: "koenigshof-alt",
+      name: "Königshof Alt",
+      abv: 4.9,
+      ibu: 28,
+      color: "#8c4a1a",
+      tasting: {
+        de: "Mild-malzig, niederrheinisch weich. Klassisch für die Region.",
+        en: "Mild-malty, soft in the Lower-Rhine style. Regional classic.",
+      },
+    },
+    {
+      id: "hannen-alt",
+      name: "Hannen Alt",
+      abv: 4.8,
+      ibu: 30,
+      color: "#8c4820",
+      tasting: {
+        de: "Industriell gebraut, aber klassisch profiliert. Die wohl bekannteste Alt-Marke außerhalb Düsseldorfs.",
+        en: "Industrially brewed but classically profiled. Likely the best-known Alt brand outside Düsseldorf.",
+      },
+    },
+    {
+      id: "long-trail-ale",
+      name: "Long Trail Ale",
+      abv: 4.6,
+      ibu: 25,
+      color: "#a56030",
+      tasting: {
+        de: "Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.",
+        en: "Vermont take: malty, mildly sweet, with American hop character.",
+      },
+    },
+    {
+      id: "hellers-alt",
+      name: "Hellers Altbier",
+      abv: 4.8,
+      ibu: null,
+      color: "#8b4820",
+      tasting: {
+        de: "Bio-Altbier des Kölner Brauhauses Hellers. Mild, ausgewogen, mit biologisch angebautem Malz gebraut.",
+        en: "Organic Altbier from Cologne's Hellers brewpub. Mild, balanced, brewed with organically grown malt.",
+      },
+    },
+    {
+      id: "altus-alt",
+      name: "Altus Bio-Alt",
+      abv: 4.9,
+      ibu: null,
+      color: "#8d4a1e",
+      tasting: {
+        de: "Erstes Bio-Altbier aus Düsseldorf. Mild-malzig, ausgewogen, mit ökologisch angebautem Hopfen und Malz.",
+        en: "The first certified organic Altbier from Düsseldorf. Mildly malty, balanced, brewed with organically grown hops and malt.",
+      },
+    },
   ],
 
-  // Preismeldungen (Seed)
+  // Preismeldungen (Seed) — Stand 2025/2026
   prices: [
-    // Uerige
-    { breweryId: "uerige", date: "2026-04-15", size: "0,25l", price: 2.7, source: "vor Ort" },
-    { breweryId: "uerige", date: "2026-04-10", size: "0,25l", price: 2.7, source: "vor Ort" },
-    { breweryId: "uerige", date: "2026-03-28", size: "0,25l", price: 2.7, source: "Website" },
-    { breweryId: "uerige", date: "2025-11-05", size: "0,25l", price: 2.5, source: "vor Ort" },
-    { breweryId: "uerige", date: "2025-06-20", size: "0,25l", price: 2.5, source: "vor Ort" },
-    // Füchschen
-    { breweryId: "fuechschen", date: "2026-04-12", size: "0,25l", price: 2.6, source: "vor Ort" },
-    { breweryId: "fuechschen", date: "2026-02-14", size: "0,25l", price: 2.6, source: "vor Ort" },
-    { breweryId: "fuechschen", date: "2025-09-01", size: "0,25l", price: 2.4, source: "vor Ort" },
-    // Schumacher
-    { breweryId: "schumacher", date: "2026-04-08", size: "0,25l", price: 2.5, source: "vor Ort" },
-    { breweryId: "schumacher", date: "2026-01-20", size: "0,25l", price: 2.5, source: "vor Ort" },
-    // Schlüssel
-    { breweryId: "schluessel", date: "2026-04-14", size: "0,25l", price: 2.6, source: "vor Ort" },
-    { breweryId: "schluessel", date: "2025-12-01", size: "0,25l", price: 2.5, source: "vor Ort" },
-    // Kürzer
-    { breweryId: "kuerzer", date: "2026-04-16", size: "0,25l", price: 2.8, source: "vor Ort" },
-    { breweryId: "kuerzer", date: "2026-03-01", size: "0,25l", price: 2.7, source: "vor Ort" },
-    // Königshof
-    { breweryId: "koenigshof", date: "2026-04-02", size: "0,5l", price: 3.4, source: "Handel" },
-    // Hannen
-    { breweryId: "hannen", date: "2026-03-15", size: "0,5l", price: 2.9, source: "Handel" },
+    // Uerige — 2,85 €/0,25l
+    { breweryId: "uerige", date: "2026-04-15", size: "0,25l", price: 2.85, source: "vor Ort" },
+    { breweryId: "uerige", date: "2025-11-05", size: "0,25l", price: 2.85, source: "vor Ort" },
+    { breweryId: "uerige", date: "2025-06-20", size: "0,25l", price: 2.85, source: "vor Ort" },
+    // Füchschen — 2,90 €/0,25l
+    { breweryId: "fuechschen", date: "2026-04-12", size: "0,25l", price: 2.90, source: "vor Ort" },
+    { breweryId: "fuechschen", date: "2025-09-01", size: "0,25l", price: 2.70, source: "vor Ort" },
+    // Schumacher — 2,90 €/0,25l
+    { breweryId: "schumacher", date: "2026-04-08", size: "0,25l", price: 2.90, source: "vor Ort" },
+    { breweryId: "schumacher", date: "2025-10-15", size: "0,25l", price: 2.70, source: "vor Ort" },
+    // Schlüssel — 2,90 €/0,25l
+    { breweryId: "schluessel", date: "2026-04-14", size: "0,25l", price: 2.90, source: "vor Ort" },
+    { breweryId: "schluessel", date: "2025-12-01", size: "0,25l", price: 2.70, source: "vor Ort" },
+    // Kürzer Altstadt
+    { breweryId: "kuerzer", date: "2026-04-16", size: "0,25l", price: 2.80, source: "vor Ort" },
+    { breweryId: "kuerzer", date: "2025-10-09", size: "0,2l",  price: 2.60, source: "vor Ort" },
+    // Kürzer Flingern
+    { breweryId: "kuerzer-flingern", date: "2026-04-20", size: "0,25l", price: 2.80, source: "vor Ort" },
+    // Königshof — Flasche
+    { breweryId: "koenigshof", date: "2026-04-02", size: "0,5l", price: 3.40, source: "Handel" },
+    // Hannen — Flasche
+    { breweryId: "hannen", date: "2026-03-15", size: "0,5l", price: 2.90, source: "Handel" },
     // International
-    { breweryId: "alaskan-brewing", date: "2026-03-22", size: "0,5l", price: 5.2, source: "Brewery" },
-    { breweryId: "long-trail", date: "2026-03-18", size: "0,5l", price: 4.8, source: "Brewery" },
-    { breweryId: "tokyo-alt", date: "2026-04-01", size: "0,33l", price: 6.5, source: "vor Ort" },
-    // Gastronomie
-    { breweryId: "zum-schlueffken", date: "2026-04-12", size: "0,25l", price: 2.7, source: "vor Ort" },
-    { breweryId: "malzmuehle-alt", date: "2026-03-05", size: "0,25l", price: 3.0, source: "vor Ort" },
+    { breweryId: "alaskan-brewing", date: "2026-03-22", size: "0,5l", price: 5.20, source: "Brewery" },
+    { breweryId: "long-trail",      date: "2026-03-18", size: "0,5l", price: 4.80, source: "Brewery" },
   ],
 
   events: [
     {
-      id: "sticke-herbst-2026",
-      title: { de: "Sticke-Ausschank Uerige (Herbst)", en: "Sticke release at Uerige (autumn)" },
-      breweryId: "uerige",
-      date: "2026-10-20",
-      description: {
-        de: "Der traditionelle Sticke-Anstich im Uerige. Ein Termin für Alt-Liebhaber weltweit.",
-        en: "The traditional Sticke tapping at Uerige. A bucket-list date for Alt lovers worldwide.",
-      },
-    },
-    {
-      id: "altbierrunde-2026",
-      title: { de: "Düsseldorfer Altbierrunde", en: "Düsseldorf Altbier round" },
+      id: "bierboerse-benrath",
+      title: { de: "Bierbörse", en: "Bierbörse" },
       breweryId: null,
-      date: "2026-05-18",
+      date: "2026-08-21",
+      endDate: "2026-08-23",
+      location: "Benrath",
+      url: "https://www.bierboerse.com/city/duesseldorf-benrath.htm",
       description: {
-        de: "Gemeinschaftliche Tour durch die vier klassischen Hausbrauereien der Altstadt.",
-        en: "Group tour through the four classic old-town brewpubs.",
-      },
-    },
-    {
-      id: "latzenbier-2026",
-      title: { de: "Schumacher Latzenbier-Saison", en: "Schumacher Latzenbier season" },
-      breweryId: "schumacher",
-      date: "2026-11-05",
-      description: {
-        de: "Das stärker eingebraute Latzenbier wird direkt aus dem hochgestellten Latzen-Fass gezapft.",
-        en: "The stronger Latzenbier is served directly from the elevated barrel.",
+        de: "Vom 21.–23. August 2026 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit 32 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.",
+        en: "From August 21–23, 2026, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for 32 years near the famous Benrath Palace, the event is known for its cosy beer gardens and authentic Rhineland atmosphere.",
       },
     },
   ],
@@ -513,7 +541,6 @@ window.ATLAS_HELPERS = {
     const list = window.ATLAS_HELPERS.pricesFor(breweryId).filter((p) => p.size === size);
     return list[0];
   },
-  // Beiträge aus LocalStorage mergen (Mock-Backend)
   userContributions() {
     try {
       return JSON.parse(localStorage.getItem("atlas-contributions") || "[]");
@@ -526,7 +553,6 @@ window.ATLAS_HELPERS = {
     all.unshift({ ...c, id: "c_" + Date.now(), pending: true });
     localStorage.setItem("atlas-contributions", JSON.stringify(all));
   },
-  // Durchschnittspreis über alle 0,25l
   averagePrice(size = "0,25l") {
     const list = window.ATLAS_DATA.prices.filter((p) => p.size === size);
     if (!list.length) return null;

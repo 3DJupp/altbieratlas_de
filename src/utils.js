@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.4.2";
+export const APP_VERSION = "0.6.0";
 
 export const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
