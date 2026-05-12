@@ -152,12 +152,14 @@ export default {
       }
     }
 
-    // Extensionless URL → redirect to .html equivalent
-    const PAGES = ["index", "ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
+    // Extensionless URL → redirect to .html (nur für bekannte Seiten, nicht für /)
+    // WICHTIG: / und /index ausschließen — ASSETS bedient index.html bereits direkt
+    // und ein Redirect würde eine Redirect-Schleife erzeugen.
+    const PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
     if (request.method === "GET" && !url.pathname.includes(".")) {
-      const bare = url.pathname.replace(/\/$/, "") || "/index";
+      const bare = url.pathname.replace(/\/$/, "");
       const name = bare.slice(1); // strip leading /
-      if (PAGES.includes(name)) {
+      if (bare && PAGES.includes(name)) {
         const target = new URL(request.url);
         target.pathname = `/${name}.html`;
         return Response.redirect(target.toString(), 301);

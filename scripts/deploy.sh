@@ -9,16 +9,16 @@
 #   database_name  — Name der D1-Datenbank
 #
 # Verwendung:
-#   bash scripts/deploy.sh              # nur Worker deployen (Standard)
-#   bash scripts/deploy.sh --seed       # Ersteinrichtung: Schema + Seed + Upgrade + Deploy
-#   bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003 + 0004) + Deploy
+#   bash scripts/deploy.sh          # nur Worker deployen (Standard)
+#   bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
 #
-# --seed:    Spielt 0001 (Schema inkl. Events/Event-Biere), 0002 (Seed), 0003 (Upgrade),
-#            0004 (site_settings), 0005 (prod cleanup) ein.
-#            Für Erstinstallationen oder vollständige Neueinrichtung.
-# --migrate: Spielt 0003 (venue_types + maps_url), 0004 (site_settings) und
-#            0005 (prod cleanup v0.6.0) ein (idempotent).
-#            Für bestehende Installationen ohne Seed-Daten zu verändern.
+# Migrations-Strategie:
+#   Es gibt immer genau zwei kanonische SQL-Dateien:
+#     0001_schema.sql  — vollständiges Schema (idempotent)
+#     0002_seed.sql    — Seed-Daten (idempotent via INSERT OR IGNORE)
+#   Für Neuinstallationen genügt --seed.
+#   Für Upgrades bestehender Installationen: einzelne SQL-Anweisungen direkt
+#   in der D1-Dashboard-Console ausführen (oder als temporäre Datei).
 # ============================================================
 set -euo pipefail
 
@@ -26,12 +26,10 @@ set -euo pipefail
 : "${database_name:?Bitte database_name als Build-Umgebungsvariable setzen}"
 
 SEED=false
-MIGRATE=false
 
 for arg in "$@"; do
   case "$arg" in
     --seed)    SEED=true ;;
-    --migrate) MIGRATE=true ;;
     *) echo "Unbekanntes Argument: $arg" >&2; exit 1 ;;
   esac
 done
@@ -43,25 +41,10 @@ sed -i \
   wrangler.toml
 
 if [ "$SEED" = true ]; then
-  echo "▶ Applying schema (inkl. Events, Event-Biere)..."
+  echo "▶ Schema einspielen..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0001_schema.sql
-  echo "▶ Seeding data (styles, glossary, breweries, prices, events)..."
+  echo "▶ Seed-Daten einspielen..."
   npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0002_seed.sql
-  echo "▶ Applying upgrade 0003 (venue_types schema, breweries maps_url + FK)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
-  echo "▶ Applying 0004 (site_settings table)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_site_settings.sql
-  echo "▶ Applying 0005 (prod cleanup, venue types v0.6.0, neue Brauereien)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0005_prod_cleanup.sql
-fi
-
-if [ "$MIGRATE" = true ]; then
-  echo "▶ Applying upgrade 0003 (venue_types schema, breweries maps_url + FK)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0003_upgrade.sql
-  echo "▶ Applying 0004 (site_settings table)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0004_site_settings.sql
-  echo "▶ Applying 0005 (prod cleanup, venue types v0.6.0, neue Brauereien)..."
-  npx wrangler d1 execute "$database_name" --remote --yes --file=migrations/0005_prod_cleanup.sql
 fi
 
 echo "▶ Worker deployen..."

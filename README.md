@@ -1,4 +1,4 @@
-# Altbieratlas · v0.6.0
+# Altbieratlas · v0.7.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -26,11 +26,8 @@ altbieratlas/
 │   ├── robots.txt
 │   └── favicon.svg …
 ├── migrations/
-│   ├── 0001_schema.sql      # Alle Tabellen, Indizes, FK-Kaskaden (Neuinstallation)
-│   ├── 0002_seed.sql        # Stile, Glossar, Venue-Typen (7), Brauereien, Preise, Events
-│   ├── 0003_upgrade.sql     # Upgrade bestehender Installationen (venue_types + maps_url)
-│   ├── 0004_site_settings.sql # site_settings-Tabelle
-│   └── 0005_prod_cleanup.sql  # v0.6.0: 7 Venue-Typen, neue Brauereien, Test-Daten bereinigen
+│   ├── 0001_schema.sql      # Vollständiges Schema (idempotent, Neuinstallation)
+│   └── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
 ├── scripts/
 │   ├── create-admin.mjs     # Admin-User anlegen
 │   ├── db-setup.sh          # DB-Setup (Schema + Seed + Upgrade)
@@ -79,17 +76,10 @@ bash scripts/db-setup.sh [--remote]
 
 | Datei | Inhalt |
 |---|---|
-| `0001_schema.sql` | Tabellen, Indizes, FK-Kaskaden (Neuinstallation) |
-| `0002_seed.sql` | Venue-Typen (7), Bierstile, Glossar, Brauereien, Preise, Events |
-| `0003_upgrade.sql` | Upgrade für bestehende Installationen (neues `venue_types`-Schema, `maps_url`-Spalte) |
-| `0004_site_settings.sql` | `site_settings`-Tabelle |
-| `0005_prod_cleanup.sql` | v0.6.0: 7 Venue-Typen, neue Brauereien (Hellers, Kürzer Flingern, Altus), Test-Daten entfernen |
+| `0001_schema.sql` | Vollständiges Schema — alle Tabellen, Indizes, FK-Kaskaden. Idempotent. |
+| `0002_seed.sql` | Alle Seed-Daten: Venue-Typen (7), Bierstile, Glossar, Brauereien, Preise, Events. Idempotent via `INSERT OR IGNORE`. |
 
-**Neuinstallation:** nur `0001` + `0002` nötig — `db-setup.sh` führt genau diese zwei Schritte aus.
-
-`0003`–`0005` sind Upgrade-Pfade für bestehende Installationen (idempotent, können wiederholt ausgeführt werden).
-
-> **Mehrtägige Events & Event-Biere** (`end_date`, `end_time`, `event_beers`) sind seit `0001` im Schema enthalten — Neuinstallationen benötigen keinen separaten Upgrade-Schritt. Bestehende Installationen, die diese Spalten noch nicht haben, fügen sie manuell per `ALTER TABLE events ADD COLUMN end_date TEXT; ALTER TABLE events ADD COLUMN end_time TEXT;` und `CREATE TABLE IF NOT EXISTS event_beers (…)` hinzu.
+**Genau zwei Dateien — immer.** Neue Spalten, Brauereien, Stile etc. werden direkt in `0001` bzw. `0002` eingebaut, **nicht** als neue Datei `0003_…`. Für Upgrades bestehender Produktionsinstanzen: SQL direkt in der D1-Dashboard-Console ausführen.
 
 > ⚠️ **Wichtig: FK-Kaskaden und Datenverlust**
 >
@@ -154,9 +144,8 @@ Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
 Deploy-Flags:
 
 ```bash
-bash scripts/deploy.sh              # Standard — jeder Push auf main (nur Worker)
-bash scripts/deploy.sh --seed       # Ersteinrichtung: 0001–0005 + Deploy
-bash scripts/deploy.sh --migrate    # bestehende Installation upgraden (0003–0005) + Deploy
+bash scripts/deploy.sh          # Standard — jeder Push auf main (nur Worker)
+bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
 ```
 
 ### 1.3 Build-Variablen setzen
@@ -186,10 +175,13 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
   "siteUrl":           "https://altbieratlas.de",
   "resendFrom":        "Altbieratlas <noreply@altbieratlas.de>",
   "author": {
-    "name":     "Dein Name",
-    "github":   "https://github.com/...",
-    "linkedin": "https://linkedin.com/in/...",
-    "website":  "https://example.com"
+    "name":      "Dein Name",
+    "github":    "https://github.com/...",
+    "linkedin":  "https://linkedin.com/in/...",
+    "website":   "https://example.com",
+    "instagram": "https://instagram.com/...",
+    "mastodon":  "https://mastodon.social/@...",
+    "kofi":      "https://ko-fi.com/..."
   },
   "impressum": {
     "owner":   "Vor- und Nachname",
@@ -222,7 +214,8 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 
 ### Karte & Suche
 - Interaktive Leaflet-Karte aller Brauereien / Gastronomien / Shops
-- Filterung nach Typ, Verifikation, Preisspanne
+- Typ-spezifische Pin-Farben, Hover-Tooltips, Filter inkl. "Historisch"
+- Historische Brauereien (`is_historical`) grau hervorgehoben; `highlighted`/`sponsored`-CSS für gesponserte Einträge
 - Geocoder-Suche via Nominatim (serverseitig proxiert)
 
 ### Brauerei-Detail
@@ -245,7 +238,8 @@ Fünf Einreichungstypen mit Moderation:
 - **Preise** — Alle Preise einsehen, löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten, löschen
 - **Glossar** — Einträge anlegen, bearbeiten, löschen
-- **Typen** — Venue-Typen (Hausbrauerei, Gastronomie, Handel) anlegen, bearbeiten, löschen (inkl. ID, Namen DE/EN, Header-Text DE/EN)
+- **Typen** — Venue-Typen (7: brewpub, brewery, pub, restaurant, kiosk, supermarket, beverage_store) anlegen, bearbeiten, löschen
+- **Einstellungen** — Impressum, Ankündigungs-Banner (DE/EN, aktivierbar), Social-Links (GitHub, LinkedIn, Instagram, Mastodon, Ko-fi, Website)
 - **Passwort-Reset per E-Mail** (DE/EN)
 - Mobile-optimierte Tab-Navigation
 
