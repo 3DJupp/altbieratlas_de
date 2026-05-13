@@ -34,6 +34,10 @@ binding = "ASSETS"
 # Worker muss für alle Requests laufen, damit /impressum.html serverseitig
 # mit Betreiberdaten angereichert werden kann (Server-Side-Injection).
 run_worker_first = true
+# Ohne "none" leitet das ASSETS-Binding /ranglisten.html → /ranglisten um,
+# auch bei internen env.ASSETS.fetch()-Aufrufen → Redirect-Schleife.
+# Mit "none" serviert ASSETS exakt den angeforderten Pfad ohne Manipulation.
+html_handling = "none"
 
 # --- D1-Datenbank ---------------------------------------------
 # Platzhalter werden von scripts/deploy.sh via sed ersetzt.

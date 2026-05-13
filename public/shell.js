@@ -9,15 +9,15 @@ window.renderShell = function ({ activeNav }) {
   const header = `
     <header class="atlas-header">
       <div class="container inner">
-        <a class="brand" href="index.html">
+        <a class="brand" href="/">
           <span class="mark" aria-hidden="true">A</span>
           <span class="wordmark">Altbieratlas</span>
         </a>
         <nav class="nav" aria-label="primary">
-          <a href="index.html" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
-          <a href="ranglisten.html" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
-          <a href="wissen.html" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
-          <a href="beitragen.html" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
+          <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
+          <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
+          <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
+          <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
         </nav>
         <div class="header-controls">
           <button class="lang-toggle" id="lang-toggle" title="Sprache / Language">DE</button>
@@ -28,10 +28,10 @@ window.renderShell = function ({ activeNav }) {
         </div>
       </div>
       <nav class="mobile-nav" id="mobile-nav" aria-label="Hauptnavigation" hidden>
-        <a href="index.html" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
-        <a href="ranglisten.html" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
-        <a href="wissen.html" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
-        <a href="beitragen.html" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
+        <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
+        <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
+        <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
+        <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
       </nav>
     </header>
   `;
@@ -98,25 +98,25 @@ window.renderShell = function ({ activeNav }) {
           <div>
             <h4 data-i18n="footer.contribute">Mitmachen</h4>
             <ul>
-              <li><a href="beitragen.html?typ=preis" data-i18n="contrib.type.price">Preis melden</a></li>
-              <li><a href="beitragen.html?typ=brauerei" data-i18n="contrib.type.brewery">Brauerei eintragen</a></li>
-              <li><a href="beitragen.html?typ=sorte" data-i18n="contrib.type.style">Sorte ergänzen</a></li>
-              <li><a href="beitragen.html?typ=event" data-i18n="contrib.type.event">Event melden</a></li>
+              <li><a href="/beitragen?typ=preis" data-i18n="contrib.type.price">Preis melden</a></li>
+              <li><a href="/beitragen?typ=brauerei" data-i18n="contrib.type.brewery">Brauerei eintragen</a></li>
+              <li><a href="/beitragen?typ=sorte" data-i18n="contrib.type.style">Sorte ergänzen</a></li>
+              <li><a href="/beitragen?typ=event" data-i18n="contrib.type.event">Event melden</a></li>
             </ul>
           </div>
           <div>
             <h4 data-i18n="footer.about">Über den Atlas</h4>
             <ul>
-              <li><a href="wissen.html" data-i18n="know.title">Altbier-Wissen</a></li>
-              <li><a href="ranglisten.html" data-i18n="nav.rankings">Ranglisten</a></li>
-              ${cfg.features && cfg.features.admin ? `<li><a href="admin.html" data-i18n="nav.admin">Admin</a></li>` : ""}
+              <li><a href="/wissen" data-i18n="know.title">Altbier-Wissen</a></li>
+              <li><a href="/ranglisten" data-i18n="nav.rankings">Ranglisten</a></li>
+              ${cfg.features && cfg.features.admin ? `<li><a href="/admin" data-i18n="nav.admin">Admin</a></li>` : ""}
             </ul>
           </div>
           <div>
             <h4 data-i18n="footer.legal">Rechtliches</h4>
             <ul>
-              <li><a href="impressum.html" data-i18n="nav.imprint">Impressum</a></li>
-              <li><a href="impressum.html#datenschutz" data-i18n="footer.privacy">Datenschutz</a></li>
+              <li><a href="/impressum" data-i18n="nav.imprint">Impressum</a></li>
+              <li><a href="/impressum#datenschutz" data-i18n="footer.privacy">Datenschutz</a></li>
             </ul>
           </div>
         </div>
@@ -147,12 +147,12 @@ window.renderShell = function ({ activeNav }) {
   function renderBanner() {
     const b = cfg.banner;
     const el = document.getElementById("shell-banner");
-    if (!el) return;
+    if (!el || el.dataset.dismissed === "1") return;
     if (!b || !b.enabled || b.enabled === "false") { el.innerHTML = ""; el.hidden = true; return; }
     const lang = window.__atlasLang || "de";
     const text = lang === "en" ? (b.text_en || b.text_de || "") : (b.text_de || b.text_en || "");
     if (!text) { el.innerHTML = ""; el.hidden = true; return; }
-    el.innerHTML = `<div class="site-banner"><span>${text}</span><button class="banner-close" aria-label="Schließen" onclick="this.closest('.site-banner').remove()">×</button></div>`;
+    el.innerHTML = `<div class="site-banner"><span>${text}</span><button class="banner-close" aria-label="Schließen" onclick="document.getElementById('shell-banner').dataset.dismissed='1';this.closest('.site-banner').remove()">×</button></div>`;
     el.hidden = false;
   }
   renderBanner();

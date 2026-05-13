@@ -44,7 +44,7 @@
   <!-- ============ HERO + MAP ============ -->
   <section class="hero-wrap">
     <div class="hero-overlay">
-      <a class="ticker" href="ranglisten.html">
+      <a class="ticker" href="/ranglisten">
         <div class="pulse"></div>
         <div>
           <div class="ticker-label eyebrow" id="ticker-label">Aktuelles 0,25 l Alt im Schnitt</div>
@@ -65,7 +65,7 @@
         </h1>
         <p class="hero-sub" data-i18n="hero.subtitle">Der Altbieratlas sammelt Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="beitragen.html?typ=preis" data-i18n="hero.cta">Preis melden</a>
+          <a class="btn btn-primary" href="/beitragen?typ=preis" data-i18n="hero.cta">Preis melden</a>
           <a class="btn" href="#map-section" data-i18n="hero.ctaSecondary">Karte erkunden</a>
         </div>
       </div>
@@ -93,7 +93,7 @@
         <div class="eyebrow" data-i18n="index.quickOverview">Schnellübersicht</div>
         <h2 data-i18n="index.pricesAtAGlance">Preise im Überblick</h2>
       </div>
-      <a class="btn btn-ghost" href="ranglisten.html" data-i18n="common.more">Mehr erfahren →</a>
+      <a class="btn btn-ghost" href="/ranglisten" data-i18n="common.more">Mehr erfahren →</a>
     </div>
 
     <div class="rank-grid">
@@ -121,7 +121,7 @@
       </div>
       <div class="section-head-actions">
         <a id="ics-all-btn" class="btn btn-ghost" href="/api/events/calendar.ics" download="altbieratlas-termine.ics" data-i18n="index.downloadIcs" title="Kalender herunterladen (.ics)">📅 .ics</a>
-        <a class="btn btn-ghost" href="beitragen.html?typ=event" data-i18n="index.reportEventLink">Event melden →</a>
+        <a class="btn btn-ghost" href="/beitragen?typ=event" data-i18n="index.reportEventLink">Event melden →</a>
       </div>
     </div>
     <div class="event-grid" id="event-grid"></div>
@@ -384,7 +384,7 @@ function renderMarkers(filter = "all", search = "") {
       <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · " + window.t("rank.sinceYear") + b.founded : ""}</div>
       ${historicalBadge}
       ${priceText}
-      <div style="margin-top:10px"><a href="brauerei.html?id=${b.id}">Details →</a></div>
+      <div style="margin-top:10px"><a href="/brauerei?id=${b.id}">Details →</a></div>
     `);
     marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
     markerMap.set(b.id, marker);
@@ -409,7 +409,7 @@ function flyToGeo(result) {
     <h4>${result.name.split(",")[0]}</h4>
     <div style="font-size:12px;opacity:.75">${result.name}</div>
     <div style="font-size:12px;opacity:.6;margin-top:10px">${window.t("map.geocode.empty")}</div>
-    <div style="margin-top:10px"><a href="beitragen.html?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>
+    <div style="margin-top:10px"><a href="/beitragen?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>
   `).openPopup();
   map.flyTo(latlng, cfg.map.geocodeZoom || 13, { duration: 0.8 });
 }
@@ -460,7 +460,7 @@ function renderSuggest(query, local, geo) {
     `).join(""));
   }
   if (!parts.length) {
-    parts.push(`<div class="sugg-empty">${window.t("map.geocode.empty")} <br><br><a href="beitragen.html?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>`);
+    parts.push(`<div class="sugg-empty">${window.t("map.geocode.empty")} <br><br><a href="/beitragen?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>`);
   }
   suggestEl.innerHTML = parts.join("");
   suggestEl.classList.add("visible");
@@ -641,7 +641,7 @@ function renderRankings(prices) {
       <li>
         <span class="pos">${String(i + 1).padStart(2, "0")}</span>
         <span class="name">
-          <a href="brauerei.html?id=${it.id}">${it.short || it.name}</a>
+          <a href="/brauerei?id=${it.id}">${it.short || it.name}</a>
           <span class="city">${it.city}</span>
         </span>
         <span class="price">${it.priceText}</span>
@@ -695,7 +695,7 @@ function renderEvents(events) {
       return `
         <article class="card event-card">
           <div class="event-date">${dateText}${timeText}</div>
-          <a class="event-title" href="/event.html?id=${encodeURIComponent(ev.id)}">${ev.title[lang] || ev.title.de}</a>
+          <a class="event-title" href="/event?id=${encodeURIComponent(ev.id)}">${ev.title[lang] || ev.title.de}</a>
           <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
           <div class="event-card-foot">
             <span class="event-loc">${locText}</span>

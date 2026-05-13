@@ -225,12 +225,12 @@
         <button class="active" data-tab="dashboard" data-i18n="admin.dashboard">Übersicht</button>
         <button data-tab="contribs" data-i18n="admin.pending">Offene Beiträge</button>
         <button data-tab="breweries" data-i18n="admin.breweries">Brauereien</button>
-        <button data-tab="venue-types">Typen</button>
-        <button data-tab="styles">Stile</button>
+        <button data-tab="venue-types" data-i18n="admin.venueTypes">Typen</button>
+        <button data-tab="styles" data-i18n="admin.styles">Stile</button>
         <button data-tab="events" data-i18n="admin.events">Events</button>
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
-        <button data-tab="glossary">Glossar</button>
-        <button data-tab="settings">Einstellungen</button>
+        <button data-tab="glossary" data-i18n="admin.glossary">Glossar</button>
+        <button data-tab="settings" data-i18n="admin.settings">Einstellungen</button>
       </div>
 
       <div class="admin-tab-content">
@@ -353,11 +353,11 @@
 
         <!-- Venue-Typen -->
         <section id="tab-venue-types">
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Venue-Typen verwalten (Hausbrauerei, Gastronomie, Handel …). Name und Header-Text werden auf den Detailseiten angezeigt.</p>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.venueTypesSub">Venue-Typen verwalten (Hausbrauerei, Gastronomie, Handel …). Name und Header-Text werden auf den Detailseiten angezeigt.</p>
 
           <!-- Typ hinzufügen -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Typ hinzufügen</h3>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.addVenueType">Typ hinzufügen</h3>
             <form id="add-vtype-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
                 <label>ID (Slug) *</label>
@@ -372,15 +372,15 @@
                 <input name="name_en" type="text" maxlength="200" placeholder="Brewery" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Header-Text (DE) — auf der Unterseite</label>
-                <input name="header_de" type="text" maxlength="1000" placeholder="Was hier gebraut und ausgeschenkt wird" />
+                <label>Header-Text (DE)</label>
+                <input name="header_de" type="text" maxlength="1000" data-i18n-placeholder="admin.vtHeaderDePh" placeholder="Was hier gebraut und ausgeschenkt wird" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
                 <label>Header-Text (EN)</label>
-                <input name="header_en" type="text" maxlength="1000" placeholder="What is brewed and served here" />
+                <input name="header_en" type="text" maxlength="1000" data-i18n-placeholder="admin.vtHeaderEnPh" placeholder="What is brewed and served here" />
               </div>
               <div>
-                <button class="btn btn-approve" type="submit" style="white-space:nowrap">Typ hinzufügen</button>
+                <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.addVenueType">Typ hinzufügen</button>
               </div>
             </form>
             <div id="add-vtype-msg" style="display:none;margin-top:10px;font-size:13px"></div>
@@ -391,7 +391,7 @@
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th>ID</th><th>Name (DE)</th><th>Name (EN)</th><th>Header (DE)</th><th>Header (EN)</th><th></th>
+                  <th>ID</th><th>Name (DE)</th><th>Name (EN)</th><th data-i18n="admin.vtColHeaderDe">Header (DE)</th><th data-i18n="admin.vtColHeaderEn">Header (EN)</th><th></th>
                 </tr>
               </thead>
               <tbody id="vtype-tbody"></tbody>
@@ -401,18 +401,18 @@
 
         <!-- Stile -->
         <section id="tab-styles">
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Alle Bierstile verwalten.</p>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.stylesSub">Alle Bierstile verwalten.</p>
 
           <!-- Stil hinzufügen -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Stil hinzufügen</h3>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.addStyle">Stil hinzufügen</h3>
             <form id="add-style-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
                 <label>ID (Slug)</label>
                 <input name="id" type="text" maxlength="80" required placeholder="uerige-alt" />
               </div>
               <div class="field" style="margin:0">
-                <label>Name</label>
+                <label data-i18n="admin.editName">Name</label>
                 <input name="name" type="text" maxlength="200" required placeholder="Uerige Alt" />
               </div>
               <div class="field" style="margin:0">
@@ -424,11 +424,11 @@
                 <input name="ibu" type="number" min="0" max="1000" step="1" placeholder="52" />
               </div>
               <div class="field" style="margin:0">
-                <label>Farbe (Hex)</label>
+                <label data-i18n="admin.styleColor">Farbe (Hex)</label>
                 <input name="color" type="text" maxlength="20" placeholder="#7b3a13" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Geschmacksnotizen DE</label>
+                <label data-i18n="admin.styleTastingDe">Geschmacksnotizen DE</label>
                 <textarea name="tasting_de" rows="2" maxlength="2000" style="resize:vertical"></textarea>
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
@@ -436,7 +436,7 @@
                 <textarea name="tasting_en" rows="2" maxlength="2000" style="resize:vertical"></textarea>
               </div>
               <div>
-                <button class="btn btn-approve" type="submit" style="white-space:nowrap">Stil hinzufügen</button>
+                <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.addStyle">Stil hinzufügen</button>
               </div>
             </form>
             <div id="add-style-msg" style="display:none;margin-top:10px;font-size:13px"></div>
@@ -447,7 +447,7 @@
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th>ID</th><th>Name</th><th>ABV</th><th>IBU</th><th>Farbe</th><th>Notizen DE</th><th></th>
+                  <th>ID</th><th data-i18n="admin.editName">Name</th><th>ABV</th><th>IBU</th><th data-i18n="admin.styleColor">Farbe</th><th data-i18n="admin.styleTastingDe">Notizen DE</th><th></th>
                 </tr>
               </thead>
               <tbody id="styles-tbody"></tbody>
@@ -459,7 +459,7 @@
         <section id="tab-events">
           <!-- Event hinzufügen -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Event hinzufügen</h3>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.addEvent">Event anlegen</h3>
             <form id="add-event-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
                 <label>Event-ID *</label>
@@ -474,29 +474,29 @@
                 <input name="title_en" type="text" maxlength="200" placeholder="Altbier Festival Düsseldorf" />
               </div>
               <div class="field" style="margin:0">
-                <label>Datum (Start) *</label>
+                <label data-i18n="admin.evDateStart">Datum (Start) *</label>
                 <input name="date" type="date" required />
               </div>
               <div class="field" style="margin:0">
-                <label>Uhrzeit Start</label>
+                <label data-i18n="admin.evTimeStart">Uhrzeit Start</label>
                 <input name="time" type="time" />
               </div>
               <div class="field" style="margin:0">
-                <label>Datum Ende</label>
+                <label data-i18n="admin.evDateEnd">Datum Ende</label>
                 <input name="end_date" type="date" />
               </div>
               <div class="field" style="margin:0">
-                <label>Uhrzeit Ende</label>
+                <label data-i18n="admin.evTimeEnd">Uhrzeit Ende</label>
                 <input name="end_time" type="time" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Brauerei</label>
+                <label data-i18n="field.brewery">Brauerei</label>
                 <select name="brewery_id" id="add-event-brewery-select">
                   <option value="">— keine —</option>
                 </select>
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Ort</label>
+                <label data-i18n="admin.evLocation">Ort</label>
                 <input name="location" type="text" maxlength="300" placeholder="Altstadt Düsseldorf" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
@@ -504,10 +504,10 @@
                 <input name="url" type="url" maxlength="500" />
               </div>
               <div class="field" style="margin:0">
-                <label>Status</label>
+                <label data-i18n="admin.colStatus">Status</label>
                 <select name="status">
-                  <option value="approved">Freigegeben</option>
-                  <option value="pending">In Prüfung</option>
+                  <option value="approved" data-i18n="admin.statusApproved">Freigegeben</option>
+                  <option value="pending" data-i18n="admin.statusPending">In Prüfung</option>
                 </select>
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
@@ -519,7 +519,7 @@
                 <textarea name="description_en" rows="2" maxlength="2000" style="resize:vertical"></textarea>
               </div>
               <div>
-                <button class="btn btn-approve" type="submit" style="white-space:nowrap">Event anlegen</button>
+                <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.addEvent">Event anlegen</button>
               </div>
             </form>
             <div id="add-event-msg" style="display:none;margin-top:10px;font-size:13px"></div>
@@ -602,14 +602,14 @@
 
         <!-- Glossar -->
         <section id="tab-glossary">
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Glossareinträge verwalten.</p>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.glossarySub">Glossareinträge verwalten.</p>
 
           <!-- Begriff hinzufügen -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Begriff hinzufügen</h3>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.addGlossaryTerm">Begriff hinzufügen</h3>
             <form id="add-glossary-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
-                <label>Begriff</label>
+                <label data-i18n="admin.glossaryTerm">Begriff</label>
                 <input name="term" type="text" maxlength="200" required placeholder="Sticke" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
@@ -621,7 +621,7 @@
                 <textarea name="definition_en" rows="2" maxlength="4000" style="resize:vertical"></textarea>
               </div>
               <div>
-                <button class="btn btn-approve" type="submit" style="white-space:nowrap">Begriff hinzufügen</button>
+                <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.addGlossaryTerm">Begriff hinzufügen</button>
               </div>
             </form>
             <div id="add-glossary-msg" style="display:none;margin-top:10px;font-size:13px"></div>
@@ -632,7 +632,7 @@
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th>Begriff</th><th>Definition (DE)</th><th>Definition (EN)</th><th></th>
+                  <th data-i18n="admin.glossaryTerm">Begriff</th><th>Definition (DE)</th><th>Definition (EN)</th><th></th>
                 </tr>
               </thead>
               <tbody id="glossary-tbody"></tbody>
@@ -642,26 +642,26 @@
 
         <!-- Einstellungen -->
         <section id="tab-settings">
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.</p>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.settingsSub">Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.</p>
 
           <!-- Impressum -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Impressum</h3>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.settingsImpressum">Impressum</h3>
             <form id="settings-impressum-form" style="display:grid;gap:12px">
               <div class="field" style="margin:0">
-                <label>Name / Betreiber</label>
-                <input id="imp-owner" name="impressum.owner" type="text" maxlength="200" placeholder="Vorname Nachname" />
+                <label data-i18n="admin.settingsImpOwner">Name / Betreiber</label>
+                <input id="imp-owner" name="impressum.owner" type="text" maxlength="200" data-i18n-placeholder="admin.settingsImpOwnerPh" placeholder="Vorname Nachname" />
               </div>
               <div class="field" style="margin:0">
-                <label>Adresse <span style="color:var(--ink-muted);font-size:12px">(Straße, PLZ Ort — mit Komma trennen)</span></label>
-                <input id="imp-address" name="impressum.address" type="text" maxlength="500" placeholder="Musterstraße 1, 40000 Düsseldorf" />
+                <label><span data-i18n="admin.settingsImpAddress">Adresse</span> <span style="color:var(--ink-muted);font-size:12px" data-i18n="admin.settingsImpAddressHint">(Straße, PLZ Ort — mit Komma trennen)</span></label>
+                <input id="imp-address" name="impressum.address" type="text" maxlength="500" data-i18n-placeholder="admin.settingsImpAddressPh" placeholder="Musterstraße 1, 40000 Düsseldorf" />
               </div>
               <div class="field" style="margin:0">
-                <label>Kontakt-E-Mail</label>
+                <label data-i18n="admin.settingsImpEmail">Kontakt-E-Mail</label>
                 <input id="imp-email" name="impressum.email" type="email" maxlength="200" placeholder="kontakt@example.de" />
               </div>
               <div style="display:flex;align-items:center;gap:12px">
-                <button class="btn btn-approve" type="submit">Speichern</button>
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-impressum-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
@@ -669,26 +669,26 @@
 
           <!-- Ankündigungs-Banner -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px">Ankündigungs-Banner</h3>
-            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px">Wird oben auf allen Seiten angezeigt. Leer lassen = kein Banner.</p>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px" data-i18n="admin.settingsBanner">Ankündigungs-Banner</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px" data-i18n="admin.settingsBannerSub">Wird oben auf allen Seiten angezeigt. Leer lassen = kein Banner.</p>
             <form id="settings-banner-form" style="display:grid;gap:12px">
               <div class="field" style="margin:0">
-                <label>Text (Deutsch)</label>
-                <input id="banner-text-de" name="banner.text_de" type="text" maxlength="500" placeholder="z. B. Wir sind am 24. Dezember geschlossen." />
+                <label data-i18n="admin.settingsBannerTextDe">Text (Deutsch)</label>
+                <input id="banner-text-de" name="banner.text_de" type="text" maxlength="500" data-i18n-placeholder="admin.settingsBannerTextDePh" placeholder="z. B. Wir sind am 24. Dezember geschlossen." />
               </div>
               <div class="field" style="margin:0">
-                <label>Text (Englisch)</label>
-                <input id="banner-text-en" name="banner.text_en" type="text" maxlength="500" placeholder="e.g. Closed on 24 December." />
+                <label data-i18n="admin.settingsBannerTextEn">Text (Englisch)</label>
+                <input id="banner-text-en" name="banner.text_en" type="text" maxlength="500" data-i18n-placeholder="admin.settingsBannerTextEnPh" placeholder="e.g. Closed on 24 December." />
               </div>
               <div class="field" style="margin:0">
-                <label>Aktiv</label>
+                <label data-i18n="admin.settingsBannerEnabled">Aktiv</label>
                 <select id="banner-enabled" name="banner.enabled">
-                  <option value="false">Nein</option>
-                  <option value="true">Ja</option>
+                  <option value="false" data-i18n="admin.settingsBannerNo">Nein</option>
+                  <option value="true" data-i18n="admin.settingsBannerYes">Ja</option>
                 </select>
               </div>
               <div style="display:flex;align-items:center;gap:12px">
-                <button class="btn btn-approve" type="submit">Speichern</button>
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-banner-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
@@ -696,12 +696,12 @@
 
           <!-- Social-Links -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px">Social-Links &amp; Autor</h3>
-            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px">Erscheinen im Footer der Seite.</p>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px" data-i18n="admin.settingsSocial">Social-Links &amp; Autor</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px" data-i18n="admin.settingsSocialSub">Erscheinen im Footer der Seite.</p>
             <form id="settings-social-form" style="display:grid;gap:12px">
               <div class="field" style="margin:0">
-                <label>Name</label>
-                <input id="author-name" name="author.name" type="text" maxlength="200" placeholder="Vorname Nachname" />
+                <label data-i18n="admin.editName">Name</label>
+                <input id="author-name" name="author.name" type="text" maxlength="200" data-i18n-placeholder="admin.settingsAuthorNamePh" placeholder="Vorname Nachname" />
               </div>
               <div class="field" style="margin:0">
                 <label>Website</label>
@@ -728,7 +728,7 @@
                 <input id="author-kofi" name="author.kofi" type="url" maxlength="300" placeholder="https://ko-fi.com/..." />
               </div>
               <div style="display:flex;align-items:center;gap:12px">
-                <button class="btn btn-approve" type="submit">Speichern</button>
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-social-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
@@ -892,11 +892,11 @@
           <input id="ev-url" type="url" maxlength="500" />
         </div>
         <div class="field" style="margin:0">
-          <label>Status</label>
+          <label data-i18n="admin.colStatus">Status</label>
           <select id="ev-status">
-            <option value="pending">In Prüfung</option>
-            <option value="approved">Freigegeben</option>
-            <option value="rejected">Abgelehnt</option>
+            <option value="pending" data-i18n="admin.statusPending">In Prüfung</option>
+            <option value="approved" data-i18n="admin.statusApproved">Freigegeben</option>
+            <option value="rejected" data-i18n="admin.statusRejected">Abgelehnt</option>
           </select>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
@@ -911,7 +911,7 @@
 
       <!-- Biere am Event -->
       <div style="margin-top:20px;border-top:1px solid var(--rule);padding-top:16px">
-        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px">
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px" data-i18n="admin.evBeersLabel">
           Biere (vom Ranking ausgenommen)
         </div>
         <div id="ev-beers-list" style="margin-bottom:12px;font-size:13px"></div>
@@ -933,7 +933,7 @@
             <input id="eb-notes" type="text" maxlength="500" placeholder="optional" />
           </div>
           <div style="grid-column:1/-1">
-            <button class="btn btn-approve" type="submit" style="font-size:12px;padding:6px 12px">Bier hinzufügen</button>
+            <button class="btn btn-approve" type="submit" style="font-size:12px;padding:6px 12px" data-i18n="admin.evAddBeer">Bier hinzufügen</button>
           </div>
         </form>
       </div>
@@ -949,7 +949,7 @@
   <!-- Edit-Dialog Preis -->
   <div class="edit-dialog" id="price-edit-dialog">
     <div class="box" style="max-width:500px">
-      <h3>Preis bearbeiten</h3>
+      <h3 data-i18n="admin.editPrice">Preis bearbeiten</h3>
       <div class="edit-grid">
         <div class="field" style="margin:0;grid-column:1/-1">
           <label>Brauerei</label>
@@ -979,18 +979,18 @@
           <input id="pe-source" type="text" maxlength="100" />
         </div>
         <div class="field" style="margin:0">
-          <label>Status</label>
+          <label data-i18n="admin.colStatus">Status</label>
           <select id="pe-status">
-            <option value="pending">In Prüfung</option>
-            <option value="approved">Freigegeben</option>
-            <option value="rejected">Abgelehnt</option>
+            <option value="pending" data-i18n="admin.statusPending">In Prüfung</option>
+            <option value="approved" data-i18n="admin.statusApproved">Freigegeben</option>
+            <option value="rejected" data-i18n="admin.statusRejected">Abgelehnt</option>
           </select>
         </div>
       </div>
       <div class="edit-msg" id="price-edit-msg" style="display:none"></div>
       <div class="edit-actions">
-        <button class="btn btn-ghost" id="price-edit-cancel">Abbrechen</button>
-        <button class="btn btn-approve" id="price-edit-save">Speichern</button>
+        <button class="btn btn-ghost" id="price-edit-cancel" data-i18n="common.cancel">Abbrechen</button>
+        <button class="btn btn-approve" id="price-edit-save" data-i18n="common.save">Speichern</button>
       </div>
     </div>
   </div>
@@ -1391,7 +1391,7 @@ async function loadBreweriesTable() {
           data-description="${(b.description?.de || "").replace(/"/g, "&quot;")}"
           data-description-en="${(b.description?.en || "").replace(/"/g, "&quot;")}"
           data-styles="${(b.styles || []).join(",")}">
-        <td><a href="brauerei.html?id=${b.id}" target="_blank">${b.name}</a></td>
+        <td><a href="/brauerei?id=${b.id}" target="_blank">${b.name}</a></td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
@@ -1539,7 +1539,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.descriptionEn  = descriptionEn;
     row.dataset.styles         = styles.join(",");
     row.querySelector("td:nth-child(1) a").textContent = name;
-    row.querySelector("td:nth-child(1) a").href = `brauerei.html?id=${effectiveId}`;
+    row.querySelector("td:nth-child(1) a").href = `/brauerei?id=${effectiveId}`;
     row.querySelector("td:nth-child(2)").textContent = city;
     const typeKey = "type." + type;
     const typeVal = t(typeKey);
@@ -1600,12 +1600,12 @@ async function loadStylesTab() {
       const id = row.dataset.styleId;
       row.querySelector("button[data-act='edit-style']").addEventListener("click", () => openStyleEditInline(id, row));
       row.querySelector("button[data-act='delete-style']").addEventListener("click", async () => {
-        if (!confirm(`Stil "${id}" wirklich löschen?`)) return;
+        if (!confirm(window.t("admin.confirmDeleteStyle").replace("{id}", id))) return;
         try {
           await window.AtlasAPI.admin.deleteStyle(id);
           row.remove();
           cachedStyles = null;
-        } catch (e) { alert("Fehler: " + e.message); }
+        } catch (e) { alert(window.t("admin.errorPrefix") + e.message); }
       });
     });
   } catch (e) {
@@ -1624,15 +1624,15 @@ function openStyleEditInline(id, rowEl) {
   editRow.innerHTML = `
     <td colspan="7" style="padding:16px;background:var(--bg-elev)">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;align-items:end">
-        <div class="field" style="margin:0"><label>Name</label><input id="se-name" type="text" maxlength="200" value="${rowEl.dataset.name.replace(/"/g, '&quot;')}" /></div>
+        <div class="field" style="margin:0"><label>${window.t("admin.editName")}</label><input id="se-name" type="text" maxlength="200" value="${rowEl.dataset.name.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0"><label>ABV (%)</label><input id="se-abv" type="number" min="0" max="100" step="0.1" value="${rowEl.dataset.abv}" /></div>
         <div class="field" style="margin:0"><label>IBU</label><input id="se-ibu" type="number" min="0" max="1000" step="1" value="${rowEl.dataset.ibu}" /></div>
-        <div class="field" style="margin:0"><label>Farbe</label><input id="se-color" type="text" maxlength="20" value="${rowEl.dataset.color}" /></div>
-        <div class="field" style="margin:0;grid-column:1/-1"><label>Notizen DE</label><textarea id="se-tasting-de" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingDe || ""}</textarea></div>
+        <div class="field" style="margin:0"><label>${window.t("admin.styleColor")}</label><input id="se-color" type="text" maxlength="20" value="${rowEl.dataset.color}" /></div>
+        <div class="field" style="margin:0;grid-column:1/-1"><label>${window.t("admin.styleTastingDe")}</label><textarea id="se-tasting-de" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingDe || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Tasting EN</label><textarea id="se-tasting-en" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingEn || ""}</textarea></div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-approve" id="se-save">Speichern</button>
-          <button class="btn btn-ghost" id="se-cancel">Abbrechen</button>
+          <button class="btn btn-approve" id="se-save">${window.t("common.save")}</button>
+          <button class="btn btn-ghost" id="se-cancel">${window.t("common.cancel")}</button>
         </div>
         <div id="se-msg" style="font-size:13px;display:none"></div>
       </div>
@@ -1674,7 +1674,7 @@ function openStyleEditInline(id, rowEl) {
       editRow.remove();
       pendingStyleEdit = null;
     } catch (e) {
-      msg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      msg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
       msg.style.color = "#9b1f1f";
       msg.style.display = "block";
     }
@@ -1696,14 +1696,14 @@ document.getElementById("add-style-form").addEventListener("submit", async (e) =
       tasting_de: fd.get("tasting_de").trim() || null,
       tasting_en: fd.get("tasting_en").trim() || null,
     });
-    msg.textContent = "Stil gespeichert.";
+    msg.textContent = window.t("admin.styleAdded");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
     cachedStyles = null;
     loadStylesTab();
   } catch (err) {
-    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+    msg.textContent = window.t("admin.errorPrefix") + (err.detail?.detail || err.message);
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }
@@ -1874,12 +1874,12 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
         }
       });
     });
-    msg.textContent = "Gespeichert.";
+    msg.textContent = window.t("admin.evSaved");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     setTimeout(() => { eventEditDialog.classList.remove("visible"); pendingEventEdit = null; }, 800);
   } catch (e) {
-    msg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+    msg.textContent = window.t("admin.evError") + (e.detail?.detail || e.message);
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }
@@ -1909,15 +1909,15 @@ async function loadEventBeers(eventId) {
     }).join("");
     list.querySelectorAll("button[data-beer-id]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm("Bier entfernen?")) return;
+        if (!confirm(window.t("admin.evAddBeer") + "?")) return;
         try {
           await window.AtlasAPI.admin.deleteEventBeer(eventId, btn.dataset.beerId);
           loadEventBeers(eventId);
-        } catch (e) { alert("Fehler: " + e.message); }
+        } catch (e) { alert(window.t("admin.errorPrefix") + e.message); }
       });
     });
   } catch (e) {
-    list.innerHTML = "<span style='color:#9b1f1f'>Fehler: " + e.message + "</span>";
+    list.innerHTML = "<span style='color:#9b1f1f'>" + window.t("admin.errorPrefix") + e.message + "</span>";
   }
 }
 
@@ -1938,7 +1938,7 @@ document.getElementById("ev-beer-form").addEventListener("submit", async (e) => 
     document.getElementById("eb-price").value = "";
     document.getElementById("eb-notes").value = "";
     loadEventBeers(pendingEventEdit.id);
-  } catch (e) { alert("Fehler: " + e.message); }
+  } catch (e) { alert(window.t("admin.evBeerError") + e.message); }
 });
 
 // ============ Prices Table ============
@@ -2070,12 +2070,12 @@ document.getElementById("price-edit-save").addEventListener("click", async () =>
     const sp = row.cells[5].querySelector("span");
     sp.className = "status-" + patch.status;
     sp.textContent = patch.status;
-    msg.textContent = "Gespeichert.";
+    msg.textContent = window.t("admin.editSaved");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     setTimeout(() => { priceEditDialog.classList.remove("visible"); pendingPriceEdit = null; }, 800);
   } catch (e) {
-    msg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+    msg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }
@@ -2090,7 +2090,7 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
   let size = fd.get("size");
   if (size === "custom") {
     const raw = document.getElementById("price-size-custom").value.trim();
-    if (!raw) { msg.textContent = "Bitte Größe eingeben."; msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
+    if (!raw) { msg.textContent = window.t("admin.errorPrefix") + window.t("field.size"); msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
     const n = parseFloat(raw.replace(",", ".").replace(/\s*l$/i, ""));
     size = isNaN(n) ? raw : n + "l";
   }
@@ -2145,11 +2145,11 @@ async function loadGlossaryTab() {
       const term = row.dataset.term;
       row.querySelector("button[data-act='edit-glossary']").addEventListener("click", () => openGlossaryEditInline(term, row));
       row.querySelector("button[data-act='delete-glossary']").addEventListener("click", async () => {
-        if (!confirm(`Begriff "${term}" wirklich löschen?`)) return;
+        if (!confirm(window.t("admin.confirmDeleteGlossary").replace("{term}", term))) return;
         try {
           await window.AtlasAPI.admin.deleteGlossaryTerm(term);
           row.remove();
-        } catch (e) { alert("Fehler: " + e.message); }
+        } catch (e) { alert(window.t("admin.errorPrefix") + e.message); }
       });
     });
   } catch (e) {
@@ -2170,8 +2170,8 @@ function openGlossaryEditInline(term, rowEl) {
         <div class="field" style="margin:0"><label>Definition (DE)</label><textarea id="ge-def-de" rows="3" maxlength="4000" style="resize:vertical">${rowEl.dataset.defDe || ""}</textarea></div>
         <div class="field" style="margin:0"><label>Definition (EN)</label><textarea id="ge-def-en" rows="3" maxlength="4000" style="resize:vertical">${rowEl.dataset.defEn || ""}</textarea></div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-approve" id="ge-save">Speichern</button>
-          <button class="btn btn-ghost" id="ge-cancel">Abbrechen</button>
+          <button class="btn btn-approve" id="ge-save">${window.t("common.save")}</button>
+          <button class="btn btn-ghost" id="ge-cancel">${window.t("common.cancel")}</button>
         </div>
         <div id="ge-msg" style="font-size:13px;display:none"></div>
       </div>
@@ -2199,7 +2199,7 @@ function openGlossaryEditInline(term, rowEl) {
       editRow.remove();
       pendingGlossaryEdit = null;
     } catch (e) {
-      msg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      msg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
       msg.style.color = "#9b1f1f";
       msg.style.display = "block";
     }
@@ -2217,13 +2217,13 @@ document.getElementById("add-glossary-form").addEventListener("submit", async (e
       definition_de: fd.get("definition_de").trim(),
       definition_en: fd.get("definition_en").trim() || null,
     });
-    msg.textContent = "Begriff gespeichert.";
+    msg.textContent = window.t("admin.glossaryTermAdded");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
     loadGlossaryTab();
   } catch (err) {
-    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+    msg.textContent = window.t("admin.errorPrefix") + (err.detail?.detail || err.message);
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }
@@ -2262,11 +2262,11 @@ function settingsFormHandler(formId, msgId, getPayload) {
     msg.style.display = "none";
     try {
       await window.AtlasAPI.admin.updateSettings(getPayload(new FormData(e.target)));
-      msg.textContent = "Gespeichert.";
+      msg.textContent = window.t("admin.settingsSaved");
       msg.style.color = "#2d7a2d";
       msg.style.display = "block";
     } catch (err) {
-      msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+      msg.textContent = window.t("admin.settingsError") + (err.detail?.detail || err.message);
       msg.style.color = "#9b1f1f";
       msg.style.display = "block";
     }
@@ -2328,7 +2328,7 @@ async function loadVenueTypesTab() {
       const id = row.dataset.vtypeId;
       row.querySelector("button[data-act='edit-vtype']").addEventListener("click", () => openVtypeEditInline(id, row));
       row.querySelector("button[data-act='delete-vtype']").addEventListener("click", async () => {
-        if (!confirm(`Typ "${id}" wirklich löschen? Nur möglich wenn keine Brauerei diesen Typ verwendet.`)) return;
+        if (!confirm(window.t("admin.confirmDeleteVt"))) return;
         try {
           await window.AtlasAPI.admin.deleteVenueType(id);
           row.remove();
@@ -2336,8 +2336,8 @@ async function loadVenueTypesTab() {
           rebuildBreweryTypeSelects();
         } catch (e) {
           const detail = e.detail?.error || e.message;
-          alert("Fehler: " + (detail === "type-in-use"
-            ? `Typ wird noch von ${e.detail?.count || "mindestens einer"} Brauerei verwendet.`
+          alert(window.t("admin.errorPrefix") + (detail === "type-in-use"
+            ? window.t("admin.vtInUse").replace("{n}", e.detail?.count || "≥1")
             : detail));
         }
       });
@@ -2359,8 +2359,8 @@ function openVtypeEditInline(id, rowEl) {
         <div class="field" style="margin:0;grid-column:1/-1"><label>Header-Text (DE)</label><input id="vte-header-de" type="text" maxlength="1000" value="${rowEl.dataset.headerDe.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Header-Text (EN)</label><input id="vte-header-en" type="text" maxlength="1000" value="${rowEl.dataset.headerEn.replace(/"/g, '&quot;')}" /></div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-approve" id="vte-save">Speichern</button>
-          <button class="btn btn-ghost" id="vte-cancel">Abbrechen</button>
+          <button class="btn btn-approve" id="vte-save">${window.t("common.save")}</button>
+          <button class="btn btn-ghost" id="vte-cancel">${window.t("common.cancel")}</button>
         </div>
         <div id="vte-msg" style="font-size:13px;display:none"></div>
       </div>
@@ -2393,7 +2393,7 @@ function openVtypeEditInline(id, rowEl) {
       editRow.remove(); pendingVtypeEdit = null;
       rebuildBreweryTypeSelects();
     } catch (e) {
-      msg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      msg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
       msg.style.color = "#9b1f1f";
       msg.style.display = "block";
     }
@@ -2413,14 +2413,14 @@ document.getElementById("add-vtype-form").addEventListener("submit", async (e) =
       header_de: fd.get("header_de").trim() || null,
       header_en: fd.get("header_en").trim() || null,
     });
-    msg.textContent = "Typ gespeichert.";
+    msg.textContent = window.t("admin.vtAdded");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
     loadVenueTypesTab();
     rebuildBreweryTypeSelects();
   } catch (err) {
-    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+    msg.textContent = window.t("admin.errorPrefix") + (err.detail?.detail || err.message);
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }
@@ -2493,7 +2493,7 @@ document.getElementById("add-brewery-form").addEventListener("submit", async (e)
       description_de: fd.get("description_de").trim() || null,
       description_en: fd.get("description_en").trim() || null,
     });
-    msg.textContent = "Brauerei angelegt.";
+    msg.textContent = window.t("admin.breweryAdded");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
@@ -2501,7 +2501,7 @@ document.getElementById("add-brewery-form").addEventListener("submit", async (e)
     loadBreweriesTable();
     loadDashboard();
   } catch (err) {
-    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+    msg.textContent = window.t("admin.errorPrefix") + (err.detail?.detail || err.message);
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }
@@ -2529,14 +2529,14 @@ document.getElementById("add-event-form").addEventListener("submit", async (e) =
       description_de: fd.get("description_de").trim() || null,
       description_en: fd.get("description_en").trim() || null,
     });
-    msg.textContent = "Event angelegt.";
+    msg.textContent = window.t("admin.evAdded");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
     loadEventsTab();
     loadDashboard();
   } catch (err) {
-    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+    msg.textContent = window.t("admin.errorPrefix") + (err.detail?.detail || err.message);
     msg.style.color = "#9b1f1f";
     msg.style.display = "block";
   }

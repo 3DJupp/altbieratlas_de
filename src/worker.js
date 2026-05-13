@@ -152,9 +152,44 @@ export default {
       }
     }
 
+    // /<page>.html → /<page>  (301, kanonische Clean URLs)
+    // /index.html  → /
+    const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
+    if (request.method === "GET" && url.pathname.endsWith(".html")) {
+      const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
+      if (name === "index") {
+        const dest = new URL(request.url);
+        dest.pathname = "/";
+        return Response.redirect(dest.toString(), 301);
+      }
+      if (ALL_PAGES.includes(name)) {
+        const dest = new URL(request.url);
+        dest.pathname = `/${name}`;
+        return Response.redirect(dest.toString(), 301);
+      }
+    }
+
+    // Startseite: / → index.html (html_handling=none deaktiviert Auto-Index)
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "") && env.ASSETS) {
+      const assetUrl = new URL(request.url);
+      assetUrl.pathname = "/index.html";
+      return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+    }
+
+    // Impressum: SSI-Block muss VOR dem PAGES-Block liegen, damit serveImpressum() greift
+    if (url.pathname === "/impressum" && request.method === "GET" && env.ASSETS) {
+      try {
+        const assetReq = new Request(request.url.replace("/impressum", "/impressum.html"), request);
+        return await R.serveImpressum(assetReq, env);
+      } catch (e) {
+        console.error("[worker] impressum threw:", e?.stack || e);
+        // Fallback: statische Datei ohne SSI ausliefern
+      }
+    }
+
     // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
-    // ASSETS würde /ranglisten.html → /ranglisten umleiten, was eine Schleife erzeugt.
-    const PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
+    // impressum ausgenommen — wird oben mit SSI bedient
+    const PAGES = ["ranglisten", "wissen", "beitragen", "admin", "brauerei", "event"];
     if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
       const bare = url.pathname.replace(/\/$/, "");
       const name = bare.slice(1); // strip leading /
@@ -162,20 +197,6 @@ export default {
         const assetUrl = new URL(request.url);
         assetUrl.pathname = `/${name}.html`;
         return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
-      }
-    }
-
-    // Impressum: Daten serverseitig ins HTML eingebettet (nicht via JSON-API)
-    if ((url.pathname === "/impressum.html" || url.pathname === "/impressum") && request.method === "GET" && env.ASSETS) {
-      try {
-        // Kanonische URL immer mit .html aufrufen
-        const assetReq = url.pathname === "/impressum"
-          ? new Request(request.url.replace("/impressum", "/impressum.html"), request)
-          : request;
-        return await R.serveImpressum(assetReq, env);
-      } catch (e) {
-        console.error("[worker] impressum threw:", e?.stack || e);
-        // bei Fehler: statische Datei unverändert ausliefern
       }
     }
 

@@ -93,7 +93,7 @@ export async function getPublicConfig(req, env) {
     highlightedSizes,
     turnstileSiteKey: siteKey,
     turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
-    ga4MeasurementId: ga && !ga.startsWith("G-X") ? ga : null,
+    ga4MeasurementId: ga && ga !== "G-XXXXXXXXXX" ? ga : null,
     author,
     banner,
     requireModeration: sc.requireModeration !== false,
