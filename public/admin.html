@@ -230,7 +230,7 @@
         <button data-tab="events" data-i18n="admin.events">Events</button>
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
         <button data-tab="glossary">Glossar</button>
-        <button data-tab="settings">Einstellungen</button>
+        <button data-tab="settings" data-i18n="admin.settings">Einstellungen</button>
       </div>
 
       <div class="admin-tab-content">
@@ -642,26 +642,26 @@
 
         <!-- Einstellungen -->
         <section id="tab-settings">
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.</p>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.settingsSub">Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.</p>
 
           <!-- Impressum -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Impressum</h3>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.settingsImpressum">Impressum</h3>
             <form id="settings-impressum-form" style="display:grid;gap:12px">
               <div class="field" style="margin:0">
-                <label>Name / Betreiber</label>
-                <input id="imp-owner" name="impressum.owner" type="text" maxlength="200" placeholder="Vorname Nachname" />
+                <label data-i18n="admin.settingsImpOwner">Name / Betreiber</label>
+                <input id="imp-owner" name="impressum.owner" type="text" maxlength="200" data-i18n-placeholder="admin.settingsImpOwnerPh" placeholder="Vorname Nachname" />
               </div>
               <div class="field" style="margin:0">
-                <label>Adresse <span style="color:var(--ink-muted);font-size:12px">(Straße, PLZ Ort — mit Komma trennen)</span></label>
-                <input id="imp-address" name="impressum.address" type="text" maxlength="500" placeholder="Musterstraße 1, 40000 Düsseldorf" />
+                <label><span data-i18n="admin.settingsImpAddress">Adresse</span> <span style="color:var(--ink-muted);font-size:12px" data-i18n="admin.settingsImpAddressHint">(Straße, PLZ Ort — mit Komma trennen)</span></label>
+                <input id="imp-address" name="impressum.address" type="text" maxlength="500" data-i18n-placeholder="admin.settingsImpAddressPh" placeholder="Musterstraße 1, 40000 Düsseldorf" />
               </div>
               <div class="field" style="margin:0">
-                <label>Kontakt-E-Mail</label>
+                <label data-i18n="admin.settingsImpEmail">Kontakt-E-Mail</label>
                 <input id="imp-email" name="impressum.email" type="email" maxlength="200" placeholder="kontakt@example.de" />
               </div>
               <div style="display:flex;align-items:center;gap:12px">
-                <button class="btn btn-approve" type="submit">Speichern</button>
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-impressum-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
@@ -669,26 +669,26 @@
 
           <!-- Ankündigungs-Banner -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px">Ankündigungs-Banner</h3>
-            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px">Wird oben auf allen Seiten angezeigt. Leer lassen = kein Banner.</p>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px" data-i18n="admin.settingsBanner">Ankündigungs-Banner</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px" data-i18n="admin.settingsBannerSub">Wird oben auf allen Seiten angezeigt. Leer lassen = kein Banner.</p>
             <form id="settings-banner-form" style="display:grid;gap:12px">
               <div class="field" style="margin:0">
-                <label>Text (Deutsch)</label>
-                <input id="banner-text-de" name="banner.text_de" type="text" maxlength="500" placeholder="z. B. Wir sind am 24. Dezember geschlossen." />
+                <label data-i18n="admin.settingsBannerTextDe">Text (Deutsch)</label>
+                <input id="banner-text-de" name="banner.text_de" type="text" maxlength="500" data-i18n-placeholder="admin.settingsBannerTextDePh" placeholder="z. B. Wir sind am 24. Dezember geschlossen." />
               </div>
               <div class="field" style="margin:0">
-                <label>Text (Englisch)</label>
-                <input id="banner-text-en" name="banner.text_en" type="text" maxlength="500" placeholder="e.g. Closed on 24 December." />
+                <label data-i18n="admin.settingsBannerTextEn">Text (Englisch)</label>
+                <input id="banner-text-en" name="banner.text_en" type="text" maxlength="500" data-i18n-placeholder="admin.settingsBannerTextEnPh" placeholder="e.g. Closed on 24 December." />
               </div>
               <div class="field" style="margin:0">
-                <label>Aktiv</label>
+                <label data-i18n="admin.settingsBannerEnabled">Aktiv</label>
                 <select id="banner-enabled" name="banner.enabled">
-                  <option value="false">Nein</option>
-                  <option value="true">Ja</option>
+                  <option value="false" data-i18n="admin.settingsBannerNo">Nein</option>
+                  <option value="true" data-i18n="admin.settingsBannerYes">Ja</option>
                 </select>
               </div>
               <div style="display:flex;align-items:center;gap:12px">
-                <button class="btn btn-approve" type="submit">Speichern</button>
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-banner-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
@@ -696,12 +696,12 @@
 
           <!-- Social-Links -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px">Social-Links &amp; Autor</h3>
-            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px">Erscheinen im Footer der Seite.</p>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px" data-i18n="admin.settingsSocial">Social-Links &amp; Autor</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px" data-i18n="admin.settingsSocialSub">Erscheinen im Footer der Seite.</p>
             <form id="settings-social-form" style="display:grid;gap:12px">
               <div class="field" style="margin:0">
-                <label>Name</label>
-                <input id="author-name" name="author.name" type="text" maxlength="200" placeholder="Vorname Nachname" />
+                <label data-i18n="admin.editName">Name</label>
+                <input id="author-name" name="author.name" type="text" maxlength="200" data-i18n-placeholder="admin.settingsAuthorNamePh" placeholder="Vorname Nachname" />
               </div>
               <div class="field" style="margin:0">
                 <label>Website</label>
@@ -728,7 +728,7 @@
                 <input id="author-kofi" name="author.kofi" type="url" maxlength="300" placeholder="https://ko-fi.com/..." />
               </div>
               <div style="display:flex;align-items:center;gap:12px">
-                <button class="btn btn-approve" type="submit">Speichern</button>
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-social-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
@@ -2262,11 +2262,11 @@ function settingsFormHandler(formId, msgId, getPayload) {
     msg.style.display = "none";
     try {
       await window.AtlasAPI.admin.updateSettings(getPayload(new FormData(e.target)));
-      msg.textContent = "Gespeichert.";
+      msg.textContent = window.t("admin.settingsSaved");
       msg.style.color = "#2d7a2d";
       msg.style.display = "block";
     } catch (err) {
-      msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+      msg.textContent = window.t("admin.settingsError") + (err.detail?.detail || err.message);
       msg.style.color = "#9b1f1f";
       msg.style.display = "block";
     }
