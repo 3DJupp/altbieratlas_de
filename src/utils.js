@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.6.0";
+export const APP_VERSION = "0.7.0";
 
 export const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -564,7 +564,8 @@ export async function sendAdminDigest(env) {
 }
 
 // ---- Brewery-Assembler (wandelt DB-Zeile in API-Shape) ----
-const LEGACY_TYPE = { brewery: "hausbrauerei", pub: "gastronomie", shop: "handel" };
+// No legacy type mapping needed — types are now canonical IDs (brewpub, brewery, pub, etc.)
+const LEGACY_TYPE = {};
 
 export function brewRow(r, styles = []) {
   if (!r) return null;
@@ -583,6 +584,7 @@ export function brewRow(r, styles = []) {
     description: { de: r.description_de, en: r.description_en },
     styles,
     verified: !!r.verified,
+    isHistorical: !!r.is_historical,
     status: r.status,
   };
 }

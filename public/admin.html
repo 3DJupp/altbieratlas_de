@@ -132,6 +132,7 @@
 </head>
 <body>
 <div class="page">
+  <div id="shell-banner" hidden></div>
   <div id="shell-header"></div>
 
   <!-- ============ LOGIN ============ -->
@@ -643,6 +644,7 @@
         <section id="tab-settings">
           <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.</p>
 
+          <!-- Impressum -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
             <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Impressum</h3>
             <form id="settings-impressum-form" style="display:grid;gap:12px">
@@ -661,6 +663,73 @@
               <div style="display:flex;align-items:center;gap:12px">
                 <button class="btn btn-approve" type="submit">Speichern</button>
                 <span id="settings-impressum-msg" style="font-size:13px;display:none"></span>
+              </div>
+            </form>
+          </div>
+
+          <!-- Ankündigungs-Banner -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px">Ankündigungs-Banner</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px">Wird oben auf allen Seiten angezeigt. Leer lassen = kein Banner.</p>
+            <form id="settings-banner-form" style="display:grid;gap:12px">
+              <div class="field" style="margin:0">
+                <label>Text (Deutsch)</label>
+                <input id="banner-text-de" name="banner.text_de" type="text" maxlength="500" placeholder="z. B. Wir sind am 24. Dezember geschlossen." />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Text (Englisch)</label>
+                <input id="banner-text-en" name="banner.text_en" type="text" maxlength="500" placeholder="e.g. Closed on 24 December." />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Aktiv</label>
+                <select id="banner-enabled" name="banner.enabled">
+                  <option value="false">Nein</option>
+                  <option value="true">Ja</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <button class="btn btn-approve" type="submit">Speichern</button>
+                <span id="settings-banner-msg" style="font-size:13px;display:none"></span>
+              </div>
+            </form>
+          </div>
+
+          <!-- Social-Links -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px">Social-Links &amp; Autor</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px">Erscheinen im Footer der Seite.</p>
+            <form id="settings-social-form" style="display:grid;gap:12px">
+              <div class="field" style="margin:0">
+                <label>Name</label>
+                <input id="author-name" name="author.name" type="text" maxlength="200" placeholder="Vorname Nachname" />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Website</label>
+                <input id="author-website" name="author.website" type="url" maxlength="300" placeholder="https://..." />
+              </div>
+              <div class="field" style="margin:0">
+                <label>GitHub</label>
+                <input id="author-github" name="author.github" type="url" maxlength="300" placeholder="https://github.com/..." />
+              </div>
+              <div class="field" style="margin:0">
+                <label>LinkedIn</label>
+                <input id="author-linkedin" name="author.linkedin" type="url" maxlength="300" placeholder="https://linkedin.com/in/..." />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Instagram</label>
+                <input id="author-instagram" name="author.instagram" type="url" maxlength="300" placeholder="https://instagram.com/..." />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Mastodon</label>
+                <input id="author-mastodon" name="author.mastodon" type="url" maxlength="300" placeholder="https://mastodon.social/@..." />
+              </div>
+              <div class="field" style="margin:0">
+                <label>Ko-fi</label>
+                <input id="author-kofi" name="author.kofi" type="url" maxlength="300" placeholder="https://ko-fi.com/..." />
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <button class="btn btn-approve" type="submit">Speichern</button>
+                <span id="settings-social-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
           </div>
@@ -704,9 +773,13 @@
         <div class="field" style="margin:0">
           <label data-i18n="admin.editType">Typ</label>
           <select id="edit-type">
-            <option value="hausbrauerei" data-i18n="type.hausbrauerei">Hausbrauerei</option>
-            <option value="gastronomie" data-i18n="type.gastronomie">Gastronomie</option>
-            <option value="handel" data-i18n="type.handel">Handel</option>
+            <option value="brewpub">Hausbrauerei</option>
+            <option value="brewery">Brauerei</option>
+            <option value="pub">Kneipe</option>
+            <option value="restaurant">Restaurant</option>
+            <option value="kiosk">Kiosk</option>
+            <option value="supermarket">Supermarkt</option>
+            <option value="beverage_store">Getränkeshop</option>
           </select>
         </div>
         <div class="field" style="margin:0">
@@ -2165,31 +2238,62 @@ async function loadSettingsTab() {
     document.getElementById("imp-owner").value   = imp.owner   || s["impressum.owner"]   || "";
     document.getElementById("imp-address").value = imp.address || s["impressum.address"] || "";
     document.getElementById("imp-email").value   = imp.email   || s["impressum.email"]   || "";
+    // Banner
+    document.getElementById("banner-text-de").value = s["banner.text_de"] || "";
+    document.getElementById("banner-text-en").value = s["banner.text_en"] || "";
+    document.getElementById("banner-enabled").value = s["banner.enabled"] === "true" ? "true" : "false";
+    // Social
+    document.getElementById("author-name").value      = s["author.name"]      || "";
+    document.getElementById("author-website").value   = s["author.website"]   || "";
+    document.getElementById("author-github").value    = s["author.github"]    || "";
+    document.getElementById("author-linkedin").value  = s["author.linkedin"]  || "";
+    document.getElementById("author-instagram").value = s["author.instagram"] || "";
+    document.getElementById("author-mastodon").value  = s["author.mastodon"]  || "";
+    document.getElementById("author-kofi").value      = s["author.kofi"]      || "";
   } catch (e) {
     console.warn("[settings] load failed:", e.message);
   }
 }
 
-document.getElementById("settings-impressum-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const msg = document.getElementById("settings-impressum-msg");
-  msg.style.display = "none";
-  const fd = new FormData(e.target);
-  try {
-    await window.AtlasAPI.admin.updateSettings({
-      "impressum.owner":   fd.get("impressum.owner").trim(),
-      "impressum.address": fd.get("impressum.address").trim(),
-      "impressum.email":   fd.get("impressum.email").trim(),
-    });
-    msg.textContent = "Gespeichert.";
-    msg.style.color = "#2d7a2d";
-    msg.style.display = "block";
-  } catch (err) {
-    msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
-    msg.style.color = "#9b1f1f";
-    msg.style.display = "block";
-  }
-});
+function settingsFormHandler(formId, msgId, getPayload) {
+  document.getElementById(formId).addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById(msgId);
+    msg.style.display = "none";
+    try {
+      await window.AtlasAPI.admin.updateSettings(getPayload(new FormData(e.target)));
+      msg.textContent = "Gespeichert.";
+      msg.style.color = "#2d7a2d";
+      msg.style.display = "block";
+    } catch (err) {
+      msg.textContent = "Fehler: " + (err.detail?.detail || err.message);
+      msg.style.color = "#9b1f1f";
+      msg.style.display = "block";
+    }
+  });
+}
+
+settingsFormHandler("settings-impressum-form", "settings-impressum-msg", (fd) => ({
+  "impressum.owner":   fd.get("impressum.owner").trim(),
+  "impressum.address": fd.get("impressum.address").trim(),
+  "impressum.email":   fd.get("impressum.email").trim(),
+}));
+
+settingsFormHandler("settings-banner-form", "settings-banner-msg", (fd) => ({
+  "banner.text_de": fd.get("banner.text_de").trim(),
+  "banner.text_en": fd.get("banner.text_en").trim(),
+  "banner.enabled": fd.get("banner.enabled"),
+}));
+
+settingsFormHandler("settings-social-form", "settings-social-msg", (fd) => ({
+  "author.name":      fd.get("author.name").trim(),
+  "author.website":   fd.get("author.website").trim(),
+  "author.github":    fd.get("author.github").trim(),
+  "author.linkedin":  fd.get("author.linkedin").trim(),
+  "author.instagram": fd.get("author.instagram").trim(),
+  "author.mastodon":  fd.get("author.mastodon").trim(),
+  "author.kofi":      fd.get("author.kofi").trim(),
+}));
 
 // ============ Venue-Typen Tab ============
 async function loadVenueTypesTab() {

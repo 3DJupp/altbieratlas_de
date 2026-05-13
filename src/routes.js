@@ -57,27 +57,45 @@ export async function getPublicConfig(req, env) {
     ? sc.highlightedSizes
     : null;
 
-  const author = sc.author || {};
+  // DB-Einstellungen laden (Banner + Social — Admin-konfiguriert, Vorrang vor SITE_CONFIG)
+  const dbSettings = {};
+  try {
+    const rows = await env.DB.prepare(
+      "SELECT key, value FROM site_settings WHERE key LIKE 'author.%' OR key LIKE 'banner.%'"
+    ).all();
+    for (const r of rows.results) {
+      try { dbSettings[r.key] = JSON.parse(r.value); } catch { dbSettings[r.key] = r.value; }
+    }
+  } catch { /* Tabelle fehlt bei alten Instanzen */ }
+
+  const scAuthor = sc.author || {};
+  const author = {
+    name:      v(dbSettings["author.name"]      ?? scAuthor.name),
+    github:    v(dbSettings["author.github"]    ?? scAuthor.github),
+    linkedin:  v(dbSettings["author.linkedin"]  ?? scAuthor.linkedin),
+    website:   v(dbSettings["author.website"]   ?? scAuthor.website),
+    instagram: v(dbSettings["author.instagram"] ?? scAuthor.instagram),
+    mastodon:  v(dbSettings["author.mastodon"]  ?? scAuthor.mastodon),
+    kofi:      v(dbSettings["author.kofi"]      ?? scAuthor.kofi),
+  };
+
+  const banner = (dbSettings["banner.text_de"] || dbSettings["banner.text_en"])
+    ? {
+        text_de:  dbSettings["banner.text_de"]  || null,
+        text_en:  dbSettings["banner.text_en"]  || null,
+        enabled:  dbSettings["banner.enabled"] === "true",
+      }
+    : (sc.banner || null);
 
   return json({
-    // App-Version
     version: APP_VERSION,
-    // Biergrößen (Dezimalzahlen ohne Einheit, UI ergänzt "l" + Locale)
     priceSizes,
-    // Hervorgehobene Größen in Ranglisten (Teilmenge von priceSizes)
     highlightedSizes,
-    // Turnstile
     turnstileSiteKey: siteKey,
     turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
-    // Analytics
     ga4MeasurementId: ga && !ga.startsWith("G-X") ? ga : null,
-    // Author / Social
-    author: {
-      name:     v(author.name),
-      github:   v(author.github),
-      linkedin: v(author.linkedin),
-      website:  v(author.website),
-    },
+    author,
+    banner,
     requireModeration: sc.requireModeration !== false,
   });
 }
@@ -328,6 +346,17 @@ export async function eventIcs(req, env, { id }) {
   return icsResponse([buildVEvent(e, base, lang)], calName, `${id}.ics`);
 }
 
+// GET /api/venue-types
+export async function listVenueTypes(req, env) {
+  const res = await env.DB.prepare("SELECT * FROM venue_types ORDER BY id").all();
+  return json({
+    venueTypes: res.results.map((r) => ({
+      id: r.id, nameDe: r.name_de, nameEn: r.name_en,
+      headerDe: r.header_de, headerEn: r.header_en,
+    })),
+  });
+}
+
 // GET /api/glossary
 export async function listGlossary(req, env) {
   const res = await env.DB.prepare("SELECT * FROM glossary ORDER BY term").all();
@@ -427,7 +456,7 @@ export async function postContribution(req, env, _params, ctx) {
     } else if (type === "brewery") {
       str(data.name, { required: true, max: 200, name: "name" });
       str(data.city, { required: true, max: 200, name: "city" });
-      oneOf(data.type, ["brewery", "pub", "shop"], { required: true, name: "type" });
+      oneOf(data.type, ["brewery", "brewpub", "pub", "restaurant", "kiosk", "supermarket", "beverage_store"], { required: true, name: "type" });
       if (data.lat != null) num(data.lat, { min: -90, max: 90, name: "lat" });
       if (data.lng != null) num(data.lng, { min: -180, max: 180, name: "lng" });
     } else if (type === "event") {
@@ -1573,7 +1602,12 @@ export async function adminUpdateSettings(req, env) {
   const body = await req.json().catch(() => ({}));
   if (!body || typeof body !== "object") return error(400, "invalid-body");
 
-  const allowed = ["impressum.owner", "impressum.address", "impressum.email"];
+  const allowed = [
+    "impressum.owner", "impressum.address", "impressum.email",
+    "banner.text_de", "banner.text_en", "banner.enabled",
+    "author.name", "author.github", "author.linkedin", "author.website",
+    "author.instagram", "author.mastodon", "author.kofi",
+  ];
   const stmts = [];
   for (const key of allowed) {
     if (!(key in body)) continue;

@@ -1,5 +1,5 @@
 -- ============================================================
--- Altbieratlas — Seed data  v0.6.0
+-- Altbieratlas — Seed data  v0.7.0
 -- ============================================================
 -- Venue types, styles, glossary, breweries, prices and events
 -- for every deployment (dev, staging and production).
@@ -40,18 +40,21 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en)
   ('kuerzer-alt',   'Kürzer Alt',           4.8,  34, '#8f461b',
     'Frisch, hell-bernsteinfarben, mit leichter Citrusnote vom offen gekochten Sud.',
     'Fresh, light amber, with a gentle citrus note from the open-boil wort.'),
-  ('alaskan-amber', 'Alaskan Amber',        5.3,  18, '#a55b24',
-    'Amerikanische Alt-Interpretation: malzbetont, karamellig, weicher als die Düsseldorfer Originale.',
-    'American take on Alt: malt-forward, caramel, softer than the Düsseldorf originals.'),
+  ('bolten-uralt',  'Bolten Ur-Alt',        4.9,  28, '#8a4618',
+    'Niederrheinisch mild, leicht malzig mit fruchtig-würzigem Charakter. Das älteste kommerziell gebraute Alt — ein Stück lebendige Biergeschichte.',
+    'Mild Lower-Rhine style, lightly malty with a fruity-spicy character. The oldest commercially brewed Alt — a piece of living beer history.'),
+  ('diebels-alt',  'Diebels Alt',          4.9,  27, '#8b4417',
+    'Mild, leicht herb, gut trinkbar. Der typische Niederrhein-Alt — weicher und runder als die Düsseldorfer Hausbrauerei-Versionen.',
+    'Mild, slightly bitter, very drinkable. The typical Lower-Rhine Alt — softer and rounder than the Düsseldorf brewpub versions.'),
+  ('frankenheim-alt','Frankenheim Alt',     4.9,  30, '#8c4519',
+    'Ausgewogen-malzig, leicht herb, süffig. Das erfolgreichste Düsseldorfer Industrie-Alt.',
+    'Balanced-malty, lightly bitter, easy-drinking. The most successful Düsseldorf industrial Alt.'),
   ('koenigshof-alt','Königshof Alt',        4.9,  28, '#8c4a1a',
     'Mild-malzig, niederrheinisch weich. Klassisch für die Region.',
     'Mild-malty, soft in the Lower-Rhine style. Regional classic.'),
   ('hannen-alt',    'Hannen Alt',           4.8,  30, '#8c4820',
     'Industriell gebraut, aber klassisch profiliert. Die wohl bekannteste Alt-Marke außerhalb Düsseldorfs.',
     'Industrially brewed but classically profiled. Likely the best-known Alt brand outside Düsseldorf.'),
-  ('long-trail-ale','Long Trail Ale',       4.6,  25, '#a56030',
-    'Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.',
-    'Vermont take: malty, mildly sweet, with American hop character.'),
   ('hellers-alt',   'Hellers Altbier',      4.8, NULL, '#8b4820',
     'Bio-Altbier des Kölner Brauhauses Hellers. Mild, ausgewogen, mit biologisch angebautem Malz gebraut.',
     'Organic Altbier from Cologne''s Hellers brewpub. Mild, balanced, brewed with organically grown malt.'),
@@ -95,92 +98,117 @@ INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES
 -- ============================================================
 -- Breweries / taprooms / retail
 -- ============================================================
-INSERT OR IGNORE INTO breweries (id, name, short_name, type, city, country, address, maps_url, lat, lng, founded, website, description_de, description_en, verified, status) VALUES
+INSERT OR IGNORE INTO breweries (id, name, short_name, type, city, country, address, maps_url, lat, lng, founded, website, description_de, description_en, verified, status, is_historical) VALUES
   -- ========== Düsseldorf — Hausbrauereien ==========
   ('uerige', 'Brauerei im Uerige', 'Uerige', 'brewpub', 'Düsseldorf', 'DE',
     'Berger Straße 1, 40213 Düsseldorf',
     'https://maps.google.com/maps?q=Berger+Stra%C3%9Fe+1,+40213+D%C3%BCsseldorf',
     51.2253, 6.7722, 1862, 'https://uerige.de',
     'Eine der vier klassischen Düsseldorfer Hausbrauereien in der Altstadt. Bekannt für kräftig-herbes, würziges Alt und die halbjährliche Sticke-Ausschank.',
-    'One of the four classic Düsseldorf brewpubs in the old town. Known for a firm, bitter, spicy Alt and its biannual Sticke release.', 1, 'approved'),
+    'One of the four classic Düsseldorf brewpubs in the old town. Known for a firm, bitter, spicy Alt and its biannual Sticke release.', 1, 'approved', 0),
   ('fuechschen', 'Brauerei Füchschen', 'Füchschen', 'brewpub', 'Düsseldorf', 'DE',
     'Ratinger Straße 28, 40213 Düsseldorf',
     'https://maps.google.com/maps?q=Ratinger+Stra%C3%9Fe+28,+40213+D%C3%BCsseldorf',
     51.2278, 6.7715, 1848, 'https://fuechschen.de',
     'Familiengeführte Hausbrauerei, bekannt für ein malzbetontes, vollmundiges Alt und die legendäre Weihnachts-Silvester-Stimmung.',
-    'Family-run brewpub known for a malty, full-bodied Alt and its legendary Christmas-New-Year atmosphere.', 1, 'approved'),
+    'Family-run brewpub known for a malty, full-bodied Alt and its legendary Christmas-New-Year atmosphere.', 1, 'approved', 0),
   ('schumacher', 'Brauerei Schumacher', 'Schumacher', 'brewpub', 'Düsseldorf', 'DE',
     'Oststraße 123, 40210 Düsseldorf',
     'https://maps.google.com/maps?q=Ostra%C3%9Fe+123,+40210+D%C3%BCsseldorf',
     51.2224, 6.7912, 1838, 'https://schumacher-alt.de',
     'Die älteste der Düsseldorfer Hausbrauereien. Mildes, gut trinkbares Schumacher Alt seit 1838.',
-    'The oldest of the Düsseldorf brewpubs. A mild, highly drinkable Schumacher Alt since 1838.', 1, 'approved'),
+    'The oldest of the Düsseldorf brewpubs. A mild, highly drinkable Schumacher Alt since 1838.', 1, 'approved', 0),
   ('schluessel', 'Brauerei zum Schlüssel', 'Schlüssel', 'brewpub', 'Düsseldorf', 'DE',
     'Bolkerstraße 41-47, 40213 Düsseldorf',
     'https://maps.google.com/maps?q=Bolkerstra%C3%9Fe+41,+40213+D%C3%BCsseldorf',
     51.2268, 6.7728, 1850, 'https://zumschluessel.de',
     'Traditionsreiche Hausbrauerei an der Bolkerstraße, im Herzen der Altstadt. Ausgewogenes, leicht herbes Alt.',
-    'Heritage brewpub on Bolker Straße, in the heart of the old town. A balanced, gently bitter Alt.', 1, 'approved'),
-  ('kuerzer', 'Brauerei Kürzer', 'Kürzer', 'brewpub', 'Düsseldorf', 'DE',
+    'Heritage brewpub on Bolker Straße, in the heart of the old town. A balanced, gently bitter Alt.', 1, 'approved', 0),
+  ('kuerzer', 'Brauerei Kürzer', 'Kürzer Altstadt', 'brewpub', 'Düsseldorf', 'DE',
     'Kurze Straße 18-20, 40213 Düsseldorf',
     'https://maps.google.com/maps?q=Kurze+Stra%C3%9Fe+18,+40213+D%C3%BCsseldorf',
     51.2262, 6.7733, 2010, 'https://brauerei-kuerzer.de',
     'Die jüngste der Düsseldorfer Altstadt-Hausbrauereien. Offene Braukessel mitten im Gastraum.',
-    'The youngest of Düsseldorf''s old-town brewpubs. Open brewing kettles right in the taproom.', 1, 'approved'),
+    'The youngest of Düsseldorf''s old-town brewpubs. Open brewing kettles right in the taproom.', 1, 'approved', 0),
   ('kuerzer-flingern', 'Brauerei Kürzer Flingern', 'Kürzer Flingern', 'brewpub', 'Düsseldorf', 'DE',
     'Fichtenstraße 21, 40233 Düsseldorf',
     'https://maps.google.com/maps?q=Fichtenstra%C3%9Fe+21,+40233+D%C3%BCsseldorf',
     51.2337, 6.8151, 2020, 'https://brauerei-kuerzer.de',
     'Zweiter Kürzer-Standort in Düsseldorf-Flingern. Vollwertige Produktionsbrauerei mit Taproom, Biergarten und sechs Spezialbieren, die ausschließlich hier ausgeschenkt werden.',
-    'Second Kürzer site in Düsseldorf-Flingern. Full production brewery with taproom, beer garden and six specialty beers available only here.', 1, 'approved'),
+    'Second Kürzer site in Düsseldorf-Flingern. Full production brewery with taproom, beer garden and six specialty beers available only here.', 1, 'approved', 0),
   -- ========== Düsseldorf — Gastronomie ==========
-  ('zum-schlueffken', 'Zum Schlüffken', 'Schlüffken', 'pub', 'Düsseldorf', 'DE',
-    'Flinger Straße 1, 40213 Düsseldorf',
-    'https://maps.google.com/maps?q=Flinger+Stra%C3%9Fe+1,+40213+D%C3%BCsseldorf',
-    51.2271, 6.774, NULL, NULL,
-    'Urige Altstadt-Kneipe mit Uerige Alt vom Fass. Klassische Köbes-Bedienung.',
-    'Classic old-town pub serving Uerige Alt on tap. Traditional Köbes service.', 1, 'approved'),
+  ('gulasch', 'Zum Gulasch', 'Gulasch', 'pub', 'Düsseldorf', 'DE',
+    'Bolkerstraße 12, 40213 Düsseldorf',
+    'https://maps.google.com/maps?q=Bolkerstra%C3%9Fe+12,+40213+D%C3%BCsseldorf',
+    51.2265, 6.7731, NULL, NULL,
+    'Beliebte Altbierkneipe in der Düsseldorfer Altstadt mit ausgezeichneten Gulaschspezialitäten und Altbier vom Fass.',
+    'Popular Altbier pub in Düsseldorf old town, known for hearty gulasch specialties and draught Altbier.', 0, 'approved', 0),
   -- ========== Düsseldorf — Marke / Lohnbrauen ==========
   ('altus', 'Altus bräu', 'Altus', 'brewery', 'Düsseldorf', 'DE',
     'Sonnbornstr. 2, 40625 Düsseldorf',
     'https://maps.google.com/maps?q=Sonnbornstr.+2,+40625+D%C3%BCsseldorf',
     51.2157, 6.8633, 2021, 'https://altus-braeu.de',
     'Erstes Bio-Altbier aus Düsseldorf. Gebraut nach biologischen Standards mit Malz und Hopfen aus ökologischem Anbau — im Lohnbrauen-Verfahren bei einer Partnerbrauerei.',
-    'The first certified organic Altbier from Düsseldorf, contract-brewed to organic standards using ecologically grown malt and hops.', 1, 'approved'),
+    'The first certified organic Altbier from Düsseldorf, contract-brewed to organic standards using ecologically grown malt and hops.', 1, 'approved', 0),
   -- ========== Krefeld ==========
   ('koenigshof', 'Privatbrauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
     'Untergath 70, 47805 Krefeld',
     'https://maps.google.com/maps?q=Untergath+70,+47805+Krefeld',
     51.3172, 6.5603, 1830, 'https://privatbrauerei-koenigshof.de',
     'Niederrheinische Privatbrauerei mit einem milderen Alt im niederrheinischen Stil.',
-    'Lower-Rhine private brewery with a milder Alt in the Niederrhein style.', 1, 'approved'),
+    'Lower-Rhine private brewery with a milder Alt in the Niederrhein style.', 1, 'approved', 0),
   -- ========== Mönchengladbach ==========
   ('hannen', 'Hannen Brauerei', 'Hannen', 'brewery', 'Mönchengladbach', 'DE',
     'Bismarckstraße 115, 41061 Mönchengladbach',
     'https://maps.google.com/maps?q=Bismarckstra%C3%9Fe+115,+41061+M%C3%B6nchengladbach',
     51.1805, 6.4428, 1725, NULL,
     'Traditionsmarke, heute unter Carlsberg-Dach. Eines der bekanntesten Alt-Biere außerhalb Düsseldorfs.',
-    'Heritage brand, now under Carlsberg. One of the best-known Alts outside Düsseldorf.', 1, 'approved'),
+    'Heritage brand, now under Carlsberg. One of the best-known Alts outside Düsseldorf.', 1, 'approved', 0),
   -- ========== Köln ==========
   ('hellers', 'Hellers Brauhaus', 'Hellers', 'brewpub', 'Köln', 'DE',
     'Roonstraße 33, 50674 Köln',
     'https://maps.google.com/maps?q=Roonstra%C3%9Fe+33,+50674+K%C3%B6ln',
     50.9284, 6.9408, 1996, 'https://www.hellers.koeln',
     'Bio-Hausbrauerei im Kwartier Latäng, Köln. Die einzige Kölner Hausbrauerei in Bio-Qualität — braut Kölsch, naturtrübes Wiess und Altbier.',
-    'Organic brewpub in Cologne''s Kwartier Latäng. The city''s only brewpub producing its beers — Kölsch, naturally cloudy Wiess and Altbier — to certified organic standards.', 1, 'approved'),
-  -- ========== International ==========
-  ('alaskan-brewing', 'Alaskan Brewing Co.', 'Alaskan', 'brewery', 'Juneau', 'US',
-    '5429 Shaune Drive, Juneau, AK',
-    'https://maps.google.com/maps?q=5429+Shaune+Drive,+Juneau,+AK',
-    58.358, -134.554, 1986, 'https://alaskanbeer.com',
-    'US-Craft-Brauerei mit einem sehr gelungenen Alt nach Düsseldorfer Vorbild — mehrfach ausgezeichnet.',
-    'US craft brewery with a highly regarded Alt in the Düsseldorf tradition — multiple award winner.', 1, 'approved'),
-  ('long-trail', 'Long Trail Brewing', 'Long Trail', 'brewery', 'Bridgewater Corners', 'US',
-    '5520 US-4, Bridgewater Corners, VT',
-    'https://maps.google.com/maps?q=5520+US-4,+Bridgewater+Corners,+VT',
-    43.6, -72.7614, 1989, 'https://longtrail.com',
-    'Vermonter Brauerei mit einem Flagship-Altbier im rheinischen Stil.',
-    'Vermont brewery whose flagship is a Rhenish-style Altbier.', 1, 'approved');
+    'Organic brewpub in Cologne''s Kwartier Latäng. The city''s only brewpub producing its beers — Kölsch, naturally cloudy Wiess and Altbier — to certified organic standards.', 1, 'approved', 0),
+  -- ========== Niederrhein — Großbrauereien ==========
+  ('bolten', 'Bolten Brauerei', 'Bolten', 'brewery', 'Korschenbroich', 'DE',
+    'Richrather Straße 61, 41352 Korschenbroich',
+    'https://maps.google.com/maps?q=Richrather+Stra%C3%9Fe+61,+41352+Korschenbroich',
+    51.1891, 6.5127, 1266, 'https://bolten-brauerei.de',
+    'Die älteste kontinuierlich brauereitreibende Alt-Brauerei Deutschlands — seit 1266 in Korschenbroich am Niederrhein. Das Bolten Ur-Alt gilt als älteste Alt-Biermarke der Welt.',
+    'Germany''s oldest continuously operating Alt brewery — in Korschenbroich on the Lower Rhine since 1266. Bolten Ur-Alt is considered the world''s oldest Alt beer brand.', 1, 'approved', 0),
+  ('diebels', 'Brauerei Diebels', 'Diebels', 'brewery', 'Issum', 'DE',
+    'Brauerei-Diebels-Platz, 47661 Issum',
+    'https://maps.google.com/maps?q=Brauerei-Diebels-Platz,+47661+Issum',
+    51.5340, 6.4279, 1878, 'https://www.diebels.de',
+    'Größte Altbier-Brauerei Deutschlands, gegründet 1878 in Issum am Niederrhein. Diebels Alt ist das meistverkaufte Altbier Deutschlands — heute im AB-InBev-Konzern.',
+    'Germany''s largest Altbier brewery, founded 1878 in Issum on the Lower Rhine. Diebels Alt is Germany''s best-selling Altbier — today part of the AB InBev group.', 1, 'approved', 0),
+  ('frankenheim', 'Frankenheim Brauerei', 'Frankenheim', 'brewery', 'Düsseldorf', 'DE',
+    'Grafenberger Allee 101, 40237 Düsseldorf',
+    'https://maps.google.com/maps?q=Grafenberger+Allee+101,+40237+D%C3%BCsseldorf',
+    51.2281, 6.8077, 1873, 'https://www.frankenheim.de',
+    'Große Düsseldorfer Alt-Brauerei, seit 1873. Frankenheim Alt ist nach Diebels das zweitmeistverkaufte Altbier Deutschlands — heute Teil der Radeberger Gruppe.',
+    'Major Düsseldorf Alt brewery since 1873. Frankenheim Alt is Germany''s second best-selling Altbier after Diebels — today part of the Radeberger Group.', 1, 'approved', 0),
+  -- ========== Historisch relevante Marken ==========
+  ('schloesser', 'Schlösser Alt', 'Schlösser', 'brewery', 'Düsseldorf', 'DE',
+    'Oststraße, 40210 Düsseldorf',
+    NULL,
+    51.2231, 6.7899, 1873, NULL,
+    'Ehemalige Düsseldorfer Brauerei, gegründet 1873. War einst die meistverkaufte Alt-Marke der Stadt. Die Brauerei wurde geschlossen; die Marke wird heute von Carlsberg Deutschland produziert.',
+    'Former Düsseldorf brewery, founded 1873. Once the city''s best-selling Alt brand. The brewery has since closed; the brand is now produced by Carlsberg Deutschland.', 1, 'approved', 1),
+  ('gatzweiler', 'Gatzweiler Alt', 'Gatzweiler', 'brewery', 'Düsseldorf', 'DE',
+    'Ratinger Straße, 40213 Düsseldorf',
+    NULL,
+    51.2276, 6.7744, 1845, NULL,
+    'Traditionsreiche Düsseldorfer Alt-Brauerei, gegründet um 1845. Wurde in den 1960er Jahren von Binding aufgekauft und eingestellt. Gatzweiler Alt war für seinen milden, malzbetonten Stil bekannt.',
+    'Traditional Düsseldorf Alt brewery, founded around 1845. Acquired by Binding in the 1960s and discontinued. Gatzweiler Alt was known for its mild, malt-forward style.', 1, 'approved', 1),
+  ('rhenania', 'Brauerei Rhenania', 'Rhenania', 'brewery', 'Düsseldorf', 'DE',
+    'Schwanemarkt, 40213 Düsseldorf',
+    NULL,
+    51.2291, 6.7799, 1879, NULL,
+    'Historische Düsseldorfer Alt-Brauerei, gegründet 1879. Braute bis Mitte des 20. Jahrhunderts ein typisches Düsseldorfer Alt. Heute nicht mehr in Betrieb.',
+    'Historic Düsseldorf Alt brewery, founded 1879. Brewed a classic Düsseldorf Alt until the mid-20th century. No longer in operation.', 1, 'approved', 1);
 
 -- Style assignments
 INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
@@ -192,13 +220,13 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('schluessel',      'schluessel-alt'),
   ('kuerzer',         'kuerzer-alt'),
   ('kuerzer-flingern','kuerzer-alt'),
-  ('zum-schlueffken', 'uerige-alt'),
   ('koenigshof',      'koenigshof-alt'),
   ('hannen',          'hannen-alt'),
   ('hellers',         'hellers-alt'),
   ('altus',           'altus-alt'),
-  ('alaskan-brewing', 'alaskan-amber'),
-  ('long-trail',      'long-trail-ale');
+  ('bolten',          'bolten-uralt'),
+  ('diebels',         'diebels-alt'),
+  ('frankenheim',     'frankenheim-alt');
 
 -- ============================================================
 -- Prices
@@ -226,9 +254,12 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, status) VAL
   ('koenigshof',      '2026-04-02', '0.5l',  3.40, 'retail',   'approved'),
   -- Hannen (Mönchengladbach) — Flasche im Getränkehandel
   ('hannen',          '2026-03-15', '0.5l',  2.90, 'retail',   'approved'),
-  -- International
-  ('alaskan-brewing', '2026-03-22', '0.5l',  5.20, 'on-site',  'approved'),
-  ('long-trail',      '2026-03-18', '0.5l',  4.80, 'on-site',  'approved');
+  -- Bolten (Korschenbroich) — Flasche im Handel
+  ('bolten',          '2026-04-10', '0.5l',  2.80, 'retail',   'approved'),
+  -- Diebels (Issum) — Flasche im Supermarkt
+  ('diebels',         '2026-04-10', '0.5l',  1.49, 'retail',   'approved'),
+  -- Frankenheim (Düsseldorf) — Flasche im Handel
+  ('frankenheim',     '2026-04-10', '0.5l',  1.59, 'retail',   'approved');
 
 -- ============================================================
 -- Events — nur bestätigte, laufende Veranstaltungen

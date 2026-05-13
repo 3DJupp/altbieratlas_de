@@ -55,6 +55,21 @@ window.renderShell = function ({ activeNav }) {
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.5 8c0-.86.14-1.69.4-2.46l3.68 3.68v.78c0 .55.45 1 1 1h.57v2.9A6.5 6.5 0 0 1 1.5 8Zm11.67 4.34A6.48 6.48 0 0 1 9 14.4v-.7a1 1 0 0 0-1-1h-.57v-2.15l3.4-3.4A6.5 6.5 0 0 1 13.17 12.34ZM8 6.5h.5v-.43a1 1 0 0 0-1-1h-.5V3.93c.83-.5 1.83-.75 2.87-.68l-.87 1.72L10.43 6.5H8Z"/></svg>
         <span>Website</span></a>`);
     }
+    if (author.instagram) {
+      socialLinks.push(`<a href="${author.instagram}" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"/></svg>
+        <span>Instagram</span></a>`);
+    }
+    if (author.mastodon) {
+      socialLinks.push(`<a href="${author.mastodon}" target="_blank" rel="noopener" class="social-link" aria-label="Mastodon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.19 12.195c2.016-.24 3.77-1.475 3.99-2.603.348-1.778.32-4.339.32-4.339 0-3.47-2.286-4.488-2.286-4.488C12.062.238 10.083.017 8.027 0h-.05C5.92.017 3.942.238 2.79.765c0 0-2.285 1.017-2.285 4.488l-.002.662c-.004.64-.007 1.35.011 2.091.083 3.394.626 6.74 3.78 7.57 1.454.383 2.703.463 3.709.408 1.823-.1 2.847-.647 2.847-.647l-.06-1.317s-1.303.41-2.767.36c-1.45-.05-2.98-.156-3.215-1.928a3.614 3.614 0 0 1-.033-.496s1.424.346 3.228.428c1.103.05 2.137-.064 3.188-.189zm1.613-2.47H11.13v-4.08c0-.859-.364-1.295-1.091-1.295-.804 0-1.207.517-1.207 1.541v2.233H7.168V5.89c0-1.024-.403-1.541-1.207-1.541-.727 0-1.091.436-1.091 1.296v4.079H3.197V5.522c0-.859.22-1.541.66-2.046.456-.505 1.052-.764 1.793-.764.856 0 1.504.328 1.933.983l.417.695.417-.695c.429-.655 1.077-.983 1.934-.983.74 0 1.336.259 1.791.764.442.505.661 1.187.661 2.046v4.203z"/></svg>
+        <span>Mastodon</span></a>`);
+    }
+    if (author.kofi) {
+      socialLinks.push(`<a href="${author.kofi}" target="_blank" rel="noopener" class="social-link" aria-label="Ko-fi">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M13.5 3.5h-11A1.5 1.5 0 0 0 1 5v6a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 15 11V5a1.5 1.5 0 0 0-1.5-1.5zM10 9.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM4 7.5h3M4 9h1.5"/></svg>
+        <span>Ko-fi</span></a>`);
+    }
     const host = document.getElementById("shell-social");
     if (!host) return;
     if (!socialLinks.length) { host.innerHTML = ""; return; }
@@ -107,7 +122,7 @@ window.renderShell = function ({ activeNav }) {
         </div>
         <div class="bottom">
           <span>© ${new Date().getFullYear()} Altbieratlas</span>
-          <span id="atlas-mode-tag" class="mono">V 0.3.9 · <span id="atlas-mode">…</span></span>
+          <span id="atlas-mode-tag" class="mono"><span id="atlas-version">${cfg.version ? "v" + cfg.version : ""}</span> · <span id="atlas-mode">…</span></span>
         </div>
       </div>
     </footer>
@@ -128,10 +143,32 @@ window.renderShell = function ({ activeNav }) {
   document.getElementById("shell-footer").innerHTML = footer;
   document.getElementById("shell-cookie").innerHTML = cookieBanner;
 
+  // ---- Banner ----
+  function renderBanner() {
+    const b = cfg.banner;
+    const el = document.getElementById("shell-banner");
+    if (!el) return;
+    if (!b || !b.enabled || b.enabled === "false") { el.innerHTML = ""; el.hidden = true; return; }
+    const lang = window.__atlasLang || "de";
+    const text = lang === "en" ? (b.text_en || b.text_de || "") : (b.text_de || b.text_en || "");
+    if (!text) { el.innerHTML = ""; el.hidden = true; return; }
+    el.innerHTML = `<div class="site-banner"><span>${text}</span><button class="banner-close" aria-label="Schließen" onclick="this.closest('.site-banner').remove()">×</button></div>`;
+    el.hidden = false;
+  }
+  renderBanner();
+  document.addEventListener("atlas:config-ready", renderBanner);
+  document.addEventListener("atlas:lang-changed", renderBanner);
+
   // Social-Row initial (mit ggf. leeren Defaults) + neu rendern, sobald die
   // Server-Config nachgeladen ist.
   renderSocialRow();
   document.addEventListener("atlas:config-ready", renderSocialRow);
+
+  // Versionsnummer aus Server-Config übernehmen, sobald verfügbar
+  document.addEventListener("atlas:config-ready", () => {
+    const vEl = document.getElementById("atlas-version");
+    if (vEl && cfg.version) vEl.textContent = "v" + cfg.version;
+  });
 
   // Mode-Badge im Footer (wird von api-client gesetzt)
   function paintMode() {

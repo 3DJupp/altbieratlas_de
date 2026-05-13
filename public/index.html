@@ -10,6 +10,20 @@
 <meta name="theme-color" content="#b57a3a" />
 <title>Altbieratlas — Die interaktive Karte des Altbiers</title>
 <meta name="description" content="Der Altbieratlas: Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt." />
+<link rel="canonical" href="https://altbieratlas.de/" />
+<link rel="alternate" hreflang="de" href="https://altbieratlas.de/" />
+<link rel="alternate" hreflang="en" href="https://altbieratlas.de/?lang=en" />
+<link rel="alternate" hreflang="x-default" href="https://altbieratlas.de/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Altbieratlas — Die interaktive Karte des Altbiers" />
+<meta property="og:description" content="Interaktive Karte mit Altbier-Brauereien, Preisen und Wissen. Gemeinschaftlich gepflegt." />
+<meta property="og:url" content="https://altbieratlas.de/" />
+<meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Altbieratlas — Die interaktive Karte des Altbiers" />
+<meta name="twitter:description" content="Interaktive Karte mit Altbier-Brauereien, Preisen und Wissen. Gemeinschaftlich gepflegt." />
+<meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +38,7 @@
 </head>
 <body>
 <div class="page">
+  <div id="shell-banner" hidden></div>
   <div id="shell-header"></div>
 
   <!-- ============ HERO + MAP ============ -->
@@ -63,6 +78,7 @@
       <button class="filter-btn" data-filter="brauerei" data-i18n="map.filter.brauerei">Brauerei / Brewpub</button>
       <button class="filter-btn" data-filter="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</button>
       <button class="filter-btn" data-filter="handel" data-i18n="map.filter.handel">Handel</button>
+      <button class="filter-btn" data-filter="historisch" data-i18n="map.filter.historisch">Historisch</button>
       <div class="map-search-wrap">
         <input type="search" id="map-search" class="filter-search" placeholder="Stadt, Brauerei, Ort…" data-i18n-placeholder="map.search" autocomplete="off" />
         <div class="map-search-suggest" id="map-search-suggest"></div>
@@ -300,11 +316,16 @@ const map = L.map("map", {
 L.control.zoom({ position: "bottomright" }).addTo(map);
 L.tileLayer(cfg.map.tileUrl, { attribution: cfg.map.tileAttribution }).addTo(map);
 
-function pinIcon(type, pending) {
+function pinIcon(type, opts = {}) {
+  const classes = ["atlas-pin", type];
+  if (opts.pending)     classes.push("pending");
+  if (opts.historical)  classes.push("historical");
+  if (opts.highlighted) classes.push("highlighted");
+  const size = opts.historical ? 16 : 22;
   return L.divIcon({
     className: "",
-    html: `<div class="atlas-pin ${type} ${pending ? "pending" : ""}"></div>`,
-    iconSize: [22, 22], iconAnchor: [11, 11],
+    html: `<div class="${classes.join(" ")}"></div>`,
+    iconSize: [size, size], iconAnchor: [size / 2, size / 2],
   });
 }
 
@@ -335,7 +356,10 @@ function renderMarkers(filter = "all", search = "") {
   const q = search.trim().toLowerCase();
 
   allBreweries.forEach((b) => {
-    if (filter !== "all") {
+    if (filter === "historisch") {
+      if (!b.isHistorical) return;
+    } else if (filter !== "all") {
+      if (b.isHistorical) return; // historische nicht in normalen Filtern
       const groups = {
         brauerei:   ["brewery", "brewpub"],
         gastronomie:["pub", "restaurant"],
@@ -346,17 +370,23 @@ function renderMarkers(filter = "all", search = "") {
     }
     if (q && !((b.name + " " + b.city).toLowerCase().includes(q))) return;
 
-    const marker = L.marker(b.coords, { icon: pinIcon(b.type, b.pending) }).addTo(map);
+    const marker = L.marker(b.coords, {
+      icon: pinIcon(b.type, { pending: b.pending, historical: b.isHistorical, highlighted: b.highlighted }),
+    }).addTo(map);
     const latest = priceByBrewery.get(b.id);
     const priceText = latest
       ? `<div class="pop-price">€ ${window.formatPrice(latest.price)} <span style="font-size:11px;opacity:.6">/ ${window.formatSize(latest.size)}</span></div>`
       : `<div style="font-size:12px;opacity:.6;margin-top:6px">${window.t("brewery.noPrice")}</div>`;
+    const historicalBadge = b.isHistorical
+      ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>` : "";
     marker.bindPopup(`
       <h4>${b.name}</h4>
       <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · " + window.t("rank.sinceYear") + b.founded : ""}</div>
+      ${historicalBadge}
       ${priceText}
       <div style="margin-top:10px"><a href="brauerei.html?id=${b.id}">Details →</a></div>
     `);
+    marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
     markerMap.set(b.id, marker);
   });
 }

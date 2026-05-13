@@ -10,18 +10,16 @@ Altbieratlas is an interactive map of Altbier breweries/taprooms/shops in German
 
 ```bash
 # Local development (requires wrangler login first)
-npm run db:setup        # Apply all migrations to local D1 (schema + seed + upgrade)
+npm run db:setup        # Apply schema + seed to local D1
 npm run dev             # Start wrangler dev server at http://localhost:8787
 
 # Database
 npm run db:setup:remote         # Apply migrations to production D1
-npm run db:setup:demo           # Apply migrations + demo data locally
 npm run db:create               # Create a new D1 database (first-time setup)
 
 # Deploy (normally handled by Cloudflare Workers Builds CI, not run manually)
 bash scripts/deploy.sh          # Deploy Worker only
-bash scripts/deploy.sh --seed   # First-time: schema + seed + upgrade + deploy
-bash scripts/deploy.sh --migrate # Existing install: run upgrade migration + deploy
+bash scripts/deploy.sh --seed   # First-time: schema + seed + deploy
 
 # Admin user
 npm run admin:create -- admin <password> --email=x@example.com --remote
@@ -36,11 +34,12 @@ npm run admin:create -- admin <password> --email=x@example.com --remote
 ```
 Browser
   → Cloudflare Worker (src/worker.js)
-      ├─ /api/*         → route handlers in src/routes.js
-      │    └─ utilities  (src/utils.js): auth, hashing, rate-limiting, email
-      ├─ /sitemap.xml   → R.sitemap()
-      ├─ /impressum.html → R.serveImpressum() (SSI: SITE_CONFIG injected into HTML)
-      └─ everything else → ASSETS binding (static files from public/)
+      ├─ /api/*              → route handlers in src/routes.js
+      │    └─ utilities       (src/utils.js): auth, hashing, rate-limiting, email
+      ├─ /sitemap.xml        → R.sitemap()
+      ├─ /impressum.html     → R.serveImpressum() (SSI: site_settings injected into HTML)
+      ├─ /<page> (no .html) → 301 redirect to /<page>.html (known pages only, not /)
+      └─ everything else     → ASSETS binding (static files from public/)
 ```
 
 `worker.js` contains a minimal hand-rolled router (`match()`) — there is no routing framework. Routes are registered as `[METHOD, pattern, handler]` tuples in the `ROUTES` array.
@@ -51,24 +50,37 @@ Each HTML page is self-contained. Shared infrastructure is loaded via `<script>`
 
 1. `config.js` — sets `window.ATLAS_CONFIG` (mock-mode fallback defaults)
 2. `i18n.js` — DE/EN translation strings
-3. `shell.js` — renders header, footer, cookie banner; reads `ATLAS_CONFIG`
+3. `shell.js` — renders header, footer, cookie banner, site banner; reads `ATLAS_CONFIG`
 4. `api-client.js` — probes `/api/config` on load; switches between **live** and **mock** mode and merges server config into `window.ATLAS_CONFIG`; exposes `window.ATLAS_API`
 
 Pages call `window.ATLAS_API.*` methods which work identically in both modes.
 
 ### Configuration
 
-All runtime configuration lives in the **Cloudflare Dashboard** (Workers → Settings → Variables and Secrets), not in `wrangler.toml`. The single variable is `SITE_CONFIG` (a JSON string). `keep_vars = true` in `wrangler.toml` ensures dashboard values survive every `wrangler deploy`.
+Runtime config lives in the **Cloudflare Dashboard** (Workers → Settings → Variables and Secrets) as `SITE_CONFIG` (a JSON string). `keep_vars = true` in `wrangler.toml` ensures dashboard values survive every `wrangler deploy`.
+
+Admin-configurable values (banner, social links, impressum) are stored in the `site_settings` D1 table and take precedence over `SITE_CONFIG`.
 
 The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_D1_ID`, `REPLACE_WITH_YOUR_D1_NAME`). `scripts/deploy.sh` replaces these via `sed` at deploy time using `database_id` and `database_name` build environment variables set in the dashboard.
 
 ### Database Schema
 
-Key tables: `breweries`, `venue_types`, `styles`, `brewery_styles` (n:m), `prices`, `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_resets`, `rate_limits`, `glossary`.
+Key tables: `breweries` (incl. `is_historical` flag), `venue_types`, `styles`, `brewery_styles` (n:m), `prices`, `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_reset_tokens`, `rate_limits`, `glossary`, `site_settings`, `untappd_cache`.
 
 **FK cascades are aggressive**: deleting a brewery cascades to prices, `brewery_styles`, events, and event_beers. Always snapshot (`wrangler d1 export`) before destructive operations.
 
-Migrations are idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). New installations only need `0001` + `0002`; `0003` is an upgrade path for existing installs.
+### Migrations policy — WICHTIG
+
+**Es gibt immer genau zwei kanonische SQL-Dateien:**
+
+| Datei | Zweck |
+|---|---|
+| `migrations/0001_schema.sql` | Vollständiges Schema — alle Tabellen, Indizes, FK-Kaskaden. Idempotent (`CREATE TABLE IF NOT EXISTS`). |
+| `migrations/0002_seed.sql` | Alle Seed-Daten — Venue-Typen, Stile, Glossar, Brauereien, Preise, Events. Idempotent (`INSERT OR IGNORE`). |
+
+Wird das Schema oder die Seed-Daten geändert (neue Spalte, neue Brauerei, neue Venue-Typen etc.), sind **beide Dateien sofort anzupassen** — nicht als neue Datei `0003_…` o. ä. anlegen. Neue Numbering-Dateien nur temporär anlegen, wenn Upgrades für bestehende Produktionsinstanzen notwendig sind, und danach sofort wieder in die zwei kanonischen Dateien integrieren und die temporäre Datei löschen.
+
+Für Live-Upgrades bestehender Instanzen: Upgrade-SQL direkt in der D1-Dashboard-Console ausführen.
 
 ### Auth & Security
 
@@ -79,8 +91,12 @@ Migrations are idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`). Ne
 
 ### Versioning
 
-`APP_VERSION` in `src/utils.js` must match the `version` field in `package.json`. Update both together when bumping the version.
+`APP_VERSION` in `src/utils.js` must match the `version` field in `package.json`. Update both together when bumping the version. The README version heading must also be updated.
 
 ### Email
 
 All transactional mail (contribution confirmations, password-reset, daily admin digest) goes through [Resend](https://resend.com) via the `RESEND_API_KEY` secret. The daily digest is triggered by a Cloudflare Cron at `0 7 * * *` (07:00 UTC).
+
+### README-Pflege
+
+`README.md` muss immer aktuell gehalten werden — bei jeder inhaltlichen Änderung (neue Features, geänderte Konfiguration, neue API-Endpunkte, Versions-Bump) direkt mitpflegen.
