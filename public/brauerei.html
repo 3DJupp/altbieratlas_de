@@ -327,7 +327,7 @@ const root = document.getElementById("brewery-root");
   }).addTo(dm);
 
   // "Open in Maps" — Leaflet control + click handler
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}`;
+  const mapsUrl = b.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}`;
   const MapsBtn = L.Control.extend({
     onAdd() {
       const a = L.DomUtil.create('a', 'maps-open-btn');
