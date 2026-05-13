@@ -152,17 +152,16 @@ export default {
       }
     }
 
-    // Extensionless URL → redirect to .html (nur für bekannte Seiten, nicht für /)
-    // WICHTIG: / und /index ausschließen — ASSETS bedient index.html bereits direkt
-    // und ein Redirect würde eine Redirect-Schleife erzeugen.
+    // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
+    // ASSETS würde /ranglisten.html → /ranglisten umleiten, was eine Schleife erzeugt.
     const PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
-    if (request.method === "GET" && !url.pathname.includes(".")) {
+    if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
       const bare = url.pathname.replace(/\/$/, "");
       const name = bare.slice(1); // strip leading /
       if (bare && PAGES.includes(name)) {
-        const target = new URL(request.url);
-        target.pathname = `/${name}.html`;
-        return Response.redirect(target.toString(), 301);
+        const assetUrl = new URL(request.url);
+        assetUrl.pathname = `/${name}.html`;
+        return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
       }
     }
 

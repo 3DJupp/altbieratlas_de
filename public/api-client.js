@@ -32,6 +32,7 @@
     if (Array.isArray(srv.priceSizes) && srv.priceSizes.length)    cfg.priceSizes          = srv.priceSizes;
     if (Array.isArray(srv.highlightedSizes))                       cfg.highlightedSizes    = srv.highlightedSizes;
     if (typeof srv.requireModeration === "boolean")                cfg.requireModeration   = srv.requireModeration;
+    if (srv.version)                                              cfg.version             = srv.version;
     if (srv.author && typeof srv.author === "object") {
       cfg.author = cfg.author || {};
       for (const k of ["name", "github", "linkedin", "website", "instagram", "mastodon", "kofi"]) {
