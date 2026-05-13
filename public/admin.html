@@ -1391,7 +1391,7 @@ async function loadBreweriesTable() {
           data-description="${(b.description?.de || "").replace(/"/g, "&quot;")}"
           data-description-en="${(b.description?.en || "").replace(/"/g, "&quot;")}"
           data-styles="${(b.styles || []).join(",")}">
-        <td><a href="brauerei.html?id=${b.id}" target="_blank">${b.name}</a></td>
+        <td><a href="/brauerei?id=${b.id}" target="_blank">${b.name}</a></td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
@@ -1539,7 +1539,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.descriptionEn  = descriptionEn;
     row.dataset.styles         = styles.join(",");
     row.querySelector("td:nth-child(1) a").textContent = name;
-    row.querySelector("td:nth-child(1) a").href = `brauerei.html?id=${effectiveId}`;
+    row.querySelector("td:nth-child(1) a").href = `/brauerei?id=${effectiveId}`;
     row.querySelector("td:nth-child(2)").textContent = city;
     const typeKey = "type." + type;
     const typeVal = t(typeKey);

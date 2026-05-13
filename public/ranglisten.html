@@ -18,7 +18,7 @@
 <meta property="og:site_name" content="Altbieratlas" />
 <meta property="og:title" content="Altbier-Ranglisten · Altbieratlas" />
 <meta property="og:description" content="Altbier-Preisranglisten: Welche Brauerei zapft am günstigsten? Aktuelle Preise im Vergleich." />
-<meta property="og:url" content="https://altbieratlas.de/ranglisten.html" />
+<meta property="og:url" content="https://altbieratlas.de/ranglisten" />
 <meta property="og:image" content="https://altbieratlas.de/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Altbier-Ranglisten · Altbieratlas" />
@@ -121,7 +121,7 @@
     <div class="container">
       <div class="eyebrow" data-i18n="nav.rankings">Ranglisten</div>
       <h1 data-i18n="rank.heroTitle">Wo Alt am günstigsten, wo es am teuersten ist</h1>
-      <p><span data-i18n="rank.heroPrelude">Alle Preise stammen aus Community-Meldungen. Nur die jüngste Meldung pro Brauerei zählt. Werte können veralten — </span><a href="beitragen.html?typ=preis" data-i18n="rank.heroPreludeLink">melde einen aktuellen Preis</a>.</p>
+      <p><span data-i18n="rank.heroPrelude">Alle Preise stammen aus Community-Meldungen. Nur die jüngste Meldung pro Brauerei zählt. Werte können veralten — </span><a href="/beitragen?typ=preis" data-i18n="rank.heroPreludeLink">melde einen aktuellen Preis</a>.</p>
 
       <div class="stats-strip" id="stats-strip">
         <!-- Preis-Durchschnittskästen werden dynamisch von renderStats() eingefügt -->
@@ -383,7 +383,7 @@ function render() {
     return `
       <div class="rank-row">
         <span class="nm">
-          <a href="brauerei.html?id=${it.brewery.id}">${it.brewery.name}</a>
+          <a href="/brauerei?id=${it.brewery.id}">${it.brewery.name}</a>
           <div class="sub">${sub}</div>
         </span>
         <span class="pr-cell">

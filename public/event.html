@@ -35,12 +35,12 @@
 
 .event-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 240px;
   gap: 40px;
   padding: 36px 0;
   align-items: start;
 }
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .event-layout { grid-template-columns: 1fr; gap: 24px; padding: 24px 0; }
   .event-sidebar { order: -1; }
 }
@@ -90,17 +90,20 @@
 <div id="shell-banner" hidden></div>
   <div id="shell-header"></div>
 
-<div class="wrap">
+<div class="page">
   <section class="event-hero">
-    <div class="breadcrumb">
-      <a href="/">Altbieratlas</a>
-      <span>&#x203A;</span>
-      <span id="bc-events">Events</span>
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="/">Altbieratlas</a>
+        <span>&#x203A;</span>
+        <span id="bc-events">Events</span>
+      </div>
+      <h1 class="event-title" id="ev-title">&#x2026;</h1>
+      <div class="event-hero-meta" id="ev-hero-meta"></div>
     </div>
-    <h1 class="event-title" id="ev-title">&#x2026;</h1>
-    <div class="event-hero-meta" id="ev-hero-meta"></div>
   </section>
 
+  <div class="container">
   <div class="event-layout">
     <div class="event-main">
       <div id="ev-desc" class="event-desc" style="display:none"></div>
@@ -133,6 +136,7 @@
         <div class="event-actions" id="ev-actions"></div>
       </div>
     </aside>
+  </div>
   </div>
 </div>
 

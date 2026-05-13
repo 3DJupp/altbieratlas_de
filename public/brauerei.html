@@ -172,7 +172,7 @@ const root = document.getElementById("brewery-root");
       <div class="container" style="padding:80px 24px">
         <h1>${window.t("common.error")}</h1>
         <p style="color:var(--ink-muted)">${e.message || "Datenabruf fehlgeschlagen."}</p>
-        <p><a href="index.html">← ${window.t("common.back")}</a></p>
+        <p><a href="/">← ${window.t("common.back")}</a></p>
       </div>`;
     return;
   }
@@ -181,7 +181,7 @@ const root = document.getElementById("brewery-root");
     root.innerHTML = `
       <div class="container" style="padding:80px 24px">
         <h1>${window.t("brewery.notFound")}</h1>
-        <p><a href="index.html">${window.t("brewery.backToMap")}</a></p>
+        <p><a href="/">${window.t("brewery.backToMap")}</a></p>
       </div>`;
     return;
   }
@@ -215,7 +215,7 @@ const root = document.getElementById("brewery-root");
     <section class="brewery-hero">
       <div class="container">
         <div class="breadcrumb">
-          <a href="index.html" data-i18n="nav.map">Karte</a>
+          <a href="/" data-i18n="nav.map">Karte</a>
           <span>›</span> <span>${b.city}</span>
           <span>›</span> <span>${b.name}</span>
         </div>
@@ -282,7 +282,7 @@ const root = document.getElementById("brewery-root");
           <div class="eyebrow" data-i18n="brewery.priceHistory">Preisentwicklung</div>
           <h2 style="margin-top:8px" data-i18n="brewery.pricesOverTime">Preis über Zeit</h2>
         </div>
-        <a class="btn btn-primary" href="beitragen.html?typ=preis&brauerei=${b.id}" data-i18n="brewery.addPrice">Preis melden</a>
+        <a class="btn btn-primary" href="/beitragen?typ=preis&brauerei=${b.id}" data-i18n="brewery.addPrice">Preis melden</a>
       </div>
 
       <div class="card" style="padding:24px 28px">
@@ -302,8 +302,8 @@ const root = document.getElementById("brewery-root");
       </div>
 
       <div class="action-bar">
-        <a class="btn" href="beitragen.html?typ=korrektur&brauerei=${b.id}" data-i18n="brewery.reportIssue">Korrektur einreichen</a>
-        <a class="btn btn-ghost" href="index.html" data-i18n="common.back">Zurück</a>
+        <a class="btn" href="/beitragen?typ=korrektur&brauerei=${b.id}" data-i18n="brewery.reportIssue">Korrektur einreichen</a>
+        <a class="btn btn-ghost" href="/" data-i18n="common.back">Zurück</a>
       </div>
     </section>
   `;

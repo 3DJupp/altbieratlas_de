@@ -152,8 +152,24 @@ export default {
       }
     }
 
+    // /<page>.html → /<page>  (301, kanonische Clean URLs)
+    // /index.html  → /
+    const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
+    if (request.method === "GET" && url.pathname.endsWith(".html")) {
+      const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
+      if (name === "index") {
+        const dest = new URL(request.url);
+        dest.pathname = "/";
+        return Response.redirect(dest.toString(), 301);
+      }
+      if (ALL_PAGES.includes(name)) {
+        const dest = new URL(request.url);
+        dest.pathname = `/${name}`;
+        return Response.redirect(dest.toString(), 301);
+      }
+    }
+
     // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
-    // ASSETS würde /ranglisten.html → /ranglisten umleiten, was eine Schleife erzeugt.
     const PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
     if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
       const bare = url.pathname.replace(/\/$/, "");
