@@ -19,7 +19,7 @@
 <style>
 .legal { padding: 60px 0 80px; }
 .legal h1 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 500; margin-bottom: 10px; }
-.legal h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; margin: 40px 0 12px; padding-top: 30px; border-top: 1px solid var(--rule); }
+.legal h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; margin: 40px 0 12px; padding-top: 30px; border-top: 1px solid var(--rule); scroll-margin-top: 70px; }
 .legal h2:first-of-type { border: none; padding-top: 0; }
 .legal h3 { font-family: var(--font-display); font-size: 1.1rem; margin: 20px 0 8px; font-weight: 500; }
 .legal p, .legal li { color: var(--ink-soft); line-height: 1.7; font-size: 15px; }
@@ -92,6 +92,13 @@
 <script src="shell.js"></script>
 <script>
 renderShell({ activeNav: "" });
+
+// Nach dem Shell-Render (Header einfügt) zum Hash-Anker nachscrollen,
+// damit der sticky Header den Ziel-Abschnitt nicht verdeckt.
+if (location.hash) {
+  const target = document.querySelector(location.hash);
+  if (target) setTimeout(function() { target.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50);
+}
 
 // Impressum-Daten werden vom Worker serverseitig eingebettet (nicht via API).
 // Bei Sprachumschaltung neu rendern, da Label-Texte i18n-abhängig sind.

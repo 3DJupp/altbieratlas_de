@@ -147,12 +147,12 @@ window.renderShell = function ({ activeNav }) {
   function renderBanner() {
     const b = cfg.banner;
     const el = document.getElementById("shell-banner");
-    if (!el) return;
+    if (!el || el.dataset.dismissed === "1") return;
     if (!b || !b.enabled || b.enabled === "false") { el.innerHTML = ""; el.hidden = true; return; }
     const lang = window.__atlasLang || "de";
     const text = lang === "en" ? (b.text_en || b.text_de || "") : (b.text_de || b.text_en || "");
     if (!text) { el.innerHTML = ""; el.hidden = true; return; }
-    el.innerHTML = `<div class="site-banner"><span>${text}</span><button class="banner-close" aria-label="Schließen" onclick="this.closest('.site-banner').remove()">×</button></div>`;
+    el.innerHTML = `<div class="site-banner"><span>${text}</span><button class="banner-close" aria-label="Schließen" onclick="document.getElementById('shell-banner').dataset.dismissed='1';this.closest('.site-banner').remove()">×</button></div>`;
     el.hidden = false;
   }
   renderBanner();
