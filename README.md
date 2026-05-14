@@ -173,21 +173,7 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
   "requireModeration": true,
   "untappdClientId":   "XXXXXXXXXXXXXXXX",
   "siteUrl":           "https://altbieratlas.de",
-  "resendFrom":        "Altbieratlas <noreply@altbieratlas.de>",
-  "author": {
-    "name":      "Dein Name",
-    "github":    "https://github.com/...",
-    "linkedin":  "https://linkedin.com/in/...",
-    "website":   "https://example.com",
-    "instagram": "https://instagram.com/...",
-    "mastodon":  "https://mastodon.social/@...",
-    "kofi":      "https://ko-fi.com/..."
-  },
-  "impressum": {
-    "owner":   "Vor- und Nachname",
-    "address": "Musterstraße 1, 40213 Düsseldorf",
-    "email":   "kontakt@example.de"
-  }
+  "resendFrom":        "Altbieratlas <noreply@altbieratlas.de>"
 }
 ```
 
@@ -197,6 +183,8 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 | `requireModeration` | `true` = alle Beiträge landen in der Queue. Standard: `true` |
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
 | `resendFrom` | Absenderadresse für Mails via Resend |
+
+> **Impressum, Social-Links (Ko-fi, GitHub, Mastodon …) und Ankündigungs-Banner** werden **nicht** hier gesetzt, sondern direkt im Admin-Panel unter *Einstellungen* (gespeichert in D1 `site_settings`). Die Felder werden dort per Formular gepflegt und greifen sofort ohne Redeploy.
 
 #### Secrets
 
@@ -230,7 +218,7 @@ Fünf Einreichungstypen mit Moderation:
 - **Korrektur** — Freitext-Hinweis
 - **Event** — Name, Datum, optionale Brauerei-Zuordnung
 
-### Moderations-Dashboard (`admin.html`)
+### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken + neueste offene Beiträge
 - **Beiträge** — Approve / Reject mit optionaler Notiz
 - **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL), verifizieren, löschen; neue Brauereien direkt anlegen
@@ -265,7 +253,7 @@ npm run dev
 
 Die Site läuft auf `http://localhost:8787`. Turnstile-Verifikation wird ohne konfiguriertes Secret übersprungen.
 
-Für reines UI-Testen einfach `index.html` im Browser öffnen — `api-client.js` erkennt das fehlende Backend und fällt auf den **Mock-Modus** zurück.
+Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser öffnen — `api-client.js` erkennt das fehlende Backend und fällt auf den **Mock-Modus** zurück.
 
 ---
 
