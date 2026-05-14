@@ -273,9 +273,10 @@ function buildVEvent(e, base, lang) {
   const location = e.brewery_name
     ? icsEscape(`${e.brewery_name}${e.brewery_city ? ", " + e.brewery_city : ""}`)
     : (e.location ? icsEscape(e.location) : "");
-  const desc = icsEscape(descRaw || "");
   // ICS URL zeigt immer auf die Detail-Seite
   const detailUrl = `${base}/event.html?id=${encodeURIComponent(e.id)}`;
+  const descWithUrl = descRaw ? `${descRaw}\n\n${detailUrl}` : detailUrl;
+  const desc = icsEscape(descWithUrl);
   const lines = [
     "BEGIN:VEVENT",
     icsFoldLine(`UID:${e.id}@altbieratlas.de`),

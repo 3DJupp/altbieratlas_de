@@ -263,22 +263,22 @@
         <section id="tab-breweries">
           <!-- Brauerei hinzufügen -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
-            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Brauerei hinzufügen</h3>
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.addBrewery">Brauerei hinzufügen</h3>
             <form id="add-brewery-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
                 <label>ID (Slug) *</label>
                 <input name="id" type="text" maxlength="80" required placeholder="uerige" style="font-family:var(--font-mono);font-size:13px" />
               </div>
               <div class="field" style="margin:0">
-                <label>Name *</label>
+                <label data-i18n="admin.editName">Name *</label>
                 <input name="name" type="text" maxlength="200" required placeholder="Brauerei Uerige" />
               </div>
               <div class="field" style="margin:0">
-                <label>Kurzname</label>
+                <label data-i18n="admin.fieldShortName">Kurzname</label>
                 <input name="short" type="text" maxlength="100" placeholder="Uerige" />
               </div>
               <div class="field" style="margin:0">
-                <label>Typ *</label>
+                <label data-i18n="admin.editType">Typ *</label>
                 <select name="type" required id="add-brewery-type-select">
                   <option value="">— wählen —</option>
                   <option value="hausbrauerei">Hausbrauerei</option>
@@ -287,36 +287,36 @@
                 </select>
               </div>
               <div class="field" style="margin:0">
-                <label>Stadt *</label>
+                <label data-i18n="admin.editCity">Stadt *</label>
                 <input name="city" type="text" maxlength="100" required placeholder="Düsseldorf" />
               </div>
               <div class="field" style="margin:0">
-                <label>Land</label>
+                <label data-i18n="admin.fieldCountry">Land</label>
                 <input name="country" type="text" maxlength="5" placeholder="DE" value="DE" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Adresse</label>
+                <label data-i18n="admin.fieldAddress">Adresse</label>
                 <input name="address" type="text" maxlength="300" placeholder="Berger Str. 1, 40213 Düsseldorf" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Google Maps URL (Pflicht oder Koordinaten)</label>
+                <label data-i18n="admin.fieldMapsUrlRequired">Google Maps URL (Pflicht oder Koordinaten)</label>
                 <input name="maps_url" type="url" maxlength="1000" placeholder="https://maps.google.com/?q=..." />
-                <span style="font-size:11px;color:var(--ink-muted)">Eigene Maps-URL oder Koordinaten unten angeben (beides möglich)</span>
+                <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldMapsUrlHint">Eigene Maps-URL oder Koordinaten unten angeben (beides möglich)</span>
               </div>
               <div class="field" style="margin:0">
-                <label>Breitengrad (Lat) *</label>
+                <label data-i18n="admin.fieldLat">Breitengrad (Lat) *</label>
                 <input name="lat" type="number" min="-90" max="90" step="any" required placeholder="51.2277" />
               </div>
               <div class="field" style="margin:0">
-                <label>Längengrad (Lng) *</label>
+                <label data-i18n="admin.fieldLng">Längengrad (Lng) *</label>
                 <input name="lng" type="number" min="-180" max="180" step="any" required placeholder="6.7735" />
               </div>
               <div style="grid-column:1/-1;display:flex;gap:8px;align-items:center">
-                <button class="btn" type="button" id="add-brewery-geocode-btn" style="white-space:nowrap">📍 Geocodieren</button>
+                <button class="btn" type="button" id="add-brewery-geocode-btn" style="white-space:nowrap" data-i18n="admin.geocodeBtn">📍 Geocodieren</button>
                 <span id="add-brewery-geocode-msg" style="font-size:12px;color:var(--ink-muted)"></span>
               </div>
               <div class="field" style="margin:0">
-                <label>Gründungsjahr</label>
+                <label data-i18n="admin.fieldFounded">Gründungsjahr</label>
                 <input name="founded" type="number" min="1000" max="2100" step="1" placeholder="1862" />
               </div>
               <div class="field" style="margin:0">
@@ -324,15 +324,15 @@
                 <input name="website" type="url" maxlength="500" placeholder="https://uerige.de" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Beschreibung (DE)</label>
+                <label data-i18n="admin.editDescription">Beschreibung (DE)</label>
                 <textarea name="description_de" rows="2" maxlength="2000" style="resize:vertical"></textarea>
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Description (EN)</label>
+                <label data-i18n="admin.fieldDescriptionEn">Beschreibung (EN)</label>
                 <textarea name="description_en" rows="2" maxlength="2000" style="resize:vertical"></textarea>
               </div>
               <div>
-                <button class="btn btn-approve" type="submit" style="white-space:nowrap">Brauerei anlegen</button>
+                <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.createBrewery">Brauerei anlegen</button>
               </div>
             </form>
             <div id="add-brewery-msg" style="display:none;margin-top:10px;font-size:13px"></div>
@@ -767,7 +767,7 @@
           <input id="edit-city" type="text" maxlength="100" />
         </div>
         <div class="field" style="margin:0">
-          <label>Land</label>
+          <label data-i18n="admin.fieldCountry">Land</label>
           <input id="edit-country" type="text" maxlength="5" placeholder="DE" />
         </div>
         <div class="field" style="margin:0">
@@ -791,29 +791,29 @@
           </select>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Brauerei-ID (URL-Slug)</label>
+          <label data-i18n="admin.fieldSlugEdit">Brauerei-ID (URL-Slug)</label>
           <input id="edit-new-id" type="text" maxlength="80" placeholder="z.B. uerige" style="font-family:var(--font-mono);font-size:13px" />
-          <span style="font-size:11px;color:var(--ink-muted)">Nur a–z, 0–9, Bindestriche. Ändert die Seiten-URL.</span>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldSlugHint">Nur a–z, 0–9, Bindestriche. Ändert die Seiten-URL.</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Adresse</label>
+          <label data-i18n="admin.fieldAddress">Adresse</label>
           <input id="edit-address" type="text" maxlength="300" />
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Google Maps URL</label>
+          <label data-i18n="admin.fieldMapsUrl">Google Maps URL</label>
           <input id="edit-maps-url" type="url" maxlength="1000" placeholder="https://maps.google.com/?q=..." />
-          <span style="font-size:11px;color:var(--ink-muted)">Eigene Maps-URL (Pflicht für Karten-Button); Koordinaten als Fallback.</span>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldMapsUrlEditHint">Eigene Maps-URL (Pflicht für Karten-Button); Koordinaten als Fallback.</span>
         </div>
         <div class="field" style="margin:0">
-          <label>Breitengrad (Lat)</label>
+          <label data-i18n="admin.fieldLat">Breitengrad (Lat)</label>
           <input id="edit-lat" type="number" min="-90" max="90" step="any" />
         </div>
         <div class="field" style="margin:0">
-          <label>Längengrad (Lng)</label>
+          <label data-i18n="admin.fieldLng">Längengrad (Lng)</label>
           <input id="edit-lng" type="number" min="-180" max="180" step="any" />
         </div>
         <div class="field" style="margin:0">
-          <label>Gründungsjahr</label>
+          <label data-i18n="admin.fieldFounded">Gründungsjahr</label>
           <input id="edit-founded" type="number" min="1000" max="2100" step="1" />
         </div>
         <div class="field" style="margin:0">
@@ -825,14 +825,14 @@
           <textarea id="edit-description" rows="3" maxlength="2000" style="resize:vertical"></textarea>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Beschreibung (EN)</label>
+          <label data-i18n="admin.fieldDescriptionEn">Beschreibung (EN)</label>
           <textarea id="edit-description-en" rows="3" maxlength="2000" style="resize:vertical"></textarea>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Stile</label>
+          <label data-i18n="admin.fieldStyles">Stile</label>
           <select id="edit-styles-select" multiple size="6" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px">
           </select>
-          <span style="font-size:11px;color:var(--ink-muted)">Strg/Cmd + Klick für Mehrfachauswahl</span>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldStylesHint">Strg/Cmd + Klick für Mehrfachauswahl</span>
         </div>
       </div>
       <div class="edit-msg" id="edit-msg" style="display:none"></div>
@@ -2446,7 +2446,11 @@ async function rebuildBreweryTypeSelects() {
   selects.forEach((sel) => {
     if (!sel) return;
     const current = sel.value;
-    sel.innerHTML = types.map((vt) => `<option value="${vt.id}">${vt.nameDe}</option>`).join("");
+    const lang = window.__atlasLang || (window.ATLAS_CONFIG?.defaultLang || "de");
+    sel.innerHTML = types.map((vt) => {
+      const label = lang === "en" ? (vt.nameEn || vt.nameDe) : vt.nameDe;
+      return `<option value="${vt.id}">${label}</option>`;
+    }).join("");
     if (current) sel.value = current;
   });
 }
@@ -2559,6 +2563,7 @@ async function populateAddEventBreweries() {
 // Bei Sprachwechsel die dynamisch gerenderten Bereiche neu zeichnen
 document.addEventListener("atlas:lang-changed", () => {
   if (document.querySelector("#tab-breweries.active"))    loadBreweriesTable();
+  rebuildBreweryTypeSelects();
   if (document.querySelector("#tab-contribs.active"))     loadContributions(currentStatus);
   if (document.querySelector("#tab-dashboard.active") && me) loadDashboard();
   if (document.querySelector("#tab-venue-types.active"))  loadVenueTypesTab();
