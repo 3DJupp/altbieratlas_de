@@ -49,6 +49,14 @@ binding       = "DB"
 database_name = "REPLACE_WITH_YOUR_D1_NAME"
 database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
+# --- R2: Stil-Logos -----------------------------------------
+# Bucket für hochgeladene Stil-Logos (PNG/WebP/SVG, max 2 MB).
+# Ersteinrichtung: `npx wrangler r2 bucket create altbieratlas-logos`
+# Logo-Auslieferung: GET /logos/:key → Worker liest aus LOGOS-Binding.
+[[r2_buckets]]
+binding     = "LOGOS"
+bucket_name = "altbieratlas-logos"
+
 # --- Cron: täglicher Admin-Digest ----------------------------
 # Sendet einmal täglich eine Zusammenfassung aller neuen
 # Beiträge an ADMIN_EMAIL (siehe Secrets unten).

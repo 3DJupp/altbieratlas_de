@@ -123,9 +123,17 @@
 .spec-head {
   height: 80px; position: relative;
   padding: 18px 20px;
-  display: flex; align-items: flex-end;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
 }
 .spec-head h3 { color: #f3ead8; font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; }
+.spec-logo {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 4px;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35));
+}
 .spec-body { padding: 16px 20px 20px; }
 .spec-row {
   display: flex; justify-content: space-between;
@@ -260,6 +268,7 @@ function paintStyles() {
     <article class="spec-card">
       <div class="spec-head" style="background: linear-gradient(135deg, ${s.color || "#8b4513"}, ${(s.color || "#8b4513")}cc)">
         <h3>${s.name}</h3>
+        ${s.logoUrl ? `<img src="${s.logoUrl}" alt="" class="spec-logo" onerror="this.style.display='none'">` : ""}
       </div>
       <div class="spec-body">
         ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${window.formatABV(s.abv)}</span></div>` : ""}

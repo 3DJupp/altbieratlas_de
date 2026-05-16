@@ -11,17 +11,17 @@
 -- ============================================================
 -- Venue types (must come before breweries due to FK)
 -- ============================================================
-INSERT OR IGNORE INTO venue_types (id, name_de, name_en, header_de, header_en) VALUES
-  ('brewery',        'Brauerei',      'Brewery',         'Was hier gebraut wird',                 'What is brewed here'),
-  ('brewpub',        'Hausbrauerei',  'Brewpub',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here'),
-  ('hausbrauerei',   'Hausbrauerei',  'Brewery',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here'),
-  ('gastronomie',    'Gastronomie',   'Bar / Restaurant','Was hier ausgeschenkt wird',             'What is served here'),
-  ('pub',            'Kneipe',        'Pub',             'Was hier ausgeschenkt wird',             'What is served here'),
-  ('restaurant',     'Restaurant',    'Restaurant',      'Was hier ausgeschenkt wird',             'What is served here'),
-  ('kiosk',          'Kiosk',         'Kiosk',           'Was hier erhältlich ist',                'What is available here'),
-  ('handel',         'Handel',        'Retail',          'Was hier erhältlich ist',                'What is available here'),
-  ('supermarket',    'Supermarkt',    'Supermarket',     'Was hier erhältlich ist',                'What is available here'),
-  ('beverage_store', 'Getränkeshop',  'Beverage store',  'Was hier erhältlich ist',                'What is available here');
+INSERT OR IGNORE INTO venue_types (id, name_de, name_en, header_de, header_en, is_producer) VALUES
+  ('brewery',        'Brauerei',      'Brewery',         'Was hier gebraut wird',                 'What is brewed here',            1),
+  ('brewpub',        'Hausbrauerei',  'Brewpub',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here', 1),
+  ('hausbrauerei',   'Hausbrauerei',  'Brewery',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here', 1),
+  ('gastronomie',    'Gastronomie',   'Bar / Restaurant','Was hier ausgeschenkt wird',             'What is served here',            0),
+  ('pub',            'Kneipe',        'Pub',             'Was hier ausgeschenkt wird',             'What is served here',            0),
+  ('restaurant',     'Restaurant',    'Restaurant',      'Was hier ausgeschenkt wird',             'What is served here',            0),
+  ('kiosk',          'Kiosk',         'Kiosk',           'Was hier erhältlich ist',                'What is available here',         0),
+  ('handel',         'Handel',        'Retail',          'Was hier erhältlich ist',                'What is available here',         0),
+  ('supermarket',    'Supermarkt',    'Supermarket',     'Was hier erhältlich ist',                'What is available here',         0),
+  ('beverage_store', 'Getränkeshop',  'Beverage store',  'Was hier erhältlich ist',                'What is available here',         0);
 
 -- ============================================================
 -- Beer styles
