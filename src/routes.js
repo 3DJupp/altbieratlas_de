@@ -158,6 +158,7 @@ export async function listStyles(req, env) {
     styles: res.results.map((s) => ({
       id: s.id, name: s.name, abv: s.abv, ibu: s.ibu, color: s.color,
       tasting: { de: s.tasting_de, en: s.tasting_en },
+      logoUrl: s.logo_key ? `/logos/${s.logo_key}` : null,
     })),
   });
 }
@@ -354,6 +355,7 @@ export async function listVenueTypes(req, env) {
     venueTypes: res.results.map((r) => ({
       id: r.id, nameDe: r.name_de, nameEn: r.name_en,
       headerDe: r.header_de, headerEn: r.header_en,
+      isProducer: !!r.is_producer,
     })),
   });
 }
@@ -1063,6 +1065,7 @@ export async function adminListStyles(req, env) {
     styles: res.results.map((s) => ({
       id: s.id, name: s.name, abv: s.abv, ibu: s.ibu, color: s.color,
       tasting: { de: s.tasting_de, en: s.tasting_en },
+      logoUrl: s.logo_key ? `/logos/${s.logo_key}` : null,
     })),
   });
 }
@@ -1207,6 +1210,7 @@ export async function adminListVenueTypes(req, env) {
     venueTypes: res.results.map((r) => ({
       id: r.id, nameDe: r.name_de, nameEn: r.name_en,
       headerDe: r.header_de, headerEn: r.header_en,
+      isProducer: !!r.is_producer,
     })),
   });
 }

@@ -7,11 +7,12 @@
 
 -- Venue-Typen (Hausbrauerei, Gastronomie, Handel …)
 CREATE TABLE IF NOT EXISTS venue_types (
-  id        TEXT PRIMARY KEY,
-  name_de   TEXT NOT NULL,
-  name_en   TEXT,
-  header_de TEXT,
-  header_en TEXT
+  id          TEXT PRIMARY KEY,
+  name_de     TEXT NOT NULL,
+  name_en     TEXT,
+  header_de   TEXT,
+  header_en   TEXT,
+  is_producer INTEGER NOT NULL DEFAULT 0
 );
 
 -- Breweries / taprooms / retail
@@ -48,7 +49,8 @@ CREATE TABLE IF NOT EXISTS styles (
   ibu        INTEGER,
   color      TEXT,
   tasting_de TEXT,
-  tasting_en TEXT
+  tasting_en TEXT,
+  logo_key   TEXT
 );
 
 -- n:m brewery <-> style mapping
