@@ -379,12 +379,25 @@ function renderMarkers(filter = "all", search = "") {
       : `<div style="font-size:12px;opacity:.6;margin-top:6px">${window.t("brewery.noPrice")}</div>`;
     const historicalBadge = b.isHistorical
       ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>` : "";
+    function popInitials(str) {
+      const w = (str || "").trim().split(/\s+/);
+      return (w.length >= 2 ? w[0][0] + w[1][0] : (str || "?").slice(0, 2)).toUpperCase();
+    }
+    const avatarStyle = "width:36px;height:36px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--copper);display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.1)";
+    const avatarHtml = b.photoUrl
+      ? `<div style="${avatarStyle}"><img src="${b.photoUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='<span style=\\'color:#fff;font-size:13px;font-weight:600\\'>${popInitials(b.short || b.name)}</span>'"></div>`
+      : `<div style="${avatarStyle}"><span style="color:#fff;font-size:13px;font-weight:600">${popInitials(b.short || b.name)}</span></div>`;
     marker.bindPopup(`
-      <h4>${b.name}</h4>
-      <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · " + window.t("rank.sinceYear") + b.founded : ""}</div>
-      ${historicalBadge}
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        ${avatarHtml}
+        <div style="flex:1;min-width:0">
+          <h4 style="margin:0 0 2px">${b.name}</h4>
+          <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · " + window.t("rank.sinceYear") + b.founded : ""}</div>
+          ${historicalBadge}
+        </div>
+      </div>
       ${priceText}
-      <div style="margin-top:10px"><a href="/brauerei?id=${b.id}">Details →</a></div>
+      <div style="margin-top:10px"><a href="/ort?id=${b.id}">Details →</a></div>
     `);
     marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
     markerMap.set(b.id, marker);
@@ -641,7 +654,7 @@ function renderRankings(prices) {
       <li>
         <span class="pos">${String(i + 1).padStart(2, "0")}</span>
         <span class="name">
-          <a href="/brauerei?id=${it.id}">${it.short || it.name}</a>
+          <a href="/ort?id=${it.id}">${it.short || it.name}</a>
           <span class="city">${it.city}</span>
         </span>
         <span class="price">${it.priceText}</span>

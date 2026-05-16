@@ -586,5 +586,7 @@ export function brewRow(r, styles = []) {
     verified: !!r.verified,
     isHistorical: !!r.is_historical,
     status: r.status,
+    photoKey: r.photo_key || null,
+    photoUrl: r.photo_key ? `/photos/${r.photo_key}` : null,
   };
 }

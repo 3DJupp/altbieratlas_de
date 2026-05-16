@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="de" data-theme="light" data-i18n-title="title.location">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
+<title>Ort · Altbieratlas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<link rel="stylesheet" href="styles.css" />
+<style>
+.brewery-hero { padding: 40px 0 30px; border-bottom: 1px solid var(--rule); }
+.breadcrumb {
+  display: flex; gap: 8px;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-muted); margin-bottom: 14px;
+}
+.breadcrumb a { border: none; color: var(--ink-muted); }
+.breadcrumb a:hover { color: var(--copper); }
+.brewery-head { display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: end; }
+.brewery-title { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 500; }
+.brewery-meta {
+  display: flex; align-items: center; gap: 18px; margin-top: 14px;
+  color: var(--ink-soft); font-size: 14px; flex-wrap: wrap;
+}
+.brewery-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.brewery-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-muted); }
+.price-hero {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 20px 28px; text-align: right;
+}
+.price-hero .label {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-muted); margin-bottom: 4px;
+}
+.price-hero .big {
+  font-family: var(--font-display); font-size: 42px;
+  color: var(--copper); font-weight: 500;
+  letter-spacing: -0.02em; line-height: 1;
+}
+.price-hero .small { font-size: 12px; color: var(--ink-muted); margin-top: 8px; font-family: var(--font-mono); }
+
+/* Ort-Photo / Avatar */
+.ort-photo-wrap {
+  display: flex; align-items: flex-start; gap: 22px; margin-bottom: 4px;
+}
+.ort-avatar {
+  width: 72px; height: 72px; border-radius: var(--radius-lg);
+  overflow: hidden; flex-shrink: 0;
+  background: var(--copper); display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--rule);
+}
+.ort-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ort-avatar .initials {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
+  color: #fff; letter-spacing: -0.02em; line-height: 1;
+}
+.ort-title-wrap { flex: 1; min-width: 0; }
+
+.grid-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px; padding-top: 40px; padding-bottom: 40px; }
+.about { display: flex; flex-direction: column; gap: 12px; }
+.about p { font-size: 14px; line-height: 1.65; color: var(--ink-soft); }
+.detail-map { height: 320px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--rule); cursor: pointer; }
+.maps-open-btn {
+  display: inline-block;
+  background: var(--bg-card);
+  color: var(--ink-soft) !important;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  text-decoration: none !important;
+  margin: 6px;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.maps-open-btn:hover { color: var(--copper) !important; border-color: var(--copper); }
+
+.style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.style-card { padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
+.swatch { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--rule); }
+.style-logo { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; }
+.style-card h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
+.style-card .nums {
+  display: flex; gap: 14px; font-family: var(--font-mono);
+  font-size: 12px; color: var(--ink-muted);
+}
+.style-card p { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+
+.price-history { padding-top: 40px; padding-bottom: 40px; }
+.chart { width: 100%; height: 220px; }
+.chart svg { width: 100%; height: 100%; display: block; }
+.chart .grid-line { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
+.chart .area { fill: var(--copper); fill-opacity: 0.08; }
+.chart .line { fill: none; stroke: var(--copper); stroke-width: 2; }
+.chart .dot { fill: var(--copper); stroke: var(--bg-card); stroke-width: 2; }
+.chart .axis-label { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-muted); }
+
+.price-log { border: 1px solid var(--rule); border-radius: var(--radius-lg); background: var(--bg-card); }
+.price-log-row {
+  display: grid; grid-template-columns: 120px 1fr auto auto;
+  gap: 16px; padding: 14px 20px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 13px; align-items: center;
+}
+.price-log-row:last-child { border-bottom: none; }
+.price-log-row .date { color: var(--ink-muted); }
+.price-log-row .src { color: var(--ink-soft); font-size: 12px; }
+.price-log-row .sz { color: var(--ink-muted); font-size: 12px; }
+.price-log-row .p { color: var(--copper); font-weight: 500; }
+
+.action-bar { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
+
+.tag.verified { color: #2d5a1e; border-color: #2d5a1e; }
+.tag.pending  { color: #a07a20; border-color: #a07a20; }
+.untappd-bar {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--bg-card); border: 1px solid var(--rule);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-family: var(--font-mono); font-size: 13px; margin-top: 20px;
+}
+.untappd-bar .ut-logo { font-weight: 700; color: #f5a21c; }
+.untappd-bar .ut-stars { color: var(--copper); }
+.untappd-bar a { font-size: 12px; color: var(--ink-muted); border-bottom: none; }
+
+@media (max-width: 900px) {
+  .brewery-head { grid-template-columns: 1fr; }
+  .price-hero { text-align: left; }
+  .grid-2col { grid-template-columns: 1fr; gap: 24px; padding-top: 24px; padding-bottom: 24px; }
+  .price-log-row { grid-template-columns: 1fr auto; gap: 6px 14px; }
+  .price-log-row .src { grid-column: 1 / -1; order: 3; }
+  .ort-avatar { width: 52px; height: 52px; }
+  .ort-avatar .initials { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-banner" hidden></div>
+  <div id="shell-header"></div>
+
+  <main id="brewery-root">
+    <div class="container" style="padding:80px 24px">
+      <p style="color:var(--ink-muted)" data-i18n="common.loading">Lade…</p>
+    </div>
+  </main>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="api-client.js"></script>
+<script src="shell.js"></script>
+<script>
+renderShell({ activeNav: "map" });
+
+const params = new URLSearchParams(location.search);
+const id = params.get("id") || "uerige";
+const root = document.getElementById("brewery-root");
+
+(async () => {
+  let result, stylesRes;
+  try {
+    [result, stylesRes] = await Promise.all([
+      window.AtlasAPI.getBrewery(id),
+      window.AtlasAPI.listStyles(),
+    ]);
+  } catch (e) {
+    console.error(e);
+    root.innerHTML = `
+      <div class="container" style="padding:80px 24px">
+        <h1>${window.t("common.error")}</h1>
+        <p style="color:var(--ink-muted)">${e.message || "Datenabruf fehlgeschlagen."}</p>
+        <p><a href="/">← ${window.t("common.back")}</a></p>
+      </div>`;
+    return;
+  }
+
+  if (!result || result.error || !result.brewery) {
+    root.innerHTML = `
+      <div class="container" style="padding:80px 24px">
+        <h1>${window.t("brewery.notFound")}</h1>
+        <p><a href="/">${window.t("brewery.backToMap")}</a></p>
+      </div>`;
+    return;
+  }
+
+  const b = result.brewery;
+  const prices = result.prices || [];
+  const allStyles = stylesRes.styles || [];
+  const styles = (b.styles || [])
+    .map((sid) => allStyles.find((s) => s.id === sid))
+    .filter(Boolean);
+
+  const preferredSize = prices.find((p) => p.size === "0,25l")
+                     || prices.find((p) => p.size === "0,5l")
+                     || prices.find((p) => p.size === "0,33l")
+                     || prices[0];
+  const latest = preferredSize;
+  const lang = window.__atlasLang;
+
+  const SOURCE_KEYS = { "vor Ort": "source.vorOrt", "Beitrag": "source.beitrag" };
+  function translateSource(src) {
+    if (!src) return "";
+    const key = SOURCE_KEYS[src];
+    return key ? window.t(key) : src;
+  }
+
+  document.title = `${b.name} · Altbieratlas`;
+
+  const typeLabel = window.t("type." + b.type);
+
+  // Avatar: Foto oder Initialen
+  function initials(str) {
+    const words = (str || "").trim().split(/\s+/);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return (str || "?").slice(0, 2).toUpperCase();
+  }
+  const avatarHtml = b.photoUrl
+    ? `<img src="${b.photoUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        + `<span class="initials" style="display:none">${initials(b.short || b.name)}</span>`
+    : `<span class="initials">${initials(b.short || b.name)}</span>`;
+
+  root.innerHTML = `
+    <section class="brewery-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="/" data-i18n="nav.map">Karte</a>
+          <span>›</span> <span>${b.city}</span>
+          <span>›</span> <span>${b.name}</span>
+        </div>
+        <div class="brewery-head">
+          <div class="ort-photo-wrap">
+            <div class="ort-avatar">${avatarHtml}</div>
+            <div class="ort-title-wrap">
+              <h1 class="brewery-title">${b.name}</h1>
+              <div class="brewery-meta">
+                <span id="b-status" class="tag ${b.verified ? 'verified' : 'pending'}">${b.verified ? window.t('common.verified') : window.t('common.pending')}</span>
+                <span id="b-type">${typeLabel}</span>
+                ${b.isHistorical ? `<span class="tag" data-i18n="brewery.historical" style="color:#888;border-color:#888;font-size:11px">${window.t('brewery.historical')}</span>` : ''}
+                <span class="dot"></span>
+                <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
+                ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
+                ${b.website ? `<span class="dot"></span><a href="${b.website}" target="_blank" rel="noopener">Website →</a>` : ''}
+              </div>
+            </div>
+          </div>
+          ${latest ? `
+            <div class="price-hero">
+              <div class="label" id="b-price-label">${window.t("brewery.current")}${window.formatSize(latest.size)}</div>
+              <div class="big" id="b-price-val">€ ${window.formatPrice(latest.price)}</div>
+              <div class="small" id="b-price-date">${window.t("brewery.reported")}${window.formatDate(latest.date)}</div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    </section>
+
+    <section class="container grid-2col">
+      <div class="about card">
+        <h3 data-i18n="brewery.about">Über</h3>
+        <p id="b-description">${(b.description && (b.description[lang] || b.description.de)) || ''}</p>
+        ${b.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${b.address}</p>` : ''}
+      </div>
+      <div>
+        <div class="detail-map" id="detail-map"></div>
+      </div>
+    </section>
+
+    ${styles.length ? `
+      <section class="container" style="padding-bottom:40px">
+        <div class="eyebrow" data-i18n="brewery.style">Stil</div>
+        <h2 style="margin-top:8px" id="b-styles-title">${window.t(['pub','restaurant','gastronomie'].includes(b.type) ? 'brewery.stylesTitleServed' : ['kiosk','supermarket','beverage_store','handel'].includes(b.type) ? 'brewery.stylesTitleRetail' : 'brewery.stylesTitle')}</h2>
+        <div class="style-grid">
+          ${styles.map((s) => `
+            <article class="card style-card">
+              ${s.logoUrl
+                ? `<img src="${s.logoUrl}" alt="" class="style-logo" onerror="this.style.display='none'">`
+                : `<div class="swatch" style="background:${s.color || '#8b4513'}"></div>`}
+              <h3>${s.name}</h3>
+              <div class="nums">
+                ${s.abv != null ? `<span><strong id="abv-${s.id}">${window.formatABV(s.abv)}</strong> ABV</span>` : ''}
+                ${s.ibu != null ? `<span><strong>${s.ibu}</strong> IBU</span>` : ''}
+              </div>
+              <p id="tasting-${s.id}">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ''}</p>
+            </article>
+          `).join('')}
+        </div>
+      </section>
+    ` : ''}
+
+    <div class="container" id="untappd-section" style="padding-bottom:20px"></div>
+
+    <section class="container price-history">
+      <div class="section-head" style="display:flex;justify-content:space-between;align-items:end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="eyebrow" data-i18n="brewery.priceHistory">Preisentwicklung</div>
+          <h2 style="margin-top:8px" data-i18n="brewery.pricesOverTime">Preis über Zeit</h2>
+        </div>
+        <a class="btn btn-primary" href="/beitragen?typ=preis&brauerei=${b.id}" data-i18n="brewery.addPrice">Preis melden</a>
+      </div>
+
+      <div class="card" style="padding:24px 28px">
+        <div class="chart" id="chart"></div>
+      </div>
+
+      <h3 style="font-family:var(--font-ui);font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin:30px 0 14px;font-weight:500" data-i18n="brewery.recentPrices">Jüngste Preismeldungen</h3>
+      <div class="price-log">
+        ${prices.slice(0, 5).map((p) => `
+          <div class="price-log-row">
+            <span class="date">${window.formatDate(p.date)}</span>
+            <span class="src">${translateSource(p.source)}</span>
+            <span class="sz">${window.formatSize(p.size)}</span>
+            <span class="p">€ ${window.formatPrice(p.price)}</span>
+          </div>
+        `).join('') || `<p style="color:var(--ink-muted);padding:20px">${window.t("brewery.noPriceReports")}</p>`}
+      </div>
+
+      <div class="action-bar">
+        <a class="btn" href="/beitragen?typ=korrektur&brauerei=${b.id}" data-i18n="brewery.reportIssue">Korrektur einreichen</a>
+        <a class="btn btn-ghost" href="/" data-i18n="common.back">Zurück</a>
+      </div>
+    </section>
+  `;
+
+  // i18n re-apply für die frisch injected nodes
+  window.setLang(window.__atlasLang);
+
+  // Detail-Karte
+  const dm = L.map('detail-map', {
+    center: b.coords, zoom: 14, zoomControl: false, scrollWheelZoom: false,
+  });
+  L.tileLayer(window.ATLAS_CONFIG.map.tileUrl, {
+    attribution: window.ATLAS_CONFIG.map.tileAttribution,
+  }).addTo(dm);
+  L.marker(b.coords, {
+    icon: L.divIcon({
+      className: '',
+      html: `<div class="atlas-pin ${b.type}"></div>`,
+      iconSize: [22, 22], iconAnchor: [11, 11],
+    }),
+  }).addTo(dm);
+
+  // "Open in Maps" — Leaflet control + click handler
+  const mapsUrl = b.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}`;
+  const MapsBtn = L.Control.extend({
+    onAdd() {
+      const a = L.DomUtil.create('a', 'maps-open-btn');
+      a.href = mapsUrl;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.setAttribute('data-i18n', 'brewery.openInMaps');
+      a.textContent = window.t('brewery.openInMaps');
+      L.DomEvent.disableClickPropagation(a);
+      return a;
+    },
+  });
+  new MapsBtn({ position: 'bottomright' }).addTo(dm);
+  dm.on('click', () => window.open(mapsUrl, '_blank', 'noopener'));
+
+  // ============ Chart ============
+  function drawChart() {
+    const targetSize = latest ? latest.size : "0,25l";
+    const series = prices
+      .filter((p) => p.size === "0,25l" || p.size === targetSize)
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const container = document.getElementById('chart');
+    if (!container) return;
+    if (series.length < 2) {
+      container.innerHTML = `<p style="color:var(--ink-muted);font-size:13px">${window.t("brewery.insufficientChart")}</p>`;
+      return;
+    }
+    const W = container.clientWidth || 600;
+    const H = 220;
+    const pad = { t: 20, r: 30, b: 30, l: 48 };
+    const innerW = W - pad.l - pad.r;
+    const innerH = H - pad.t - pad.b;
+
+    const xs = series.map((s) => new Date(s.date).getTime());
+    const ys = series.map((s) => s.price);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const yMin = Math.min(...ys) - 0.2, yMax = Math.max(...ys) + 0.2;
+    const x = (v) => pad.l + ((v - xMin) / Math.max(1, xMax - xMin)) * innerW;
+    const y = (v) => pad.t + (1 - (v - yMin) / (yMax - yMin)) * innerH;
+
+    const linePath = series.map((s, i) =>
+      (i ? 'L' : 'M') + x(new Date(s.date).getTime()) + ' ' + y(s.price)
+    ).join(' ');
+    const areaPath = linePath
+      + ' L ' + x(xMax) + ' ' + (pad.t + innerH)
+      + ' L ' + x(xMin) + ' ' + (pad.t + innerH) + ' Z';
+
+    const gridLines = [];
+    const steps = 4;
+    for (let i = 0; i <= steps; i++) {
+      const v = yMin + (yMax - yMin) * (i / steps);
+      gridLines.push(`<line class="grid-line" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}" />`);
+      gridLines.push(`<text class="axis-label" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">€ ${window.formatPrice(v)}</text>`);
+    }
+
+    const xTicks = series.filter((_, i) => i === 0 || i === series.length - 1 || i === Math.floor(series.length / 2));
+    const xLabels = xTicks.map((s) => {
+      const d = new Date(s.date);
+      return `<text class="axis-label" x="${x(d.getTime())}" y="${H - 8}" text-anchor="middle">${d.toLocaleDateString(window.atlasLocale(), { month: 'short', year: '2-digit' })}</text>`;
+    }).join('');
+
+    const dots = series.map((s) =>
+      `<circle class="dot" cx="${x(new Date(s.date).getTime())}" cy="${y(s.price)}" r="3.5" />`
+    ).join('');
+
+    container.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        ${gridLines.join('')}
+        <path class="area" d="${areaPath}" />
+        <path class="line" d="${linePath}" />
+        ${dots}
+        ${xLabels}
+      </svg>
+    `;
+  }
+  drawChart();
+  window.addEventListener('resize', drawChart);
+
+  function updateBreweryTexts() {
+    const l = window.__atlasLang;
+    const elStatus = document.getElementById('b-status');
+    if (elStatus) {
+      elStatus.className = `tag ${b.verified ? 'verified' : 'pending'}`;
+      elStatus.textContent = b.verified ? window.t('common.verified') : window.t('common.pending');
+    }
+    const elType = document.getElementById('b-type');
+    if (elType) elType.textContent = window.t('type.' + b.type);
+    const elStylesTitle = document.getElementById('b-styles-title');
+    if (elStylesTitle) elStylesTitle.textContent = window.t(['pub','restaurant','gastronomie'].includes(b.type) ? 'brewery.stylesTitleServed' : ['kiosk','supermarket','beverage_store','handel'].includes(b.type) ? 'brewery.stylesTitleRetail' : 'brewery.stylesTitle');
+    const elSince = document.getElementById('b-since');
+    if (elSince) elSince.textContent = window.t('rank.sinceYear') + b.founded;
+    if (latest) {
+      const elLabel = document.getElementById('b-price-label');
+      if (elLabel) elLabel.textContent = window.t('brewery.current') + window.formatSize(latest.size);
+      const elVal = document.getElementById('b-price-val');
+      if (elVal) elVal.textContent = '€ ' + window.formatPrice(latest.price);
+      const elDate = document.getElementById('b-price-date');
+      if (elDate) elDate.textContent = window.t('brewery.reported') + window.formatDate(latest.date);
+    }
+    const elDesc = document.getElementById('b-description');
+    if (elDesc) elDesc.textContent = (b.description && (b.description[l] || b.description.de)) || '';
+    styles.forEach((s) => {
+      const el = document.getElementById('tasting-' + s.id);
+      if (el) el.textContent = (s.tasting && (s.tasting[l] || s.tasting.de)) || '';
+      if (s.abv != null) {
+        const elAbv = document.getElementById('abv-' + s.id);
+        if (elAbv) elAbv.textContent = window.formatABV(s.abv);
+      }
+    });
+    const log = document.querySelector('.price-log');
+    if (log) {
+      log.innerHTML = prices.slice(0, 5).map((p) => `
+        <div class="price-log-row">
+          <span class="date">${window.formatDate(p.date)}</span>
+          <span class="src">${translateSource(p.source)}</span>
+          <span class="sz">${window.formatSize(p.size)}</span>
+          <span class="p">€ ${window.formatPrice(p.price)}</span>
+        </div>
+      `).join('') || `<p style="color:var(--ink-muted);padding:20px">${window.t('brewery.noPriceReports')}</p>`;
+    }
+  }
+  document.addEventListener('atlas:lang-changed', () => { updateBreweryTexts(); drawChart(); });
+
+  // Untappd-Daten nachladen (fire & forget — zeigt nur wenn verfügbar)
+  fetch(`/api/untappd/brewery/${encodeURIComponent(b.id)}`)
+    .then((r) => r.ok ? r.json() : null)
+    .then((ut) => {
+      if (!ut || !ut.available || !ut.found) return;
+      const sec = document.getElementById("untappd-section");
+      if (!sec) return;
+      const stars = ut.rating != null
+        ? "★".repeat(Math.round(ut.rating)) + "☆".repeat(5 - Math.round(ut.rating))
+        : null;
+      const href = ut.slug ? `https://untappd.com/brewery/${ut.slug}` : "https://untappd.com";
+      sec.innerHTML = `
+        <div class="untappd-bar">
+          <span class="ut-logo">Untappd</span>
+          ${stars ? `<span class="ut-stars">${stars}</span>` : ""}
+          ${ut.rating != null ? `<span>${ut.rating.toFixed(2)} / 5</span>` : ""}
+          ${ut.beerCount != null ? `<span style="color:var(--ink-muted)">${ut.beerCount} Biere</span>` : ""}
+          <a href="${href}" target="_blank" rel="noopener">auf Untappd →</a>
+        </div>`;
+    })
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>

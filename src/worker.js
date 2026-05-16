@@ -75,6 +75,8 @@ const ROUTES = [
   ["POST",   "/api/admin/breweries",                       R.adminCreateBrewery],
   ["PUT",    "/api/admin/breweries/:id",                   R.adminUpdateBrewery],
   ["DELETE", "/api/admin/breweries/:id",                   R.adminDeleteBrewery],
+  ["POST",   "/api/admin/breweries/:id/photo",             R.adminUploadBreweryPhoto],
+  ["DELETE", "/api/admin/breweries/:id/photo",             R.adminDeleteBreweryPhoto],
   ["GET",    "/api/admin/events",                          R.adminListEvents],
   ["POST",   "/api/admin/events",                          R.adminCreateEvent],
   ["GET",    "/api/admin/events/:id/beers",               R.adminListEventBeers],
@@ -146,6 +148,21 @@ export default {
       return error(404, "api-route-not-found", { path: url.pathname });
     }
 
+    // Foto-Auslieferung aus R2 (Brauerei-/Ortfotos, kein Fallback)
+    if (url.pathname.startsWith("/photos/") && request.method === "GET") {
+      const filename = url.pathname.slice(8); // strip "/photos/"
+      if (filename && !filename.includes("..") && env.LOGOS) {
+        const obj = await env.LOGOS.get(`photos/${filename}`);
+        if (obj) {
+          const headers = new Headers();
+          headers.set("Content-Type", obj.httpMetadata?.contentType || "image/jpeg");
+          headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
+          return new Response(obj.body, { headers });
+        }
+      }
+      return new Response("Not found", { status: 404 });
+    }
+
     // Logo-Auslieferung aus R2 (mit Fallback auf SVG-Platzhalter)
     if (url.pathname.startsWith("/logos/") && request.method === "GET") {
       const key = url.pathname.slice(7); // strip "/logos/"
@@ -179,12 +196,18 @@ export default {
 
     // /<page>.html → /<page>  (301, kanonische Clean URLs)
     // /index.html  → /
-    const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "brauerei", "event"];
+    const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "ort", "brauerei", "event"];
     if (request.method === "GET" && url.pathname.endsWith(".html")) {
       const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
       if (name === "index") {
         const dest = new URL(request.url);
         dest.pathname = "/";
+        return Response.redirect(dest.toString(), 301);
+      }
+      // Legacy: /brauerei.html → /ort (canonical rename)
+      if (name === "brauerei") {
+        const dest = new URL(request.url);
+        dest.pathname = "/ort";
         return Response.redirect(dest.toString(), 301);
       }
       if (ALL_PAGES.includes(name)) {
@@ -201,6 +224,13 @@ export default {
       return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
     }
 
+    // Legacy-Redirect: /brauerei → /ort (kanonische URL-Umbenennung, Query-String erhalten)
+    if (request.method === "GET" && url.pathname === "/brauerei") {
+      const dest = new URL(request.url);
+      dest.pathname = "/ort";
+      return Response.redirect(dest.toString(), 301);
+    }
+
     // Impressum: SSI-Block muss VOR dem PAGES-Block liegen, damit serveImpressum() greift
     if (url.pathname === "/impressum" && request.method === "GET" && env.ASSETS) {
       try {
@@ -214,7 +244,8 @@ export default {
 
     // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
     // impressum ausgenommen — wird oben mit SSI bedient
-    const PAGES = ["ranglisten", "wissen", "beitragen", "admin", "brauerei", "event"];
+    // brauerei ausgenommen — wird oben auf /ort weitergeleitet
+    const PAGES = ["ranglisten", "wissen", "beitragen", "admin", "ort", "event"];
     if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
       const bare = url.pathname.replace(/\/$/, "");
       const name = bare.slice(1); // strip leading /

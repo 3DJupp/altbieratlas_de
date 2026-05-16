@@ -205,6 +205,7 @@
       <div class="style-spec-grid" id="style-grid">
         <p style="color:var(--ink-muted);grid-column:1/-1" data-i18n="common.loading">Lade…</p>
       </div>
+      <p id="style-legal-notice" style="font-size:11px;color:var(--ink-muted);margin-top:14px;font-family:var(--font-mono);letter-spacing:0.02em"></p>
     </div>
   </section>
 
@@ -274,9 +275,18 @@ function paintStyles() {
         ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${window.formatABV(s.abv)}</span></div>` : ""}
         ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
         <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
+        ${s.primaryBrewery ? `<a href="/ort?id=${s.primaryBrewery.id}" style="display:inline-block;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--copper);text-decoration:none;border:none;letter-spacing:0.04em">→ ${s.primaryBrewery.name}</a>` : ""}
       </div>
     </article>
   `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
+
+  // Rechtlicher Hinweis unter dem Raster
+  const notice = document.getElementById("style-legal-notice");
+  if (notice) {
+    notice.textContent = lang === "en"
+      ? "All brand names and logos are the property of the respective breweries and are used for identification purposes only."
+      : "Alle genannten Markennamen und Logos sind Eigentum der jeweiligen Brauereien und dienen nur zur Identifikation.";
+  }
 }
 
 function paintGlossary() {

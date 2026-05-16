@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS breweries (
   verified       INTEGER NOT NULL DEFAULT 0,
   is_historical  INTEGER NOT NULL DEFAULT 0,
   status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
+  photo_key      TEXT,
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -43,14 +44,15 @@ CREATE INDEX IF NOT EXISTS idx_breweries_country ON breweries(country);
 
 -- Beer styles
 CREATE TABLE IF NOT EXISTS styles (
-  id         TEXT PRIMARY KEY,
-  name       TEXT NOT NULL,
-  abv        REAL,
-  ibu        INTEGER,
-  color      TEXT,
-  tasting_de TEXT,
-  tasting_en TEXT,
-  logo_key   TEXT
+  id                  TEXT PRIMARY KEY,
+  name                TEXT NOT NULL,
+  abv                 REAL,
+  ibu                 INTEGER,
+  color               TEXT,
+  tasting_de          TEXT,
+  tasting_en          TEXT,
+  logo_key            TEXT,
+  primary_brewery_id  TEXT REFERENCES breweries(id) ON DELETE SET NULL
 );
 
 -- n:m brewery <-> style mapping
