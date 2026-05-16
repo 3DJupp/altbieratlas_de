@@ -1132,6 +1132,54 @@ export async function adminDeleteStyle(req, env, { id }) {
   return json({ ok: true });
 }
 
+// POST /api/admin/styles/:id/logo  (multipart/form-data, field: logo)
+export async function adminUploadStyleLogo(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return error(503, "r2-not-configured");
+
+  const style = await env.DB.prepare("SELECT id, logo_key FROM styles WHERE id = ?").bind(id).first();
+  if (!style) return error(404, "not-found");
+
+  let formData;
+  try { formData = await req.formData(); } catch { return error(400, "multipart-required"); }
+  const file = formData.get("logo");
+  if (!file || typeof file.arrayBuffer !== "function") return error(400, "logo-field-required");
+
+  const mimeType = file.type || "application/octet-stream";
+  if (!mimeType.startsWith("image/")) return error(400, "image-required");
+
+  const bytes = await file.arrayBuffer();
+  if (bytes.byteLength > 2 * 1024 * 1024) return error(400, "file-too-large", { maxBytes: 2097152 });
+
+  const extMap = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg", "image/gif": "gif" };
+  const ext = extMap[mimeType] || "png";
+  const key = `${id}.${ext}`;
+
+  if (style.logo_key && style.logo_key !== key) {
+    await env.LOGOS.delete(style.logo_key).catch(() => {});
+  }
+
+  await env.LOGOS.put(key, bytes, { httpMetadata: { contentType: mimeType } });
+  await env.DB.prepare("UPDATE styles SET logo_key = ? WHERE id = ?").bind(key, id).run();
+  return json({ ok: true, logoKey: key, logoUrl: `/logos/${key}` });
+}
+
+// DELETE /api/admin/styles/:id/logo
+export async function adminDeleteStyleLogo(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return error(503, "r2-not-configured");
+
+  const style = await env.DB.prepare("SELECT logo_key FROM styles WHERE id = ?").bind(id).first();
+  if (!style) return error(404, "not-found");
+  if (style.logo_key) {
+    await env.LOGOS.delete(style.logo_key).catch(() => {});
+    await env.DB.prepare("UPDATE styles SET logo_key = NULL WHERE id = ?").bind(id).run();
+  }
+  return json({ ok: true });
+}
+
 // GET /api/admin/glossary
 export async function adminListGlossary(req, env) {
   const auth = await requireAdmin(req, env);
@@ -1236,8 +1284,8 @@ export async function adminCreateVenueType(req, env) {
   const exists = await env.DB.prepare("SELECT id FROM venue_types WHERE id = ?").bind(id).first();
   if (exists) return error(409, "id-already-exists");
   await env.DB.prepare(
-    "INSERT INTO venue_types (id, name_de, name_en, header_de, header_en) VALUES (?, ?, ?, ?, ?)"
-  ).bind(id, name_de, name_en || null, header_de || null, header_en || null).run();
+    "INSERT INTO venue_types (id, name_de, name_en, header_de, header_en, is_producer) VALUES (?, ?, ?, ?, ?, ?)"
+  ).bind(id, name_de, name_en || null, header_de || null, header_en || null, body.is_producer ? 1 : 0).run();
   return json({ ok: true }, { status: 201 });
 }
 
@@ -1255,6 +1303,7 @@ export async function adminUpdateVenueType(req, env, { id }) {
     if ("name_en"   in body) { fields.push("name_en = ?");   values.push(str(body.name_en,   { max: 200,  name: "name_en" }) || null); }
     if ("header_de" in body) { fields.push("header_de = ?"); values.push(str(body.header_de, { max: 1000, name: "header_de" }) || null); }
     if ("header_en" in body) { fields.push("header_en = ?"); values.push(str(body.header_en, { max: 1000, name: "header_en" }) || null); }
+    if ("is_producer" in body) { fields.push("is_producer = ?"); values.push(body.is_producer ? 1 : 0); }
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }

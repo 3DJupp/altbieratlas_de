@@ -95,6 +95,8 @@ const ROUTES = [
   ["POST",   "/api/admin/styles",                          R.adminCreateStyle],
   ["PUT",    "/api/admin/styles/:id",                      R.adminUpdateStyle],
   ["DELETE", "/api/admin/styles/:id",                      R.adminDeleteStyle],
+  ["POST",   "/api/admin/styles/:id/logo",                 R.adminUploadStyleLogo],
+  ["DELETE", "/api/admin/styles/:id/logo",                 R.adminDeleteStyleLogo],
   ["GET",    "/api/admin/glossary",                        R.adminListGlossary],
   ["POST",   "/api/admin/glossary",                        R.adminCreateGlossary],
   ["PUT",    "/api/admin/glossary/:term",                  R.adminUpdateGlossary],
@@ -140,6 +142,27 @@ export default {
         }
       }
       return error(404, "api-route-not-found", { path: url.pathname });
+    }
+
+    // Logo-Auslieferung aus R2 (mit Fallback auf SVG-Platzhalter)
+    if (url.pathname.startsWith("/logos/") && request.method === "GET") {
+      const key = url.pathname.slice(7); // strip "/logos/"
+      if (key && !key.includes("..") && env.LOGOS) {
+        const obj = await env.LOGOS.get(key);
+        if (obj) {
+          const headers = new Headers();
+          headers.set("Content-Type", obj.httpMetadata?.contentType || "image/png");
+          headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
+          return new Response(obj.body, { headers });
+        }
+      }
+      // Fallback: SVG-Platzhalter aus public/images/
+      if (env.ASSETS) {
+        const fallback = new URL(request.url);
+        fallback.pathname = "/images/logo-fallback.svg";
+        return env.ASSETS.fetch(new Request(fallback.toString(), request));
+      }
+      return new Response("Not found", { status: 404 });
     }
 
     // Dynamische Sitemap (außerhalb /api, damit Crawler sie unter /sitemap.xml finden)

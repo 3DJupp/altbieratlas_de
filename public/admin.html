@@ -447,7 +447,7 @@
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th>ID</th><th data-i18n="admin.editName">Name</th><th>ABV</th><th>IBU</th><th data-i18n="admin.styleColor">Farbe</th><th data-i18n="admin.styleTastingDe">Notizen DE</th><th></th>
+                  <th>ID</th><th data-i18n="admin.editName">Name</th><th>ABV</th><th>IBU</th><th data-i18n="admin.styleColor">Farbe</th><th data-i18n="admin.styleLogo">Logo</th><th data-i18n="admin.styleTastingDe">Notizen DE</th><th></th>
                 </tr>
               </thead>
               <tbody id="styles-tbody"></tbody>
@@ -1566,12 +1566,12 @@ document.getElementById("edit-save").addEventListener("click", async () => {
 // ============ Stile Table ============
 async function loadStylesTab() {
   const tbody = document.getElementById("styles-tbody");
-  tbody.innerHTML = `<tr><td colspan="7" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
   try {
     cachedStyles = null; // Neulade erzwingen
     const allSty = await ensureStyles();
     if (!allSty.length) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Stile vorhanden.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Stile vorhanden.</td></tr>`;
       return;
     }
     tbody.innerHTML = allSty.map((s) => `
@@ -1582,12 +1582,14 @@ async function loadStylesTab() {
           data-color="${(s.color || "").replace(/"/g, "&quot;")}"
           data-tasting-de="${(s.tasting?.de || "").replace(/"/g, "&quot;")}"
           data-tasting-en="${(s.tasting?.en || "").replace(/"/g, "&quot;")}"
+          data-logo-key="${s.logoKey || ""}"
           >
         <td style="font-family:var(--font-mono);font-size:12px">${s.id}</td>
         <td>${s.name}</td>
         <td>${s.abv != null ? s.abv + " %" : "—"}</td>
         <td>${s.ibu != null ? s.ibu : "—"}</td>
         <td>${s.color ? `<span style="display:inline-block;width:14px;height:14px;background:${s.color};border-radius:2px;vertical-align:middle;margin-right:4px"></span>${s.color}` : "—"}</td>
+        <td>${s.logoUrl ? `<img src="${s.logoUrl}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px" onerror="this.style.display='none'">` : "—"}</td>
         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.tasting?.de || "—"}</td>
         <td class="actions">
           <button class="btn" data-act="edit-style">Bearbeiten</button>
@@ -1609,7 +1611,7 @@ async function loadStylesTab() {
       });
     });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
   }
 }
 
@@ -1622,7 +1624,7 @@ function openStyleEditInline(id, rowEl) {
   }
   const editRow = document.createElement("tr");
   editRow.innerHTML = `
-    <td colspan="7" style="padding:16px;background:var(--bg-elev)">
+    <td colspan="8" style="padding:16px;background:var(--bg-elev)">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;align-items:end">
         <div class="field" style="margin:0"><label>${window.t("admin.editName")}</label><input id="se-name" type="text" maxlength="200" value="${rowEl.dataset.name.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0"><label>ABV (%)</label><input id="se-abv" type="number" min="0" max="100" step="0.1" value="${rowEl.dataset.abv}" /></div>
@@ -1630,6 +1632,22 @@ function openStyleEditInline(id, rowEl) {
         <div class="field" style="margin:0"><label>${window.t("admin.styleColor")}</label><input id="se-color" type="text" maxlength="20" value="${rowEl.dataset.color}" /></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>${window.t("admin.styleTastingDe")}</label><textarea id="se-tasting-de" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingDe || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Tasting EN</label><textarea id="se-tasting-en" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingEn || ""}</textarea></div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label>${window.t("admin.styleLogo") || "Logo"}</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <div id="se-logo-preview" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--bg-page);border:1px solid var(--rule);border-radius:4px;overflow:hidden">
+              ${rowEl.dataset.logoKey ? `<img src="/logos/${rowEl.dataset.logoKey}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">` : '<span style="color:var(--ink-muted);font-size:11px">–</span>'}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label class="btn" style="cursor:pointer;margin:0">
+                <span data-i18n="admin.uploadLogo">Logo hochladen</span>
+                <input type="file" id="se-logo-file" accept="image/*" style="display:none">
+              </label>
+              ${rowEl.dataset.logoKey ? `<button class="btn btn-reject" id="se-logo-delete" style="font-size:12px" type="button">Logo löschen</button>` : ""}
+            </div>
+            <div id="se-logo-msg" style="font-size:12px;color:var(--ink-muted)"></div>
+          </div>
+        </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-approve" id="se-save">${window.t("common.save")}</button>
           <button class="btn btn-ghost" id="se-cancel">${window.t("common.cancel")}</button>
@@ -1640,6 +1658,48 @@ function openStyleEditInline(id, rowEl) {
   `;
   rowEl.parentNode.insertBefore(editRow, rowEl.nextSibling);
   pendingStyleEdit = { id, rowEl, editRow };
+
+  const logoFile = editRow.querySelector("#se-logo-file");
+  const logoDel  = editRow.querySelector("#se-logo-delete");
+  const logoMsg  = editRow.querySelector("#se-logo-msg");
+  const logoPrev = editRow.querySelector("#se-logo-preview");
+
+  if (logoFile) {
+    logoFile.addEventListener("change", async () => {
+      const file = logoFile.files[0];
+      if (!file) return;
+      logoMsg.textContent = "Uploading…";
+      try {
+        const res = await window.AtlasAPI.admin.uploadStyleLogo(id, file);
+        rowEl.dataset.logoKey = res.logoKey;
+        logoPrev.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
+        logoMsg.textContent = "✓";
+        cachedStyles = null;
+        const logoCell = rowEl.cells[5];
+        if (logoCell) logoCell.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px">`;
+      } catch (e) {
+        logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      }
+    });
+  }
+
+  if (logoDel) {
+    logoDel.addEventListener("click", async () => {
+      logoMsg.textContent = "Löscht…";
+      try {
+        await window.AtlasAPI.admin.deleteStyleLogo(id);
+        rowEl.dataset.logoKey = "";
+        logoPrev.innerHTML = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
+        logoDel.remove();
+        logoMsg.textContent = "✓";
+        cachedStyles = null;
+        const logoCell = rowEl.cells[5];
+        if (logoCell) logoCell.textContent = "—";
+      } catch (e) {
+        logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      }
+    });
+  }
 
   editRow.querySelector("#se-cancel").addEventListener("click", () => {
     editRow.remove();
@@ -1670,7 +1730,7 @@ function openStyleEditInline(id, rowEl) {
       rowEl.cells[4].innerHTML = patch.color
         ? `<span style="display:inline-block;width:14px;height:14px;background:${patch.color};border-radius:2px;vertical-align:middle;margin-right:4px"></span>${patch.color}`
         : "—";
-      rowEl.cells[5].textContent = patch.tasting_de || "—";
+      rowEl.cells[6].textContent = patch.tasting_de || "—";
       editRow.remove();
       pendingStyleEdit = null;
     } catch (e) {

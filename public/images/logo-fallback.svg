@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Kein Logo">
+  <!-- Glass body -->
+  <path d="M20 12 L17 52 H47 L44 12 Z" fill="#c8a96e" opacity="0.25"/>
+  <path d="M20 12 L17 52 H47 L44 12 Z" stroke="#c8a96e" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Beer fill (amber) -->
+  <path d="M21 20 L18.5 50 H45.5 L43 20 Z" fill="#c8791a" opacity="0.55"/>
+  <!-- Foam -->
+  <ellipse cx="32" cy="20" rx="11.5" ry="5" fill="#f5f0e8" opacity="0.9"/>
+  <ellipse cx="26" cy="18.5" rx="4" ry="3.5" fill="white" opacity="0.8"/>
+  <ellipse cx="32" cy="17" rx="5" ry="4" fill="white" opacity="0.95"/>
+  <ellipse cx="38" cy="18.5" rx="4" ry="3.5" fill="white" opacity="0.8"/>
+  <!-- Handle -->
+  <path d="M44 22 Q56 22 56 32 Q56 42 44 42" stroke="#c8a96e" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

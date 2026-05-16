@@ -126,6 +126,15 @@
   display: flex; align-items: flex-end;
 }
 .spec-head h3 { color: #f3ead8; font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; }
+.spec-logo {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  margin: 0 auto 10px;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35));
+  border-radius: 4px;
+}
 .spec-body { padding: 16px 20px 20px; }
 .spec-row {
   display: flex; justify-content: space-between;
@@ -259,6 +268,7 @@ function paintStyles() {
   grid.innerHTML = stylesCache.map((s) => `
     <article class="spec-card">
       <div class="spec-head" style="background: linear-gradient(135deg, ${s.color || "#8b4513"}, ${(s.color || "#8b4513")}cc)">
+        ${s.logoUrl ? `<img src="${s.logoUrl}" alt="" class="spec-logo" onerror="this.style.display='none'">` : ""}
         <h3>${s.name}</h3>
       </div>
       <div class="spec-body">
