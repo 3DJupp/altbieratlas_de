@@ -80,6 +80,7 @@
 .style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
 .style-card { padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
 .swatch { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--rule); }
+.style-logo { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; }
 .style-card h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
 .style-card .nums {
   display: flex; gap: 14px; font-family: var(--font-mono);
@@ -261,7 +262,9 @@ const root = document.getElementById("brewery-root");
         <div class="style-grid">
           ${styles.map((s) => `
             <article class="card style-card">
-              <div class="swatch" style="background:${s.color || '#8b4513'}"></div>
+              ${s.logoUrl
+                ? `<img src="${s.logoUrl}" alt="" class="style-logo" onerror="this.style.display='none'">`
+                : `<div class="swatch" style="background:${s.color || '#8b4513'}"></div>`}
               <h3>${s.name}</h3>
               <div class="nums">
                 ${s.abv != null ? `<span><strong id="abv-${s.id}">${window.formatABV(s.abv)}</strong> ABV</span>` : ''}
