@@ -187,9 +187,9 @@
     return json;
   }
 
-  async function upload(path, file) {
+  async function upload(path, file, fieldName = "logo") {
     const fd = new FormData();
-    fd.append("logo", file);
+    fd.append(fieldName, file);
     const r = await fetch(`${base}${path}`, { method: "POST", credentials: "same-origin", body: fd });
     const text = await r.text();
     let parsed = {};
@@ -224,9 +224,11 @@
       listContribs:   (status = "pending") => req(`/admin/contributions?status=${encodeURIComponent(status)}`),
       approve:        (id) => req(`/admin/contributions/${encodeURIComponent(id)}/approve`, { method: "POST" }),
       reject:         (id, notes) => req(`/admin/contributions/${encodeURIComponent(id)}/reject`, { method: "POST", body: { notes } }),
-      listBreweries:  () => req("/admin/breweries"),
-      updateBrewery:  (id, patch) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
-      deleteBrewery:  (id) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      listBreweries:        () => req("/admin/breweries"),
+      updateBrewery:        (id, patch) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      deleteBrewery:        (id) => req(`/admin/breweries/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      uploadBreweryPhoto:   (id, file) => upload(`/admin/breweries/${encodeURIComponent(id)}/photo`, file, "photo"),
+      deleteBreweryPhoto:   (id) => req(`/admin/breweries/${encodeURIComponent(id)}/photo`, { method: "DELETE" }),
       requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
       resetPassword:  (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
       listEvents:        () => req("/admin/events"),
@@ -306,9 +308,11 @@
       listContribs:   (s) => window.AtlasAPI.admin._gate("listContribs", s),
       approve:        (id) => window.AtlasAPI.admin._gate("approve", id),
       reject:         (id, n) => window.AtlasAPI.admin._gate("reject", id, n),
-      listBreweries:  () => window.AtlasAPI.admin._gate("listBreweries"),
-      updateBrewery:  (id, p) => window.AtlasAPI.admin._gate("updateBrewery", id, p),
-      deleteBrewery:  (id) => window.AtlasAPI.admin._gate("deleteBrewery", id),
+      listBreweries:      () => window.AtlasAPI.admin._gate("listBreweries"),
+      updateBrewery:      (id, p) => window.AtlasAPI.admin._gate("updateBrewery", id, p),
+      deleteBrewery:      (id) => window.AtlasAPI.admin._gate("deleteBrewery", id),
+      uploadBreweryPhoto: (id, f) => window.AtlasAPI.admin._gate("uploadBreweryPhoto", id, f),
+      deleteBreweryPhoto: (id) => window.AtlasAPI.admin._gate("deleteBreweryPhoto", id),
       listEvents:     () => window.AtlasAPI.admin._gate("listEvents"),
       updateEvent:    (id, p) => window.AtlasAPI.admin._gate("updateEvent", id, p),
       deleteEvent:    (id) => window.AtlasAPI.admin._gate("deleteEvent", id),

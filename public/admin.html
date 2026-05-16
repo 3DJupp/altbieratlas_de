@@ -834,6 +834,22 @@
           </select>
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldStylesHint">Strg/Cmd + Klick für Mehrfachauswahl</span>
         </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label>Foto</label>
+          <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div id="edit-photo-preview" style="width:72px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--copper);display:flex;align-items:center;justify-content:center;border:1px solid var(--rule);cursor:pointer" title="Klicken zum Hochladen">
+              <span id="edit-photo-initials" style="color:#fff;font-size:1.3rem;font-weight:600">?</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label class="btn" style="cursor:pointer;margin:0">
+                Foto hochladen
+                <input type="file" id="edit-photo-file" accept="image/*" style="display:none">
+              </label>
+              <button class="btn btn-reject" id="edit-photo-delete" type="button" style="display:none;font-size:12px">Foto entfernen</button>
+            </div>
+            <div id="edit-photo-msg" style="font-size:12px;color:var(--ink-muted);align-self:center"></div>
+          </div>
+        </div>
       </div>
       <div class="edit-msg" id="edit-msg" style="display:none"></div>
       <div class="edit-actions">
@@ -1390,8 +1406,9 @@ async function loadBreweriesTable() {
           data-website="${(b.website || "").replace(/"/g, "&quot;")}"
           data-description="${(b.description?.de || "").replace(/"/g, "&quot;")}"
           data-description-en="${(b.description?.en || "").replace(/"/g, "&quot;")}"
-          data-styles="${(b.styles || []).join(",")}">
-        <td><a href="/brauerei?id=${b.id}" target="_blank">${b.name}</a></td>
+          data-styles="${(b.styles || []).join(",")}"
+          data-photo-key="${b.photoKey || ""}">
+        <td><a href="/ort?id=${b.id}" target="_blank">${b.name}</a></td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
@@ -1477,6 +1494,67 @@ async function openEditDialog(id, rowEl) {
     sel.appendChild(opt);
   });
 
+  // Photo
+  const photoPrev    = document.getElementById("edit-photo-preview");
+  const photoInitials = document.getElementById("edit-photo-initials");
+  const photoFile    = document.getElementById("edit-photo-file");
+  const photoDel     = document.getElementById("edit-photo-delete");
+  const photoMsg     = document.getElementById("edit-photo-msg");
+
+  function initPhotoPrev(photoKey) {
+    photoPrev.style.background = "";
+    photoPrev.innerHTML = "";
+    if (photoKey) {
+      const img = document.createElement("img");
+      img.src = `/photos/${photoKey}`;
+      img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block";
+      img.onerror = () => { photoPrev.innerHTML = `<span id="edit-photo-initials" style="color:#fff;font-size:1.3rem;font-weight:600">${getEditInitials()}</span>`; photoPrev.style.background = "var(--copper)"; };
+      photoPrev.appendChild(img);
+      photoDel.style.display = "block";
+    } else {
+      photoPrev.style.background = "var(--copper)";
+      photoPrev.innerHTML = `<span id="edit-photo-initials" style="color:#fff;font-size:1.3rem;font-weight:600">${getEditInitials()}</span>`;
+      photoDel.style.display = "none";
+    }
+    photoMsg.textContent = "";
+  }
+  function getEditInitials() {
+    const nm = document.getElementById("edit-name").value.trim() || "?";
+    const w = nm.split(/\s+/);
+    return (w.length >= 2 ? w[0][0] + w[1][0] : nm.slice(0, 2)).toUpperCase();
+  }
+
+  initPhotoPrev(rowEl.dataset.photoKey);
+  photoPrev.onclick = () => photoFile.click();
+
+  photoFile.onchange = async () => {
+    const file = photoFile.files[0];
+    if (!file || !pendingEdit) return;
+    photoMsg.textContent = "Lädt hoch…";
+    try {
+      const res = await window.AtlasAPI.admin.uploadBreweryPhoto(pendingEdit.id, file);
+      rowEl.dataset.photoKey = res.photoKey || "";
+      initPhotoPrev(res.photoKey);
+      photoMsg.textContent = "✓";
+    } catch (e) {
+      photoMsg.textContent = "Fehler: " + e.message;
+    }
+    photoFile.value = "";
+  };
+
+  photoDel.onclick = async () => {
+    if (!pendingEdit || !confirm("Foto löschen?")) return;
+    photoMsg.textContent = "Lösche…";
+    try {
+      await window.AtlasAPI.admin.deleteBreweryPhoto(pendingEdit.id);
+      rowEl.dataset.photoKey = "";
+      initPhotoPrev("");
+      photoMsg.textContent = "✓";
+    } catch (e) {
+      photoMsg.textContent = "Fehler: " + e.message;
+    }
+  };
+
   editDialog.classList.add("visible");
 }
 
@@ -1539,7 +1617,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.descriptionEn  = descriptionEn;
     row.dataset.styles         = styles.join(",");
     row.querySelector("td:nth-child(1) a").textContent = name;
-    row.querySelector("td:nth-child(1) a").href = `/brauerei?id=${effectiveId}`;
+    row.querySelector("td:nth-child(1) a").href = `/ort?id=${effectiveId}`;
     row.querySelector("td:nth-child(2)").textContent = city;
     const typeKey = "type." + type;
     const typeVal = t(typeKey);
@@ -1588,6 +1666,7 @@ async function loadStylesTab() {
           data-tasting-de="${(s.tasting?.de || "").replace(/"/g, "&quot;")}"
           data-tasting-en="${(s.tasting?.en || "").replace(/"/g, "&quot;")}"
           data-logo-key="${s.logoKey || ""}"
+          data-primary-brewery-id="${s.primaryBreweryId || ""}"
           >
         <td style="font-family:var(--font-mono);font-size:12px">${s.id}</td>
         <td>${s.name}</td>
@@ -1637,6 +1716,13 @@ function openStyleEditInline(id, rowEl) {
         <div class="field" style="margin:0"><label>${window.t("admin.styleColor")}</label><input id="se-color" type="text" maxlength="20" value="${rowEl.dataset.color}" /></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>${window.t("admin.styleTastingDe")}</label><textarea id="se-tasting-de" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingDe || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Tasting EN</label><textarea id="se-tasting-en" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingEn || ""}</textarea></div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label>Verlinkter Ort (Hauptbrauerei)</label>
+          <select id="se-primary-brewery">
+            <option value="">— kein Ort verlinkt —</option>
+          </select>
+          <span style="font-size:11px;color:var(--ink-muted)">Optionaler Link auf der Stile-Seite</span>
+        </div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label>${window.t("admin.styleLogo") || "Logo"}</label>
           <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
@@ -1698,6 +1784,21 @@ function openStyleEditInline(id, rowEl) {
       });
       if (rowEl.dataset.logoKey) logoSelect.value = rowEl.dataset.logoKey;
     } catch { /* R2 not reachable in dev/mock */ }
+  })();
+
+  // Load breweries for primary-brewery dropdown
+  const primaryBrewerySelect = editRow.querySelector("#se-primary-brewery");
+  (async () => {
+    try {
+      const allBrews = await ensureBreweries();
+      allBrews.forEach((b) => {
+        const opt = document.createElement("option");
+        opt.value = b.id;
+        opt.textContent = `${b.name} (${b.city})`;
+        primaryBrewerySelect.appendChild(opt);
+      });
+      primaryBrewerySelect.value = rowEl.dataset.primaryBreweryId || "";
+    } catch { /* ignore */ }
   })();
 
   logoFile.addEventListener("change", async () => {
@@ -1797,13 +1898,15 @@ function openStyleEditInline(id, rowEl) {
     const newId = editRow.querySelector("#se-id").value.trim();
     if (!newId) { msg.textContent = "ID darf nicht leer sein."; msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
     if (!/^[a-z0-9][a-z0-9-]*$/.test(newId)) { msg.textContent = "ID: nur Kleinbuchstaben, Ziffern und Bindestriche erlaubt."; msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
+    const primaryBrewVal = editRow.querySelector("#se-primary-brewery")?.value || "";
     const patch = {
-      name:       editRow.querySelector("#se-name").value.trim(),
-      abv:        editRow.querySelector("#se-abv").value !== "" ? parseFloat(editRow.querySelector("#se-abv").value) : null,
-      ibu:        editRow.querySelector("#se-ibu").value !== "" ? parseInt(editRow.querySelector("#se-ibu").value, 10) : null,
-      color:      normalizeColor(editRow.querySelector("#se-color").value),
-      tasting_de: editRow.querySelector("#se-tasting-de").value.trim() || null,
-      tasting_en: editRow.querySelector("#se-tasting-en").value.trim() || null,
+      name:               editRow.querySelector("#se-name").value.trim(),
+      abv:                editRow.querySelector("#se-abv").value !== "" ? parseFloat(editRow.querySelector("#se-abv").value) : null,
+      ibu:                editRow.querySelector("#se-ibu").value !== "" ? parseInt(editRow.querySelector("#se-ibu").value, 10) : null,
+      color:              normalizeColor(editRow.querySelector("#se-color").value),
+      tasting_de:         editRow.querySelector("#se-tasting-de").value.trim() || null,
+      tasting_en:         editRow.querySelector("#se-tasting-en").value.trim() || null,
+      primary_brewery_id: primaryBrewVal || null,
     };
     if (newId !== currentId) patch.id = newId;
     try {
@@ -1818,6 +1921,7 @@ function openStyleEditInline(id, rowEl) {
       rowEl.dataset.color     = patch.color || "";
       rowEl.dataset.tastingDe = patch.tasting_de || "";
       rowEl.dataset.tastingEn = patch.tasting_en || "";
+      rowEl.dataset.primaryBreweryId = patch.primary_brewery_id || "";
       rowEl.cells[0].textContent = finalId;
       rowEl.cells[1].textContent = patch.name;
       rowEl.cells[2].textContent = patch.abv != null ? patch.abv + " %" : "—";

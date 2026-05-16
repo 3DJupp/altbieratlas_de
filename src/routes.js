@@ -153,12 +153,20 @@ export async function getBrewery(req, env, { id }) {
 
 // GET /api/styles
 export async function listStyles(req, env) {
-  const res = await env.DB.prepare("SELECT * FROM styles ORDER BY name").all();
+  const res = await env.DB.prepare(
+    `SELECT s.*, b.name AS primary_brewery_name
+     FROM styles s
+     LEFT JOIN breweries b ON b.id = s.primary_brewery_id AND b.status = 'approved'
+     ORDER BY s.name`
+  ).all();
   return json({
     styles: res.results.map((s) => ({
       id: s.id, name: s.name, abv: s.abv, ibu: s.ibu, color: s.color,
       tasting: { de: s.tasting_de, en: s.tasting_en },
       logoUrl: s.logo_key ? `/logos/${s.logo_key}` : null,
+      primaryBrewery: s.primary_brewery_id
+        ? { id: s.primary_brewery_id, name: s.primary_brewery_name }
+        : null,
     })),
   });
 }
@@ -903,6 +911,54 @@ export async function adminDeleteBrewery(req, env, { id }) {
   return json({ ok: true });
 }
 
+// POST /api/admin/breweries/:id/photo  (multipart/form-data, field: photo)
+export async function adminUploadBreweryPhoto(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return error(503, "r2-not-configured");
+
+  const brewery = await env.DB.prepare("SELECT id, photo_key FROM breweries WHERE id = ?").bind(id).first();
+  if (!brewery) return error(404, "not-found");
+
+  let formData;
+  try { formData = await req.formData(); } catch { return error(400, "multipart-required"); }
+  const file = formData.get("photo");
+  if (!file || typeof file.arrayBuffer !== "function") return error(400, "photo-field-required");
+
+  const mimeType = file.type || "application/octet-stream";
+  if (!mimeType.startsWith("image/")) return error(400, "image-required");
+
+  const bytes = await file.arrayBuffer();
+  if (bytes.byteLength > 5 * 1024 * 1024) return error(400, "file-too-large", { maxBytes: 5242880 });
+
+  const extMap = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
+  const ext = extMap[mimeType] || "jpg";
+  const filename = `${id}.${ext}`;
+  const r2Key = `photos/${filename}`;
+
+  if (brewery.photo_key && brewery.photo_key !== filename) {
+    await env.LOGOS.delete(`photos/${brewery.photo_key}`).catch(() => {});
+  }
+
+  await env.LOGOS.put(r2Key, bytes, { httpMetadata: { contentType: mimeType } });
+  await env.DB.prepare("UPDATE breweries SET photo_key = ?, updated_at = datetime('now') WHERE id = ?").bind(filename, id).run();
+  return json({ ok: true, photoKey: filename, photoUrl: `/photos/${filename}` });
+}
+
+// DELETE /api/admin/breweries/:id/photo
+export async function adminDeleteBreweryPhoto(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+
+  const brewery = await env.DB.prepare("SELECT id, photo_key FROM breweries WHERE id = ?").bind(id).first();
+  if (!brewery) return error(404, "not-found");
+  if (brewery.photo_key && env.LOGOS) {
+    await env.LOGOS.delete(`photos/${brewery.photo_key}`).catch(() => {});
+  }
+  await env.DB.prepare("UPDATE breweries SET photo_key = NULL, updated_at = datetime('now') WHERE id = ?").bind(id).run();
+  return json({ ok: true });
+}
+
 // GET /api/admin/events
 export async function adminListEvents(req, env) {
   const auth = await requireAdmin(req, env);
@@ -1060,13 +1116,20 @@ export async function adminUpdatePrice(req, env, { id }) {
 export async function adminListStyles(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
-  const res = await env.DB.prepare("SELECT * FROM styles ORDER BY name").all();
+  const res = await env.DB.prepare(
+    `SELECT s.*, b.name AS primary_brewery_name
+     FROM styles s
+     LEFT JOIN breweries b ON b.id = s.primary_brewery_id
+     ORDER BY s.name`
+  ).all();
   return json({
     styles: res.results.map((s) => ({
       id: s.id, name: s.name, abv: s.abv, ibu: s.ibu, color: s.color,
       tasting: { de: s.tasting_de, en: s.tasting_en },
       logoKey: s.logo_key || null,
       logoUrl: s.logo_key ? `/logos/${s.logo_key}` : null,
+      primaryBreweryId: s.primary_brewery_id || null,
+      primaryBreweryName: s.primary_brewery_name || null,
     })),
   });
 }
@@ -1127,7 +1190,8 @@ export async function adminUpdateStyle(req, env, { id }) {
     if ("tasting_en" in body) { fields.push("tasting_en = ?"); values.push(str(body.tasting_en, { max: 2000, name: "tasting_en" })); }
     if ("abv"        in body) { fields.push("abv = ?");        values.push(body.abv != null ? num(body.abv, { min: 0, max: 100,  name: "abv" })  : null); }
     if ("ibu"        in body) { fields.push("ibu = ?");        values.push(body.ibu != null ? num(body.ibu, { min: 0, max: 1000, name: "ibu" })  : null); }
-    if ("logo_key"   in body) { fields.push("logo_key = ?");   values.push(body.logo_key || null); }
+    if ("logo_key"           in body) { fields.push("logo_key = ?");           values.push(body.logo_key || null); }
+    if ("primary_brewery_id" in body) { fields.push("primary_brewery_id = ?"); values.push(body.primary_brewery_id || null); }
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }
@@ -1139,7 +1203,7 @@ export async function adminUpdateStyle(req, env, { id }) {
       stmts.push(env.DB.prepare(`UPDATE styles SET ${fields.join(", ")} WHERE id = ?`).bind(...values, id));
     }
     stmts.push(
-      env.DB.prepare("INSERT INTO styles (id,name,abv,ibu,color,tasting_de,tasting_en,logo_key) SELECT ?,name,abv,ibu,color,tasting_de,tasting_en,logo_key FROM styles WHERE id=?").bind(newId, id),
+      env.DB.prepare("INSERT INTO styles (id,name,abv,ibu,color,tasting_de,tasting_en,logo_key,primary_brewery_id) SELECT ?,name,abv,ibu,color,tasting_de,tasting_en,logo_key,primary_brewery_id FROM styles WHERE id=?").bind(newId, id),
       env.DB.prepare("UPDATE brewery_styles SET style_id=? WHERE style_id=?").bind(newId, id),
       env.DB.prepare("DELETE FROM styles WHERE id=?").bind(id),
     );
@@ -1664,7 +1728,7 @@ export async function sitemap(req, env) {
   </url>`),
     ...breweryIds.map((b) => `
   <url>
-    <loc>${esc(base + "/brauerei.html?id=" + b.id)}</loc>
+    <loc>${esc(base + "/ort?id=" + b.id)}</loc>
     <lastmod>${(b.lastmod || today).slice(0, 10)}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

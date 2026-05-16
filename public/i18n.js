@@ -142,7 +142,8 @@ window.ATLAS_I18N = {
     "common.error": "Fehler",
     // Page titles
     "title.map": "Altbieratlas — Die interaktive Karte des Altbiers",
-    "title.brewery": "Brauerei · Altbieratlas",
+    "title.brewery": "Ort · Altbieratlas",
+    "title.location": "Ort · Altbieratlas",
     "title.rankings": "Ranglisten · Altbieratlas",
     "title.knowledge": "Wissen · Altbieratlas",
     "title.contribute": "Beitragen · Altbieratlas",
@@ -645,7 +646,8 @@ window.ATLAS_I18N = {
     "common.error": "Error",
     // Page titles
     "title.map": "Altbieratlas — The interactive atlas of Altbier",
-    "title.brewery": "Brewery · Altbieratlas",
+    "title.brewery": "Location · Altbieratlas",
+    "title.location": "Location · Altbieratlas",
     "title.rankings": "Rankings · Altbieratlas",
     "title.knowledge": "Knowledge · Altbieratlas",
     "title.contribute": "Contribute · Altbieratlas",
