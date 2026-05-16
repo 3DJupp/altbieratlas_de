@@ -1692,6 +1692,7 @@ function openStyleEditInline(id, rowEl) {
         opt.textContent = key;
         logoSelect.appendChild(opt);
       });
+      if (rowEl.dataset.logoKey) logoSelect.value = rowEl.dataset.logoKey;
     } catch { /* R2 not reachable in dev/mock */ }
   })();
 
