@@ -1640,10 +1640,10 @@ function openStyleEditInline(id, rowEl) {
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
               <label class="btn" style="cursor:pointer;margin:0">
-                <span data-i18n="admin.uploadLogo">Logo hochladen</span>
+                ${window.t("admin.uploadLogo")}
                 <input type="file" id="se-logo-file" accept="image/*" style="display:none">
               </label>
-              ${rowEl.dataset.logoKey ? `<button class="btn btn-reject" id="se-logo-delete" style="font-size:12px" type="button">Logo löschen</button>` : ""}
+              ${rowEl.dataset.logoKey ? `<button class="btn btn-reject" id="se-logo-delete" style="font-size:12px" type="button">${window.t("admin.deleteLogo")}</button>` : ""}
             </div>
             <div id="se-logo-msg" style="font-size:12px;color:var(--ink-muted)"></div>
           </div>
