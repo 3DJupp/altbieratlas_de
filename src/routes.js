@@ -1065,6 +1065,7 @@ export async function adminListStyles(req, env) {
     styles: res.results.map((s) => ({
       id: s.id, name: s.name, abv: s.abv, ibu: s.ibu, color: s.color,
       tasting: { de: s.tasting_de, en: s.tasting_en },
+      logoKey: s.logo_key || null,
       logoUrl: s.logo_key ? `/logos/${s.logo_key}` : null,
     })),
   });
