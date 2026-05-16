@@ -835,17 +835,17 @@
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldStylesHint">Strg/Cmd + Klick für Mehrfachauswahl</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Foto</label>
+          <label data-i18n="admin.photo">Foto</label>
           <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-            <div id="edit-photo-preview" style="width:72px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--copper);display:flex;align-items:center;justify-content:center;border:1px solid var(--rule);cursor:pointer" title="Klicken zum Hochladen">
+            <div id="edit-photo-preview" style="width:72px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--copper);display:flex;align-items:center;justify-content:center;border:1px solid var(--rule);cursor:pointer">
               <span id="edit-photo-initials" style="color:#fff;font-size:1.3rem;font-weight:600">?</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
               <label class="btn" style="cursor:pointer;margin:0">
-                Foto hochladen
+                <span data-i18n="admin.uploadPhoto">Foto hochladen</span>
                 <input type="file" id="edit-photo-file" accept="image/*" style="display:none">
               </label>
-              <button class="btn btn-reject" id="edit-photo-delete" type="button" style="display:none;font-size:12px">Foto entfernen</button>
+              <button class="btn btn-reject" id="edit-photo-delete" type="button" style="display:none;font-size:12px" data-i18n="admin.removePhoto">Foto entfernen</button>
             </div>
             <div id="edit-photo-msg" style="font-size:12px;color:var(--ink-muted);align-self:center"></div>
           </div>
@@ -1530,28 +1530,28 @@ async function openEditDialog(id, rowEl) {
   photoFile.onchange = async () => {
     const file = photoFile.files[0];
     if (!file || !pendingEdit) return;
-    photoMsg.textContent = "Wird hochgeladen…";
+    photoMsg.textContent = window.t("admin.uploading");
     try {
       const res = await window.AtlasAPI.admin.uploadBreweryPhoto(pendingEdit.id, file);
       rowEl.dataset.photoKey = res.photoKey || "";
       initPhotoPrev(res.photoKey);
       photoMsg.textContent = "✓";
     } catch (e) {
-      photoMsg.textContent = "Fehler: " + e.message;
+      photoMsg.textContent = window.t("admin.errorPrefix") + e.message;
     }
     photoFile.value = "";
   };
 
   photoDel.onclick = async () => {
-    if (!pendingEdit || !confirm("Foto entfernen und löschen?")) return;
-    photoMsg.textContent = "Wird gelöscht…";
+    if (!pendingEdit || !confirm(window.t("admin.confirmRemovePhoto"))) return;
+    photoMsg.textContent = window.t("admin.deleting");
     try {
       await window.AtlasAPI.admin.deleteBreweryPhoto(pendingEdit.id);
       rowEl.dataset.photoKey = "";
       initPhotoPrev("");
       photoMsg.textContent = "✓";
     } catch (e) {
-      photoMsg.textContent = "Fehler: " + e.message;
+      photoMsg.textContent = window.t("admin.errorPrefix") + e.message;
     }
   };
 
@@ -1717,14 +1717,14 @@ function openStyleEditInline(id, rowEl) {
         <div class="field" style="margin:0;grid-column:1/-1"><label>${window.t("admin.styleTastingDe")}</label><textarea id="se-tasting-de" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingDe || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Tasting EN</label><textarea id="se-tasting-en" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingEn || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Verlinkter Ort</label>
+          <label>${window.t("admin.styleLinkedLocation")}</label>
           <select id="se-primary-brewery">
-            <option value="">— kein Ort verlinkt —</option>
+            <option value="">${window.t("admin.noLocationLinked")}</option>
           </select>
-          <span style="font-size:11px;color:var(--ink-muted)">Erscheint als Link auf der öffentlichen Stile-Seite</span>
+          <span style="font-size:11px;color:var(--ink-muted)">${window.t("admin.styleLinkedLocationHint")}</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>${window.t("admin.styleLogo") || "Logo"}</label>
+          <label>${window.t("admin.styleLogo")}</label>
           <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
             <div id="se-logo-preview" style="flex-shrink:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:var(--bg-page);border:1px solid var(--rule);border-radius:4px;overflow:hidden">
               ${rowEl.dataset.logoKey ? `<img src="/logos/${rowEl.dataset.logoKey}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">` : '<span style="color:var(--ink-muted);font-size:11px">–</span>'}
@@ -1736,12 +1736,12 @@ function openStyleEditInline(id, rowEl) {
               </label>
               <div style="display:flex;gap:6px;align-items:center">
                 <select id="se-logo-select" style="max-width:220px;font-size:12px">
-                  <option value="">Aus Bibliothek wählen…</option>
+                  <option value="">${window.t("admin.fromLibrary")}</option>
                 </select>
-                <button class="btn" id="se-logo-assign" type="button" style="font-size:12px;white-space:nowrap">Zuweisen</button>
-                <button class="btn btn-reject" id="se-logo-lib-del" type="button" style="font-size:12px;white-space:nowrap" title="Ausgewähltes Bild aus R2 löschen">Löschen</button>
+                <button class="btn" id="se-logo-assign" type="button" style="font-size:12px;white-space:nowrap">${window.t("admin.assignFromLibrary")}</button>
+                <button class="btn btn-reject" id="se-logo-lib-del" type="button" style="font-size:12px;white-space:nowrap" title="${window.t("admin.titleAusgewaehlt")}">${window.t("admin.deleteFromLibrary")}</button>
               </div>
-              <button class="btn btn-reject" id="se-logo-delete" style="font-size:12px;display:${rowEl.dataset.logoKey ? "block" : "none"}" type="button">Logo entfernen</button>
+              <button class="btn btn-reject" id="se-logo-delete" style="font-size:12px;display:${rowEl.dataset.logoKey ? "block" : "none"}" type="button">${window.t("admin.removeLogoRef")}</button>
             </div>
             <div id="se-logo-msg" style="font-size:12px;color:var(--ink-muted);align-self:center"></div>
           </div>
@@ -1804,7 +1804,7 @@ function openStyleEditInline(id, rowEl) {
   logoFile.addEventListener("change", async () => {
     const file = logoFile.files[0];
     if (!file) return;
-    logoMsg.textContent = "Wird hochgeladen…";
+    logoMsg.textContent = window.t("admin.uploading");
     try {
       const res = await window.AtlasAPI.admin.uploadStyleLogo(pendingStyleEdit.id, file);
       rowEl.dataset.logoKey = res.logoKey;
@@ -1822,14 +1822,14 @@ function openStyleEditInline(id, rowEl) {
         logoSelect.appendChild(opt);
       }
     } catch (e) {
-      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      logoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
     }
   });
 
   logoAssign.addEventListener("click", async () => {
     const key = logoSelect.value;
-    if (!key) { logoMsg.textContent = "Kein Bild ausgewählt."; return; }
-    logoMsg.textContent = "Wird zugewiesen…";
+    if (!key) { logoMsg.textContent = window.t("admin.noImageSelected"); return; }
+    logoMsg.textContent = window.t("admin.assigning");
     try {
       await window.AtlasAPI.admin.updateStyle(pendingStyleEdit.id, { logo_key: key });
       rowEl.dataset.logoKey = key;
@@ -1841,15 +1841,15 @@ function openStyleEditInline(id, rowEl) {
       const logoCell = rowEl.cells[5];
       if (logoCell) logoCell.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px">`;
     } catch (e) {
-      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      logoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
     }
   });
 
   logoLibDel.addEventListener("click", async () => {
     const key = logoSelect.value;
-    if (!key) { logoMsg.textContent = "Kein Bild ausgewählt."; return; }
-    if (!confirm(`Bild "${key}" dauerhaft aus R2 löschen?`)) return;
-    logoMsg.textContent = "Wird gelöscht…";
+    if (!key) { logoMsg.textContent = window.t("admin.noImageSelected"); return; }
+    if (!confirm(window.t("admin.confirmDeleteFromLibrary").replace("{key}", key))) return;
+    logoMsg.textContent = window.t("admin.deleting");
     try {
       await window.AtlasAPI.admin.deleteLogo(key);
       // Remove from dropdown
@@ -1864,15 +1864,15 @@ function openStyleEditInline(id, rowEl) {
         const logoCell = rowEl.cells[5];
         if (logoCell) logoCell.textContent = "—";
       }
-      logoMsg.textContent = "✓ Gelöscht";
+      logoMsg.textContent = window.t("admin.deleted");
       cachedStyles = null;
     } catch (e) {
-      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      logoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
     }
   });
 
   logoDel.addEventListener("click", async () => {
-    logoMsg.textContent = "Wird entfernt…";
+    logoMsg.textContent = window.t("admin.removing");
     try {
       await window.AtlasAPI.admin.deleteStyleLogo(pendingStyleEdit.id);
       rowEl.dataset.logoKey = "";
@@ -1883,7 +1883,7 @@ function openStyleEditInline(id, rowEl) {
       const logoCell = rowEl.cells[5];
       if (logoCell) logoCell.textContent = "—";
     } catch (e) {
-      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+      logoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
     }
   });
 
