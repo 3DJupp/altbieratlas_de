@@ -1564,6 +1564,11 @@ document.getElementById("edit-save").addEventListener("click", async () => {
 });
 
 // ============ Stile Table ============
+function normalizeColor(val) {
+  const v = (val || "").trim();
+  if (!v) return null;
+  return /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(v) ? "#" + v : v;
+}
 async function loadStylesTab() {
   const tbody = document.getElementById("styles-tbody");
   tbody.innerHTML = `<tr><td colspan="8" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
@@ -1618,7 +1623,6 @@ async function loadStylesTab() {
 let pendingStyleEdit = null;
 function openStyleEditInline(id, rowEl) {
   if (pendingStyleEdit) {
-    // vorherige Inline-Zeile schließen
     pendingStyleEdit.editRow.remove();
     pendingStyleEdit = null;
   }
@@ -1626,6 +1630,7 @@ function openStyleEditInline(id, rowEl) {
   editRow.innerHTML = `
     <td colspan="8" style="padding:16px;background:var(--bg-elev)">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;align-items:end">
+        <div class="field" style="margin:0"><label>ID (Slug)</label><input id="se-id" type="text" maxlength="80" value="${id}" pattern="[a-z0-9][a-z0-9-]*" /></div>
         <div class="field" style="margin:0"><label>${window.t("admin.editName")}</label><input id="se-name" type="text" maxlength="200" value="${rowEl.dataset.name.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0"><label>ABV (%)</label><input id="se-abv" type="number" min="0" max="100" step="0.1" value="${rowEl.dataset.abv}" /></div>
         <div class="field" style="margin:0"><label>IBU</label><input id="se-ibu" type="number" min="0" max="1000" step="1" value="${rowEl.dataset.ibu}" /></div>
@@ -1634,8 +1639,8 @@ function openStyleEditInline(id, rowEl) {
         <div class="field" style="margin:0;grid-column:1/-1"><label>Tasting EN</label><textarea id="se-tasting-en" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingEn || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label>${window.t("admin.styleLogo") || "Logo"}</label>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <div id="se-logo-preview" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--bg-page);border:1px solid var(--rule);border-radius:4px;overflow:hidden">
+          <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div id="se-logo-preview" style="flex-shrink:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:var(--bg-page);border:1px solid var(--rule);border-radius:4px;overflow:hidden">
               ${rowEl.dataset.logoKey ? `<img src="/logos/${rowEl.dataset.logoKey}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">` : '<span style="color:var(--ink-muted);font-size:11px">–</span>'}
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
@@ -1643,12 +1648,19 @@ function openStyleEditInline(id, rowEl) {
                 ${window.t("admin.uploadLogo")}
                 <input type="file" id="se-logo-file" accept="image/*" style="display:none">
               </label>
-              ${rowEl.dataset.logoKey ? `<button class="btn btn-reject" id="se-logo-delete" style="font-size:12px" type="button">${window.t("admin.deleteLogo")}</button>` : ""}
+              <div style="display:flex;gap:6px;align-items:center">
+                <select id="se-logo-select" style="max-width:220px;font-size:12px">
+                  <option value="">Aus Bibliothek wählen…</option>
+                </select>
+                <button class="btn" id="se-logo-assign" type="button" style="font-size:12px;white-space:nowrap">Zuweisen</button>
+                <button class="btn btn-reject" id="se-logo-lib-del" type="button" style="font-size:12px;white-space:nowrap" title="Ausgewähltes Bild aus R2 löschen">Löschen</button>
+              </div>
+              <button class="btn btn-reject" id="se-logo-delete" style="font-size:12px;display:${rowEl.dataset.logoKey ? "block" : "none"}" type="button">Logo entfernen</button>
             </div>
-            <div id="se-logo-msg" style="font-size:12px;color:var(--ink-muted)"></div>
+            <div id="se-logo-msg" style="font-size:12px;color:var(--ink-muted);align-self:center"></div>
           </div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;align-items:center">
           <button class="btn btn-approve" id="se-save">${window.t("common.save")}</button>
           <button class="btn btn-ghost" id="se-cancel">${window.t("common.cancel")}</button>
         </div>
@@ -1659,71 +1671,154 @@ function openStyleEditInline(id, rowEl) {
   rowEl.parentNode.insertBefore(editRow, rowEl.nextSibling);
   pendingStyleEdit = { id, rowEl, editRow };
 
-  const logoFile = editRow.querySelector("#se-logo-file");
-  const logoDel  = editRow.querySelector("#se-logo-delete");
-  const logoMsg  = editRow.querySelector("#se-logo-msg");
-  const logoPrev = editRow.querySelector("#se-logo-preview");
+  const logoFile   = editRow.querySelector("#se-logo-file");
+  const logoDel    = editRow.querySelector("#se-logo-delete");
+  const logoMsg    = editRow.querySelector("#se-logo-msg");
+  const logoPrev   = editRow.querySelector("#se-logo-preview");
+  const logoSelect = editRow.querySelector("#se-logo-select");
+  const logoAssign = editRow.querySelector("#se-logo-assign");
+  const logoLibDel = editRow.querySelector("#se-logo-lib-del");
 
-  if (logoFile) {
-    logoFile.addEventListener("change", async () => {
-      const file = logoFile.files[0];
-      if (!file) return;
-      logoMsg.textContent = "Uploading…";
-      try {
-        const res = await window.AtlasAPI.admin.uploadStyleLogo(id, file);
-        rowEl.dataset.logoKey = res.logoKey;
-        logoPrev.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
-        logoMsg.textContent = "✓";
-        cachedStyles = null;
-        const logoCell = rowEl.cells[5];
-        if (logoCell) logoCell.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px">`;
-      } catch (e) {
-        logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+  const colorInput = editRow.querySelector("#se-color");
+  colorInput.addEventListener("blur", () => { const n = normalizeColor(colorInput.value); if (n) colorInput.value = n; });
+
+  logoPrev.style.cursor = "pointer";
+  logoPrev.title = "Klicken zum Hochladen";
+  logoPrev.addEventListener("click", () => logoFile.click());
+
+  // Load logo library from R2
+  (async () => {
+    try {
+      const { logos } = await window.AtlasAPI.admin.listLogos();
+      logos.forEach(({ key }) => {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = key;
+        logoSelect.appendChild(opt);
+      });
+      if (rowEl.dataset.logoKey) logoSelect.value = rowEl.dataset.logoKey;
+    } catch { /* R2 not reachable in dev/mock */ }
+  })();
+
+  logoFile.addEventListener("change", async () => {
+    const file = logoFile.files[0];
+    if (!file) return;
+    logoMsg.textContent = "Uploading…";
+    try {
+      const res = await window.AtlasAPI.admin.uploadStyleLogo(pendingStyleEdit.id, file);
+      rowEl.dataset.logoKey = res.logoKey;
+      logoPrev.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
+      logoDel.style.display = "block";
+      logoMsg.textContent = "✓";
+      cachedStyles = null;
+      const logoCell = rowEl.cells[5];
+      if (logoCell) logoCell.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px">`;
+      // Add new key to library dropdown if not already there
+      if (!Array.from(logoSelect.options).some((o) => o.value === res.logoKey)) {
+        const opt = document.createElement("option");
+        opt.value = res.logoKey;
+        opt.textContent = res.logoKey;
+        logoSelect.appendChild(opt);
       }
-    });
-  }
+    } catch (e) {
+      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+    }
+  });
 
-  if (logoDel) {
-    logoDel.addEventListener("click", async () => {
-      logoMsg.textContent = "Löscht…";
-      try {
-        await window.AtlasAPI.admin.deleteStyleLogo(id);
+  logoAssign.addEventListener("click", async () => {
+    const key = logoSelect.value;
+    if (!key) { logoMsg.textContent = "Kein Bild ausgewählt."; return; }
+    logoMsg.textContent = "Zuweise…";
+    try {
+      await window.AtlasAPI.admin.updateStyle(pendingStyleEdit.id, { logo_key: key });
+      rowEl.dataset.logoKey = key;
+      const url = `/logos/${key}`;
+      logoPrev.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
+      logoDel.style.display = "block";
+      logoMsg.textContent = "✓";
+      cachedStyles = null;
+      const logoCell = rowEl.cells[5];
+      if (logoCell) logoCell.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px">`;
+    } catch (e) {
+      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+    }
+  });
+
+  logoLibDel.addEventListener("click", async () => {
+    const key = logoSelect.value;
+    if (!key) { logoMsg.textContent = "Kein Bild ausgewählt."; return; }
+    if (!confirm(`Bild "${key}" dauerhaft aus R2 löschen?`)) return;
+    logoMsg.textContent = "Löscht…";
+    try {
+      await window.AtlasAPI.admin.deleteLogo(key);
+      // Remove from dropdown
+      const opt = logoSelect.querySelector(`option[value="${key}"]`);
+      if (opt) opt.remove();
+      logoSelect.value = "";
+      // If this was the current logo, clear preview
+      if (rowEl.dataset.logoKey === key) {
         rowEl.dataset.logoKey = "";
         logoPrev.innerHTML = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
-        logoDel.remove();
-        logoMsg.textContent = "✓";
-        cachedStyles = null;
+        logoDel.style.display = "none";
         const logoCell = rowEl.cells[5];
         if (logoCell) logoCell.textContent = "—";
-      } catch (e) {
-        logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
       }
-    });
-  }
+      logoMsg.textContent = "✓ gelöscht";
+      cachedStyles = null;
+    } catch (e) {
+      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+    }
+  });
+
+  logoDel.addEventListener("click", async () => {
+    logoMsg.textContent = "Entfernt…";
+    try {
+      await window.AtlasAPI.admin.deleteStyleLogo(pendingStyleEdit.id);
+      rowEl.dataset.logoKey = "";
+      logoPrev.innerHTML = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
+      logoDel.style.display = "none";
+      logoMsg.textContent = "✓";
+      cachedStyles = null;
+      const logoCell = rowEl.cells[5];
+      if (logoCell) logoCell.textContent = "—";
+    } catch (e) {
+      logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
+    }
+  });
 
   editRow.querySelector("#se-cancel").addEventListener("click", () => {
     editRow.remove();
     pendingStyleEdit = null;
   });
+
   editRow.querySelector("#se-save").addEventListener("click", async () => {
     const msg = editRow.querySelector("#se-msg");
+    const currentId = pendingStyleEdit.id;
+    const newId = editRow.querySelector("#se-id").value.trim();
+    if (!newId) { msg.textContent = "ID darf nicht leer sein."; msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(newId)) { msg.textContent = "ID: nur Kleinbuchstaben, Ziffern und Bindestriche erlaubt."; msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
     const patch = {
       name:       editRow.querySelector("#se-name").value.trim(),
       abv:        editRow.querySelector("#se-abv").value !== "" ? parseFloat(editRow.querySelector("#se-abv").value) : null,
       ibu:        editRow.querySelector("#se-ibu").value !== "" ? parseInt(editRow.querySelector("#se-ibu").value, 10) : null,
-      color:      editRow.querySelector("#se-color").value.trim() || null,
+      color:      normalizeColor(editRow.querySelector("#se-color").value),
       tasting_de: editRow.querySelector("#se-tasting-de").value.trim() || null,
       tasting_en: editRow.querySelector("#se-tasting-en").value.trim() || null,
     };
+    if (newId !== currentId) patch.id = newId;
     try {
-      await window.AtlasAPI.admin.updateStyle(id, patch);
+      const res = await window.AtlasAPI.admin.updateStyle(currentId, patch);
+      const finalId = res?.newId || newId;
       cachedStyles = null;
+      // Update DOM
+      rowEl.dataset.styleId   = finalId;
       rowEl.dataset.name      = patch.name;
       rowEl.dataset.abv       = patch.abv ?? "";
       rowEl.dataset.ibu       = patch.ibu ?? "";
       rowEl.dataset.color     = patch.color || "";
       rowEl.dataset.tastingDe = patch.tasting_de || "";
       rowEl.dataset.tastingEn = patch.tasting_en || "";
+      rowEl.cells[0].textContent = finalId;
       rowEl.cells[1].textContent = patch.name;
       rowEl.cells[2].textContent = patch.abv != null ? patch.abv + " %" : "—";
       rowEl.cells[3].textContent = patch.ibu != null ? patch.ibu : "—";
@@ -1731,6 +1826,15 @@ function openStyleEditInline(id, rowEl) {
         ? `<span style="display:inline-block;width:14px;height:14px;background:${patch.color};border-radius:2px;vertical-align:middle;margin-right:4px"></span>${patch.color}`
         : "—";
       rowEl.cells[6].textContent = patch.tasting_de || "—";
+      // Re-wire buttons with new ID
+      if (finalId !== currentId) {
+        rowEl.querySelector("button[data-act='edit-style']").onclick = () => openStyleEditInline(finalId, rowEl);
+        rowEl.querySelector("button[data-act='delete-style']").onclick = async () => {
+          if (!confirm(window.t("admin.confirmDeleteStyle").replace("{id}", finalId))) return;
+          try { await window.AtlasAPI.admin.deleteStyle(finalId); rowEl.remove(); cachedStyles = null; }
+          catch (e) { alert(window.t("admin.errorPrefix") + e.message); }
+        };
+      }
       editRow.remove();
       pendingStyleEdit = null;
     } catch (e) {
@@ -1740,6 +1844,8 @@ function openStyleEditInline(id, rowEl) {
     }
   });
 }
+
+document.querySelector("#add-style-form input[name='color']").addEventListener("blur", (e) => { const n = normalizeColor(e.target.value); if (n) e.target.value = n; });
 
 document.getElementById("add-style-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1752,7 +1858,7 @@ document.getElementById("add-style-form").addEventListener("submit", async (e) =
       name:       fd.get("name").trim(),
       abv:        fd.get("abv") ? parseFloat(fd.get("abv")) : null,
       ibu:        fd.get("ibu") ? parseInt(fd.get("ibu"), 10) : null,
-      color:      fd.get("color").trim() || null,
+      color:      normalizeColor(fd.get("color")),
       tasting_de: fd.get("tasting_de").trim() || null,
       tasting_en: fd.get("tasting_en").trim() || null,
     });

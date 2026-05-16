@@ -97,6 +97,8 @@ const ROUTES = [
   ["DELETE", "/api/admin/styles/:id",                      R.adminDeleteStyle],
   ["POST",   "/api/admin/styles/:id/logo",                 R.adminUploadStyleLogo],
   ["DELETE", "/api/admin/styles/:id/logo",                 R.adminDeleteStyleLogo],
+  ["GET",    "/api/admin/logos",                           R.adminListLogos],
+  ["DELETE", "/api/admin/logos/:key",                      R.adminDeleteLogo],
   ["GET",    "/api/admin/glossary",                        R.adminListGlossary],
   ["POST",   "/api/admin/glossary",                        R.adminCreateGlossary],
   ["PUT",    "/api/admin/glossary/:term",                  R.adminUpdateGlossary],
