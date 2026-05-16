@@ -1564,6 +1564,11 @@ document.getElementById("edit-save").addEventListener("click", async () => {
 });
 
 // ============ Stile Table ============
+function normalizeColor(val) {
+  const v = (val || "").trim();
+  if (!v) return null;
+  return /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(v) ? "#" + v : v;
+}
 async function loadStylesTab() {
   const tbody = document.getElementById("styles-tbody");
   tbody.innerHTML = `<tr><td colspan="8" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
@@ -1673,6 +1678,9 @@ function openStyleEditInline(id, rowEl) {
   const logoSelect = editRow.querySelector("#se-logo-select");
   const logoAssign = editRow.querySelector("#se-logo-assign");
   const logoLibDel = editRow.querySelector("#se-logo-lib-del");
+
+  const colorInput = editRow.querySelector("#se-color");
+  colorInput.addEventListener("blur", () => { const n = normalizeColor(colorInput.value); if (n) colorInput.value = n; });
 
   // Load logo library from R2
   (async () => {
@@ -1788,7 +1796,7 @@ function openStyleEditInline(id, rowEl) {
       name:       editRow.querySelector("#se-name").value.trim(),
       abv:        editRow.querySelector("#se-abv").value !== "" ? parseFloat(editRow.querySelector("#se-abv").value) : null,
       ibu:        editRow.querySelector("#se-ibu").value !== "" ? parseInt(editRow.querySelector("#se-ibu").value, 10) : null,
-      color:      editRow.querySelector("#se-color").value.trim() || null,
+      color:      normalizeColor(editRow.querySelector("#se-color").value),
       tasting_de: editRow.querySelector("#se-tasting-de").value.trim() || null,
       tasting_en: editRow.querySelector("#se-tasting-en").value.trim() || null,
     };
@@ -1832,6 +1840,8 @@ function openStyleEditInline(id, rowEl) {
   });
 }
 
+document.querySelector("#add-style-form input[name='color']").addEventListener("blur", (e) => { const n = normalizeColor(e.target.value); if (n) e.target.value = n; });
+
 document.getElementById("add-style-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const msg = document.getElementById("add-style-msg");
@@ -1843,7 +1853,7 @@ document.getElementById("add-style-form").addEventListener("submit", async (e) =
       name:       fd.get("name").trim(),
       abv:        fd.get("abv") ? parseFloat(fd.get("abv")) : null,
       ibu:        fd.get("ibu") ? parseInt(fd.get("ibu"), 10) : null,
-      color:      fd.get("color").trim() || null,
+      color:      normalizeColor(fd.get("color")),
       tasting_de: fd.get("tasting_de").trim() || null,
       tasting_en: fd.get("tasting_en").trim() || null,
     });
