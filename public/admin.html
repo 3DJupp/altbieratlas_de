@@ -1530,7 +1530,7 @@ async function openEditDialog(id, rowEl) {
   photoFile.onchange = async () => {
     const file = photoFile.files[0];
     if (!file || !pendingEdit) return;
-    photoMsg.textContent = "Lädt hoch…";
+    photoMsg.textContent = "Wird hochgeladen…";
     try {
       const res = await window.AtlasAPI.admin.uploadBreweryPhoto(pendingEdit.id, file);
       rowEl.dataset.photoKey = res.photoKey || "";
@@ -1543,8 +1543,8 @@ async function openEditDialog(id, rowEl) {
   };
 
   photoDel.onclick = async () => {
-    if (!pendingEdit || !confirm("Foto löschen?")) return;
-    photoMsg.textContent = "Lösche…";
+    if (!pendingEdit || !confirm("Foto entfernen und löschen?")) return;
+    photoMsg.textContent = "Wird gelöscht…";
     try {
       await window.AtlasAPI.admin.deleteBreweryPhoto(pendingEdit.id);
       rowEl.dataset.photoKey = "";
@@ -1717,11 +1717,11 @@ function openStyleEditInline(id, rowEl) {
         <div class="field" style="margin:0;grid-column:1/-1"><label>${window.t("admin.styleTastingDe")}</label><textarea id="se-tasting-de" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingDe || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Tasting EN</label><textarea id="se-tasting-en" rows="2" maxlength="2000" style="resize:vertical">${rowEl.dataset.tastingEn || ""}</textarea></div>
         <div class="field" style="margin:0;grid-column:1/-1">
-          <label>Verlinkter Ort (Hauptbrauerei)</label>
+          <label>Verlinkter Ort</label>
           <select id="se-primary-brewery">
             <option value="">— kein Ort verlinkt —</option>
           </select>
-          <span style="font-size:11px;color:var(--ink-muted)">Optionaler Link auf der Stile-Seite</span>
+          <span style="font-size:11px;color:var(--ink-muted)">Erscheint als Link auf der öffentlichen Stile-Seite</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label>${window.t("admin.styleLogo") || "Logo"}</label>
@@ -1804,7 +1804,7 @@ function openStyleEditInline(id, rowEl) {
   logoFile.addEventListener("change", async () => {
     const file = logoFile.files[0];
     if (!file) return;
-    logoMsg.textContent = "Uploading…";
+    logoMsg.textContent = "Wird hochgeladen…";
     try {
       const res = await window.AtlasAPI.admin.uploadStyleLogo(pendingStyleEdit.id, file);
       rowEl.dataset.logoKey = res.logoKey;
@@ -1829,7 +1829,7 @@ function openStyleEditInline(id, rowEl) {
   logoAssign.addEventListener("click", async () => {
     const key = logoSelect.value;
     if (!key) { logoMsg.textContent = "Kein Bild ausgewählt."; return; }
-    logoMsg.textContent = "Zuweise…";
+    logoMsg.textContent = "Wird zugewiesen…";
     try {
       await window.AtlasAPI.admin.updateStyle(pendingStyleEdit.id, { logo_key: key });
       rowEl.dataset.logoKey = key;
@@ -1849,7 +1849,7 @@ function openStyleEditInline(id, rowEl) {
     const key = logoSelect.value;
     if (!key) { logoMsg.textContent = "Kein Bild ausgewählt."; return; }
     if (!confirm(`Bild "${key}" dauerhaft aus R2 löschen?`)) return;
-    logoMsg.textContent = "Löscht…";
+    logoMsg.textContent = "Wird gelöscht…";
     try {
       await window.AtlasAPI.admin.deleteLogo(key);
       // Remove from dropdown
@@ -1864,7 +1864,7 @@ function openStyleEditInline(id, rowEl) {
         const logoCell = rowEl.cells[5];
         if (logoCell) logoCell.textContent = "—";
       }
-      logoMsg.textContent = "✓ gelöscht";
+      logoMsg.textContent = "✓ Gelöscht";
       cachedStyles = null;
     } catch (e) {
       logoMsg.textContent = "Fehler: " + (e.detail?.detail || e.message);
@@ -1872,7 +1872,7 @@ function openStyleEditInline(id, rowEl) {
   });
 
   logoDel.addEventListener("click", async () => {
-    logoMsg.textContent = "Entfernt…";
+    logoMsg.textContent = "Wird entfernt…";
     try {
       await window.AtlasAPI.admin.deleteStyleLogo(pendingStyleEdit.id);
       rowEl.dataset.logoKey = "";
