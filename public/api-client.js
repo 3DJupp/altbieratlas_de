@@ -246,6 +246,8 @@
       deleteStyle:    (id) => req(`/admin/styles/${encodeURIComponent(id)}`, { method: "DELETE" }),
       uploadStyleLogo: (id, file) => upload(`/admin/styles/${encodeURIComponent(id)}/logo`, file),
       deleteStyleLogo: (id) => req(`/admin/styles/${encodeURIComponent(id)}/logo`, { method: "DELETE" }),
+      listLogos:      () => req("/admin/logos"),
+      deleteLogo:     (key) => req(`/admin/logos/${encodeURIComponent(key)}`, { method: "DELETE" }),
       listGlossary:        () => req("/admin/glossary"),
       createGlossaryTerm:  (body) => req("/admin/glossary", { method: "POST", body }),
       updateGlossaryTerm:  (term, patch) => req(`/admin/glossary/${encodeURIComponent(term)}`, { method: "PUT", body: patch }),

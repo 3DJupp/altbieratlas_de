@@ -1105,6 +1105,18 @@ export async function adminUpdateStyle(req, env, { id }) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
 
+  // Validate new ID if provided
+  const doRename = "id" in body && body.id !== id;
+  let newId = id;
+  if (doRename) {
+    try { newId = str(body.id, { required: true, max: 80, name: "id" }); } catch (e) {
+      return error(400, "validation-failed", { detail: e.message });
+    }
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(newId)) return error(400, "invalid-id-format");
+    const clash = await env.DB.prepare("SELECT id FROM styles WHERE id = ?").bind(newId).first();
+    if (clash) return error(409, "id-already-exists");
+  }
+
   const fields = [];
   const values = [];
   try {
@@ -1114,12 +1126,49 @@ export async function adminUpdateStyle(req, env, { id }) {
     if ("tasting_en" in body) { fields.push("tasting_en = ?"); values.push(str(body.tasting_en, { max: 2000, name: "tasting_en" })); }
     if ("abv"        in body) { fields.push("abv = ?");        values.push(body.abv != null ? num(body.abv, { min: 0, max: 100,  name: "abv" })  : null); }
     if ("ibu"        in body) { fields.push("ibu = ?");        values.push(body.ibu != null ? num(body.ibu, { min: 0, max: 1000, name: "ibu" })  : null); }
+    if ("logo_key"   in body) { fields.push("logo_key = ?");   values.push(body.logo_key || null); }
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }
+
+  if (doRename) {
+    const stmts = [];
+    if (fields.length) {
+      // Apply field updates to old row first, then rename via INSERT+DELETE
+      stmts.push(env.DB.prepare(`UPDATE styles SET ${fields.join(", ")} WHERE id = ?`).bind(...values, id));
+    }
+    stmts.push(
+      env.DB.prepare("INSERT INTO styles (id,name,abv,ibu,color,tasting_de,tasting_en,logo_key) SELECT ?,name,abv,ibu,color,tasting_de,tasting_en,logo_key FROM styles WHERE id=?").bind(newId, id),
+      env.DB.prepare("UPDATE brewery_styles SET style_id=? WHERE style_id=?").bind(newId, id),
+      env.DB.prepare("DELETE FROM styles WHERE id=?").bind(id),
+    );
+    await env.DB.batch(stmts);
+    return json({ ok: true, newId });
+  }
+
   if (!fields.length) return error(400, "no-fields");
   values.push(id);
   await env.DB.prepare(`UPDATE styles SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  return json({ ok: true });
+}
+
+// GET /api/admin/logos
+export async function adminListLogos(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return json({ logos: [] });
+  const listed = await env.LOGOS.list();
+  const logos = listed.objects.map((obj) => ({ key: obj.key, url: `/logos/${obj.key}`, size: obj.size }));
+  return json({ logos });
+}
+
+// DELETE /api/admin/logos/:key
+export async function adminDeleteLogo(req, env, { key }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return error(503, "r2-not-configured");
+  await env.LOGOS.delete(key).catch(() => {});
+  await env.DB.prepare("UPDATE styles SET logo_key = NULL WHERE logo_key = ?").bind(key).run();
   return json({ ok: true });
 }
 
@@ -1165,18 +1214,14 @@ export async function adminUploadStyleLogo(req, env, { id }) {
   return json({ ok: true, logoKey: key, logoUrl: `/logos/${key}` });
 }
 
-// DELETE /api/admin/styles/:id/logo
+// DELETE /api/admin/styles/:id/logo  — entfernt nur die DB-Referenz, löscht R2-Objekt nicht
 export async function adminDeleteStyleLogo(req, env, { id }) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
-  if (!env.LOGOS) return error(503, "r2-not-configured");
 
-  const style = await env.DB.prepare("SELECT logo_key FROM styles WHERE id = ?").bind(id).first();
+  const style = await env.DB.prepare("SELECT id FROM styles WHERE id = ?").bind(id).first();
   if (!style) return error(404, "not-found");
-  if (style.logo_key) {
-    await env.LOGOS.delete(style.logo_key).catch(() => {});
-    await env.DB.prepare("UPDATE styles SET logo_key = NULL WHERE id = ?").bind(id).run();
-  }
+  await env.DB.prepare("UPDATE styles SET logo_key = NULL WHERE id = ?").bind(id).run();
   return json({ ok: true });
 }
 
