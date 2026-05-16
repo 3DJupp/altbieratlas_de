@@ -1682,6 +1682,10 @@ function openStyleEditInline(id, rowEl) {
   const colorInput = editRow.querySelector("#se-color");
   colorInput.addEventListener("blur", () => { const n = normalizeColor(colorInput.value); if (n) colorInput.value = n; });
 
+  logoPrev.style.cursor = "pointer";
+  logoPrev.title = "Klicken zum Hochladen";
+  logoPrev.addEventListener("click", () => logoFile.click());
+
   // Load logo library from R2
   (async () => {
     try {
