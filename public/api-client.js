@@ -322,6 +322,8 @@
       deleteStyle:    (id) => window.AtlasAPI.admin._gate("deleteStyle", id),
       uploadStyleLogo: (id, f) => window.AtlasAPI.admin._gate("uploadStyleLogo", id, f),
       deleteStyleLogo: (id) => window.AtlasAPI.admin._gate("deleteStyleLogo", id),
+      listLogos:       () => window.AtlasAPI.admin._gate("listLogos"),
+      deleteLogo:      (key) => window.AtlasAPI.admin._gate("deleteLogo", key),
       listGlossary:        () => window.AtlasAPI.admin._gate("listGlossary"),
       createGlossaryTerm:  (b) => window.AtlasAPI.admin._gate("createGlossaryTerm", b),
       updateGlossaryTerm:  (t, p) => window.AtlasAPI.admin._gate("updateGlossaryTerm", t, p),
