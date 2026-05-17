@@ -9,6 +9,18 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#b57a3a" />
 <title>Ort · Altbieratlas</title>
+<meta name="description" content="Altbier-Brauerei im Altbieratlas — Preise, Öffnungszeiten und Informationen." />
+<link rel="canonical" href="https://altbieratlas.de/ort" id="meta-canonical" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Ort · Altbieratlas" id="meta-og-title" />
+<meta property="og:description" content="Altbier-Brauerei im Altbieratlas." id="meta-og-desc" />
+<meta property="og:url" content="https://altbieratlas.de/ort" id="meta-og-url" />
+<meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Ort · Altbieratlas" id="meta-tw-title" />
+<meta name="twitter:description" content="Altbier-Brauerei im Altbieratlas." id="meta-tw-desc" />
+<meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -228,6 +240,37 @@ const root = document.getElementById("brewery-root");
   }
 
   document.title = `${b.name} · Altbieratlas`;
+
+  // SEO: Meta-Tags dynamisch befüllen
+  (function() {
+    const pageUrl = `https://altbieratlas.de/ort?id=${b.id}`;
+    const desc = (b.description && (b.description.de || b.description.en))
+      ? (b.description.de || b.description.en).slice(0, 155).replace(/\s+\S*$/, "") + "…"
+      : `${b.name} — Altbier ${window.t ? window.t("type." + b.type) : b.type} in ${b.city} im Altbieratlas.`;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", desc);
+    const canonical = document.getElementById("meta-canonical");
+    if (canonical) canonical.setAttribute("href", pageUrl);
+    const ogUrl = document.getElementById("meta-og-url");
+    if (ogUrl) ogUrl.setAttribute("content", pageUrl);
+    const ogTitle = document.getElementById("meta-og-title");
+    if (ogTitle) ogTitle.setAttribute("content", `${b.name} · Altbieratlas`);
+    const ogDesc = document.getElementById("meta-og-desc");
+    if (ogDesc) ogDesc.setAttribute("content", desc);
+    const twTitle = document.getElementById("meta-tw-title");
+    if (twTitle) twTitle.setAttribute("content", `${b.name} · Altbieratlas`);
+    const twDesc = document.getElementById("meta-tw-desc");
+    if (twDesc) twDesc.setAttribute("content", desc);
+    // JSON-LD LocalBusiness
+    const ld = {"@context":"https://schema.org","@type":"LocalBusiness","name":b.name,"url":pageUrl};
+    if (b.address) ld.address = {"@type":"PostalAddress","streetAddress":b.address,"addressLocality":b.city,"addressCountry":b.country||"DE"};
+    if (b.lat && b.lon) ld.geo = {"@type":"GeoCoordinates","latitude":b.lat,"longitude":b.lon};
+    if (b.website) ld.sameAs = b.website;
+    const s = document.createElement("script");
+    s.type = "application/ld+json";
+    s.textContent = JSON.stringify(ld);
+    document.head.appendChild(s);
+  })();
 
   const typeLabel = window.t("type." + b.type);
 
