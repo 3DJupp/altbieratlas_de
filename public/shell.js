@@ -99,7 +99,7 @@ window.renderShell = function ({ activeNav }) {
             <h4 data-i18n="footer.contribute">Mitmachen</h4>
             <ul>
               <li><a href="/beitragen?typ=preis" data-i18n="contrib.type.price">Preis melden</a></li>
-              <li><a href="/beitragen?typ=brauerei" data-i18n="contrib.type.brewery">Brauerei eintragen</a></li>
+              <li><a href="/beitragen?typ=ort" data-i18n="contrib.type.brewery">Ort eintragen</a></li>
               <li><a href="/beitragen?typ=sorte" data-i18n="contrib.type.style">Sorte ergänzen</a></li>
               <li><a href="/beitragen?typ=event" data-i18n="contrib.type.event">Event melden</a></li>
             </ul>
