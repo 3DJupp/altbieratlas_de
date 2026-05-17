@@ -1704,27 +1704,33 @@ export async function sitemap(req, env) {
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
                               .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
                               .replace(/'/g, "&apos;");
-  const staticPaths = ["/", "/index.html", "/ranglisten.html", "/wissen.html",
-                       "/beitragen.html"];
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/beitragen"];
   let breweryIds = [];
+  let eventIds = [];
   let lastMod = null;
+  const today = new Date().toISOString().slice(0, 10);
   try {
-    const r = await env.DB.prepare(
-      "SELECT id, updated_at FROM breweries WHERE status = 'approved' ORDER BY updated_at DESC LIMIT 5000"
-    ).all();
-    breweryIds = r.results.map((x) => ({ id: x.id, lastmod: x.updated_at }));
-    lastMod = r.results[0]?.updated_at || null;
+    const [bRes, eRes] = await Promise.all([
+      env.DB.prepare(
+        "SELECT id, updated_at FROM breweries WHERE status = 'approved' ORDER BY updated_at DESC LIMIT 5000"
+      ).all(),
+      env.DB.prepare(
+        "SELECT id, created_at FROM events WHERE status = 'approved'" +
+        " AND COALESCE(end_date, date) >= ? ORDER BY date ASC LIMIT 500"
+      ).bind(today).all(),
+    ]);
+    breweryIds = bRes.results.map((x) => ({ id: x.id, lastmod: x.updated_at }));
+    lastMod = bRes.results[0]?.updated_at || null;
+    eventIds = eRes.results.map((x) => ({ id: x.id, lastmod: x.created_at }));
   } catch { /* keine DB → nur statische Seiten */ }
 
-  const nowIso = new Date().toISOString().slice(0, 10);
-  const today = nowIso;
   const entries = [
     ...staticPaths.map((p) => `
   <url>
     <loc>${esc(base + p)}</loc>
     <lastmod>${lastMod ? lastMod.slice(0, 10) : today}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>${p === "/" || p === "/index.html" ? "1.0" : "0.7"}</priority>
+    <priority>${p === "/" ? "1.0" : "0.7"}</priority>
   </url>`),
     ...breweryIds.map((b) => `
   <url>
@@ -1732,6 +1738,13 @@ export async function sitemap(req, env) {
     <lastmod>${(b.lastmod || today).slice(0, 10)}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+  </url>`),
+    ...eventIds.map((e) => `
+  <url>
+    <loc>${esc(base + "/event?id=" + e.id)}</loc>
+    <lastmod>${(e.lastmod || today).slice(0, 10)}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
   </url>`),
   ].join("");
 
