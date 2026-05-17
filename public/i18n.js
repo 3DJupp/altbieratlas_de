@@ -67,7 +67,7 @@ window.ATLAS_I18N = {
     "contrib.anonymous": "Du kannst anonym beitragen. E-Mail ist optional.",
     "contrib.error": "Einreichung fehlgeschlagen. Bitte später erneut versuchen.",
     // Felder
-    "field.brewery": "Brauerei / Ausschank",
+    "field.brewery": "Ort / Ausschank",
     "field.city": "Stadt",
     "field.price": "Preis (€)",
     "field.size": "Größe",
@@ -596,7 +596,7 @@ window.ATLAS_I18N = {
     "contrib.thanks": "Thanks! Your submission is under review.",
     "contrib.anonymous": "You can contribute anonymously. Email is optional.",
     "contrib.error": "Submission failed. Please try again later.",
-    "field.brewery": "Brewery / taproom",
+    "field.brewery": "Location",
     "field.city": "City",
     "field.price": "Price (€)",
     "field.size": "Size",

@@ -195,7 +195,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
     <div class="container container-narrow">
       <div class="type-switcher" role="tablist">
         <button type="button" data-typ="preis" data-i18n="contrib.type.price">Preis melden</button>
-        <button type="button" data-typ="brauerei" data-i18n="contrib.type.brewery">Brauerei / Kneipe eintragen</button>
+        <button type="button" data-typ="ort" data-i18n="contrib.type.brewery">Ort eintragen</button>
         <button type="button" data-typ="sorte" data-i18n="contrib.type.style">Sorte & Geschmacksnotizen</button>
         <button type="button" data-typ="korrektur" data-i18n="contrib.type.correction">Korrektur einreichen</button>
         <button type="button" data-typ="event" data-i18n="contrib.type.event">Event melden</button>
@@ -268,13 +268,14 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 renderShell({ activeNav: "contribute" });
 
 const params = new URLSearchParams(location.search);
-let currentTyp = params.get("typ") || "preis";
+let currentTyp = (params.get("typ") || "preis").replace(/^brauerei$/, "ort");
 const preBrewery = params.get("brauerei") || "";
 const today = new Date().toISOString().slice(0, 10);
 
 // Mappt interne Typen (DE-Slugs) auf API-Typen (EN-Canonical)
 const TYP_TO_API = {
   preis: "price",
+  ort: "brewery",
   brauerei: "brewery",
   sorte: "style",
   korrektur: "correction",
@@ -443,7 +444,7 @@ function forms(typ) {
       <textarea name="notes" placeholder="${t("contrib.form.priceNotesPh")}"></textarea>
     </div>
   `;
-  if (typ === "brauerei") return `
+  if (typ === "ort") return `
     <h2>${t("contrib.form.breweryTitle")}</h2>
     <p class="hint">${t("contrib.form.brewerySub")}</p>
     <div class="field autocomplete-field">

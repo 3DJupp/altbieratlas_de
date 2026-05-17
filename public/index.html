@@ -425,7 +425,7 @@ function flyToGeo(result) {
     <h4>${result.name.split(",")[0]}</h4>
     <div style="font-size:12px;opacity:.75">${result.name}</div>
     <div style="font-size:12px;opacity:.6;margin-top:10px">${window.t("map.geocode.empty")}</div>
-    <div style="margin-top:10px"><a href="/beitragen?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>
+    <div style="margin-top:10px"><a href="/beitragen?typ=ort">${window.t("contrib.type.brewery")} →</a></div>
   `).openPopup();
   map.flyTo(latlng, cfg.map.geocodeZoom || 13, { duration: 0.8 });
 }
@@ -476,7 +476,7 @@ function renderSuggest(query, local, geo) {
     `).join(""));
   }
   if (!parts.length) {
-    parts.push(`<div class="sugg-empty">${window.t("map.geocode.empty")} <br><br><a href="/beitragen?typ=brauerei">${window.t("contrib.type.brewery")} →</a></div>`);
+    parts.push(`<div class="sugg-empty">${window.t("map.geocode.empty")} <br><br><a href="/beitragen?typ=ort">${window.t("contrib.type.brewery")} →</a></div>`);
   }
   suggestEl.innerHTML = parts.join("");
   suggestEl.classList.add("visible");
