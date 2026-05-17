@@ -763,6 +763,10 @@
           <input id="edit-name" type="text" maxlength="200" />
         </div>
         <div class="field" style="margin:0">
+          <label data-i18n="admin.fieldShortName">Kurzname</label>
+          <input id="edit-short" type="text" maxlength="100" />
+        </div>
+        <div class="field" style="margin:0">
           <label data-i18n="admin.editCity">Stadt</label>
           <input id="edit-city" type="text" maxlength="100" />
         </div>
@@ -1406,6 +1410,7 @@ async function loadBreweriesTable() {
           data-website="${(b.website || "").replace(/"/g, "&quot;")}"
           data-description="${(b.description?.de || "").replace(/"/g, "&quot;")}"
           data-description-en="${(b.description?.en || "").replace(/"/g, "&quot;")}"
+          data-short="${(b.short || "").replace(/"/g, "&quot;")}"
           data-styles="${(b.styles || []).join(",")}"
           data-photo-key="${b.photoKey || ""}">
         <td><a href="/ort?id=${b.id}" target="_blank">${b.name}</a></td>
@@ -1461,6 +1466,7 @@ let pendingEdit = null;
 async function openEditDialog(id, rowEl) {
   pendingEdit = { id, rowEl };
   document.getElementById("edit-name").value          = rowEl.dataset.name || "";
+  document.getElementById("edit-short").value         = rowEl.dataset.short || "";
   document.getElementById("edit-city").value          = rowEl.dataset.city || "";
   document.getElementById("edit-country").value       = rowEl.dataset.country || "DE";
   document.getElementById("edit-type").value          = rowEl.dataset.type || "hausbrauerei";
@@ -1519,9 +1525,12 @@ async function openEditDialog(id, rowEl) {
     photoMsg.textContent = "";
   }
   function getEditInitials() {
-    const nm = document.getElementById("edit-name").value.trim() || "?";
-    const w = nm.split(/\s+/);
-    return (w.length >= 2 ? w[0][0] + w[1][0] : nm.slice(0, 2)).toUpperCase();
+    const short = document.getElementById("edit-short")?.value.trim();
+    const nm = short || document.getElementById("edit-name").value.trim();
+    if (!nm) return "?";
+    const words = nm.match(/\p{L}+/gu) || [];
+    if (words.length === 0) return "?";
+    return (words.length >= 2 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
   }
 
   initPhotoPrev(rowEl.dataset.photoKey);
@@ -1571,6 +1580,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const t = window.t;
   const msg = document.getElementById("edit-msg");
   const name           = document.getElementById("edit-name").value.trim();
+  const short          = document.getElementById("edit-short").value.trim() || null;
   const city           = document.getElementById("edit-city").value.trim();
   const country        = document.getElementById("edit-country").value.trim() || "DE";
   const type           = document.getElementById("edit-type").value;
@@ -1589,7 +1599,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   msg.style.display = "none";
   try {
     const patch = {
-      name, city, country, type, status, address, maps_url: mapsUrl,
+      name, short, city, country, type, status, address, maps_url: mapsUrl,
       lat: latRaw !== "" ? parseFloat(latRaw) : undefined,
       lng: lngRaw !== "" ? parseFloat(lngRaw) : undefined,
       founded: foundedRaw !== "" ? parseInt(foundedRaw, 10) : null,
@@ -1603,6 +1613,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     const row = pendingEdit.rowEl;
     row.dataset.id             = effectiveId;
     row.dataset.name           = name;
+    row.dataset.short          = short || "";
     row.dataset.city           = city;
     row.dataset.country        = country;
     row.dataset.type           = type;
