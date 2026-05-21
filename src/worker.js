@@ -231,6 +231,16 @@ export default {
       return Response.redirect(dest.toString(), 301);
     }
 
+    // /ort?id=... — SSR: title + meta tags mit echten Brauerei-Daten befüllen
+    if (url.pathname === "/ort" && request.method === "GET" && env.ASSETS && env.DB) {
+      try {
+        return await R.serveOrt(request, env);
+      } catch (e) {
+        console.error("[worker] serveOrt threw:", e?.stack || e);
+        // Fallback: statische Datei ohne SSR ausliefern
+      }
+    }
+
     // Impressum: SSI-Block muss VOR dem PAGES-Block liegen, damit serveImpressum() greift
     if (url.pathname === "/impressum" && request.method === "GET" && env.ASSETS) {
       try {
