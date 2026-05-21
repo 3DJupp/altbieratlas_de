@@ -1802,6 +1802,117 @@ export async function adminUpdateSettings(req, env) {
 // GET /impressum.html
 // Liefert die statische Seite, ergänzt um ein serverseitig eingebettetes
 // <script>-Block mit den Impressum-Daten. D1 hat Vorrang vor SITE_CONFIG.
+// GET /ort?id=... — SSR: title + meta tags mit echten Brauerei-Daten befüllen,
+// damit Google und andere Crawler den richtigen Seitentitel sehen (nicht "Ort"
+// oder den rohen i18n-Key "title.location").
+export async function serveOrt(req, env) {
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+
+  // Ohne ID: statische Datei direkt ausliefern (kein SSR nötig)
+  if (!id) {
+    const assetUrl = new URL(req.url);
+    assetUrl.pathname = "/ort.html";
+    return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  }
+
+  // Brauerei aus D1 laden
+  let row;
+  try {
+    row = await env.DB.prepare(
+      "SELECT id, name, city, country, type, description_de, description_en, lat, lng, address, website FROM breweries WHERE id = ? AND status = 'approved'"
+    ).bind(id).first();
+  } catch { /* D1 nicht verfügbar — Fallback auf statische Datei */ }
+
+  // Brauerei nicht gefunden oder DB-Fehler: statische Datei ausliefern
+  if (!row) {
+    const assetUrl = new URL(req.url);
+    assetUrl.pathname = "/ort.html";
+    return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  }
+
+  const assetUrl = new URL(req.url);
+  assetUrl.pathname = "/ort.html";
+  const assetRes = await env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  if (!assetRes.ok) return assetRes;
+
+  const pageUrl = `https://altbieratlas.de/ort?id=${row.id}`;
+  const title = `${row.name} · Altbieratlas`;
+  const desc = (row.description_de || row.description_en || "")
+    .slice(0, 155).replace(/\s+\S*$/, "").trim();
+  const metaDesc = desc
+    ? desc + "…"
+    : `${row.name} — Altbier in ${row.city} im Altbieratlas.`;
+
+  const ld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": row.name,
+    "url": pageUrl,
+    ...(row.address ? { "address": { "@type": "PostalAddress", "streetAddress": row.address, "addressLocality": row.city, "addressCountry": row.country || "DE" } } : {}),
+    ...(row.lat && row.lng ? { "geo": { "@type": "GeoCoordinates", "latitude": row.lat, "longitude": row.lng } } : {}),
+    ...(row.website ? { "sameAs": row.website } : {}),
+  });
+
+  let html = await assetRes.text();
+
+  // <title>
+  html = html.replace(
+    /<title>[^<]*<\/title>/,
+    `<title>${escHtml(title)}</title>`,
+  );
+  // meta description
+  html = html.replace(
+    /(<meta name="description" content=")[^"]*(")/,
+    `$1${escHtml(metaDesc)}$2`,
+  );
+  // canonical
+  html = html.replace(
+    /(<link rel="canonical" href=")[^"]*(" id="meta-canonical")/,
+    `$1${escHtml(pageUrl)}$2`,
+  );
+  // og:title
+  html = html.replace(
+    /(<meta property="og:title" content=")[^"]*(" id="meta-og-title")/,
+    `$1${escHtml(title)}$2`,
+  );
+  // og:description
+  html = html.replace(
+    /(<meta property="og:description" content=")[^"]*(" id="meta-og-desc")/,
+    `$1${escHtml(metaDesc)}$2`,
+  );
+  // og:url
+  html = html.replace(
+    /(<meta property="og:url" content=")[^"]*(" id="meta-og-url")/,
+    `$1${escHtml(pageUrl)}$2`,
+  );
+  // twitter:title
+  html = html.replace(
+    /(<meta name="twitter:title" content=")[^"]*(" id="meta-tw-title")/,
+    `$1${escHtml(title)}$2`,
+  );
+  // twitter:description
+  html = html.replace(
+    /(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/,
+    `$1${escHtml(metaDesc)}$2`,
+  );
+  // JSON-LD vor </head> einfügen
+  html = html.replace(
+    "</head>",
+    `<script type="application/ld+json">${ld}</script>\n</head>`,
+  );
+
+  const headers = new Headers(assetRes.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+
+  return new Response(html, { status: 200, headers });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export async function serveImpressum(req, env) {
   const assetRes = await env.ASSETS.fetch(req);
   if (!assetRes.ok) return assetRes;
