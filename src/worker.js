@@ -252,6 +252,16 @@ export default {
       }
     }
 
+    // /event?id=... — SSR: title + meta tags mit echten Event-Daten befüllen
+    if (url.pathname === "/event" && request.method === "GET" && env.ASSETS && env.DB) {
+      try {
+        return await R.serveEvent(request, env);
+      } catch (e) {
+        console.error("[worker] serveEvent threw:", e?.stack || e);
+        // Fallback: statische Datei ohne SSR ausliefern
+      }
+    }
+
     // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
     // impressum ausgenommen — wird oben mit SSI bedient
     // brauerei ausgenommen — wird oben auf /ort weitergeleitet
