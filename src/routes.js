@@ -356,6 +356,82 @@ export async function eventIcs(req, env, { id }) {
   return icsResponse([buildVEvent(e, base, lang)], calName, `${id}.ics`);
 }
 
+// GET /api/events/feed.xml  — Atom-Feed für alle kommenden Events (DE + EN)
+export async function eventsAtom(req, env) {
+  const url  = new URL(req.url);
+  const lang = url.searchParams.get("lang") === "en" ? "en" : "de";
+  const base = `${url.protocol}//${url.host}`;
+  const res = await env.DB.prepare(
+    `SELECT e.*, b.name AS brewery_name
+     FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+     WHERE e.status = 'approved' AND e.date >= date('now', '-7 days')
+     ORDER BY e.date ASC, e.time ASC
+     LIMIT 50`
+  ).all();
+  const events = res.results;
+
+  const updated = events.length
+    ? new Date(events[0].date).toISOString()
+    : new Date().toISOString();
+
+  const isDE = lang === "de";
+  const feedTitle  = isDE ? "Altbieratlas – Termine" : "Altbieratlas – Events";
+  const feedSub    = isDE
+    ? "Kommende Altbier-Veranstaltungen"
+    : "Upcoming Altbier events";
+
+  function xmlEsc(s) {
+    if (!s) return "";
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  const entries = events.map((e) => {
+    const title  = xmlEsc((isDE ? e.title_de : e.title_en) || e.title_de || e.title_en || "");
+    const desc   = xmlEsc((isDE ? e.description_de : e.description_en) || e.description_de || e.description_en || "");
+    const link   = `${base}/event?id=${encodeURIComponent(e.id)}`;
+    const dateTs = new Date(e.date).toISOString();
+    const where  = e.location || (e.brewery_name ? xmlEsc(e.brewery_name) : "");
+    const summary = [
+      e.date,
+      e.time ? ` · ${e.time}` : "",
+      where ? ` · ${where}` : "",
+      desc ? `\n${desc}` : "",
+    ].join("");
+
+    return `  <entry>
+    <id>${xmlEsc(link)}</id>
+    <title>${title}</title>
+    <link href="${xmlEsc(link)}" />
+    <updated>${dateTs}</updated>
+    <summary>${xmlEsc(summary)}</summary>
+  </entry>`;
+  }).join("\n");
+
+  const atom = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>${base}/api/events/feed.xml</id>
+  <title>${xmlEsc(feedTitle)}</title>
+  <subtitle>${xmlEsc(feedSub)}</subtitle>
+  <link href="${base}/api/events/feed.xml?lang=${lang}" rel="self" />
+  <link href="${base}/" />
+  <updated>${updated}</updated>
+  <author><name>Altbieratlas</name><uri>${base}/</uri></author>
+${entries}
+</feed>`;
+
+  return new Response(atom, {
+    status: 200,
+    headers: {
+      "content-type": "application/atom+xml; charset=utf-8",
+      "cache-control": "public, max-age=900",
+    },
+  });
+}
+
 // GET /api/venue-types
 export async function listVenueTypes(req, env) {
   const res = await env.DB.prepare("SELECT * FROM venue_types ORDER BY id").all();

@@ -53,6 +53,7 @@ const ROUTES = [
   ["POST",   "/api/prices",                                R.postPrice],
   ["GET",    "/api/events",                                R.listEvents],
   ["GET",    "/api/events/calendar.ics",                  R.eventsIcs],
+  ["GET",    "/api/events/feed.xml",                      R.eventsAtom],
   ["GET",    "/api/events/:id/calendar.ics",              R.eventIcs],
   ["GET",    "/api/events/:id",                           R.getEvent],
   ["GET",    "/api/venue-types",                            R.listVenueTypes],
