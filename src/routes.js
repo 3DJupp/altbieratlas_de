@@ -1913,6 +1913,104 @@ function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+export async function serveEvent(req, env) {
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+
+  if (!id) {
+    const assetUrl = new URL(req.url);
+    assetUrl.pathname = "/event.html";
+    return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  }
+
+  let row;
+  try {
+    row = await env.DB.prepare(
+      `SELECT e.id, e.title_de, e.title_en, e.date, e.time, e.end_date, e.end_time,
+              e.location, e.url, e.description_de, e.description_en,
+              b.name AS brewery_name, b.city AS brewery_city
+       FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+       WHERE e.id = ? AND e.status = 'approved'`
+    ).bind(id).first();
+  } catch { /* D1 nicht verfügbar */ }
+
+  if (!row) {
+    const assetUrl = new URL(req.url);
+    assetUrl.pathname = "/event.html";
+    return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  }
+
+  const assetUrl = new URL(req.url);
+  assetUrl.pathname = "/event.html";
+  const assetRes = await env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  if (!assetRes.ok) return assetRes;
+
+  const pageUrl = `https://altbieratlas.de/event?id=${row.id}`;
+  const titleDe = row.title_de || row.title_en || "Event";
+  const title = `${titleDe} · Altbieratlas`;
+  const rawDesc = row.description_de || row.description_en || "";
+  const metaDesc = rawDesc
+    ? (rawDesc.length > 155 ? rawDesc.slice(0, 155).replace(/\s+\S*$/, "") + "…" : rawDesc)
+    : `${titleDe} — Altbier-Event im Altbieratlas.`;
+
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": titleDe,
+    "url": pageUrl,
+    "startDate": row.date + (row.time ? ("T" + row.time) : ""),
+    "eventStatus": "https://schema.org/EventScheduled",
+    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  };
+  if (row.end_date) ld.endDate = row.end_date + (row.end_time ? ("T" + row.end_time) : "");
+  const locName = row.brewery_name
+    ? row.brewery_name + (row.brewery_city ? ", " + row.brewery_city : "")
+    : row.location;
+  if (locName) ld.location = { "@type": "Place", "name": locName };
+
+  let html = await assetRes.text();
+
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${escHtml(title)}</title>`);
+  html = html.replace(
+    /(<meta name="description" content=")[^"]*(")/,
+    `$1${escHtml(metaDesc)}$2`,
+  );
+  html = html.replace(
+    /(<link rel="canonical" href=")[^"]*(" id="meta-canonical")/,
+    `$1${escHtml(pageUrl)}$2`,
+  );
+  html = html.replace(
+    /(<meta property="og:title" content=")[^"]*(" id="meta-og-title")/,
+    `$1${escHtml(title)}$2`,
+  );
+  html = html.replace(
+    /(<meta property="og:description" content=")[^"]*(" id="meta-og-desc")/,
+    `$1${escHtml(metaDesc)}$2`,
+  );
+  html = html.replace(
+    /(<meta property="og:url" content=")[^"]*(" id="meta-og-url")/,
+    `$1${escHtml(pageUrl)}$2`,
+  );
+  html = html.replace(
+    /(<meta name="twitter:title" content=")[^"]*(" id="meta-tw-title")/,
+    `$1${escHtml(title)}$2`,
+  );
+  html = html.replace(
+    /(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/,
+    `$1${escHtml(metaDesc)}$2`,
+  );
+  html = html.replace(
+    "</head>",
+    `<script type="application/ld+json">${JSON.stringify(ld)}</script>\n</head>`,
+  );
+
+  const headers = new Headers(assetRes.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+
+  return new Response(html, { status: 200, headers });
+}
+
 export async function serveImpressum(req, env) {
   const assetRes = await env.ASSETS.fetch(req);
   if (!assetRes.ok) return assetRes;
