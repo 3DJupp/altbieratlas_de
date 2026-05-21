@@ -103,7 +103,7 @@
           id: c.id,
           name: c.data.name,
           short: c.data.name,
-          type: c.data.type || "hausbrauerei",
+          type: c.data.type || "brewpub",
           city: c.data.city || "",
           country: c.data.country || "DE",
           address: c.data.address || "",
