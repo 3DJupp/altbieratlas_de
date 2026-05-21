@@ -281,7 +281,7 @@
                 <label data-i18n="admin.editType">Typ *</label>
                 <select name="type" required id="add-brewery-type-select">
                   <option value="">— wählen —</option>
-                  <option value="hausbrauerei">Hausbrauerei</option>
+                  <option value="brewpub">Hausbrauerei</option>
                   <option value="gastronomie">Gastronomie</option>
                   <option value="handel">Handel</option>
                 </select>
@@ -1469,7 +1469,7 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-short").value         = rowEl.dataset.short || "";
   document.getElementById("edit-city").value          = rowEl.dataset.city || "";
   document.getElementById("edit-country").value       = rowEl.dataset.country || "DE";
-  document.getElementById("edit-type").value          = rowEl.dataset.type || "hausbrauerei";
+  document.getElementById("edit-type").value          = rowEl.dataset.type || "brewpub";
   document.getElementById("edit-status").value        = rowEl.dataset.status || "pending";
   document.getElementById("edit-address").value       = rowEl.dataset.address || "";
   document.getElementById("edit-maps-url").value      = rowEl.dataset.mapsUrl || "";

@@ -14,7 +14,6 @@
 INSERT OR IGNORE INTO venue_types (id, name_de, name_en, header_de, header_en, is_producer) VALUES
   ('brewery',        'Brauerei',      'Brewery',         'Was hier gebraut wird',                 'What is brewed here',            1),
   ('brewpub',        'Hausbrauerei',  'Brewpub',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here', 1),
-  ('hausbrauerei',   'Hausbrauerei',  'Brewery',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here', 1),
   ('gastronomie',    'Gastronomie',   'Bar / Restaurant','Was hier ausgeschenkt wird',             'What is served here',            0),
   ('pub',            'Kneipe',        'Pub',             'Was hier ausgeschenkt wird',             'What is served here',            0),
   ('restaurant',     'Restaurant',    'Restaurant',      'Was hier ausgeschenkt wird',             'What is served here',            0),
