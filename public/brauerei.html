@@ -9,6 +9,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#b57a3a" />
 <title>Brauerei · Altbieratlas</title>
+<link rel="alternate" type="application/atom+xml" title="Altbieratlas – Termine" href="/api/events/feed.xml" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -306,6 +307,7 @@ const root = document.getElementById("brewery-root");
 
       <div class="action-bar">
         <a class="btn" href="/beitragen?typ=korrektur&brauerei=${b.id}" data-i18n="brewery.reportIssue">Korrektur einreichen</a>
+        <button class="btn btn-ghost" id="share-btn" type="button" data-i18n="brewery.share">Teilen</button>
         <a class="btn btn-ghost" href="/" data-i18n="common.back">Zurück</a>
       </div>
     </section>
@@ -476,6 +478,41 @@ const root = document.getElementById("brewery-root");
         </div>`;
     })
     .catch(() => {});
+
+  // Share-Button
+  const shareBtn = document.getElementById('share-btn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      const shareUrl  = location.href;
+      const shareText = `${b.name} — ${window.t('brewery.shareTitle')}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: shareText, url: shareUrl });
+          return;
+        } catch { /* aborted or not supported */ }
+      }
+      // Fallback: URL in Clipboard kopieren
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      const orig = shareBtn.textContent;
+      shareBtn.textContent = window.t('brewery.shareCopied');
+      shareBtn.disabled = true;
+      setTimeout(() => {
+        shareBtn.textContent = orig;
+        shareBtn.disabled = false;
+      }, 2000);
+    });
+  }
 })();
 </script>
 </body>
