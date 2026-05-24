@@ -60,6 +60,8 @@ const ROUTES = [
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],
   ["POST",   "/api/contributions",                         R.postContribution],
+  // --- OG-Image ---
+  ["GET",    "/api/og/ort",                                R.serveOgBrewery],
   // --- Untappd ---
   ["GET",    "/api/untappd/brewery/:id",                   R.getUntappdBrewery],
   // --- Admin ---

@@ -1,6 +1,7 @@
 // ============================================================
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
+import { generateOgImage } from "./og.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
@@ -1913,6 +1914,7 @@ export async function serveOrt(req, env) {
   if (!assetRes.ok) return assetRes;
 
   const pageUrl = `https://altbieratlas.de/ort?id=${row.id}`;
+  const ogImageUrl = `https://altbieratlas.de/api/og/ort?id=${row.id}`;
   const title = `${row.name} · Altbieratlas`;
   const desc = (row.description_de || row.description_en || "")
     .slice(0, 155).replace(/\s+\S*$/, "").trim();
@@ -1972,6 +1974,15 @@ export async function serveOrt(req, env) {
     /(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/,
     `$1${escHtml(metaDesc)}$2`,
   );
+  // og:image + twitter:image dynamisch
+  html = html.replace(
+    /(<meta property="og:image" content=")[^"]*(")/,
+    `$1${escHtml(ogImageUrl)}$2`,
+  );
+  html = html.replace(
+    /(<meta name="twitter:image" content=")[^"]*(")/,
+    `$1${escHtml(ogImageUrl)}$2`,
+  );
   // JSON-LD vor </head> einfügen
   html = html.replace(
     "</head>",
@@ -1987,6 +1998,60 @@ export async function serveOrt(req, env) {
 
 function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// GET /api/og/ort?id=<brewery_id>
+// Liefert ein dynamisch generiertes 1200×630-PNG als og:image
+export async function serveOgBrewery(req, env) {
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+  if (!id) return new Response("missing id", { status: 400 });
+
+  // Aus D1 holen
+  let row;
+  try {
+    row = await env.DB.prepare(
+      "SELECT id, name, city, type FROM breweries WHERE id = ? AND status = 'approved'"
+    ).bind(id).first();
+  } catch { /* DB-Fehler → 404 */ }
+
+  if (!row) return new Response("not found", { status: 404 });
+
+  // Preise: Durchschnitt pro Größe, absteigend nach Anzahl der Einträge
+  let prices = [];
+  try {
+    const res = await env.DB.prepare(
+      `SELECT size, AVG(price) AS avg_price, COUNT(*) AS n
+       FROM prices WHERE brewery_id = ? AND status = 'approved'
+       GROUP BY size ORDER BY n DESC, size ASC LIMIT 5`
+    ).bind(id).all();
+    prices = res.results || [];
+  } catch { /* ignorieren — Bild wird ohne Preis gerendert */ }
+
+  let png;
+  try {
+    png = await generateOgImage({
+      name:   row.name,
+      city:   row.city,
+      type:   row.type,
+      prices,
+    });
+  } catch (e) {
+    console.error("[og] generateOgImage failed:", e?.message);
+    // Fallback: statisches Bild weiterleiten
+    return Response.redirect(
+      new URL("/og-image.png", url.origin).toString(), 302
+    );
+  }
+
+  return new Response(png, {
+    status: 200,
+    headers: {
+      "content-type":  "image/png",
+      "cache-control": "public, max-age=3600, stale-while-revalidate=86400",
+      "x-og-brewery":  row.id,
+    },
+  });
 }
 
 export async function serveEvent(req, env) {
