@@ -130,10 +130,10 @@ export async function generateOgImage({ name, city, type, prices }) {
   const subtitle = [
     truncate(city, 28),
     typeLabel,
-  ].filter(Boolean).join("  ·  ");
+  ].filter(Boolean).join("  -  ");
 
   const priceText = price
-    ? `${formatSize(price.size)}  ·  ${formatPrice(price.avg_price)}`
+    ? `${formatSize(price.size)}  -  ${formatPrice(price.avg_price)}`
     : null;
 
   const vdom = {
@@ -201,7 +201,7 @@ export async function generateOgImage({ name, city, type, prices }) {
                         children: truncate(name.toUpperCase(), 40),
                       },
                     },
-                    // Stadt · Typ
+                    // Stadt - Typ
                     {
                       type: "div",
                       props: {
