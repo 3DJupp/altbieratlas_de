@@ -76,6 +76,16 @@ function truncate(text, maxLen) {
   return text.slice(0, maxLen).replace(/\s+\S*$/, "") + "...";
 }
 
+// Deutsche Umlaute und ß in ASCII-sichere Schreibweise umwandeln,
+// da satori/resvg im Worker-Kontext diese Glyphen aus PressStart2P
+// nicht immer korrekt auflöst.
+function deUmlaut(text) {
+  return String(text || "")
+    .replace(/Ä/g, "AE").replace(/Ö/g, "OE").replace(/Ü/g, "UE")
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue")
+    .replace(/ß/g, "ss");
+}
+
 // Satori-VDOM: Bierglas (vereinfacht, passend zum statischen Bild)
 function glassEl() {
   return {
@@ -127,8 +137,11 @@ export async function generateOgImage({ name, city, type, prices }) {
   const typeLabel = TYPE_LABELS[type] || type || "";
   const price     = bestPrice(prices);
 
+  const safeCity = deUmlaut(city);
+  const safeName = deUmlaut(name);
+
   const subtitle = [
-    truncate(city, 28),
+    truncate(safeCity, 28),
     typeLabel,
   ].filter(Boolean).join("  -  ");
 
@@ -193,12 +206,12 @@ export async function generateOgImage({ name, city, type, prices }) {
                       type: "div",
                       props: {
                         style: {
-                          fontSize:      name.length > 22 ? "34px" : "42px",
+                          fontSize:      safeName.length > 22 ? "34px" : "42px",
                           color:         C.text,
                           lineHeight:    "1.4",
                           letterSpacing: "1px",
                         },
-                        children: truncate(name.toUpperCase(), 40),
+                        children: truncate(safeName.toUpperCase(), 40),
                       },
                     },
                     // Stadt - Typ
