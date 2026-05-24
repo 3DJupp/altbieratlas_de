@@ -73,7 +73,7 @@ function formatPrice(p) {
 // Kürzt Text auf maxLen Zeichen (Wortgrenze), hängt … an
 function truncate(text, maxLen) {
   if (!text || text.length <= maxLen) return text || "";
-  return text.slice(0, maxLen).replace(/\s+\S*$/, "") + "…";
+  return text.slice(0, maxLen).replace(/\s+\S*$/, "") + "...";
 }
 
 // Satori-VDOM: Bierglas (vereinfacht, passend zum statischen Bild)
@@ -133,7 +133,7 @@ export async function generateOgImage({ name, city, type, prices }) {
   ].filter(Boolean).join("  ·  ");
 
   const priceText = price
-    ? `${formatSize(price.size)}  ·  ∅ ${formatPrice(price.avg_price)}`
+    ? `${formatSize(price.size)}  ·  ${formatPrice(price.avg_price)}`
     : null;
 
   const vdom = {
