@@ -20,6 +20,12 @@ main = "src/worker.js"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Binäre Assets: TTF-Font für OG-Image-Generator
+[[rules]]
+type = "Data"
+globs = ["**/*.ttf"]
+fallthrough = true
+
 # Alle im Dashboard gesetzten Variablen und Secrets bleiben bei
 # jedem Deploy erhalten. Ohne dieses Flag würde `wrangler deploy`
 # sie mit dem (hier absichtlich leeren) Datei-Zustand überschreiben.
