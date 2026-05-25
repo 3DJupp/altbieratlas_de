@@ -199,7 +199,7 @@ export default {
 
     // /<page>.html → /<page>  (301, kanonische Clean URLs)
     // /index.html  → /
-    const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "impressum", "admin", "ort", "brauerei", "event"];
+    const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "impressum", "admin", "ort", "brauerei", "event"];
     if (request.method === "GET" && url.pathname.endsWith(".html")) {
       const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
       if (name === "index") {
@@ -268,7 +268,7 @@ export default {
     // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
     // impressum ausgenommen — wird oben mit SSI bedient
     // brauerei ausgenommen — wird oben auf /ort weitergeleitet
-    const PAGES = ["ranglisten", "wissen", "beitragen", "admin", "ort", "event"];
+    const PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "admin", "ort", "event"];
     if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
       const bare = url.pathname.replace(/\/$/, "");
       const name = bare.slice(1); // strip leading /
