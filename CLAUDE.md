@@ -110,3 +110,10 @@ All transactional mail (contribution confirmations, password-reset, daily admin 
 - Prioritäten: `/` = 1.0, Inhaltsseiten = 0.7, Rechtliches (`/impressum`) = 0.3
 - Nicht in die Sitemap: `/admin`, dynamische Detail-URLs (werden separat über DB-Queries generiert)
 - Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/rivalen`, `/beitragen`, `/impressum`
+
+**Sitemap-Datum (`PAGE_DATES` in `sitemap()`)**: Jede statische Seite hat ein eigenes `lastmod`-Datum in der `PAGE_DATES`-Map. Dieses Datum **muss** aktualisiert werden, wenn:
+- Eine `public/*.html`-Seite inhaltlich geändert wird → zugehöriges Datum auf aktuellen Tag setzen
+- Globale Änderungen alle Seiten betreffen (z.B. neue Nav-Links in `shell.js`, neue i18n-Keys, CSS-Redesign) → alle betroffenen Seiten-Daten aktualisieren
+- Reine Bugfixes ohne Inhaltsänderung (Tippfehler, Syntax) müssen das Datum **nicht** ändern
+
+`/` und `/ranglisten` bekommen automatisch das neuere von `PAGE_DATES`-Datum und dem DB-`lastMod` (letztes Brauerei-Update), da sie datengetrieben sind.

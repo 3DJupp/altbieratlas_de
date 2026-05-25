@@ -1782,6 +1782,18 @@ export async function sitemap(req, env) {
                               .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
                               .replace(/'/g, "&apos;");
   const staticPaths = ["/", "/ranglisten", "/wissen", "/rivalen", "/beitragen", "/impressum"];
+
+  // Letztes inhaltliches Änderungsdatum pro Seite.
+  // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
+  // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuер.
+  const PAGE_DATES = {
+    "/":           "2026-05-25",
+    "/ranglisten": "2026-05-25",
+    "/wissen":     "2026-05-24",
+    "/rivalen":    "2026-05-25",
+    "/beitragen":  "2026-05-24",
+    "/impressum":  "2026-05-13",
+  };
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
@@ -1802,13 +1814,22 @@ export async function sitemap(req, env) {
   } catch { /* keine DB → nur statische Seiten */ }
 
   const entries = [
-    ...staticPaths.map((p) => `
+    ...staticPaths.map((p) => {
+      const pageDate = PAGE_DATES[p] || today;
+      // Datengetriebene Seiten: aktuelleres von PAGE_DATE und DB-lastMod verwenden
+      const dbDate = lastMod ? lastMod.slice(0, 10) : null;
+      const useDate = (p === "/" || p === "/ranglisten") && dbDate && dbDate > pageDate
+        ? dbDate
+        : pageDate;
+      const priority = p === "/" ? "1.0" : p === "/impressum" ? "0.3" : "0.7";
+      return `
   <url>
     <loc>${esc(base + p)}</loc>
-    <lastmod>${lastMod ? lastMod.slice(0, 10) : today}</lastmod>
+    <lastmod>${useDate}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>${p === "/" ? "1.0" : p === "/impressum" ? "0.3" : "0.7"}</priority>
-  </url>`),
+    <priority>${priority}</priority>
+  </url>`;
+    }),
     ...breweryIds.map((b) => `
   <url>
     <loc>${esc(base + "/ort?id=" + b.id)}</loc>
