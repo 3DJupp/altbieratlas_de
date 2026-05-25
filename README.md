@@ -10,10 +10,12 @@ altbieratlas/
 │   └── utils.js             # PBKDF2, Turnstile, Rate-Limit, E-Mail
 ├── public/
 │   ├── index.html           # Landing + Karte (Leaflet)
-│   ├── brauerei.html        # Brauerei-Detail + Preisverlauf + Untappd
-│   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
+│   ├── ort.html             # Ort-Detail + Preisverlauf + Untappd
+│   ├── event.html           # Event-Detail
 │   ├── ranglisten.html      # Preis-Ranglisten
 │   ├── wissen.html          # Glossar & Hintergrund
+│   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
+│   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
 │   ├── impressum.html       # Impressum & Datenschutz
 │   ├── admin.html           # Moderations-Dashboard
 │   ├── api-client.js        # Einheitliche API-Schnittstelle (live / mock)
@@ -236,6 +238,13 @@ Fünf Einreichungstypen mit Moderation:
 
 ### Altbier-Wissen
 - Glossar (aus D1), Hintergrundtexte, Stilkunde
+
+### Das Rheinderby (`/rivalen`)
+- Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz
+- Hebt überraschende Gemeinsamkeiten hervor (beide obergärig, beide Köbes, beide 0,2 l)
+- Prosa-Abschnitt zur Rivalität (Kölschkonvention 1986, g.g.A.-Geschichte)
+- Lokale Abstimmung „Team Alt vs. Team Kölsch" (localStorage, kein Tracking)
+- Vollständig DE/EN übersetzt
 
 ### Mehrsprachigkeit & UX
 - DE / EN vollständig via `i18n.js`

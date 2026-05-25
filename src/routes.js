@@ -1781,7 +1781,7 @@ export async function sitemap(req, env) {
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
                               .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
                               .replace(/'/g, "&apos;");
-  const staticPaths = ["/", "/ranglisten", "/wissen", "/beitragen"];
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/rivalen", "/beitragen", "/impressum"];
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
@@ -1807,7 +1807,7 @@ export async function sitemap(req, env) {
     <loc>${esc(base + p)}</loc>
     <lastmod>${lastMod ? lastMod.slice(0, 10) : today}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>${p === "/" ? "1.0" : "0.7"}</priority>
+    <priority>${p === "/" ? "1.0" : p === "/impressum" ? "0.3" : "0.7"}</priority>
   </url>`),
     ...breweryIds.map((b) => `
   <url>

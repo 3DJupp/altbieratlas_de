@@ -97,6 +97,16 @@ Für Live-Upgrades bestehender Instanzen: Upgrade-SQL direkt in der D1-Dashboard
 
 All transactional mail (contribution confirmations, password-reset, daily admin digest) goes through [Resend](https://resend.com) via the `RESEND_API_KEY` secret. The daily digest is triggered by a Cloudflare Cron at `0 7 * * *` (07:00 UTC).
 
-### README-Pflege
+### README- und Sitemap-Pflege
 
-`README.md` muss immer aktuell gehalten werden — bei jeder inhaltlichen Änderung (neue Features, geänderte Konfiguration, neue API-Endpunkte, Versions-Bump) direkt mitpflegen.
+**README.md** muss bei jeder inhaltlichen Änderung direkt mitgepflegt werden:
+- Neue Seite in `public/` → Dateibaum aktualisieren
+- Neues Feature → Abschnitt unter „Features" ergänzen
+- Neuer API-Endpunkt → Tabelle in „API-Endpunkte" ergänzen
+- Versions-Bump → Heading `# Altbieratlas · vX.Y.Z` aktualisieren
+
+**Sitemap** (`src/routes.js`, `staticPaths`-Array in der `sitemap()`-Funktion) muss bei jeder neuen öffentlichen Seite aktualisiert werden:
+- Neue Seite in `public/` → URL zur `staticPaths`-Liste hinzufügen
+- Prioritäten: `/` = 1.0, Inhaltsseiten = 0.7, Rechtliches (`/impressum`) = 0.3
+- Nicht in die Sitemap: `/admin`, dynamische Detail-URLs (werden separat über DB-Queries generiert)
+- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/rivalen`, `/beitragen`, `/impressum`
