@@ -17,6 +17,7 @@ window.renderShell = function ({ activeNav }) {
           <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
           <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
           <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
+          <a href="/rivalen" class="${activeNav === "rivals" ? "active" : ""}" data-i18n="nav.rivals">Rivalen</a>
           <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
         </nav>
         <div class="header-controls">
@@ -31,6 +32,7 @@ window.renderShell = function ({ activeNav }) {
         <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
         <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
         <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
+        <a href="/rivalen" class="${activeNav === "rivals" ? "active" : ""}" data-i18n="nav.rivals">Rivalen</a>
         <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
       </nav>
     </header>

@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="de" data-theme="light" data-i18n-title="title.rivals">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
+<title>Das Rheinderby · Altbieratlas</title>
+<meta name="description" content="Alt gegen Kölsch: 47 km Rhein, zwei obergärige Biere, ein Streit seit Generationen. Fakten, Rivalität und eine Abstimmung." />
+<link rel="canonical" href="https://altbieratlas.de/rivalen" />
+<link rel="alternate" hreflang="de" href="https://altbieratlas.de/rivalen" />
+<link rel="alternate" hreflang="en" href="https://altbieratlas.de/rivalen?lang=en" />
+<link rel="alternate" hreflang="x-default" href="https://altbieratlas.de/rivalen" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Das Rheinderby: Alt vs. Kölsch · Altbieratlas" />
+<meta property="og:description" content="47 km Rhein, zwei obergärige Biere, ein Streit seit Generationen. Fakten, Rivalität und eine Abstimmung." />
+<meta property="og:url" content="https://altbieratlas.de/rivalen" />
+<meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Das Rheinderby: Alt vs. Kölsch · Altbieratlas" />
+<meta name="twitter:description" content="47 km Rhein, zwei obergärige Biere, ein Streit seit Generationen." />
+<meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css" />
+<style>
+/* ---- Hero ---- */
+.rivals-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); }
+.rivals-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 22ch; }
+.rivals-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 62ch; margin-top: 18px; line-height: 1.65; }
+.rivals-hero .lede em { font-style: italic; color: var(--copper); }
+.rivals-hero .distance-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em;
+  color: var(--ink-muted); margin-bottom: 20px;
+  padding: 5px 10px; border: 1px solid var(--rule); border-radius: 4px;
+}
+
+/* ---- Sub-Nav (reused from wissen) ---- */
+.rivals-nav {
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
+  z-index: 50;
+}
+.rivals-nav.is-stuck { position: fixed; top: 0; left: 0; right: 0; }
+.rivals-nav-top {
+  display: none; margin-left: auto; flex-shrink: 0;
+  padding: 8px 14px; font-size: 13px;
+  font-family: var(--font-ui); color: var(--ink-muted);
+  background: transparent; border: none; cursor: pointer;
+  white-space: nowrap; transition: color .15s;
+}
+.rivals-nav-top:hover { color: var(--ink); }
+.rivals-nav.is-stuck .rivals-nav-top { display: flex; align-items: center; }
+.rivals-nav .container {
+  display: flex; gap: 4px;
+  overflow-x: auto; overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  padding-right: 24px;
+}
+.rivals-nav .container::-webkit-scrollbar { display: none; }
+.rivals-nav a {
+  border: none; padding: 14px 18px;
+  color: var(--ink-soft); font-size: 14px;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+  flex: 0 0 auto;
+}
+.rivals-nav a:hover { color: var(--ink); }
+.rivals-nav a.active { color: var(--ink); border-bottom-color: var(--copper); }
+
+/* ---- Sections ---- */
+.rivals-section { padding: 60px 0; border-bottom: 1px solid var(--rule); }
+.rivals-section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 500; max-width: 24ch; margin-bottom: 26px; }
+.rivals-section .eyebrow { margin-bottom: 8px; }
+
+/* ---- Prose (from wissen) ---- */
+.prose {
+  font-family: var(--font-display); font-size: 19px; line-height: 1.7;
+  color: var(--ink); max-width: 68ch;
+}
+.prose p { margin: 0 0 20px; }
+.prose p:first-letter {
+  font-size: 3.6em; float: left; line-height: 0.85;
+  padding: 6px 10px 0 0; color: var(--copper); font-weight: 500;
+}
+.prose p + p:first-letter { font-size: 1em; float: none; padding: 0; color: inherit; }
+.prose em { font-style: italic; color: var(--copper); }
+
+/* ---- Versus Table ---- */
+.versus-wrap {
+  margin-top: 28px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.versus-head {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  background: var(--bg-card);
+  border-bottom: 2px solid var(--rule);
+}
+.vs-head-cell {
+  padding: 24px 20px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.vs-head-cell.vs-alt { border-right: 1px solid var(--rule); }
+.vs-head-cell.vs-center {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 1.1rem; font-weight: 500;
+  color: var(--ink-muted); border-right: 1px solid var(--rule);
+}
+.vs-beer-name {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+}
+.vs-head-cell.vs-alt .vs-beer-name { color: var(--copper); }
+.vs-head-cell.vs-kolsch .vs-beer-name { color: #c89800; }
+.vs-city-name {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-muted);
+}
+.versus-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  border-top: 1px solid var(--rule);
+}
+.versus-row.vs-match {
+  background: color-mix(in srgb, var(--bg-card) 60%, transparent);
+}
+.versus-row.vs-match .vs-val { color: var(--ink-muted); }
+.vs-val {
+  padding: 14px 20px;
+  font-family: var(--font-mono); font-size: 13px;
+  display: flex; align-items: center;
+}
+.vs-val.vs-alt {
+  border-right: 1px solid var(--rule);
+  color: var(--copper); font-weight: 500;
+}
+.vs-val.vs-kolsch {
+  color: #c89800; font-weight: 500;
+}
+.vs-row-label {
+  padding: 14px 8px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ink-muted);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  border-right: 1px solid var(--rule);
+}
+.versus-row.vs-match .vs-val.vs-alt,
+.versus-row.vs-match .vs-val.vs-kolsch { color: var(--ink-soft); }
+.vs-match-badge {
+  display: inline-block; margin-left: 6px;
+  font-size: 10px; color: #2a7a2a; opacity: 0.7;
+}
+
+/* ---- Gemeinsam-Block ---- */
+.shared-facts {
+  margin-top: 20px; padding: 20px 24px;
+  background: var(--bg-card); border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+}
+.shared-facts h3 {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 14px;
+}
+.shared-list {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px 24px; list-style: none; padding: 0; margin: 0;
+}
+.shared-list li {
+  font-size: 14px; color: var(--ink-soft); display: flex; align-items: center; gap: 8px;
+}
+.shared-list li::before { content: "≡"; color: var(--copper); font-weight: 700; flex-shrink: 0; }
+
+/* ---- Fun Facts ---- */
+.funfacts-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px; margin-top: 28px;
+}
+.funfact-card {
+  background: var(--bg-card); border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: 20px 22px;
+}
+.funfact-card .ff-num {
+  font-family: var(--font-display); font-size: 36px; color: var(--copper);
+  font-weight: 500; line-height: 1; letter-spacing: -0.02em;
+}
+.funfact-card h3 {
+  font-family: var(--font-display); font-size: 1.1rem; font-weight: 500;
+  margin: 10px 0 6px;
+}
+.funfact-card p { color: var(--ink-soft); font-size: 13px; line-height: 1.6; margin: 0; }
+
+/* ---- Abstimmung ---- */
+.vote-wrap { max-width: 560px; margin-top: 28px; }
+.vote-intro { color: var(--ink-soft); font-size: 16px; line-height: 1.6; margin-bottom: 28px; max-width: 52ch; }
+.vote-buttons {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-bottom: 24px;
+}
+.vote-btn {
+  padding: 20px 16px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--rule);
+  background: var(--bg-card);
+  cursor: pointer; font-family: var(--font-display);
+  font-size: 1.1rem; font-weight: 500;
+  transition: border-color .15s, background .15s, transform .1s;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.vote-btn:hover { transform: translateY(-2px); }
+.vote-btn.vote-alt { color: var(--copper); }
+.vote-btn.vote-alt:hover { border-color: var(--copper); background: color-mix(in srgb, var(--copper) 6%, var(--bg-card)); }
+.vote-btn.vote-kolsch { color: #c89800; }
+.vote-btn.vote-kolsch:hover { border-color: #c89800; background: color-mix(in srgb, #c89800 6%, var(--bg-card)); }
+.vote-btn .vote-btn-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-muted); }
+.vote-result { padding: 24px; background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); }
+.vote-result .vr-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
+.vote-result .vr-verdict { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin-bottom: 8px; }
+.vote-result .vr-verdict.vr-alt { color: var(--copper); }
+.vote-result .vr-verdict.vr-kolsch { color: #c89800; }
+.vote-result .vr-body { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+.vote-reset { margin-top: 12px; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--font-mono); color: var(--ink-muted); text-decoration: underline; padding: 0; }
+.vote-reset:hover { color: var(--ink); }
+
+@media (max-width: 700px) {
+  .versus-head,
+  .versus-row { grid-template-columns: 1fr 56px 1fr; }
+  .vs-head-cell.vs-center { font-size: 0.9rem; padding: 12px 4px; }
+  .vs-row-label { font-size: 9px; padding: 12px 4px; }
+  .vs-val { padding: 12px 12px; font-size: 12px; }
+  .vs-head-cell { padding: 18px 12px; }
+  .funfacts-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-banner" hidden></div>
+  <div id="shell-header"></div>
+
+  <section class="rivals-hero">
+    <div class="container">
+      <div class="distance-badge">
+        <span>DUS</span>
+        <span>↔</span>
+        <span>CGN</span>
+        <span>·</span>
+        <span>47 km</span>
+      </div>
+      <div class="eyebrow" data-i18n="rivals.heroEyebrow">Das Rheinderby</div>
+      <h1 data-i18n-html="rivals.heroTitleHtml">Zwei Städte. Zwei Biere. Ein <em>Streit seit Generationen.</em></h1>
+      <p class="lede" data-i18n="rivals.heroLede">Altbier gegen Kölsch: 47 Kilometer Autobahn, weltanschauliche Abgründe in Bierfragen — aber mehr Gemeinsamkeiten, als beide Seiten zugeben wollen. Gut recherchiert, gerne provokant.</p>
+    </div>
+  </section>
+
+  <nav class="rivals-nav">
+    <div class="container">
+      <a href="#vergleich" class="active" data-i18n="rivals.nav.compare">Vergleich</a>
+      <a href="#rivalitaet" data-i18n="rivals.nav.rivalry">Rivalität</a>
+      <a href="#abstimmung" data-i18n="rivals.nav.vote">Abstimmung</a>
+      <button class="rivals-nav-top" id="rivals-nav-top" aria-label="Zum Seitenanfang">↑ Top</button>
+    </div>
+  </nav>
+
+  <!-- =================== VERGLEICH =================== -->
+  <section class="rivals-section" id="vergleich">
+    <div class="container">
+      <div class="eyebrow" data-i18n="rivals.compareEyebrow">Vergleich</div>
+      <h2 data-i18n="rivals.compareTitle">Alt vs. Kölsch — die Fakten</h2>
+
+      <div class="versus-wrap">
+        <div class="versus-head">
+          <div class="vs-head-cell vs-alt">
+            <span class="vs-beer-name">Altbier</span>
+            <span class="vs-city-name" data-i18n="rivals.altCity">Düsseldorf &amp; Niederrhein</span>
+          </div>
+          <div class="vs-head-cell vs-center">VS</div>
+          <div class="vs-head-cell vs-kolsch">
+            <span class="vs-beer-name">Kölsch</span>
+            <span class="vs-city-name" data-i18n="rivals.kolschCity">Köln &amp; Kölner Bucht</span>
+          </div>
+        </div>
+
+        <!-- Farbe -->
+        <div class="versus-row">
+          <div class="vs-val vs-alt" data-i18n="rivals.altColor">Bernstein-dunkel</div>
+          <div class="vs-row-label" data-i18n="rivals.rowColor">Farbe</div>
+          <div class="vs-val vs-kolsch" data-i18n="rivals.kolschColor">Strohgelb</div>
+        </div>
+        <!-- Gärung — SAME -->
+        <div class="versus-row vs-match">
+          <div class="vs-val vs-alt"><span data-i18n="rivals.fermentation">Obergärig, kalt nachgereift</span><span class="vs-match-badge">≡</span></div>
+          <div class="vs-row-label" data-i18n="rivals.rowFerm">Gärung</div>
+          <div class="vs-val vs-kolsch"><span data-i18n="rivals.fermentation">Obergärig, kalt nachgereift</span><span class="vs-match-badge">≡</span></div>
+        </div>
+        <!-- ABV -->
+        <div class="versus-row">
+          <div class="vs-val vs-alt">4,5–5,0 %</div>
+          <div class="vs-row-label">ABV</div>
+          <div class="vs-val vs-kolsch">4,4–5,2 %</div>
+        </div>
+        <!-- IBU -->
+        <div class="versus-row">
+          <div class="vs-val vs-alt">25–40 IBU</div>
+          <div class="vs-row-label">IBU</div>
+          <div class="vs-val vs-kolsch">16–24 IBU</div>
+        </div>
+        <!-- Malz -->
+        <div class="versus-row">
+          <div class="vs-val vs-alt" data-i18n="rivals.altMalt">Röstmalz-betont</div>
+          <div class="vs-row-label" data-i18n="rivals.rowMalt">Malz</div>
+          <div class="vs-val vs-kolsch" data-i18n="rivals.kolschMalt">Hellmalz-betont</div>
+        </div>
+        <!-- Glas — same volume! -->
+        <div class="versus-row vs-match">
+          <div class="vs-val vs-alt"><span data-i18n="rivals.altGlass">Becher, 0,2 l</span><span class="vs-match-badge">≡</span></div>
+          <div class="vs-row-label" data-i18n="rivals.rowGlass">Glas</div>
+          <div class="vs-val vs-kolsch"><span data-i18n="rivals.kolschGlass">Stange, 0,2 l</span><span class="vs-match-badge">≡</span></div>
+        </div>
+        <!-- Köbes — same! -->
+        <div class="versus-row vs-match">
+          <div class="vs-val vs-alt"><span>Köbes</span><span class="vs-match-badge">≡</span></div>
+          <div class="vs-row-label" data-i18n="rivals.rowService">Bedienung</div>
+          <div class="vs-val vs-kolsch"><span>Köbes</span><span class="vs-match-badge">≡</span></div>
+        </div>
+        <!-- Bierdeckel — same! -->
+        <div class="versus-row vs-match">
+          <div class="vs-val vs-alt"><span data-i18n="rivals.coaster">Bierdeckel-Strichliste</span><span class="vs-match-badge">≡</span></div>
+          <div class="vs-row-label" data-i18n="rivals.rowCoaster">Abrechnung</div>
+          <div class="vs-val vs-kolsch"><span data-i18n="rivals.coaster">Bierdeckel-Strichliste</span><span class="vs-match-badge">≡</span></div>
+        </div>
+        <!-- EU-Schutz -->
+        <div class="versus-row">
+          <div class="vs-val vs-alt" data-i18n="rivals.altEU">g.g.A. seit 2005</div>
+          <div class="vs-row-label" data-i18n="rivals.rowEU">EU-Schutz</div>
+          <div class="vs-val vs-kolsch" data-i18n="rivals.kolschEU">g.g.A. seit 1997</div>
+        </div>
+        <!-- Schutzgebiet -->
+        <div class="versus-row">
+          <div class="vs-val vs-alt" data-i18n="rivals.altRegion">Düsseldorf, Niederrhein, Neuss, MG, Krefeld</div>
+          <div class="vs-row-label" data-i18n="rivals.rowRegion">Gebiet</div>
+          <div class="vs-val vs-kolsch" data-i18n="rivals.kolschRegion">Köln und näheres Umfeld</div>
+        </div>
+      </div>
+
+      <div class="shared-facts" style="margin-top:20px">
+        <h3 data-i18n="rivals.sharedTitle">Was beide gemeinsam haben</h3>
+        <ul class="shared-list">
+          <li data-i18n="rivals.shared1">Beide obergärig — die meisten deutschen Biere sind untergärig</li>
+          <li data-i18n="rivals.shared2">Beide kalt nachgereift (wie ein Lager)</li>
+          <li data-i18n="rivals.shared3">Beide im 0,2-l-Glas serviert</li>
+          <li data-i18n="rivals.shared4">Beide mit Köbes-Bedienung und Bierdeckel-Strichliste</li>
+          <li data-i18n="rivals.shared5">Beide EU-weit als g.g.A. geschützt</li>
+          <li data-i18n="rivals.shared6">Beide aus dem Rheinland — 47 km voneinander entfernt</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== RIVALITÄT =================== -->
+  <section class="rivals-section" id="rivalitaet">
+    <div class="container">
+      <div class="eyebrow" data-i18n="rivals.rivalryEyebrow">Rivalität</div>
+      <h2 data-i18n="rivals.rivalryTitle">Warum das kein normaler Bierstreit ist</h2>
+      <div class="prose">
+        <p data-i18n-html="rivals.rivalryP1Html">Wer in Düsseldorf ein Kölsch bestellt, bekommt im besten Fall einen milden Tadel vom Köbes. Im schlechtesten ein Glas Wasser. Das ist keine Unhöflichkeit — das ist <em>Haltung</em>. Die gilt in umgekehrter Richtung genauso: In einem Kölner Brauhaus wäre ein Bestellen von Altbier bestenfalls exotisch.</p>
+        <p data-i18n-html="rivals.rivalryP2Html">Das Kuriose: Technisch gesehen sind Altbier und Kölsch enge Verwandte. Beide gären <em>obergärig</em> — wie englisches Ale, nicht wie bayerisches Lager. Beide werden danach kalt nachgereift, was ihnen die saubere, klare Note gibt, die Deutsche an einem Bier gewohnt sind. Das macht sie zu sogenannten „Hybrid-Ales" — zwischen Welten, wie die Städte selbst.</p>
+        <p data-i18n-html="rivals.rivalryP3Html">1986 legten die Kölner Brauer die <em>Kölschkonvention</em> schriftlich fest: Kölsch darf seitdem nur noch in einem eng definierten Gebiet rund um Köln gebraut werden. 1997 folgte der EU-Schutz als geschützte geografische Angabe. Altbier zog 2005 nach. Heute stehen beide Biere rechtlich auf derselben Stufe wie Champagner oder Parmigiano Reggiano — Herkunft ist Pflicht, nicht Dekoration.</p>
+        <p data-i18n-html="rivals.rivalryP4Html">Was viele nicht wissen: Der <em>Köbes</em> — der wortkarge, strichlisten-führende Kellner — ist keine Düsseldorfer Erfindung. In Kölner Brauhäusern heißt er genauso. Beide Namen stammen vom rheinischen Diminutiv für „Jakob". Zwei Köbesse, eine Tradition, ein Missverständnis das sich seit Generationen am Laufen hält — und das keiner von beiden wirklich beenden will.</p>
+      </div>
+
+      <div class="funfacts-grid" style="margin-top:40px">
+        <div class="funfact-card">
+          <div class="ff-num">47</div>
+          <h3 data-i18n="rivals.ff1Title">Kilometer Rhein</h3>
+          <p data-i18n="rivals.ff1Body">So weit liegen Düsseldorf und Köln auseinander. In Bierfragen könnten es Lichtjahre sein — in technischer Hinsicht sind es Nachbarn.</p>
+        </div>
+        <div class="funfact-card">
+          <div class="ff-num">≡</div>
+          <h3 data-i18n="rivals.ff2Title">Köbes heißt Köbes</h3>
+          <p data-i18n="rivals.ff2Body">In beiden Städten heißt der Zapfkellner Köbes — rheinisch für Jakob. Derselbe Name, zwei Biere, null Kompromisse.</p>
+        </div>
+        <div class="funfact-card">
+          <div class="ff-num">0,2</div>
+          <h3 data-i18n="rivals.ff3Title">Liter pro Glas</h3>
+          <p data-i18n="rivals.ff3Body">Alt im Becher, Kölsch in der Stange. Unterschiedliche Form, identisches Volumen. Damit sind Nachbestellungen in beiden Städten gleich schnell nötig.</p>
+        </div>
+        <div class="funfact-card">
+          <div class="ff-num">2</div>
+          <h3 data-i18n="rivals.ff4Title">EU-Schutzgebiete</h3>
+          <p data-i18n="rivals.ff4Body">Kölsch seit 1997, Altbier seit 2005 — beide als g.g.A. geschützt. Ein Brauer in München kann weder das eine noch das andere herstellen und so nennen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== ABSTIMMUNG =================== -->
+  <section class="rivals-section" id="abstimmung" style="border-bottom:none">
+    <div class="container">
+      <div class="eyebrow" data-i18n="rivals.voteEyebrow">Abstimmung</div>
+      <h2 data-i18n="rivals.voteTitle">Zeit, Farbe zu bekennen</h2>
+      <div class="vote-wrap">
+        <p class="vote-intro" data-i18n="rivals.voteIntro">Kein Druck. Aber du weißt, was richtig ist. Das Ergebnis bleibt in deinem Browser — anonym und ohne Tracking.</p>
+
+        <div class="vote-buttons" id="vote-buttons">
+          <button class="vote-btn vote-alt" id="vote-btn-alt" type="button">
+            <span data-i18n="rivals.voteAlt">Team Alt</span>
+            <span class="vote-btn-sub" data-i18n="rivals.voteAltSub">Düsseldorf</span>
+          </button>
+          <button class="vote-btn vote-kolsch" id="vote-btn-kolsch" type="button">
+            <span data-i18n="rivals.voteKolsch">Team Kölsch</span>
+            <span class="vote-btn-sub" data-i18n="rivals.voteKolschSub">Köln</span>
+          </button>
+        </div>
+
+        <div class="vote-result" id="vote-result" hidden>
+          <div class="vr-eyebrow" data-i18n="rivals.voteResultEyebrow">Dein Urteil</div>
+          <div class="vr-verdict" id="vr-verdict"></div>
+          <div class="vr-body" id="vr-body"></div>
+          <button class="vote-reset" id="vote-reset" type="button" data-i18n="rivals.voteReset">Stimme zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="api-client.js"></script>
+<script src="shell.js"></script>
+<script>
+renderShell({ activeNav: "rivals" });
+
+// ---- Sticky Sub-Nav ----
+const rivalsNav  = document.querySelector(".rivals-nav");
+const rivalsHero = document.querySelector(".rivals-hero");
+const sections   = ["vergleich", "rivalitaet", "abstimmung"];
+const navLinks   = document.querySelectorAll(".rivals-nav a");
+
+const navPlaceholder = document.createElement("div");
+navPlaceholder.style.cssText = "height:0;pointer-events:none;";
+rivalsNav.parentNode.insertBefore(navPlaceholder, rivalsNav);
+
+let navIsStuck = false;
+
+const heroObserver = new IntersectionObserver(
+  ([entry]) => {
+    const shouldStick = !entry.isIntersecting;
+    if (shouldStick && !navIsStuck) {
+      navPlaceholder.style.height = rivalsNav.offsetHeight + "px";
+      rivalsNav.classList.add("is-stuck");
+      navIsStuck = true;
+    } else if (!shouldStick && navIsStuck) {
+      rivalsNav.classList.remove("is-stuck");
+      navPlaceholder.style.height = "0";
+      navIsStuck = false;
+    }
+    updateActive();
+  },
+  { threshold: 0 }
+);
+heroObserver.observe(rivalsHero);
+
+function updateActive() {
+  let active = sections[0];
+  if (navIsStuck) {
+    const navH      = rivalsNav.offsetHeight;
+    const threshold = window.scrollY + navH + 2;
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && el.offsetTop <= threshold) active = id;
+    });
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 60) {
+      active = sections[sections.length - 1];
+    }
+  }
+  navLinks.forEach((a) =>
+    a.classList.toggle("active", a.getAttribute("href") === "#" + active)
+  );
+}
+window.addEventListener("scroll", updateActive, { passive: true });
+updateActive();
+
+document.getElementById("rivals-nav-top").addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+navLinks.forEach((link) => {
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    const id     = link.getAttribute("href").slice(1);
+    const target = document.getElementById(id);
+    if (!target) return;
+    navLinks.forEach((a) => a.classList.remove("active"));
+    link.classList.add("active");
+    const navH   = rivalsNav.offsetHeight;
+    const offset = navH - 40;
+    const y = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+  });
+});
+
+// ---- Abstimmung ----
+const VOTE_KEY = "atlas-rivals-vote";
+
+const voteMessages = {
+  alt: {
+    de: {
+      verdict: "Du bist ein echter Altbier-Mensch.",
+      body: "Bernstein im Glas, Köbes vor dir, Bierdeckel unter dem Strich. So soll es sein. Die Düsseldorfer Altstadt wartet.",
+    },
+    en: {
+      verdict: "A true Altbier person.",
+      body: "Amber in the glass, Köbes across the table, beer mat beneath the tally. As it should be. The Düsseldorf Altstadt awaits.",
+    },
+  },
+  kolsch: {
+    de: {
+      verdict: "Du hast dich für die goldene Seite entschieden.",
+      body: "Die Stange, die Leichtigkeit, der Kölner Dom im Hintergrund. Respektable Wahl — auch wenn man das in Düsseldorf nicht laut sagen sollte.",
+    },
+    en: {
+      verdict: "You've chosen the golden side.",
+      body: "The Stange, the lightness, Cologne Cathedral in the background. A respectable choice — even if one shouldn't say that too loudly in Düsseldorf.",
+    },
+  },
+};
+
+function showVoteResult(choice) {
+  const lang = window.__atlasLang || "de";
+  const msgs = voteMessages[choice][lang] || voteMessages[choice].de;
+  const verdict = document.getElementById("vr-verdict");
+  verdict.textContent = msgs.verdict;
+  verdict.className = "vr-verdict " + (choice === "alt" ? "vr-alt" : "vr-kolsch");
+  document.getElementById("vr-body").textContent = msgs.body;
+  document.getElementById("vote-buttons").hidden = true;
+  document.getElementById("vote-result").hidden = false;
+}
+
+function initVote() {
+  const stored = localStorage.getItem(VOTE_KEY);
+  if (stored === "alt" || stored === "kolsch") {
+    showVoteResult(stored);
+    return;
+  }
+  document.getElementById("vote-buttons").hidden = false;
+  document.getElementById("vote-result").hidden = true;
+}
+
+document.getElementById("vote-btn-alt").addEventListener("click", () => {
+  localStorage.setItem(VOTE_KEY, "alt");
+  showVoteResult("alt");
+});
+document.getElementById("vote-btn-kolsch").addEventListener("click", () => {
+  localStorage.setItem(VOTE_KEY, "kolsch");
+  showVoteResult("kolsch");
+});
+document.getElementById("vote-reset").addEventListener("click", () => {
+  localStorage.removeItem(VOTE_KEY);
+  document.getElementById("vote-buttons").hidden = false;
+  document.getElementById("vote-result").hidden = true;
+});
+
+initVote();
+
+// Nach Sprachwechsel: Vote-Ergebnis in neuer Sprache zeigen
+document.addEventListener("atlas:lang-changed", () => {
+  const stored = localStorage.getItem(VOTE_KEY);
+  if (stored === "alt" || stored === "kolsch") {
+    showVoteResult(stored);
+  }
+});
+</script>
+</body>
+</html>
