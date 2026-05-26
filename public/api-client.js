@@ -165,6 +165,13 @@
       this._pushUserContrib({ type: body.type, data: body.data });
       return { ok: true, status: "pending", mock: true };
     },
+    async getRivalVotes() { return { alt: 42, kolsch: 31, total: 73 }; },
+    async postRivalVote(choice) {
+      const counts = { alt: 42, kolsch: 31 };
+      if (choice === "alt") counts.alt++;
+      else counts.kolsch++;
+      return { ok: true, ...counts, total: counts.alt + counts.kolsch };
+    },
   };
 
   // ---- Live-Implementierung (HTTP) ----
@@ -215,6 +222,8 @@
     listGlossary:     () => req("/glossary"),
     geocode:          async (q) => { try { return await req(`/geocode?q=${encodeURIComponent(q)}`); } catch { return { results: [] }; } },
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
+    getRivalVotes:    () => req("/rivals/votes"),
+    postRivalVote:    (choice) => req("/rivals/vote", { method: "POST", body: { choice } }),
     // Admin
     admin: {
       login:          (username, password, turnstileToken) => req("/admin/login", { method: "POST", body: { username, password, turnstileToken } }),
@@ -289,6 +298,8 @@
     listGlossary:       () => call("listGlossary"),
     geocode:            (q) => call("geocode", q),
     submitContribution: (body) => call("submitContribution", body),
+    getRivalVotes:      () => call("getRivalVotes"),
+    postRivalVote:      (choice) => call("postRivalVote", choice),
 
     // Admin-Endpunkte funktionieren nur live — im Mock immer 401
     admin: {

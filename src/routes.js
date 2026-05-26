@@ -606,6 +606,47 @@ export async function postContribution(req, env, _params, ctx) {
   return json({ ok: true, id, status: "pending" }, { status: 201 });
 }
 
+// ---- IP-Hash für Vote-Deduplication (SHA-256, keine rohen IPs gespeichert) ----
+async function hashIp(ip) {
+  const data = new TextEncoder().encode(ip + ":rival-vote-2026");
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// GET /api/rivals/votes
+export async function getRivalVotes(req, env) {
+  const res = await env.DB.prepare(
+    "SELECT choice, COUNT(*) AS n FROM rival_votes GROUP BY choice"
+  ).all();
+  const counts = { alt: 0, kolsch: 0 };
+  for (const row of res.results) {
+    if (row.choice === "alt") counts.alt = row.n;
+    else if (row.choice === "kolsch") counts.kolsch = row.n;
+  }
+  return json({ alt: counts.alt, kolsch: counts.kolsch, total: counts.alt + counts.kolsch });
+}
+
+// POST /api/rivals/vote  { choice: "alt" | "kolsch" }
+export async function postRivalVote(req, env) {
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  if (body.choice !== "alt" && body.choice !== "kolsch") return error(400, "invalid-choice");
+  const ip = clientIp(req);
+  const ipHash = await hashIp(ip);
+  await env.DB.prepare(
+    "INSERT INTO rival_votes (choice, ip_hash) VALUES (?, ?) ON CONFLICT(ip_hash) DO UPDATE SET choice = excluded.choice, created_at = datetime('now')"
+  ).bind(body.choice, ipHash).run();
+  const res = await env.DB.prepare(
+    "SELECT choice, COUNT(*) AS n FROM rival_votes GROUP BY choice"
+  ).all();
+  const counts = { alt: 0, kolsch: 0 };
+  for (const row of res.results) {
+    if (row.choice === "alt") counts.alt = row.n;
+    else if (row.choice === "kolsch") counts.kolsch = row.n;
+  }
+  return json({ ok: true, alt: counts.alt, kolsch: counts.kolsch, total: counts.alt + counts.kolsch });
+}
+
 // POST /api/prices (Convenience — wrapt als Contribution vom Typ "price")
 export async function postPrice(req, env, _params, ctx) {
   const body = await req.json().catch(() => null);
@@ -1789,8 +1830,8 @@ export async function sitemap(req, env) {
   const PAGE_DATES = {
     "/":           "2026-05-25",
     "/ranglisten": "2026-05-25",
-    "/wissen":     "2026-05-24",
-    "/rivalen":    "2026-05-25",
+    "/wissen":     "2026-05-26",
+    "/rivalen":    "2026-05-26",
     "/beitragen":  "2026-05-24",
     "/impressum":  "2026-05-13",
   };

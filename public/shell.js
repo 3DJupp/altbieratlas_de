@@ -111,7 +111,6 @@ window.renderShell = function ({ activeNav }) {
             <ul>
               <li><a href="/wissen" data-i18n="know.title">Altbier-Wissen</a></li>
               <li><a href="/ranglisten" data-i18n="nav.rankings">Ranglisten</a></li>
-              ${cfg.features && cfg.features.admin ? `<li><a href="/admin" data-i18n="nav.admin">Admin</a></li>` : ""}
             </ul>
           </div>
           <div>
