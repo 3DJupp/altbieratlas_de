@@ -91,7 +91,16 @@ Für Live-Upgrades bestehender Instanzen: Upgrade-SQL direkt in der D1-Dashboard
 
 ### Versioning
 
-`APP_VERSION` in `src/utils.js` must match the `version` field in `package.json`. Update both together when bumping the version. The README version heading must also be updated.
+Bei jedem Versions-Bump **alle vier Stellen** gleichzeitig anpassen:
+
+| Datei | Was ändern |
+|---|---|
+| `src/utils.js` | `APP_VERSION = "x.y.z"` |
+| `package.json` | `"version": "x.y.z"` |
+| `README.md` | Heading `# Altbieratlas · vx.y.z` |
+| `migrations/0002_seed.sql` | Versions-Kommentar in der Kopfzeile |
+
+Die Versionsnummer wird automatisch über `/api/config` an das Frontend gereicht und im Footer angezeigt — kein separates Frontend-Update notwendig.
 
 ### Email
 
