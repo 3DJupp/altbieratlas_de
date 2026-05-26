@@ -56,6 +56,8 @@ const ROUTES = [
   ["GET",    "/api/events/feed.xml",                      R.eventsAtom],
   ["GET",    "/api/events/:id/calendar.ics",              R.eventIcs],
   ["GET",    "/api/events/:id",                           R.getEvent],
+  ["GET",    "/api/rivals/votes",                           R.getRivalVotes],
+  ["POST",   "/api/rivals/vote",                            R.postRivalVote],
   ["GET",    "/api/venue-types",                            R.listVenueTypes],
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],

@@ -232,6 +232,59 @@
 .vote-reset { margin-top: 12px; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--font-mono); color: var(--ink-muted); text-decoration: underline; padding: 0; }
 .vote-reset:hover { color: var(--ink); }
 
+/* ---- Vote Bar ---- */
+.vote-bar-wrap { margin-top: 24px; }
+.vote-bar-header {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px;
+}
+.vote-bar-labels {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 6px;
+}
+.vote-bar-label { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.vote-bar-label.vbl-alt { color: var(--copper); }
+.vote-bar-label.vbl-kolsch { color: #c89800; }
+.vote-bar-track {
+  height: 12px; border-radius: 6px;
+  background: color-mix(in srgb, #c89800 25%, var(--bg-card));
+  overflow: hidden; border: 1px solid var(--rule);
+}
+.vote-bar-fill {
+  height: 100%; border-radius: 6px;
+  background: var(--copper);
+  transition: width 0.8s ease;
+}
+.vote-bar-sub {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--ink-muted); margin-top: 6px;
+}
+.vote-bar-total {
+  text-align: center; font-family: var(--font-mono); font-size: 11px;
+  color: var(--ink-muted); margin-top: 8px;
+  padding-top: 8px; border-top: 1px solid var(--rule);
+}
+
+/* ---- Miteinander / Sports ---- */
+.rivals-sports-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px;
+}
+.sport-card {
+  background: var(--bg-card); border: 1px solid var(--rule);
+  border-radius: var(--radius-lg); padding: 22px 24px;
+}
+.sport-card .sport-icon { font-size: 26px; margin-bottom: 12px; line-height: 1; }
+.sport-card h3 {
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 500;
+  margin-bottom: 4px;
+}
+.sport-card .sport-match {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  color: var(--copper); text-transform: uppercase; margin-bottom: 10px;
+}
+.sport-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
+
 @media (max-width: 700px) {
   .versus-head,
   .versus-row { grid-template-columns: 1fr 56px 1fr; }
@@ -240,6 +293,7 @@
   .vs-val { padding: 12px 12px; font-size: 12px; }
   .vs-head-cell { padding: 18px 12px; }
   .funfacts-grid { grid-template-columns: 1fr; }
+  .rivals-sports-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -267,6 +321,7 @@
     <div class="container">
       <a href="#vergleich" class="active" data-i18n="rivals.nav.compare">Vergleich</a>
       <a href="#rivalitaet" data-i18n="rivals.nav.rivalry">Rivalität</a>
+      <a href="#miteinander" data-i18n="rivals.nav.together">Miteinander</a>
       <a href="#abstimmung" data-i18n="rivals.nav.vote">Abstimmung</a>
       <button class="rivals-nav-top" id="rivals-nav-top" aria-label="Zum Seitenanfang">↑ Top</button>
     </div>
@@ -311,9 +366,9 @@
         </div>
         <!-- IBU -->
         <div class="versus-row">
-          <div class="vs-val vs-alt">25–40 IBU</div>
+          <div class="vs-val vs-alt">25–50 IBU</div>
           <div class="vs-row-label">IBU</div>
-          <div class="vs-val vs-kolsch">16–24 IBU</div>
+          <div class="vs-val vs-kolsch">16–26 IBU</div>
         </div>
         <!-- Malz -->
         <div class="versus-row">
@@ -404,13 +459,43 @@
     </div>
   </section>
 
+  <!-- =================== MITEINANDER =================== -->
+  <section class="rivals-section" id="miteinander">
+    <div class="container">
+      <div class="eyebrow" data-i18n="rivals.togetherEyebrow">Das Miteinander</div>
+      <h2 data-i18n="rivals.togetherTitle">Wenn die Grenze verschwimmt</h2>
+      <div class="prose">
+        <p data-i18n-html="rivals.togetherP1Html">Wer sagt, der Graben sei unüberbrückbar, war noch nicht im <em>Hellers Brauhaus</em> in Köln. Dort bekommst du auf Wunsch auch ein Altbier — eine kleine Geste mit Augenzwinkern. Umgekehrt ist Kölsch in Düsseldorf in vielen Bars und Restaurants ohne Weiteres erhältlich. Die ungeschriebene Regel lautet nur: In den klassischen Hausbrauereien fragt man das besser nicht.</p>
+        <p data-i18n-html="rivals.togetherP2Html">Am Reißbrett haben findige Brauer sogar versucht, den Streit zu lösen: mit dem <em>Költ</em> — einem Bierhybrid aus dem Rheinland, der Elemente beider Stile vereint. Obergärig wie beide, aber weder ganz Alt noch ganz Kölsch. Manche nennen es ein Friedensangebot. Die Mehrheit in Düsseldorf und Köln sieht darin eine Provokation für beide Seiten — was es zu einem der selten gelungenen Kompromisse des Rheinlands macht.</p>
+      </div>
+
+      <h3 style="font-family:var(--font-display);font-size:1.2rem;font-weight:500;margin:40px 0 4px" data-i18n="rivals.sportsTitle">Rivalität auf Eis und Rasen</h3>
+      <p style="color:var(--ink-soft);font-size:15px;max-width:60ch;margin-bottom:0" data-i18n="rivals.sportsSub">Das Rheinderby geht weit über das Glas hinaus. Auch auf dem Spielfeld und der Eisfläche kämpfen Düsseldorf und Köln um jeden Punkt.</p>
+
+      <div class="rivals-sports-grid">
+        <div class="sport-card">
+          <div class="sport-icon">⚽</div>
+          <h3 data-i18n="rivals.footballTitle">Fußball</h3>
+          <div class="sport-match" data-i18n="rivals.footballMatch">Fortuna Düsseldorf · 1. FC Köln</div>
+          <p data-i18n="rivals.footballBody">Das Rheinderby im Stadion. Beide Clubs mit langer Bundesliga-Geschichte und leidenschaftlichen Anhängern — verbunden durch den Rhein und getrennt durch alles andere. Ob in der Ersten oder Zweiten Liga: Der Karneval endet, wenn die Pfeife pfeift.</p>
+        </div>
+        <div class="sport-card">
+          <div class="sport-icon">🏒</div>
+          <h3 data-i18n="rivals.hockeyTitle">Eishockey</h3>
+          <div class="sport-match" data-i18n="rivals.hockeyMatch">Düsseldorfer EG · Kölner Haie</div>
+          <p data-i18n="rivals.hockeyBody">In der DEL gehören beide zu den traditionsreichsten Vereinen des deutschen Eishockeys. Die DEG mit acht Meistertiteln, die Haie mit sieben — und eine Rivalität, die mindestens so hitzköpfig ist wie der Bierstreit, nur mit mehr Körperkontakt.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- =================== ABSTIMMUNG =================== -->
   <section class="rivals-section" id="abstimmung" style="border-bottom:none">
     <div class="container">
       <div class="eyebrow" data-i18n="rivals.voteEyebrow">Abstimmung</div>
       <h2 data-i18n="rivals.voteTitle">Zeit, Farbe zu bekennen</h2>
       <div class="vote-wrap">
-        <p class="vote-intro" data-i18n="rivals.voteIntro">Kein Druck. Aber du weißt, was richtig ist. Das Ergebnis bleibt in deinem Browser — anonym und ohne Tracking.</p>
+        <p class="vote-intro" data-i18n="rivals.voteIntro">Kein Druck. Aber du weißt, was richtig ist. Deine Stimme fließt anonym in die Gemeinschaftsauswertung ein.</p>
 
         <div class="vote-buttons" id="vote-buttons">
           <button class="vote-btn vote-alt" id="vote-btn-alt" type="button">
@@ -428,6 +513,22 @@
           <div class="vr-verdict" id="vr-verdict"></div>
           <div class="vr-body" id="vr-body"></div>
           <button class="vote-reset" id="vote-reset" type="button" data-i18n="rivals.voteReset">Stimme zurücksetzen</button>
+        </div>
+
+        <div class="vote-bar-wrap" id="vote-bar" hidden>
+          <div class="vote-bar-header" data-i18n="rivals.voteBarLabel">Alle Stimmen</div>
+          <div class="vote-bar-labels">
+            <span class="vote-bar-label vbl-alt"><span id="vbl-alt-pct">—</span>&thinsp;Alt</span>
+            <span class="vote-bar-label vbl-kolsch">Kölsch&thinsp;<span id="vbl-kolsch-pct">—</span></span>
+          </div>
+          <div class="vote-bar-track">
+            <div class="vote-bar-fill" id="vbf" style="width:50%"></div>
+          </div>
+          <div class="vote-bar-sub">
+            <span id="vbc-alt"></span>
+            <span id="vbc-kolsch"></span>
+          </div>
+          <div class="vote-bar-total" id="vbt"></div>
         </div>
       </div>
     </div>
@@ -448,7 +549,7 @@ renderShell({ activeNav: "rivals" });
 // ---- Sticky Sub-Nav ----
 const rivalsNav  = document.querySelector(".rivals-nav");
 const rivalsHero = document.querySelector(".rivals-hero");
-const sections   = ["vergleich", "rivalitaet", "abstimmung"];
+const sections   = ["vergleich", "rivalitaet", "miteinander", "abstimmung"];
 const navLinks   = document.querySelectorAll(".rivals-nav a");
 
 const navPlaceholder = document.createElement("div");
@@ -521,11 +622,11 @@ const voteMessages = {
   alt: {
     de: {
       verdict: "Du bist ein echter Altbier-Mensch.",
-      body: "Bernstein im Glas, Köbes vor dir, Bierdeckel unter dem Strich. So soll es sein. Die Düsseldorfer Altstadt wartet.",
+      body: "Bernstein im Glas, Köbes vor dir, Strich auf dem Deckel. So soll es sein. Die Düsseldorfer Altstadt wartet.",
     },
     en: {
       verdict: "A true Altbier person.",
-      body: "Amber in the glass, Köbes across the table, beer mat beneath the tally. As it should be. The Düsseldorf Altstadt awaits.",
+      body: "Amber in the glass, Köbes across the table, tally running on the coaster. As it should be. The Düsseldorf Altstadt awaits.",
     },
   },
   kolsch: {
@@ -551,24 +652,64 @@ function showVoteResult(choice) {
   document.getElementById("vote-result").hidden = false;
 }
 
+// ---- Community Vote Bar ----
+let rivalVotes = { alt: 0, kolsch: 0 };
+
+function renderVoteBar() {
+  const bar = document.getElementById("vote-bar");
+  if (!bar) return;
+  const total = rivalVotes.alt + rivalVotes.kolsch;
+  if (total === 0) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const altPct = Math.round((rivalVotes.alt / total) * 100);
+  const kolschPct = 100 - altPct;
+  document.getElementById("vbl-alt-pct").textContent = altPct + " %";
+  document.getElementById("vbl-kolsch-pct").textContent = kolschPct + " %";
+  document.getElementById("vbf").style.width = altPct + "%";
+  document.getElementById("vbc-alt").textContent = rivalVotes.alt.toLocaleString("de-DE") + " × Alt";
+  document.getElementById("vbc-kolsch").textContent = rivalVotes.kolsch.toLocaleString("de-DE") + " × Kölsch";
+  const lang = window.__atlasLang || "de";
+  const vbt = document.getElementById("vbt");
+  if (vbt) vbt.textContent = lang === "en"
+    ? total.toLocaleString("de-DE") + " votes total"
+    : total.toLocaleString("de-DE") + " Stimmen insgesamt";
+}
+
+async function loadVotes() {
+  try {
+    const data = await window.AtlasAPI.getRivalVotes();
+    rivalVotes = { alt: data.alt || 0, kolsch: data.kolsch || 0 };
+    renderVoteBar();
+  } catch (e) {
+    console.warn("[rivals] vote load failed", e);
+  }
+}
+
+async function castVote(choice) {
+  localStorage.setItem(VOTE_KEY, choice);
+  showVoteResult(choice);
+  try {
+    const res = await window.AtlasAPI.postRivalVote(choice);
+    rivalVotes = { alt: res.alt || 0, kolsch: res.kolsch || 0 };
+    renderVoteBar();
+  } catch (e) {
+    console.warn("[rivals] vote cast failed", e);
+  }
+}
+
 function initVote() {
   const stored = localStorage.getItem(VOTE_KEY);
   if (stored === "alt" || stored === "kolsch") {
     showVoteResult(stored);
-    return;
+  } else {
+    document.getElementById("vote-buttons").hidden = false;
+    document.getElementById("vote-result").hidden = true;
   }
-  document.getElementById("vote-buttons").hidden = false;
-  document.getElementById("vote-result").hidden = true;
+  loadVotes();
 }
 
-document.getElementById("vote-btn-alt").addEventListener("click", () => {
-  localStorage.setItem(VOTE_KEY, "alt");
-  showVoteResult("alt");
-});
-document.getElementById("vote-btn-kolsch").addEventListener("click", () => {
-  localStorage.setItem(VOTE_KEY, "kolsch");
-  showVoteResult("kolsch");
-});
+document.getElementById("vote-btn-alt").addEventListener("click", () => castVote("alt"));
+document.getElementById("vote-btn-kolsch").addEventListener("click", () => castVote("kolsch"));
 document.getElementById("vote-reset").addEventListener("click", () => {
   localStorage.removeItem(VOTE_KEY);
   document.getElementById("vote-buttons").hidden = false;
@@ -577,12 +718,11 @@ document.getElementById("vote-reset").addEventListener("click", () => {
 
 initVote();
 
-// Nach Sprachwechsel: Vote-Ergebnis in neuer Sprache zeigen
+// Nach Sprachwechsel: Vote-Ergebnis und Bar in neuer Sprache zeigen
 document.addEventListener("atlas:lang-changed", () => {
   const stored = localStorage.getItem(VOTE_KEY);
-  if (stored === "alt" || stored === "kolsch") {
-    showVoteResult(stored);
-  }
+  if (stored === "alt" || stored === "kolsch") showVoteResult(stored);
+  renderVoteBar();
 });
 </script>
 </body>
