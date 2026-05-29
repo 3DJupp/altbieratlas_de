@@ -20,16 +20,19 @@ main = "src/worker.js"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Im Dashboard gesetzte Plaintext-Variablen NICHT bei jedem Deploy
+# löschen. WICHTIG: muss ein Top-Level-Key bleiben — steht er nach
+# einer [table]/[[table]]-Überschrift, schluckt TOML ihn als deren
+# Property und wrangler ignoriert ihn (so geschehen → Turnstile-
+# Site-Key wurde bei jedem Deploy entfernt). Secrets bleiben ohnehin
+# immer erhalten.
+keep_vars = true
+
 # Binäre Assets: TTF-Font für OG-Image-Generator
 [[rules]]
 type = "Data"
 globs = ["**/*.ttf"]
 fallthrough = true
-
-# Alle im Dashboard gesetzten Variablen und Secrets bleiben bei
-# jedem Deploy erhalten. Ohne dieses Flag würde `wrangler deploy`
-# sie mit dem (hier absichtlich leeren) Datei-Zustand überschreiben.
-keep_vars = true
 
 # --- Statische Dateien ----------------------------------------
 # Der Worker beantwortet /api/* selbst und delegiert alles andere
@@ -88,14 +91,29 @@ enabled = true
 head_sampling_rate = 1
 persist = true
 
-# --- Absichtlich KEINE [vars] in dieser Datei -----------------
+# --- [vars]: öffentliche, deploy-feste Werte -----------------
 #
-# Alles wird im Dashboard gepflegt. Der Worker liest env.*
-# direkt zur Laufzeit; fehlende Werte werden vom Frontend
-# sauber als „nicht gesetzt" behandelt (z. B. kein Social-Icon,
-# kein GA4-Tracking, Turnstile-Platzhalter).
+# Nur NICHT-sensitive Werte, die jeden Deploy überleben müssen.
+# Quasi-Source-of-Truth: hier definierte Vars werden bei jedem
+# Deploy aus der Datei gesetzt — unabhängig vom Dashboard-Zustand.
+# Der Turnstile-SITE-Key ist öffentlich (steht ohnehin im HTML),
+# daher gehört er hierher; so kann er nicht mehr verschwinden, wie
+# es vorher passierte (keep_vars war fälschlich unter [[rules]]
+# eingerückt → wirkungslos → Site-Key bei jedem Deploy gelöscht).
+[vars]
+TURNSTILE_SITE_KEY = "0x4AAAAAAADANKhOfPfuzPK0H"
+
+# --- Restliche Konfiguration: Dashboard ----------------------
 #
-# ── Einzige Konfigurationsvariable: SITE_CONFIG ───────────────
+# Übriges (GA4-ID, priceSizes, Autor, Impressum …) wird im
+# Dashboard gepflegt. Der Worker liest env.* direkt zur Laufzeit;
+# fehlende Werte werden vom Frontend sauber als „nicht gesetzt"
+# behandelt (z. B. kein Social-Icon, kein GA4-Tracking).
+# Dashboard-Plaintext-Vars (z. B. SITE_CONFIG) überleben Deploys
+# nur dank des nun korrekt platzierten keep_vars = true; wer ganz
+# sichergehen will, legt Öffentliches analog oben unter [vars] ab.
+#
+# ── Sammel-Konfigurationsvariable: SITE_CONFIG ────────────────
 #
 #   SITE_CONFIG  (JSON-String, im Dashboard als Plaintext-Variable)
 #
