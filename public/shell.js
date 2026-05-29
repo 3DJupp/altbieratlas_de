@@ -273,7 +273,7 @@ window.renderShell = function ({ activeNav }) {
 function loadAnalytics() {
   const id = window.ATLAS_CONFIG.ga4MeasurementId;
   if (!id || id === "G-XXXXXXXXXX") {
-    console.info("[atlas] GA4 placeholder — set ga4MeasurementId in config.js to enable.");
+    console.info("[atlas] GA4 placeholder — set ga4MeasurementId in SITE_CONFIG (Dashboard) to enable.");
     return;
   }
   if (document.getElementById("ga4-script")) return;

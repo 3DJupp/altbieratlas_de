@@ -8,12 +8,9 @@ import {
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
   clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail,
+  siteConfig,
 } from "./utils.js";
 
-// Liest SITE_CONFIG JSON (falls gesetzt), fällt sonst auf {} zurück
-function siteConfig(env) {
-  try { return env.SITE_CONFIG ? JSON.parse(env.SITE_CONFIG) : {}; } catch { return {}; }
-}
 // Nominatim-User-Agent-E-Mail aus SITE_CONFIG.contactEmail
 function contactEmail(env) {
   return siteConfig(env).contactEmail || "";
@@ -772,7 +769,7 @@ export async function adminRequestReset(req, env) {
       "INSERT INTO password_reset_tokens (token, username, expires_at) VALUES (?, ?, ?)"
     ).bind(token, row.username, expires).run();
 
-    const sc = (() => { try { return env.SITE_CONFIG ? JSON.parse(env.SITE_CONFIG) : {}; } catch { return {}; } })();
+    const sc = siteConfig(env);
     const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
     const resetUrl = `${siteUrl}/admin.html?reset=${encodeURIComponent(token)}`;
     await sendPasswordResetEmail(env, { to: email, resetUrl });
