@@ -1487,57 +1487,6 @@ export async function adminDeleteStyleLogo(req, env, { id }) {
   return json({ ok: true });
 }
 
-// POST /api/admin/migrate-r2  — einmalige R2-Migration auf neue Ordnerstruktur
-// Verschiebt: photos/* → orte/fotos/*, ort-logos/* → orte/logos/*, Root-PNGs → stile/*
-// Kann mehrfach aufgerufen werden (idempotent — überspringt bereits migrierte Objekte).
-export async function adminMigrateR2(req, env) {
-  const auth = await requireAdmin(req, env);
-  if (!auth.ok) return auth.res;
-  if (!env.LOGOS) return error(503, "r2-not-configured");
-
-  const moves = [];
-  const errors = [];
-
-  async function moveObj(oldKey, newKey) {
-    try {
-      const existing = await env.LOGOS.head(newKey);
-      if (existing) { moves.push({ from: oldKey, to: newKey, status: "already-exists" }); return; }
-      const obj = await env.LOGOS.get(oldKey);
-      if (!obj) { moves.push({ from: oldKey, to: newKey, status: "source-missing" }); return; }
-      const bytes = await obj.arrayBuffer();
-      await env.LOGOS.put(newKey, bytes, { httpMetadata: obj.httpMetadata });
-      await env.LOGOS.delete(oldKey);
-      moves.push({ from: oldKey, to: newKey, status: "moved" });
-    } catch (e) {
-      errors.push({ from: oldKey, to: newKey, error: String(e) });
-    }
-  }
-
-  // photos/* → orte/fotos/*
-  const photoList = await env.LOGOS.list({ prefix: "photos/" });
-  for (const obj of photoList.objects) {
-    const filename = obj.key.slice("photos/".length);
-    await moveObj(obj.key, `orte/fotos/${filename}`);
-  }
-
-  // ort-logos/* → orte/logos/*
-  const ortList = await env.LOGOS.list({ prefix: "ort-logos/" });
-  for (const obj of ortList.objects) {
-    const filename = obj.key.slice("ort-logos/".length);
-    await moveObj(obj.key, `orte/logos/${filename}`);
-  }
-
-  // Root-level Stil-Logos (*.png / *.jpg / *.webp / *.svg / *.gif ohne Slash) → stile/*
-  const rootList = await env.LOGOS.list();
-  for (const obj of rootList.objects) {
-    if (!obj.key.includes("/")) {
-      await moveObj(obj.key, `stile/${obj.key}`);
-    }
-  }
-
-  return json({ ok: true, moves, errors });
-}
-
 // GET /api/admin/glossary
 export async function adminListGlossary(req, env) {
   const auth = await requireAdmin(req, env);
