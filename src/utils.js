@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.9.1";
+export const APP_VERSION = "0.9.2";
 
 export const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -212,7 +212,9 @@ export function clientIp(req) {
       || "0.0.0.0";
 }
 
-function getSiteConfig(env) {
+// Liest SITE_CONFIG JSON (falls gesetzt), fällt sonst auf {} zurück.
+// Einzige Definition projektweit — auch von routes.js importiert.
+export function siteConfig(env) {
   try { return env.SITE_CONFIG ? JSON.parse(env.SITE_CONFIG) : {}; } catch { return {}; }
 }
 
@@ -222,7 +224,7 @@ function getSiteConfig(env) {
 export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip = "–", lang = "de", submittedAt }) {
   if (!env.RESEND_API_KEY || !to) return;
 
-  const sc = getSiteConfig(env);
+  const sc = siteConfig(env);
   const de = lang !== "en";
   const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
   const typeLabels = {
@@ -382,7 +384,7 @@ function _emailDataRows(type, data, de) {
 // ---- Passwort-Reset-E-Mail via Resend API ----
 export async function sendPasswordResetEmail(env, { to, resetUrl }) {
   if (!env.RESEND_API_KEY || !to) return;
-  const sc = getSiteConfig(env);
+  const sc = siteConfig(env);
   const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
 
   const subject = "Altbieratlas: Passwort zurücksetzen";
@@ -456,7 +458,7 @@ export async function sendPasswordResetEmail(env, { to, resetUrl }) {
 export async function sendAdminDigest(env) {
   if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
 
-  const sc = getSiteConfig(env);
+  const sc = siteConfig(env);
   const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   let rows;

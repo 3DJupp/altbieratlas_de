@@ -1,4 +1,4 @@
-# Altbieratlas · v0.9.1
+# Altbieratlas · v0.9.2
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -182,6 +182,7 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 
 | Feld | Beschreibung |
 |---|---|
+| `turnstileSiteKey` | Öffentlicher Turnstile-Site-Key. Kann alternativ als eigenständige Variable `TURNSTILE_SITE_KEY` gesetzt werden (siehe unten) — diese hat Vorrang. |
 | `highlightedSizes` | Größen, die in Ranglisten hervorgehoben werden und beim Laden vorausgewählt sind. Empfehlung: `[0.25]` |
 | `requireModeration` | `true` = alle Beiträge landen in der Queue. Standard: `true` |
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
@@ -194,6 +195,7 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 | Name | Type | Zweck |
 |---|---|---|
 | `TURNSTILE_SECRET_KEY` | **Secret** | Serverseitiger Turnstile-Key |
+| `TURNSTILE_SITE_KEY` | Variable *oder* Secret | Öffentlicher Site-Key. Alternative zu `SITE_CONFIG.turnstileSiteKey` und hat Vorrang davor. Aktiviert das Widget; ohne ihn bleibt der Platzhalter „Site-Key nicht gesetzt" sichtbar. Da öffentlich, genügt eine Plaintext-Variable. |
 | `RESEND_API_KEY` | **Secret** | [Resend](https://resend.com)-API-Key |
 | `ADMIN_EMAIL` | **Secret** | Empfänger des täglichen Digests |
 | `UNTAPPD_CLIENT_SECRET` | **Secret** | Untappd-App-Secret (optional) |
