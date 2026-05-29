@@ -207,6 +207,7 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 - Typ-spezifische Pin-Farben, Hover-Tooltips, Filter inkl. "Historisch"
 - Historische Brauereien (`is_historical`) grau hervorgehoben; `highlighted`/`sponsored`-CSS für gesponserte Einträge
 - Geocoder-Suche via Nominatim (serverseitig proxiert)
+- **„In meiner Nähe"** — Browser-Geolocation schwenkt die Karte auf den Standort und zeigt den nächstgelegenen Ort (Haversine, ohne Backend)
 
 ### Brauerei-Detail
 - Preisverlauf als SVG-Chart, Stile, Geschmacksnotizen (DE/EN)

@@ -501,6 +501,18 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   border: 2px dashed var(--copper);
   box-shadow: none;
 }
+/* user geolocation — pulsing blue */
+.atlas-pin.user {
+  background: #3a8bc4;
+  border-color: #eaf4fb;
+  box-shadow: 0 0 0 3px rgba(58,139,196,0.35), 0 2px 6px rgba(0,0,0,0.4);
+  animation: atlas-user-pulse 2s ease-out infinite;
+}
+@keyframes atlas-user-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(58,139,196,0.5), 0 2px 6px rgba(0,0,0,0.4); }
+  70%  { box-shadow: 0 0 0 14px rgba(58,139,196,0), 0 2px 6px rgba(0,0,0,0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(58,139,196,0), 0 2px 6px rgba(0,0,0,0.4); }
+}
 .leaflet-popup-content-wrapper {
   background: #22180e !important;
   color: #f3ead8 !important;

@@ -1828,7 +1828,7 @@ export async function sitemap(req, env) {
   // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
   // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuер.
   const PAGE_DATES = {
-    "/":           "2026-05-25",
+    "/":           "2026-05-29",
     "/ranglisten": "2026-05-25",
     "/wissen":     "2026-05-26",
     "/rivalen":    "2026-05-26",
@@ -2064,10 +2064,14 @@ export async function serveOrt(req, env) {
     /(<meta property="og:image:alt" content=")[^"]*(" id="meta-og-img-alt")/,
     `$1${escHtml(row.name + " — Altbieratlas")}$2`,
   );
-  // JSON-LD vor </head> einfügen
+  // JSON-LD + hreflang-Alternates vor </head> einfügen
+  const hreflang =
+    `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
+    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "&lang=en")}" />\n` +
+    `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
   html = html.replace(
     "</head>",
-    `<script type="application/ld+json">${ld}</script>\n</head>`,
+    `${hreflang}<script type="application/ld+json">${ld}</script>\n</head>`,
   );
 
   const headers = new Headers(assetRes.headers);
@@ -2230,9 +2234,13 @@ export async function serveEvent(req, env) {
     /(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/,
     `$1${escHtml(metaDesc)}$2`,
   );
+  const hreflang =
+    `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
+    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "&lang=en")}" />\n` +
+    `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
   html = html.replace(
     "</head>",
-    `<script type="application/ld+json">${JSON.stringify(ld)}</script>\n</head>`,
+    `${hreflang}<script type="application/ld+json">${JSON.stringify(ld)}</script>\n</head>`,
   );
 
   const headers = new Headers(assetRes.headers);
