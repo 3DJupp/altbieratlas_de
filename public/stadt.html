@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
+<title>Altbier in Düsseldorf · Altbieratlas</title>
+<meta name="description" content="Alle Altbier-Brauereien, Ausschankorte und Händler in Düsseldorf — mit aktuellen Preisen im Altbieratlas." />
+<link rel="canonical" href="https://altbieratlas.de/stadt/duesseldorf" id="meta-canonical" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Altbier in Düsseldorf · Altbieratlas" id="meta-og-title" />
+<meta property="og:description" content="Alle Altbier-Brauereien, Ausschankorte und Händler in Düsseldorf — mit aktuellen Preisen." id="meta-og-desc" />
+<meta property="og:url" content="https://altbieratlas.de/stadt/duesseldorf" id="meta-og-url" />
+<meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+<meta property="og:locale" content="de_DE" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Altbier in Düsseldorf · Altbieratlas" id="meta-tw-title" />
+<meta name="twitter:description" content="Alle Altbier-Brauereien, Ausschankorte und Händler in Düsseldorf — mit aktuellen Preisen." id="meta-tw-desc" />
+<meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/styles.css" />
+<style>
+/* Hero — identische Werte wie know-hero (Wissen-Seite) */
+.city-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); }
+.city-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; margin: 8px 0 0; }
+.city-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
+.city-hero .lede em { font-style: italic; color: var(--copper); }
+
+/* Stat-Boxen — gleiche Optik wie auf den Ranglisten */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(var(--stat-cols, 2), 1fr);
+  gap: 16px; margin: 28px 0 6px; max-width: 520px;
+}
+.stat { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 18px 20px; }
+.stat .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); }
+.stat .val { font-family: var(--font-display); font-size: 32px; color: var(--copper); font-weight: 500; margin-top: 4px; letter-spacing: -0.02em; }
+.city-back { display: inline-block; margin-top: 22px; font-size: 13px; color: var(--ink-muted); }
+
+/* Sektionen — identische Werte wie know-section */
+.city-section { padding: 60px 0; border-bottom: 1px solid var(--rule); }
+.city-section .eyebrow { margin-bottom: 8px; }
+.city-section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 500; max-width: 20ch; margin-bottom: 26px; }
+
+/* Venue-Karten — wie spec-/koebes-card auf der Wissen-Seite */
+.city-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.city-card {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  padding: 24px; text-decoration: none; color: inherit;
+  transition: border-color .15s, transform .1s, box-shadow .15s;
+}
+.city-card:hover { border-color: var(--copper); transform: translateY(-2px); box-shadow: var(--shadow); }
+.city-card .cc-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; color: var(--ink); line-height: 1.2; }
+.city-card .cc-type { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.city-card .cc-price { font-family: var(--font-mono); font-size: 14px; color: var(--copper); margin-top: 4px; }
+.city-card.historical { opacity: .8; }
+.city-empty { color: var(--ink-muted); padding: 16px 0; }
+
+@media (max-width: 800px) { .stats-strip { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-banner" hidden></div>
+  <div id="shell-header"></div>
+
+  <section class="city-hero">
+    <div class="container">
+      <div class="eyebrow" id="city-eyebrow" data-i18n="city.eyebrow">Altbier vor Ort</div>
+      <h1 id="city-h1">Altbier in Düsseldorf</h1>
+      <p class="lede" id="city-lede"></p>
+      <div class="stats-strip" id="city-stats" hidden style="--stat-cols:2">
+        <div class="stat"><div class="label" id="stat-count-lbl"></div><div class="val" id="stat-count">—</div></div>
+        <div class="stat" id="stat-price-wrap" hidden><div class="label" id="stat-price-lbl"></div><div class="val" id="stat-price">—</div></div>
+      </div>
+      <a class="city-back" href="/" data-i18n="city.backToMap">← Zur Karte</a>
+    </div>
+  </section>
+
+  <section class="city-section">
+    <div class="container">
+      <div class="eyebrow" data-i18n="city.currentEyebrow">Übersicht</div>
+      <h2 id="city-current-title" data-i18n="city.current">Orte & Ausschank</h2>
+      <div class="city-grid" id="city-venues" data-ssr="0">
+        <p class="city-empty" data-i18n="common.loading">Lade…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="city-section" id="city-historical-section" hidden>
+    <div class="container">
+      <div class="eyebrow" data-i18n="city.historicalEyebrow">Geschichte</div>
+      <h2 data-i18n="city.historical">Historische Brauereien</h2>
+      <div class="city-grid" id="city-historical"></div>
+    </div>
+  </section>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="/config.js"></script>
+<script src="/i18n.js"></script>
+<script src="/data.js"></script>
+<script src="/api-client.js"></script>
+<script src="/shell.js"></script>
+<script>
+renderShell({ activeNav: "" });
+
+// Slug → Stadtname (Pilot: nur Düsseldorf)
+const CITIES = {
+  duesseldorf: { name: "Düsseldorf", ledeKey: "city.lede.duesseldorf" },
+};
+const slug = (location.pathname.split("/")[2] || "duesseldorf").toLowerCase();
+const cityInfo = CITIES[slug] || CITIES.duesseldorf;
+const CITY = cityInfo.name;
+
+let breweriesCache = null;
+let pricesByBrewery = new Map();
+
+const fillTpl = (key, vars) => {
+  let s = window.t(key);
+  for (const k in vars) s = s.replace("{" + k + "}", vars[k]);
+  return s;
+};
+
+// Venue-Typ → lokalisiertes Label (gleiche Gruppen wie der Kartenfilter)
+const TYPE_GROUP = {
+  brewpub: "brauerei", brewery: "brauerei",
+  pub: "gastronomie", restaurant: "gastronomie",
+  kiosk: "handel", supermarket: "handel", beverage_store: "handel",
+};
+const typeLabel = (type) => {
+  const g = TYPE_GROUP[type];
+  return g ? window.t("map.filter." + g) : (type || "");
+};
+
+function paint() {
+  const lang = window.__atlasLang;
+  document.getElementById("city-h1").textContent = fillTpl("city.h1", { city: CITY });
+  document.documentElement.lang = lang;
+  document.title = fillTpl("city.h1", { city: CITY }) + " · Altbieratlas";
+  document.getElementById("city-lede").textContent = window.t(cityInfo.ledeKey);
+
+  if (!breweriesCache) return;
+  const inCity = breweriesCache.filter((b) => (b.city || "").toLowerCase() === CITY.toLowerCase());
+  const current = inCity.filter((b) => !b.isHistorical);
+  const historical = inCity.filter((b) => b.isHistorical);
+
+  // Stats
+  const statsEl = document.getElementById("city-stats");
+  statsEl.hidden = false;
+  document.getElementById("stat-count").textContent = inCity.length;
+  document.getElementById("stat-count-lbl").textContent = window.t("city.stat.places");
+  const prices = current.map((b) => pricesByBrewery.get(b.id)).filter((x) => x != null);
+  const priceWrap = document.getElementById("stat-price-wrap");
+  if (prices.length) {
+    const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+    priceWrap.hidden = false;
+    document.getElementById("stat-price").textContent = "€ " + window.formatPrice(avg);
+    document.getElementById("stat-price-lbl").textContent = window.t("city.stat.price");
+    statsEl.style.setProperty("--stat-cols", "2");
+  } else {
+    priceWrap.hidden = true;
+    statsEl.style.setProperty("--stat-cols", "1");
+  }
+
+  const card = (b) => {
+    const p = pricesByBrewery.get(b.id);
+    return `<a class="city-card${b.isHistorical ? " historical" : ""}" href="/ort?id=${encodeURIComponent(b.id)}">
+      <span class="cc-name">${b.name}</span>
+      <span class="cc-type">${typeLabel(b.type)}</span>
+      ${p ? `<span class="cc-price">€ ${window.formatPrice(p)} <span style="opacity:.55;font-size:11px">/ 0,25 l</span></span>` : ""}
+    </a>`;
+  };
+
+  const cont = document.getElementById("city-venues");
+  if (current.length) {
+    cont.innerHTML = current.map(card).join("");
+    cont.dataset.ssr = "1";
+  } else {
+    cont.innerHTML = `<p class="city-empty">${fillTpl("city.empty", { city: CITY })} <a href="/beitragen?typ=ort">${window.t("city.contribute")}</a></p>`;
+  }
+
+  const histSec = document.getElementById("city-historical-section");
+  if (historical.length) {
+    histSec.hidden = false;
+    document.getElementById("city-historical").innerHTML = historical.map(card).join("");
+  } else {
+    histSec.hidden = true;
+  }
+}
+
+(async () => {
+  paint(); // Texte sofort (auch ohne Daten)
+  try {
+    const [brews, prices] = await Promise.all([
+      window.AtlasAPI.listBreweries(),
+      window.AtlasAPI.listPrices(),
+    ]);
+    breweriesCache = brews.breweries || [];
+    // neuesten 0,25 l-Preis je Brauerei bestimmen
+    const want = 0.25;
+    const latest = new Map();
+    (prices.prices || []).forEach((p) => {
+      const size = Number(p.size);
+      if (Math.abs(size - want) > 0.001) return;
+      const prev = latest.get(p.breweryId);
+      if (!prev || new Date(p.date) > new Date(prev.date)) latest.set(p.breweryId, p);
+    });
+    latest.forEach((p, id) => pricesByBrewery.set(id, Number(p.price)));
+    paint();
+  } catch (e) { /* SSR-/Mock-Inhalt bleibt stehen */ }
+})();
+
+document.addEventListener("atlas:lang-changed", paint);
+</script>
+</body>
+</html>

@@ -267,6 +267,16 @@ export default {
       }
     }
 
+    // /stadt/<slug> — SSR Stadt-Landingpage (Meta + JSON-LD + server-gerenderte Liste)
+    if (url.pathname.startsWith("/stadt/") && request.method === "GET" && env.ASSETS) {
+      try {
+        return await R.serveCity(request, env);
+      } catch (e) {
+        console.error("[worker] serveCity threw:", e?.stack || e);
+        return new Response("Not found", { status: 404 });
+      }
+    }
+
     // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
     // impressum ausgenommen — wird oben mit SSI bedient
     // brauerei ausgenommen — wird oben auf /ort weitergeleitet

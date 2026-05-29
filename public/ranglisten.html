@@ -20,11 +20,17 @@
 <meta property="og:description" content="Altbier-Preisranglisten: Welcher Ort hat das günstigste Alt? Aktuelle Preise im Vergleich." />
 <meta property="og:url" content="https://altbieratlas.de/ranglisten" />
 <meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+<meta property="og:locale" content="de_DE" />
+<meta property="og:locale:alternate" content="en_US" />
 <meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Altbier-Ranglisten · Altbieratlas" />
 <meta name="twitter:description" content="Altbier-Preisranglisten: Welcher Ort hat das günstigste Alt? Aktuelle Preise im Vergleich." />
 <meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -197,10 +203,10 @@ function highlightedSizes() {
   return hl.length > 0 ? hl : configSizes();
 }
 
-// Gehört eine Größe zu den hervorgehobenen Größen?
-// Nicht-hervorgehobene Größen landen in "Andere".
+// Gehört eine Größe zu den konfigurierten Größen?
+// Größen außerhalb der konfigurierten Liste landen in "Andere".
 function isConfigSize(num) {
-  return highlightedSizes().some((c) => Math.abs(c - num) < 0.001);
+  return configSizes().some((c) => Math.abs(c - num) < 0.001);
 }
 
 function avgPrice(sizeNum) {
@@ -210,13 +216,15 @@ function avgPrice(sizeNum) {
 
 function renderStats() {
   const strip = document.getElementById("stats-strip");
-  const hl = window.ATLAS_CONFIG.highlightedSizes || [];
+  // Ø-Preis je konfigurierter Größe, die auch Meldungen hat (keine leeren Kacheln)
+  const sizes = configSizes().filter((s) =>
+    prices.some((p) => Math.abs(normSize(p.size) - s) < 0.001));
 
   // Vorherige Preis-Kästen entfernen, dann neu einfügen
   strip.querySelectorAll(".stat-price-avg").forEach((el) => el.remove());
   const firstCountBox = strip.querySelector(".stat");
   const metaLabel = window.t ? window.t("rank.statMetaAll") : "über alle Meldungen";
-  hl.forEach((sizeNum) => {
+  sizes.forEach((sizeNum) => {
     const box = document.createElement("div");
     box.className = "stat stat-price-avg";
     box.innerHTML =
@@ -227,7 +235,7 @@ function renderStats() {
   });
 
   // Grid-Spalten: n Preiskästen + 2 Zählkästen
-  strip.style.setProperty("--stat-cols", hl.length + 2);
+  strip.style.setProperty("--stat-cols", sizes.length + 2);
 }
 
 let currentTab = "prices";
@@ -237,7 +245,9 @@ let currentDir = "asc";
 function initSizeToggle(sizes) {
   const toggle = document.getElementById("size-toggle");
   const otherLabel = window.__atlasLang === "en" ? "Other" : "Andere";
-  const defaultSize = sizes[0];
+  // Voreingestellte Größe: erste hervorgehobene Größe (z. B. 0,25 l), sonst die erste
+  const hl = highlightedSizes();
+  const defaultSize = sizes.find((n) => hl.some((h) => Math.abs(h - n) < 0.001)) ?? sizes[0];
   toggle.innerHTML =
     sizes.map((n) =>
       `<button data-size="${n}"${Math.abs(n - defaultSize) < 0.001 ? ' class="active"' : ''}>${window.formatSize(String(n))}</button>`
@@ -272,7 +282,7 @@ function initSizeToggle(sizes) {
     if (cfg?.priceSizes?.length)              window.ATLAS_CONFIG.priceSizes      = cfg.priceSizes;
     if (Array.isArray(cfg?.highlightedSizes)) window.ATLAS_CONFIG.highlightedSizes = cfg.highlightedSizes;
 
-    initSizeToggle(highlightedSizes());
+    initSizeToggle(configSizes());
     updateToggleLabels();
     renderStats();
     document.getElementById("st-br").textContent = breweries.length;

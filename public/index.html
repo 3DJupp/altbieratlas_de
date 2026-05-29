@@ -21,11 +21,17 @@
 <meta property="og:description" content="Interaktive Karte mit Altbier-Orten, Preisen und Wissen. Gemeinschaftlich gepflegt." />
 <meta property="og:url" content="https://altbieratlas.de/" />
 <meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+<meta property="og:locale" content="de_DE" />
+<meta property="og:locale:alternate" content="en_US" />
 <meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Altbieratlas — Die interaktive Karte des Altbiers" />
 <meta name="twitter:description" content="Interaktive Karte mit Altbier-Orten, Preisen und Wissen. Gemeinschaftlich gepflegt." />
 <meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -79,11 +85,14 @@
     <div id="map" class="map-canvas"></div>
 
     <div class="map-filters">
-      <button class="filter-btn active" data-filter="all" data-i18n="map.filter.all">Alle</button>
-      <button class="filter-btn" data-filter="brauerei" data-i18n="map.filter.brauerei">Brauerei / Brewpub</button>
-      <button class="filter-btn" data-filter="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</button>
-      <button class="filter-btn" data-filter="handel" data-i18n="map.filter.handel">Handel</button>
-      <button class="filter-btn" data-filter="historisch" data-i18n="map.filter.historisch">Historisch</button>
+      <select id="type-filter" class="filter-select" aria-label="Kategorie filtern">
+        <option value="all" data-i18n="map.filter.all">Alle</option>
+        <option value="brauerei" data-i18n="map.filter.brauerei">Brauerei / Brewpub</option>
+        <option value="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</option>
+        <option value="handel" data-i18n="map.filter.handel">Handel</option>
+        <option value="historisch" data-i18n="map.filter.historisch">Historisch</option>
+      </select>
+      <button class="filter-btn filter-near" id="near-me-btn" type="button" title="In meiner Nähe">📍 In meiner Nähe</button>
       <div class="map-search-wrap">
         <input type="search" id="map-search" class="filter-search" placeholder="Stadt, Brauerei, Ort…" data-i18n-placeholder="map.search" autocomplete="off" />
         <div class="map-search-suggest" id="map-search-suggest"></div>
@@ -236,8 +245,19 @@
   border-radius: 999px;
   box-shadow: var(--shadow);
   flex-wrap: wrap;
+  align-items: center;
   max-width: calc(100% - 56px);
 }
+.filter-select {
+  background: transparent; border: none;
+  color: var(--ink); font-family: var(--font-ui); font-size: 13px;
+  padding: 8px 30px 8px 16px; border-radius: 999px;
+  cursor: pointer; outline: none; appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%23a98a63' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.filter-select:hover { background-color: var(--bg-elev); }
+.filter-select option { background: var(--bg-card); color: var(--ink); }
 .filter-btn {
   background: transparent; border: none;
   color: var(--ink-soft);
@@ -248,6 +268,8 @@
 }
 .filter-btn:hover { color: var(--ink); background: var(--bg-elev); }
 .filter-btn.active { background: var(--accent); color: var(--accent-ink); }
+.filter-near { color: var(--copper); font-weight: 600; }
+.filter-near:disabled { opacity: .6; cursor: default; }
 .filter-search {
   background: transparent; border: none;
   color: var(--ink);
@@ -522,11 +544,12 @@ const runSuggest = debounce(async (q) => {
 
 searchEl.addEventListener("input", (e) => {
   const v = e.target.value;
-  const active = document.querySelector(".filter-btn.active").dataset.filter;
+  const active = document.getElementById("type-filter").value;
   renderMarkers(active, v);
   runSuggest(v);
 });
 searchEl.addEventListener("focus", () => {
+  hideHero();
   if (searchEl.value) runSuggest(searchEl.value);
 });
 // Close on outside click
@@ -544,24 +567,117 @@ searchEl.addEventListener("keydown", (e) => {
   }
 });
 
-// "Karte erkunden" hides the hero copy card
+// Intro-Karte ausblenden, sobald mit der Karte interagiert wird
+function hideHero() { document.querySelector(".hero-copy")?.classList.add("hidden"); }
+
+// "Karte erkunden" + Tippen auf die Karte blenden die Intro-Karte aus
 const exploreBtn = document.querySelector('a[href="#map-section"].btn');
 if (exploreBtn) {
   exploreBtn.addEventListener("click", function (e) {
     e.preventDefault();
-    document.querySelector(".hero-copy")?.classList.add("hidden");
+    hideHero();
   });
 }
+map.on("click", hideHero);
 
-// Filter-Buttons
-document.querySelectorAll(".filter-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    renderMarkers(btn.dataset.filter, searchEl.value);
-    atlasTrack("map_filter", { filter: btn.dataset.filter });
-  });
+// Typ-Filter (Dropdown) — beim Wechsel den Standort-Pin entfernen
+const typeFilter = document.getElementById("type-filter");
+typeFilter.addEventListener("change", () => {
+  hideHero();
+  clearUserMarker();
+  renderMarkers(typeFilter.value, searchEl.value);
+  atlasTrack("map_filter", { filter: typeFilter.value });
 });
+
+// ============ "In meiner Nähe" (Geolocation) ============
+let userMarker = null;
+let userNearest = null; // { brewery, km } | null
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371, toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function nearestBrewery(lat, lng) {
+  let best = null, bestKm = Infinity;
+  allBreweries.forEach((b) => {
+    if (b.isHistorical || !Array.isArray(b.coords)) return;
+    const km = haversineKm(lat, lng, b.coords[0], b.coords[1]);
+    if (km < bestKm) { bestKm = km; best = b; }
+  });
+  return best ? { brewery: best, km: bestKm } : null;
+}
+
+function userPopupHtml() {
+  let body;
+  if (userNearest) {
+    const km = userNearest.km < 10 ? userNearest.km.toFixed(1) : Math.round(userNearest.km);
+    const line = window.t("map.nearMe.nearest").replace("{name}", userNearest.brewery.name).replace("{km}", km);
+    body = `<div style="font-size:12px;opacity:.85">${line}</div>
+            <div style="margin-top:8px"><a href="/ort?id=${userNearest.brewery.id}">${window.t("map.goto")} →</a></div>`;
+  } else {
+    body = `<div style="font-size:12px;opacity:.75">${window.t("map.nearMe.none")}</div>`;
+  }
+  return `<h4>${window.t("map.nearMe.youAreHere")}</h4>${body}`;
+}
+
+// Standort-Marker entfernen (z. B. beim Kategoriewechsel)
+function clearUserMarker() {
+  if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+  userNearest = null;
+}
+
+const nearMeBtn = document.getElementById("near-me-btn");
+if (nearMeBtn) {
+  const defaultLabel = () => { nearMeBtn.textContent = "📍 " + window.t("map.nearMe"); };
+  const flash = (msg) => {
+    nearMeBtn.textContent = msg;
+    nearMeBtn.disabled = false;
+    setTimeout(defaultLabel, 4000);
+  };
+  nearMeBtn.addEventListener("click", () => {
+    hideHero();
+    if (!navigator.geolocation) { flash(window.t("map.nearMe.unavailable")); return; }
+    nearMeBtn.disabled = true;
+    nearMeBtn.textContent = "⏳ " + window.t("map.nearMe.locating");
+    atlasTrack("map_near_me", {});
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        const latlng = [lat, lng];
+        clearGeoMarker();
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker(latlng, {
+          icon: L.divIcon({ className: "", html: `<div class="atlas-pin user"></div>`, iconSize: [22, 22], iconAnchor: [11, 11] }),
+        }).addTo(map);
+        userNearest = nearestBrewery(lat, lng);
+        userMarker.bindPopup(userPopupHtml()).openPopup();
+        map.flyTo(latlng, cfg.map.geocodeZoom || 11, { duration: 0.8 });
+        nearMeBtn.disabled = false;
+        defaultLabel();
+      },
+      (err) => {
+        flash(err.code === err.PERMISSION_DENIED
+          ? window.t("map.nearMe.denied")
+          : window.t("map.nearMe.unavailable"));
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  });
+  // Sprachwechsel: Button-Label und ein offenes Standort-Popup neu rendern
+  document.addEventListener("atlas:lang-changed", () => {
+    defaultLabel();
+    if (userMarker) {
+      const wasOpen = userMarker.isPopupOpen();
+      userMarker.setPopupContent(userPopupHtml());
+      if (wasOpen) userMarker.openPopup();
+    }
+  });
+  defaultLabel();
+}
 
 // ============ Daten laden ============
 let cachedPrices = [];

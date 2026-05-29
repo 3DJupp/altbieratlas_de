@@ -1,4 +1,4 @@
-# Altbieratlas · v0.9.0
+# Altbieratlas · v0.9.1
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -15,6 +15,7 @@ altbieratlas/
 │   ├── ranglisten.html      # Preis-Ranglisten
 │   ├── wissen.html          # Glossar & Hintergrund
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
+│   ├── stadt.html           # Stadt-Landingpage (SSR, Pilot: /stadt/duesseldorf)
 │   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
 │   ├── impressum.html       # Impressum & Datenschutz
 │   ├── admin.html           # Moderations-Dashboard
@@ -207,10 +208,18 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 - Typ-spezifische Pin-Farben, Hover-Tooltips, Filter inkl. "Historisch"
 - Historische Brauereien (`is_historical`) grau hervorgehoben; `highlighted`/`sponsored`-CSS für gesponserte Einträge
 - Geocoder-Suche via Nominatim (serverseitig proxiert)
+- **„In meiner Nähe"** — Browser-Geolocation schwenkt die Karte auf den Standort und zeigt den nächstgelegenen Ort (Haversine, ohne Backend)
 
 ### Brauerei-Detail
 - Preisverlauf als SVG-Chart, Stile, Geschmacksnotizen (DE/EN)
 - **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
+
+### Stadt-Landingpages (SEO)
+- Serverseitig gerenderte Seiten unter `/stadt/<slug>` (Pilot: `/stadt/duesseldorf`)
+- Listet alle freigegebenen Orte einer Stadt + Ø-Preis, mit `CollectionPage`-,
+  `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang-Alternates
+- Weitere Städte über die `CITY_SLUGS`-Whitelist in `src/routes.js` freischalten;
+  Sitemap-Einträge entstehen automatisch
 
 ### Beitragen
 Fünf Einreichungstypen mit Moderation:
