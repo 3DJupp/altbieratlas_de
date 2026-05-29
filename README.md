@@ -1,4 +1,4 @@
-# Altbieratlas · v0.9.2
+# Altbieratlas · v0.9.3
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -182,7 +182,7 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 
 | Feld | Beschreibung |
 |---|---|
-| `turnstileSiteKey` | Öffentlicher Turnstile-Site-Key. Kann alternativ als eigenständige Variable `TURNSTILE_SITE_KEY` gesetzt werden (siehe unten) — diese hat Vorrang. |
+| `turnstileSiteKey` | Öffentlicher Turnstile-Site-Key. **Empfohlen:** stattdessen `TURNSTILE_SITE_KEY` als `[vars]` in `wrangler.toml` (deploy-fest, siehe unten) — diese Quelle hat Vorrang. Ein Dashboard-Wert wird beim Deploy ggf. überschrieben. |
 | `highlightedSizes` | Größen, die in Ranglisten hervorgehoben werden und beim Laden vorausgewählt sind. Empfehlung: `[0.25]` |
 | `requireModeration` | `true` = alle Beiträge landen in der Queue. Standard: `true` |
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
@@ -195,11 +195,21 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 | Name | Type | Zweck |
 |---|---|---|
 | `TURNSTILE_SECRET_KEY` | **Secret** | Serverseitiger Turnstile-Key |
-| `TURNSTILE_SITE_KEY` | Variable *oder* Secret | Öffentlicher Site-Key. Alternative zu `SITE_CONFIG.turnstileSiteKey` und hat Vorrang davor. Aktiviert das Widget; ohne ihn bleibt der Platzhalter „Site-Key nicht gesetzt" sichtbar. Da öffentlich, genügt eine Plaintext-Variable. |
 | `RESEND_API_KEY` | **Secret** | [Resend](https://resend.com)-API-Key |
 | `ADMIN_EMAIL` | **Secret** | Empfänger des täglichen Digests |
 | `UNTAPPD_CLIENT_SECRET` | **Secret** | Untappd-App-Secret (optional) |
 | `INITIAL_ADMIN` | **Secret** | Ersteinrichtung — nach erstem Login löschen |
+
+#### Öffentliche, deploy-feste Variablen (`wrangler.toml` → `[vars]`)
+
+Dashboard-**Plaintext-Variablen** werden bei `wrangler deploy` gelöscht, sofern `keep_vars = true` nicht greift — und das ist ein **Top-Level-Key**: steht er (wie zuvor versehentlich) nach einer `[table]`-Überschrift, parst TOML ihn als deren Property und wrangler ignoriert ihn. **Secrets** bleiben immer erhalten. Werte, die jeden Deploy überleben müssen und **nicht** sensibel sind, gehören als `[vars]` in `wrangler.toml`:
+
+```toml
+[vars]
+TURNSTILE_SITE_KEY = "0x..."   # öffentlicher Turnstile-Site-Key
+```
+
+`TURNSTILE_SITE_KEY` hat Vorrang vor `SITE_CONFIG.turnstileSiteKey`. **Nur öffentliche Werte** hier ablegen — niemals Secrets.
 
 ---
 

@@ -57,7 +57,7 @@ Pages call `window.ATLAS_API.*` methods which work identically in both modes.
 
 ### Configuration
 
-Runtime config lives in the **Cloudflare Dashboard** (Workers → Settings → Variables and Secrets) as `SITE_CONFIG` (a JSON string). `keep_vars = true` in `wrangler.toml` ensures dashboard values survive every `wrangler deploy`.
+Runtime config lives in the **Cloudflare Dashboard** (Workers → Settings → Variables and Secrets) as `SITE_CONFIG` (a JSON string). `keep_vars = true` in `wrangler.toml` keeps dashboard **plaintext variables** from being wiped on `wrangler deploy` — but it **only works as a top-level key**: if placed after any `[table]`/`[[table]]` header TOML parses it as that table's property and wrangler silently ignores it (this happened — it sat under `[[rules]]`, so every deploy deleted dashboard plaintext vars like `TURNSTILE_SITE_KEY`; **secrets always survive** regardless). Guidance: secrets (e.g. `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`) belong in the dashboard; **public, non-sensitive values that must survive every deploy** belong in `wrangler.toml` under `[vars]` (e.g. `TURNSTILE_SITE_KEY`, which takes precedence over `SITE_CONFIG.turnstileSiteKey`). Never put secrets in `[vars]` — that file is version-controlled.
 
 Admin-configurable values (banner, social links, impressum) are stored in the `site_settings` D1 table and take precedence over `SITE_CONFIG`.
 
