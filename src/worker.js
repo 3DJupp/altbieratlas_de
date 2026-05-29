@@ -161,7 +161,7 @@ export default {
     if (url.pathname.startsWith("/photos/") && request.method === "GET") {
       const filename = url.pathname.slice(8); // strip "/photos/"
       if (filename && !filename.includes("..") && env.LOGOS) {
-        const obj = await env.LOGOS.get(`photos/${filename}`);
+        const obj = await env.LOGOS.get(`orte/fotos/${filename}`);
         if (obj) {
           const headers = new Headers();
           headers.set("Content-Type", obj.httpMetadata?.contentType || "image/jpeg");
