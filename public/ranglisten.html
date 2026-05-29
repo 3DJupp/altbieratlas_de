@@ -216,13 +216,15 @@ function avgPrice(sizeNum) {
 
 function renderStats() {
   const strip = document.getElementById("stats-strip");
-  const hl = window.ATLAS_CONFIG.highlightedSizes || [];
+  // Ø-Preis je konfigurierter Größe, die auch Meldungen hat (keine leeren Kacheln)
+  const sizes = configSizes().filter((s) =>
+    prices.some((p) => Math.abs(normSize(p.size) - s) < 0.001));
 
   // Vorherige Preis-Kästen entfernen, dann neu einfügen
   strip.querySelectorAll(".stat-price-avg").forEach((el) => el.remove());
   const firstCountBox = strip.querySelector(".stat");
   const metaLabel = window.t ? window.t("rank.statMetaAll") : "über alle Meldungen";
-  hl.forEach((sizeNum) => {
+  sizes.forEach((sizeNum) => {
     const box = document.createElement("div");
     box.className = "stat stat-price-avg";
     box.innerHTML =
@@ -233,7 +235,7 @@ function renderStats() {
   });
 
   // Grid-Spalten: n Preiskästen + 2 Zählkästen
-  strip.style.setProperty("--stat-cols", hl.length + 2);
+  strip.style.setProperty("--stat-cols", sizes.length + 2);
 }
 
 let currentTab = "prices";
