@@ -110,6 +110,7 @@ const ROUTES = [
   ["DELETE", "/api/admin/breweries/:id/logo",              R.adminDeleteBreweryLogo],
   ["GET",    "/api/admin/ort-logos",                       R.adminListBreweryLogos],
   ["DELETE", "/api/admin/ort-logos/:key",                  R.adminDeleteBreweryLogoFile],
+  ["POST",   "/api/admin/migrate-r2",                      R.adminMigrateR2],
   ["GET",    "/api/admin/glossary",                        R.adminListGlossary],
   ["POST",   "/api/admin/glossary",                        R.adminCreateGlossary],
   ["PUT",    "/api/admin/glossary/:term",                  R.adminUpdateGlossary],
