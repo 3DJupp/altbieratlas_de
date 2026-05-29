@@ -513,9 +513,13 @@ export async function postContribution(req, env, _params, ctx) {
   try { body = await req.json(); }
   catch { return error(400, "invalid-json"); }
 
-  // Turnstile (wenn konfiguriert)
+  // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
+  // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
+  const contribSc = siteConfig(env);
+  const contribSiteKey = contribSc.turnstileSiteKey;
+  const tsActive = contribSiteKey && !String(contribSiteKey).includes("PLACEHOLDER");
   const tsResult = await verifyTurnstile(
-    body.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp(req)
+    body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req)
   );
   if (!tsResult.success) return error(403, "turnstile-failed", { reason: tsResult });
 
@@ -1052,10 +1056,10 @@ export async function adminUploadBreweryPhoto(req, env, { id }) {
   const extMap = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
   const ext = extMap[mimeType] || "jpg";
   const filename = `${id}.${ext}`;
-  const r2Key = `photos/${filename}`;
+  const r2Key = `orte/fotos/${filename}`;
 
   if (brewery.photo_key && brewery.photo_key !== filename) {
-    await env.LOGOS.delete(`photos/${brewery.photo_key}`).catch(() => {});
+    await env.LOGOS.delete(`orte/fotos/${brewery.photo_key}`).catch(() => {});
   }
 
   await env.LOGOS.put(r2Key, bytes, { httpMetadata: { contentType: mimeType } });
@@ -1071,7 +1075,7 @@ export async function adminDeleteBreweryPhoto(req, env, { id }) {
   const brewery = await env.DB.prepare("SELECT id, photo_key FROM breweries WHERE id = ?").bind(id).first();
   if (!brewery) return error(404, "not-found");
   if (brewery.photo_key && env.LOGOS) {
-    await env.LOGOS.delete(`photos/${brewery.photo_key}`).catch(() => {});
+    await env.LOGOS.delete(`orte/fotos/${brewery.photo_key}`).catch(() => {});
   }
   await env.DB.prepare("UPDATE breweries SET photo_key = NULL, updated_at = datetime('now') WHERE id = ?").bind(id).run();
   return json({ ok: true });
@@ -1100,15 +1104,15 @@ export async function adminUploadBreweryLogo(req, env, { id }) {
   const extMap = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg", "image/gif": "gif" };
   const ext = extMap[mimeType] || "png";
   const filename = `${id}.${ext}`;
-  const r2Key = `ort-logos/${filename}`;
+  const r2Key = `orte/logos/${filename}`;
 
   if (brewery.logo_key && brewery.logo_key !== filename) {
-    await env.LOGOS.delete(`ort-logos/${brewery.logo_key}`).catch(() => {});
+    await env.LOGOS.delete(`orte/logos/${brewery.logo_key}`).catch(() => {});
   }
 
   await env.LOGOS.put(r2Key, bytes, { httpMetadata: { contentType: mimeType } });
   await env.DB.prepare("UPDATE breweries SET logo_key = ?, updated_at = datetime('now') WHERE id = ?").bind(filename, id).run();
-  return json({ ok: true, logoKey: filename, logoUrl: `/logos/ort-logos/${filename}` });
+  return json({ ok: true, logoKey: filename, logoUrl: `/logos/orte/${filename}` });
 }
 
 // DELETE /api/admin/breweries/:id/logo  — entfernt nur die DB-Referenz, löscht R2-Objekt nicht
@@ -1127,9 +1131,9 @@ export async function adminListBreweryLogos(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   if (!env.LOGOS) return json({ logos: [] });
-  const listed = await env.LOGOS.list({ prefix: "ort-logos/" });
+  const listed = await env.LOGOS.list({ prefix: "orte/logos/" });
   const logos = listed.objects.map((obj) => ({
-    key: obj.key.slice("ort-logos/".length),
+    key: obj.key.slice("orte/logos/".length),
     url: `/logos/${obj.key}`,
     size: obj.size,
   }));
@@ -1141,7 +1145,7 @@ export async function adminDeleteBreweryLogoFile(req, env, { key }) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   if (!env.LOGOS) return error(503, "r2-not-configured");
-  await env.LOGOS.delete(`ort-logos/${key}`).catch(() => {});
+  await env.LOGOS.delete(`orte/logos/${key}`).catch(() => {});
   await env.DB.prepare("UPDATE breweries SET logo_key = NULL, updated_at = datetime('now') WHERE logo_key = ?").bind(key).run();
   return json({ ok: true });
 }
@@ -1409,8 +1413,14 @@ export async function adminListLogos(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   if (!env.LOGOS) return json({ logos: [] });
-  const listed = await env.LOGOS.list();
-  const logos = listed.objects.map((obj) => ({ key: obj.key, url: `/logos/${obj.key}`, size: obj.size }));
+  const [orteList, stileList] = await Promise.all([
+    env.LOGOS.list({ prefix: "orte/logos/" }),
+    env.LOGOS.list({ prefix: "stile/" }),
+  ]);
+  const logos = [
+    ...orteList.objects.map((obj) => ({ key: obj.key, url: `/logos/${obj.key}`, size: obj.size, folder: "orte" })),
+    ...stileList.objects.map((obj) => ({ key: obj.key, url: `/logos/${obj.key}`, size: obj.size, folder: "stile" })),
+  ];
   return json({ logos });
 }
 
@@ -1455,7 +1465,7 @@ export async function adminUploadStyleLogo(req, env, { id }) {
 
   const extMap = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg", "image/gif": "gif" };
   const ext = extMap[mimeType] || "png";
-  const key = `${id}.${ext}`;
+  const key = `stile/${id}.${ext}`;
 
   if (style.logo_key && style.logo_key !== key) {
     await env.LOGOS.delete(style.logo_key).catch(() => {});
