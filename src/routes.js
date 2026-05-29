@@ -964,7 +964,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     name: "name", short: "short_name", type: "type", city: "city", country: "country",
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
-    verified: "verified", status: "status",
+    verified: "verified", status: "status", logo_key: "logo_key",
   };
   for (const [k, col] of Object.entries(allow)) {
     if (k in body) {
@@ -1074,6 +1074,75 @@ export async function adminDeleteBreweryPhoto(req, env, { id }) {
     await env.LOGOS.delete(`photos/${brewery.photo_key}`).catch(() => {});
   }
   await env.DB.prepare("UPDATE breweries SET photo_key = NULL, updated_at = datetime('now') WHERE id = ?").bind(id).run();
+  return json({ ok: true });
+}
+
+// POST /api/admin/breweries/:id/logo  (multipart/form-data, field: logo)
+export async function adminUploadBreweryLogo(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return error(503, "r2-not-configured");
+
+  const brewery = await env.DB.prepare("SELECT id, logo_key FROM breweries WHERE id = ?").bind(id).first();
+  if (!brewery) return error(404, "not-found");
+
+  let formData;
+  try { formData = await req.formData(); } catch { return error(400, "multipart-required"); }
+  const file = formData.get("logo");
+  if (!file || typeof file.arrayBuffer !== "function") return error(400, "logo-field-required");
+
+  const mimeType = file.type || "application/octet-stream";
+  if (!mimeType.startsWith("image/")) return error(400, "image-required");
+
+  const bytes = await file.arrayBuffer();
+  if (bytes.byteLength > 2 * 1024 * 1024) return error(400, "file-too-large", { maxBytes: 2097152 });
+
+  const extMap = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg", "image/gif": "gif" };
+  const ext = extMap[mimeType] || "png";
+  const filename = `${id}.${ext}`;
+  const r2Key = `ort-logos/${filename}`;
+
+  if (brewery.logo_key && brewery.logo_key !== filename) {
+    await env.LOGOS.delete(`ort-logos/${brewery.logo_key}`).catch(() => {});
+  }
+
+  await env.LOGOS.put(r2Key, bytes, { httpMetadata: { contentType: mimeType } });
+  await env.DB.prepare("UPDATE breweries SET logo_key = ?, updated_at = datetime('now') WHERE id = ?").bind(filename, id).run();
+  return json({ ok: true, logoKey: filename, logoUrl: `/logos/ort-logos/${filename}` });
+}
+
+// DELETE /api/admin/breweries/:id/logo  — entfernt nur die DB-Referenz, löscht R2-Objekt nicht
+export async function adminDeleteBreweryLogo(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+
+  const brewery = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(id).first();
+  if (!brewery) return error(404, "not-found");
+  await env.DB.prepare("UPDATE breweries SET logo_key = NULL, updated_at = datetime('now') WHERE id = ?").bind(id).run();
+  return json({ ok: true });
+}
+
+// GET /api/admin/ort-logos
+export async function adminListBreweryLogos(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return json({ logos: [] });
+  const listed = await env.LOGOS.list({ prefix: "ort-logos/" });
+  const logos = listed.objects.map((obj) => ({
+    key: obj.key.slice("ort-logos/".length),
+    url: `/logos/${obj.key}`,
+    size: obj.size,
+  }));
+  return json({ logos });
+}
+
+// DELETE /api/admin/ort-logos/:key
+export async function adminDeleteBreweryLogoFile(req, env, { key }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.LOGOS) return error(503, "r2-not-configured");
+  await env.LOGOS.delete(`ort-logos/${key}`).catch(() => {});
+  await env.DB.prepare("UPDATE breweries SET logo_key = NULL, updated_at = datetime('now') WHERE logo_key = ?").bind(key).run();
   return json({ ok: true });
 }
 

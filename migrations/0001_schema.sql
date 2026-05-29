@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS breweries (
   is_historical  INTEGER NOT NULL DEFAULT 0,
   status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
   photo_key      TEXT,
+  logo_key       TEXT,
   created_at     TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
