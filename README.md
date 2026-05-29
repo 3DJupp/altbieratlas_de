@@ -164,13 +164,14 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**):
 
 Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 
-#### Einzige Konfigurationsvariable: `SITE_CONFIG`
+#### Sammel-Konfigurationsvariable: `SITE_CONFIG`
+
+Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vollständige, ausfüllbare Vorlage liegt im Repo unter [`site-config.example.json`](./site-config.example.json) — Werte anpassen, als **eine Zeile** ins Dashboard kopieren.
 
 ```json
 {
   "contactEmail":      "deine@email.de",
   "ga4MeasurementId":  "G-XXXXXXXXXX",
-  "turnstileSiteKey":  "0x...",
   "priceSizes":        [0.2, 0.25, 0.4, 0.5],
   "highlightedSizes":  [0.25],
   "requireModeration": true,
@@ -180,9 +181,10 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 }
 ```
 
+> **Turnstile gehört nicht mehr hier rein.** Der Site-Key steht jetzt als `TURNSTILE_SITE_KEY` unter `[vars]` in `wrangler.toml` (deploy-fest, siehe unten) und hat Vorrang vor `SITE_CONFIG.turnstileSiteKey`.
+
 | Feld | Beschreibung |
 |---|---|
-| `turnstileSiteKey` | Öffentlicher Turnstile-Site-Key. **Empfohlen:** stattdessen `TURNSTILE_SITE_KEY` als `[vars]` in `wrangler.toml` (deploy-fest, siehe unten) — diese Quelle hat Vorrang. Ein Dashboard-Wert wird beim Deploy ggf. überschrieben. |
 | `highlightedSizes` | Größen, die in Ranglisten hervorgehoben werden und beim Laden vorausgewählt sind. Empfehlung: `[0.25]` |
 | `requireModeration` | `true` = alle Beiträge landen in der Queue. Standard: `true` |
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
