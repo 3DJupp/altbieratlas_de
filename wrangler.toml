@@ -136,6 +136,12 @@ persist = true
 # Secrets (nie in SITE_CONFIG — immer einzeln im Dashboard setzen):
 #   TURNSTILE_SECRET_KEY  — serverseitiger Turnstile-Key
 #   RESEND_API_KEY        — API-Key von resend.com (für alle Mails)
+#
+#   TURNSTILE_SITE_KEY    — öffentlicher Turnstile-Site-Key. Alternative zu
+#                           SITE_CONFIG.turnstileSiteKey; hat Vorrang davor.
+#                           Da öffentlich, ist Plaintext-Variable ausreichend,
+#                           ein Secret funktioniert aber genauso. Aktiviert das
+#                           Widget; ohne ihn bleibt der „Platzhalter" sichtbar.
 #   ADMIN_EMAIL           — Empfänger des täglichen Beitrags-Digests
 #   UNTAPPD_CLIENT_SECRET — Untappd-App-Secret (sensitiv)
 #

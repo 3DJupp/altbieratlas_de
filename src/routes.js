@@ -19,6 +19,19 @@ function contactEmail(env) {
   return siteConfig(env).contactEmail || "";
 }
 
+// Turnstile-Site-Key (öffentlich): bevorzugt eigenständige Variable
+// TURNSTILE_SITE_KEY (Dashboard, Plaintext oder Secret — beides funktioniert,
+// der Site-Key ist ohnehin öffentlich), sonst Fallback auf SITE_CONFIG.turnstileSiteKey.
+function turnstileSiteKey(env) {
+  const k = env.TURNSTILE_SITE_KEY || siteConfig(env).turnstileSiteKey || null;
+  return k && String(k).trim().length > 0 ? String(k).trim() : null;
+}
+// Turnstile aktiv = Site-Key gesetzt und kein Platzhalter
+function turnstileActive(env) {
+  const k = turnstileSiteKey(env);
+  return !!k && !k.includes("PLACEHOLDER");
+}
+
 // ---- Auth-Middleware ----
 async function requireAdmin(req, env) {
   const cookies = parseCookies(req);
@@ -41,13 +54,15 @@ async function requireAdmin(req, env) {
 
 // GET /api/config
 // Liefert alle nicht-sensitiven Werte, die das Frontend zur Laufzeit benötigt.
-// Primärquelle: SITE_CONFIG (JSON-String). Fallback: Einzelvariablen (Legacy).
+// Primärquelle: SITE_CONFIG (JSON-String). Der Turnstile-Site-Key kann
+// alternativ als eigenständige Variable TURNSTILE_SITE_KEY gesetzt werden
+// (parallel zum Secret TURNSTILE_SECRET_KEY) — siehe turnstileSiteKey().
 export async function getPublicConfig(req, env) {
   const v = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : null);
 
   const sc = siteConfig(env);
 
-  const siteKey = v(sc.turnstileSiteKey);
+  const siteKey = turnstileSiteKey(env);
   const ga      = v(sc.ga4MeasurementId);
 
   const priceSizes = Array.isArray(sc.priceSizes) && sc.priceSizes.length > 0
@@ -515,9 +530,7 @@ export async function postContribution(req, env, _params, ctx) {
 
   // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
   // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
-  const contribSc = siteConfig(env);
-  const contribSiteKey = contribSc.turnstileSiteKey;
-  const tsActive = contribSiteKey && !String(contribSiteKey).includes("PLACEHOLDER");
+  const tsActive = turnstileActive(env);
   const tsResult = await verifyTurnstile(
     body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req)
   );
@@ -679,9 +692,7 @@ export async function adminLogin(req, env) {
   // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
   // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
   // Fehlt der Site-Key, wird kein Widget angezeigt und kein Token gesendet.
-  const loginSc = siteConfig(env);
-  const tsSiteKey = loginSc.turnstileSiteKey;
-  const tsActive = tsSiteKey && !String(tsSiteKey).includes("PLACEHOLDER");
+  const tsActive = turnstileActive(env);
   const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, ip);
   if (!ts.success) return error(403, "turnstile-failed");
 
