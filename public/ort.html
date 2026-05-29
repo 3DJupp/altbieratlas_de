@@ -274,6 +274,18 @@ const root = document.getElementById("brewery-root");
     if (b.address) ld.address = {"@type":"PostalAddress","streetAddress":b.address,"addressLocality":b.city,"addressCountry":b.country||"DE"};
     if (b.lat && b.lon) ld.geo = {"@type":"GeoCoordinates","latitude":b.lat,"longitude":b.lon};
     if (b.website) ld.sameAs = b.website;
+    const ldPrices = prices.filter((p) => p.price);
+    if (ldPrices.length > 0) {
+      ld.hasOfferCatalog = {
+        "@type": "OfferCatalog",
+        "itemListElement": ldPrices.map((p) => ({
+          "@type": "Offer",
+          "itemOffered": {"@type": "Product", "name": `Altbier${p.size ? " (" + p.size + ")" : ""}`},
+          "price": (p.price / 100).toFixed(2),
+          "priceCurrency": "EUR"
+        }))
+      };
+    }
     const s = document.createElement("script");
     s.type = "application/ld+json";
     s.textContent = JSON.stringify(ld);
