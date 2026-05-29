@@ -2296,10 +2296,15 @@ export async function serveCity(req, env) {
   const metaDesc = `Alle ${rows.length} Altbier-Brauereien, Ausschankorte und Händler in ${city} — mit aktuellen Preisen im Altbieratlas.`;
 
   // Server-gerenderte Liste, damit Crawler & No-JS-Besucher Inhalt sehen
+  const TYPE_DE = {
+    brewpub: "Brauerei / Brewpub", brewery: "Brauerei / Brewpub",
+    pub: "Gastronomie", restaurant: "Gastronomie",
+    kiosk: "Handel", supermarket: "Handel", beverage_store: "Handel",
+  };
   const cardHtml = (r) =>
     `<a class="city-card${r.is_historical ? " historical" : ""}" href="/ort?id=${escHtml(encodeURIComponent(r.id))}">` +
     `<span class="cc-name">${escHtml(r.name)}</span>` +
-    `<span class="cc-meta">${escHtml(r.type || "")}</span></a>`;
+    `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span></a>`;
   const venuesHtml = current.length
     ? current.map(cardHtml).join("")
     : `<p class="city-empty">Noch keine Orte in ${escHtml(city)} im Atlas. <a href="/beitragen?typ=ort">Ort eintragen →</a></p>`;

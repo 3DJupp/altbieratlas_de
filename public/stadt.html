@@ -35,29 +35,40 @@
 
 <link rel="stylesheet" href="styles.css" />
 <style>
-.city-hero { padding: 56px 0 32px; border-bottom: 1px solid var(--rule); }
-.city-hero h1 { font-size: clamp(2.1rem, 5vw, 3.4rem); font-weight: 500; max-width: 16ch; margin: 8px 0 0; }
-.city-hero .lede { color: var(--ink-soft); font-size: 17px; max-width: 62ch; margin-top: 18px; line-height: 1.65; }
-.city-stats { display: flex; gap: 28px; margin-top: 22px; flex-wrap: wrap; }
-.city-stat { font-family: var(--font-mono); }
-.city-stat .num { font-size: 22px; color: var(--copper); font-weight: 600; }
-.city-stat .lbl { font-size: 12px; color: var(--ink-muted); letter-spacing: 0.03em; }
-.city-section { padding: 36px 0; }
-.city-section h2 { font-size: 1.4rem; font-weight: 500; margin-bottom: 16px; }
+/* Hero — analog zu rank-hero/know-hero */
+.city-hero { padding: 56px 0 36px; border-bottom: 1px solid var(--rule); }
+.city-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 16ch; margin: 8px 0 0; }
+.city-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 62ch; margin-top: 18px; line-height: 1.65; }
+
+/* Stat-Boxen — gleiche Optik wie auf den Ranglisten */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(var(--stat-cols, 2), 1fr);
+  gap: 16px; margin: 26px 0 24px; max-width: 520px;
+}
+.stat { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 18px 20px; }
+.stat .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); }
+.stat .val { font-family: var(--font-display); font-size: 32px; color: var(--copper); font-weight: 500; margin-top: 4px; letter-spacing: -0.02em; }
+@media (max-width: 800px) { .stats-strip { grid-template-columns: 1fr 1fr; } }
+.city-back { display: inline-block; font-size: 13px; color: var(--ink-muted); }
+
+/* Sektionen — analog zu know-section (Eyebrow + H2, Trennlinie) */
+.city-section { padding: 48px 0; border-bottom: 1px solid var(--rule); }
+.city-section .eyebrow { margin-bottom: 8px; }
+.city-section h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 500; margin-bottom: 24px; }
+
 .city-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 .city-card {
-  display: flex; flex-direction: column; gap: 4px;
-  padding: 16px 18px; border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 20px; border: 1px solid var(--rule); border-radius: var(--radius-lg);
   background: var(--bg-card); text-decoration: none; color: inherit;
-  transition: border-color .15s, transform .1s;
+  transition: border-color .15s, transform .1s, box-shadow .15s;
 }
-.city-card:hover { border-color: var(--copper); transform: translateY(-2px); }
-.city-card .cc-name { font-weight: 600; font-size: 15px; }
-.city-card .cc-meta { font-size: 12px; color: var(--ink-muted); }
-.city-card .cc-price { font-family: var(--font-mono); font-size: 13px; color: var(--copper); margin-top: 4px; }
-.city-card.historical { opacity: .75; }
+.city-card:hover { border-color: var(--copper); transform: translateY(-2px); box-shadow: var(--shadow); }
+.city-card .cc-name { font-weight: 600; font-size: 15px; color: var(--ink); }
+.city-card .cc-type { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.city-card .cc-price { font-family: var(--font-mono); font-size: 14px; color: var(--copper); margin-top: 2px; }
+.city-card.historical { opacity: .8; }
 .city-empty { color: var(--ink-muted); padding: 16px 0; }
-.city-back { display: inline-block; margin: 8px 0 0; font-size: 13px; color: var(--ink-muted); }
 </style>
 </head>
 <body>
@@ -70,9 +81,9 @@
       <div class="eyebrow" id="city-eyebrow" data-i18n="city.eyebrow">Altbier vor Ort</div>
       <h1 id="city-h1">Altbier in Düsseldorf</h1>
       <p class="lede" id="city-lede"></p>
-      <div class="city-stats" id="city-stats" hidden>
-        <div class="city-stat"><div class="num" id="stat-count">—</div><div class="lbl" id="stat-count-lbl"></div></div>
-        <div class="city-stat" id="stat-price-wrap" hidden><div class="num" id="stat-price">—</div><div class="lbl" id="stat-price-lbl"></div></div>
+      <div class="stats-strip" id="city-stats" hidden style="--stat-cols:2">
+        <div class="stat"><div class="label" id="stat-count-lbl"></div><div class="val" id="stat-count">—</div></div>
+        <div class="stat" id="stat-price-wrap" hidden><div class="label" id="stat-price-lbl"></div><div class="val" id="stat-price">—</div></div>
       </div>
       <a class="city-back" href="/" data-i18n="city.backToMap">← Zur Karte</a>
     </div>
@@ -80,6 +91,7 @@
 
   <section class="city-section">
     <div class="container">
+      <div class="eyebrow" data-i18n="city.currentEyebrow">Übersicht</div>
       <h2 id="city-current-title" data-i18n="city.current">Orte & Ausschank</h2>
       <div class="city-grid" id="city-venues" data-ssr="0">
         <p class="city-empty" data-i18n="common.loading">Lade…</p>
@@ -89,6 +101,7 @@
 
   <section class="city-section" id="city-historical-section" hidden>
     <div class="container">
+      <div class="eyebrow" data-i18n="city.historicalEyebrow">Geschichte</div>
       <h2 data-i18n="city.historical">Historische Brauereien</h2>
       <div class="city-grid" id="city-historical"></div>
     </div>
@@ -123,6 +136,17 @@ const fillTpl = (key, vars) => {
   return s;
 };
 
+// Venue-Typ → lokalisiertes Label (gleiche Gruppen wie der Kartenfilter)
+const TYPE_GROUP = {
+  brewpub: "brauerei", brewery: "brauerei",
+  pub: "gastronomie", restaurant: "gastronomie",
+  kiosk: "handel", supermarket: "handel", beverage_store: "handel",
+};
+const typeLabel = (type) => {
+  const g = TYPE_GROUP[type];
+  return g ? window.t("map.filter." + g) : (type || "");
+};
+
 function paint() {
   const lang = window.__atlasLang;
   document.getElementById("city-h1").textContent = fillTpl("city.h1", { city: CITY });
@@ -141,19 +165,24 @@ function paint() {
   document.getElementById("stat-count").textContent = inCity.length;
   document.getElementById("stat-count-lbl").textContent = window.t("city.stat.places");
   const prices = current.map((b) => pricesByBrewery.get(b.id)).filter((x) => x != null);
+  const priceWrap = document.getElementById("stat-price-wrap");
   if (prices.length) {
     const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
-    document.getElementById("stat-price-wrap").hidden = false;
+    priceWrap.hidden = false;
     document.getElementById("stat-price").textContent = "€ " + window.formatPrice(avg);
     document.getElementById("stat-price-lbl").textContent = window.t("city.stat.price");
+    statsEl.style.setProperty("--stat-cols", "2");
+  } else {
+    priceWrap.hidden = true;
+    statsEl.style.setProperty("--stat-cols", "1");
   }
 
   const card = (b) => {
     const p = pricesByBrewery.get(b.id);
     return `<a class="city-card${b.isHistorical ? " historical" : ""}" href="/ort?id=${encodeURIComponent(b.id)}">
       <span class="cc-name">${b.name}</span>
-      <span class="cc-meta">${b.type || ""}</span>
-      ${p ? `<span class="cc-price">€ ${window.formatPrice(p)} <span style="opacity:.6;font-size:11px">/ 0,25 l</span></span>` : ""}
+      <span class="cc-type">${typeLabel(b.type)}</span>
+      ${p ? `<span class="cc-price">€ ${window.formatPrice(p)} <span style="opacity:.55;font-size:11px">/ 0,25 l</span></span>` : ""}
     </a>`;
   };
 
