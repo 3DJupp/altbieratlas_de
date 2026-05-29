@@ -1829,7 +1829,7 @@ export async function sitemap(req, env) {
   // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuер.
   const PAGE_DATES = {
     "/":           "2026-05-29",
-    "/ranglisten": "2026-05-25",
+    "/ranglisten": "2026-05-29",
     "/wissen":     "2026-05-29",
     "/rivalen":    "2026-05-26",
     "/beitragen":  "2026-05-24",

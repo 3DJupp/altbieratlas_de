@@ -85,11 +85,13 @@
     <div id="map" class="map-canvas"></div>
 
     <div class="map-filters">
-      <button class="filter-btn active" data-filter="all" data-i18n="map.filter.all">Alle</button>
-      <button class="filter-btn" data-filter="brauerei" data-i18n="map.filter.brauerei">Brauerei / Brewpub</button>
-      <button class="filter-btn" data-filter="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</button>
-      <button class="filter-btn" data-filter="handel" data-i18n="map.filter.handel">Handel</button>
-      <button class="filter-btn" data-filter="historisch" data-i18n="map.filter.historisch">Historisch</button>
+      <select id="type-filter" class="filter-select" aria-label="Kategorie filtern">
+        <option value="all" data-i18n="map.filter.all">Alle</option>
+        <option value="brauerei" data-i18n="map.filter.brauerei">Brauerei / Brewpub</option>
+        <option value="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</option>
+        <option value="handel" data-i18n="map.filter.handel">Handel</option>
+        <option value="historisch" data-i18n="map.filter.historisch">Historisch</option>
+      </select>
       <button class="filter-btn filter-near" id="near-me-btn" type="button" title="In meiner Nähe">📍 In meiner Nähe</button>
       <div class="map-search-wrap">
         <input type="search" id="map-search" class="filter-search" placeholder="Stadt, Brauerei, Ort…" data-i18n-placeholder="map.search" autocomplete="off" />
@@ -243,8 +245,19 @@
   border-radius: 999px;
   box-shadow: var(--shadow);
   flex-wrap: wrap;
+  align-items: center;
   max-width: calc(100% - 56px);
 }
+.filter-select {
+  background: transparent; border: none;
+  color: var(--ink); font-family: var(--font-ui); font-size: 13px;
+  padding: 8px 30px 8px 16px; border-radius: 999px;
+  cursor: pointer; outline: none; appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%23a98a63' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.filter-select:hover { background-color: var(--bg-elev); }
+.filter-select option { background: var(--bg-card); color: var(--ink); }
 .filter-btn {
   background: transparent; border: none;
   color: var(--ink-soft);
@@ -531,7 +544,7 @@ const runSuggest = debounce(async (q) => {
 
 searchEl.addEventListener("input", (e) => {
   const v = e.target.value;
-  const active = document.querySelector(".filter-btn.active").dataset.filter;
+  const active = document.getElementById("type-filter").value;
   renderMarkers(active, v);
   runSuggest(v);
 });
@@ -562,18 +575,17 @@ if (exploreBtn) {
   });
 }
 
-// Filter-Buttons
-document.querySelectorAll(".filter-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    renderMarkers(btn.dataset.filter, searchEl.value);
-    atlasTrack("map_filter", { filter: btn.dataset.filter });
-  });
+// Typ-Filter (Dropdown) — beim Wechsel den Standort-Pin entfernen
+const typeFilter = document.getElementById("type-filter");
+typeFilter.addEventListener("change", () => {
+  clearUserMarker();
+  renderMarkers(typeFilter.value, searchEl.value);
+  atlasTrack("map_filter", { filter: typeFilter.value });
 });
 
 // ============ "In meiner Nähe" (Geolocation) ============
 let userMarker = null;
+let userNearest = null; // { brewery, km } | null
 
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371, toRad = (d) => (d * Math.PI) / 180;
@@ -591,6 +603,25 @@ function nearestBrewery(lat, lng) {
     if (km < bestKm) { bestKm = km; best = b; }
   });
   return best ? { brewery: best, km: bestKm } : null;
+}
+
+function userPopupHtml() {
+  let body;
+  if (userNearest) {
+    const km = userNearest.km < 10 ? userNearest.km.toFixed(1) : Math.round(userNearest.km);
+    const line = window.t("map.nearMe.nearest").replace("{name}", userNearest.brewery.name).replace("{km}", km);
+    body = `<div style="font-size:12px;opacity:.85">${line}</div>
+            <div style="margin-top:8px"><a href="/ort?id=${userNearest.brewery.id}">${window.t("map.goto")} →</a></div>`;
+  } else {
+    body = `<div style="font-size:12px;opacity:.75">${window.t("map.nearMe.none")}</div>`;
+  }
+  return `<h4>${window.t("map.nearMe.youAreHere")}</h4>${body}`;
+}
+
+// Standort-Marker entfernen (z. B. beim Kategoriewechsel)
+function clearUserMarker() {
+  if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+  userNearest = null;
 }
 
 const nearMeBtn = document.getElementById("near-me-btn");
@@ -615,18 +646,8 @@ if (nearMeBtn) {
         userMarker = L.marker(latlng, {
           icon: L.divIcon({ className: "", html: `<div class="atlas-pin user"></div>`, iconSize: [22, 22], iconAnchor: [11, 11] }),
         }).addTo(map);
-
-        const near = nearestBrewery(lat, lng);
-        let body;
-        if (near) {
-          const km = near.km < 10 ? near.km.toFixed(1) : Math.round(near.km);
-          const line = window.t("map.nearMe.nearest").replace("{name}", near.brewery.name).replace("{km}", km);
-          body = `<div style="font-size:12px;opacity:.85">${line}</div>
-                  <div style="margin-top:8px"><a href="/ort?id=${near.brewery.id}">${window.t("map.goto")} →</a></div>`;
-        } else {
-          body = `<div style="font-size:12px;opacity:.75">${window.t("map.nearMe.none")}</div>`;
-        }
-        userMarker.bindPopup(`<h4>${window.t("map.nearMe.youAreHere")}</h4>${body}`).openPopup();
+        userNearest = nearestBrewery(lat, lng);
+        userMarker.bindPopup(userPopupHtml()).openPopup();
         map.flyTo(latlng, cfg.map.geocodeZoom || 11, { duration: 0.8 });
         nearMeBtn.disabled = false;
         defaultLabel();
@@ -639,7 +660,15 @@ if (nearMeBtn) {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   });
-  document.addEventListener("atlas:lang-changed", defaultLabel);
+  // Sprachwechsel: Button-Label und ein offenes Standort-Popup neu rendern
+  document.addEventListener("atlas:lang-changed", () => {
+    defaultLabel();
+    if (userMarker) {
+      const wasOpen = userMarker.isPopupOpen();
+      userMarker.setPopupContent(userPopupHtml());
+      if (wasOpen) userMarker.openPopup();
+    }
+  });
   defaultLabel();
 }
 
