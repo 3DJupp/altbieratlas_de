@@ -1986,12 +1986,26 @@ export async function serveOrt(req, env) {
 
   const ld = JSON.stringify({
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": row.name,
-    "url": pageUrl,
-    ...(row.address ? { "address": { "@type": "PostalAddress", "streetAddress": row.address, "addressLocality": row.city, "addressCountry": row.country || "DE" } } : {}),
-    ...(row.lat && row.lng ? { "geo": { "@type": "GeoCoordinates", "latitude": row.lat, "longitude": row.lng } } : {}),
-    ...(row.website ? { "sameAs": row.website } : {}),
+    "@graph": [
+      {
+        "@type": "LocalBusiness",
+        "@id": pageUrl + "#business",
+        "name": row.name,
+        "url": pageUrl,
+        "image": ogImageUrl,
+        ...(metaDesc ? { "description": metaDesc } : {}),
+        ...(row.address ? { "address": { "@type": "PostalAddress", "streetAddress": row.address, "addressLocality": row.city, "addressCountry": row.country || "DE" } } : {}),
+        ...(row.lat && row.lng ? { "geo": { "@type": "GeoCoordinates", "latitude": row.lat, "longitude": row.lng } } : {}),
+        ...(row.website ? { "sameAs": row.website } : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Altbieratlas", "item": "https://altbieratlas.de/" },
+          { "@type": "ListItem", "position": 2, "name": row.name, "item": pageUrl },
+        ],
+      },
+    ],
   });
 
   let html = await assetRes.text();
@@ -2044,6 +2058,11 @@ export async function serveOrt(req, env) {
   html = html.replace(
     /(<meta name="twitter:image" content=")[^"]*(")/,
     `$1${escHtml(ogImageUrl)}$2`,
+  );
+  // og:image:alt mit Brauereinamen
+  html = html.replace(
+    /(<meta property="og:image:alt" content=")[^"]*(" id="meta-og-img-alt")/,
+    `$1${escHtml(row.name + " — Altbieratlas")}$2`,
   );
   // JSON-LD vor </head> einfügen
   html = html.replace(
@@ -2161,15 +2180,24 @@ export async function serveEvent(req, env) {
     "@type": "Event",
     "name": titleDe,
     "url": pageUrl,
+    "image": "https://altbieratlas.de/og-image.png",
     "startDate": row.date + (row.time ? ("T" + row.time) : ""),
     "eventStatus": "https://schema.org/EventScheduled",
     "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+    "description": metaDesc,
+    "organizer": { "@type": "Organization", "name": "Altbieratlas", "url": "https://altbieratlas.de/" },
   };
   if (row.end_date) ld.endDate = row.end_date + (row.end_time ? ("T" + row.end_time) : "");
   const locName = row.brewery_name
     ? row.brewery_name + (row.brewery_city ? ", " + row.brewery_city : "")
     : row.location;
-  if (locName) ld.location = { "@type": "Place", "name": locName };
+  if (locName) {
+    ld.location = {
+      "@type": "Place",
+      "name": locName,
+      ...(row.brewery_city ? { "address": { "@type": "PostalAddress", "addressLocality": row.brewery_city, "addressCountry": "DE" } } : {}),
+    };
+  }
 
   let html = await assetRes.text();
 
