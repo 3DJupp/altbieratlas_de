@@ -549,6 +549,7 @@ searchEl.addEventListener("input", (e) => {
   runSuggest(v);
 });
 searchEl.addEventListener("focus", () => {
+  hideHero();
   if (searchEl.value) runSuggest(searchEl.value);
 });
 // Close on outside click
@@ -566,18 +567,23 @@ searchEl.addEventListener("keydown", (e) => {
   }
 });
 
-// "Karte erkunden" hides the hero copy card
+// Intro-Karte ausblenden, sobald mit der Karte interagiert wird
+function hideHero() { document.querySelector(".hero-copy")?.classList.add("hidden"); }
+
+// "Karte erkunden" + Tippen auf die Karte blenden die Intro-Karte aus
 const exploreBtn = document.querySelector('a[href="#map-section"].btn');
 if (exploreBtn) {
   exploreBtn.addEventListener("click", function (e) {
     e.preventDefault();
-    document.querySelector(".hero-copy")?.classList.add("hidden");
+    hideHero();
   });
 }
+map.on("click", hideHero);
 
 // Typ-Filter (Dropdown) — beim Wechsel den Standort-Pin entfernen
 const typeFilter = document.getElementById("type-filter");
 typeFilter.addEventListener("change", () => {
+  hideHero();
   clearUserMarker();
   renderMarkers(typeFilter.value, searchEl.value);
   atlasTrack("map_filter", { filter: typeFilter.value });
@@ -633,6 +639,7 @@ if (nearMeBtn) {
     setTimeout(defaultLabel, 4000);
   };
   nearMeBtn.addEventListener("click", () => {
+    hideHero();
     if (!navigator.geolocation) { flash(window.t("map.nearMe.unavailable")); return; }
     nearMeBtn.disabled = true;
     nearMeBtn.textContent = "⏳ " + window.t("map.nearMe.locating");
