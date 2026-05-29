@@ -1830,7 +1830,7 @@ export async function sitemap(req, env) {
   const PAGE_DATES = {
     "/":           "2026-05-29",
     "/ranglisten": "2026-05-25",
-    "/wissen":     "2026-05-26",
+    "/wissen":     "2026-05-29",
     "/rivalen":    "2026-05-26",
     "/beitragen":  "2026-05-24",
     "/impressum":  "2026-05-13",
@@ -1871,6 +1871,13 @@ export async function sitemap(req, env) {
     <priority>${priority}</priority>
   </url>`;
     }),
+    ...Object.keys(CITY_SLUGS).map((slug) => `
+  <url>
+    <loc>${esc(base + "/stadt/" + slug)}</loc>
+    <lastmod>${lastMod ? lastMod.slice(0, 10) : today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`),
     ...breweryIds.map((b) => `
   <url>
     <loc>${esc(base + "/ort?id=" + b.id)}</loc>
@@ -2247,6 +2254,111 @@ export async function serveEvent(req, env) {
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
 
+  return new Response(html, { status: 200, headers });
+}
+
+// ============================================================
+//  STADT-LANDINGPAGES (SSR)
+// ============================================================
+// GET /stadt/<slug> — Pilot: nur Düsseldorf.
+// Whitelist hier erweitern, um weitere Städte freizuschalten.
+export const CITY_SLUGS = {
+  duesseldorf: "Düsseldorf",
+};
+
+export function citySlugLabels() {
+  // Slug → Anzeigename, für Sitemap & Routing
+  return CITY_SLUGS;
+}
+
+export async function serveCity(req, env) {
+  const url = new URL(req.url);
+  const slug = (url.pathname.split("/")[2] || "").toLowerCase();
+  const city = CITY_SLUGS[slug];
+  if (!city) return new Response("Not found", { status: 404 });
+
+  let rows = [];
+  try {
+    const res = await env.DB.prepare(
+      "SELECT id, name, type, is_historical FROM breweries WHERE status = 'approved' AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
+    ).bind(city).all();
+    rows = res.results || [];
+  } catch { /* D1 nicht verfügbar — statische Datei mit Client-Rendering ausliefern */ }
+
+  const assetUrl = new URL(req.url);
+  assetUrl.pathname = "/stadt.html";
+  const assetRes = await env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  if (!assetRes.ok) return assetRes;
+
+  const pageUrl = `https://altbieratlas.de/stadt/${slug}`;
+  const current = rows.filter((r) => !r.is_historical);
+  const title = `Altbier in ${city} · Altbieratlas`;
+  const metaDesc = `Alle ${rows.length} Altbier-Brauereien, Ausschankorte und Händler in ${city} — mit aktuellen Preisen im Altbieratlas.`;
+
+  // Server-gerenderte Liste, damit Crawler & No-JS-Besucher Inhalt sehen
+  const cardHtml = (r) =>
+    `<a class="city-card${r.is_historical ? " historical" : ""}" href="/ort?id=${escHtml(encodeURIComponent(r.id))}">` +
+    `<span class="cc-name">${escHtml(r.name)}</span>` +
+    `<span class="cc-meta">${escHtml(r.type || "")}</span></a>`;
+  const venuesHtml = current.length
+    ? current.map(cardHtml).join("")
+    : `<p class="city-empty">Noch keine Orte in ${escHtml(city)} im Atlas. <a href="/beitragen?typ=ort">Ort eintragen →</a></p>`;
+
+  const ld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": pageUrl + "#page",
+        "url": pageUrl,
+        "name": `Altbier in ${city}`,
+        "description": metaDesc,
+        "inLanguage": "de",
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Altbieratlas", "item": "https://altbieratlas.de/" },
+          { "@type": "ListItem", "position": 2, "name": `Altbier in ${city}`, "item": pageUrl },
+        ],
+      },
+      {
+        "@type": "ItemList",
+        "itemListElement": current.map((r, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "url": `https://altbieratlas.de/ort?id=${encodeURIComponent(r.id)}`,
+          "name": r.name,
+        })),
+      },
+    ],
+  });
+
+  let html = await assetRes.text();
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${escHtml(title)}</title>`);
+  html = html.replace(/(<meta name="description" content=")[^"]*(")/, `$1${escHtml(metaDesc)}$2`);
+  html = html.replace(/(<link rel="canonical" href=")[^"]*(" id="meta-canonical")/, `$1${escHtml(pageUrl)}$2`);
+  html = html.replace(/(<meta property="og:title" content=")[^"]*(" id="meta-og-title")/, `$1${escHtml(title)}$2`);
+  html = html.replace(/(<meta property="og:description" content=")[^"]*(" id="meta-og-desc")/, `$1${escHtml(metaDesc)}$2`);
+  html = html.replace(/(<meta property="og:url" content=")[^"]*(" id="meta-og-url")/, `$1${escHtml(pageUrl)}$2`);
+  html = html.replace(/(<meta name="twitter:title" content=")[^"]*(" id="meta-tw-title")/, `$1${escHtml(title)}$2`);
+  html = html.replace(/(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/, `$1${escHtml(metaDesc)}$2`);
+  // H1 + server-gerenderte Liste (Funktion-Replacement: $ in Daten nicht interpretieren)
+  html = html.replace(/<h1 id="city-h1">[^<]*<\/h1>/, () => `<h1 id="city-h1">${escHtml("Altbier in " + city)}</h1>`);
+  html = html.replace(
+    /<div class="city-grid" id="city-venues" data-ssr="0">[\s\S]*?<\/div>/,
+    () => `<div class="city-grid" id="city-venues" data-ssr="1">${venuesHtml}</div>`,
+  );
+
+  const hreflang =
+    `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
+    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "?lang=en")}" />\n` +
+    `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
+  html = html.replace("</head>", `${hreflang}<script type="application/ld+json">${ld}</script>\n</head>`);
+
+  const headers = new Headers(assetRes.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
   return new Response(html, { status: 200, headers });
 }
 

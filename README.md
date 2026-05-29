@@ -15,6 +15,7 @@ altbieratlas/
 │   ├── ranglisten.html      # Preis-Ranglisten
 │   ├── wissen.html          # Glossar & Hintergrund
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
+│   ├── stadt.html           # Stadt-Landingpage (SSR, Pilot: /stadt/duesseldorf)
 │   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
 │   ├── impressum.html       # Impressum & Datenschutz
 │   ├── admin.html           # Moderations-Dashboard
@@ -212,6 +213,13 @@ Unter *Settings → Variables and Secrets* (**Runtime-Sektion**):
 ### Brauerei-Detail
 - Preisverlauf als SVG-Chart, Stile, Geschmacksnotizen (DE/EN)
 - **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
+
+### Stadt-Landingpages (SEO)
+- Serverseitig gerenderte Seiten unter `/stadt/<slug>` (Pilot: `/stadt/duesseldorf`)
+- Listet alle freigegebenen Orte einer Stadt + Ø-Preis, mit `CollectionPage`-,
+  `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang-Alternates
+- Weitere Städte über die `CITY_SLUGS`-Whitelist in `src/routes.js` freischalten;
+  Sitemap-Einträge entstehen automatisch
 
 ### Beitragen
 Fünf Einreichungstypen mit Moderation:
