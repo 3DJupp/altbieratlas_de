@@ -22,6 +22,8 @@ window.ATLAS_DATA = {
       },
       styles: ["uerige-alt", "sticke", "doppelsticke"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     {
       id: "fuechschen",
@@ -41,6 +43,8 @@ window.ATLAS_DATA = {
       },
       styles: ["fuechschen-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     {
       id: "schumacher",
@@ -60,6 +64,8 @@ window.ATLAS_DATA = {
       },
       styles: ["schumacher-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     {
       id: "schluessel",
@@ -79,6 +85,8 @@ window.ATLAS_DATA = {
       },
       styles: ["schluessel-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     {
       id: "kuerzer",
@@ -98,6 +106,8 @@ window.ATLAS_DATA = {
       },
       styles: ["kuerzer-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     {
       id: "kuerzer-flingern",
@@ -117,6 +127,8 @@ window.ATLAS_DATA = {
       },
       styles: ["kuerzer-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     // ========== Düsseldorf — Gastronomie ==========
     {
@@ -137,6 +149,8 @@ window.ATLAS_DATA = {
       },
       styles: [],
       verified: false,
+      logoKey: null,
+      logoUrl: null,
       isHistorical: false,
     },
     // ========== Düsseldorf — Marke / Lohnbrauen ==========
@@ -158,6 +172,8 @@ window.ATLAS_DATA = {
       },
       styles: ["altus-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     // ========== Krefeld ==========
     {
@@ -178,6 +194,8 @@ window.ATLAS_DATA = {
       },
       styles: ["koenigshof-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     // ========== Mönchengladbach ==========
     {
@@ -198,6 +216,8 @@ window.ATLAS_DATA = {
       },
       styles: ["hannen-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     // ========== Köln ==========
     {
@@ -218,6 +238,8 @@ window.ATLAS_DATA = {
       },
       styles: ["hellers-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
     },
     // ========== Niederrhein — Großbrauereien ==========
     {
@@ -238,6 +260,8 @@ window.ATLAS_DATA = {
       },
       styles: ["bolten-uralt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
       isHistorical: false,
     },
     {
@@ -258,6 +282,8 @@ window.ATLAS_DATA = {
       },
       styles: ["diebels-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
       isHistorical: false,
     },
     {
@@ -278,6 +304,8 @@ window.ATLAS_DATA = {
       },
       styles: ["frankenheim-alt"],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
       isHistorical: false,
     },
     // ========== Historisch relevante Marken ==========
@@ -299,6 +327,8 @@ window.ATLAS_DATA = {
       },
       styles: [],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
       isHistorical: true,
     },
     {
@@ -319,6 +349,8 @@ window.ATLAS_DATA = {
       },
       styles: [],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
       isHistorical: true,
     },
     {
@@ -339,6 +371,8 @@ window.ATLAS_DATA = {
       },
       styles: [],
       verified: true,
+      logoKey: null,
+      logoUrl: null,
       isHistorical: true,
     },
   ],

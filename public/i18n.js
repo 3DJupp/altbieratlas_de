@@ -519,6 +519,7 @@ window.ATLAS_I18N = {
     "admin.photo": "Foto",
     "admin.uploadPhoto": "Foto hochladen",
     "admin.removePhoto": "Foto entfernen",
+    "admin.ortLogo": "Logo",
     "admin.confirmRemovePhoto": "Foto entfernen und löschen?",
     "admin.fromLibrary": "Aus Bibliothek wählen…",
     "admin.assignFromLibrary": "Zuweisen",
@@ -1146,6 +1147,7 @@ window.ATLAS_I18N = {
     // Logo / photo handling
     "admin.photo": "Photo",
     "admin.uploadPhoto": "Upload photo",
+    "admin.ortLogo": "Logo",
     "admin.removePhoto": "Remove photo",
     "admin.confirmRemovePhoto": "Remove and delete photo?",
     "admin.fromLibrary": "Select from library…",

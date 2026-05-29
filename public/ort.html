@@ -303,6 +303,9 @@ const root = document.getElementById("brewery-root");
   const avatarHtml = b.photoUrl
     ? `<img src="${b.photoUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         + `<span class="initials" style="display:none">${initials(b.short || b.name)}</span>`
+    : b.logoUrl
+    ? `<img src="${b.logoUrl}" alt="" style="object-fit:contain;padding:6px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        + `<span class="initials" style="display:none">${initials(b.short || b.name)}</span>`
     : `<span class="initials">${initials(b.short || b.name)}</span>`;
 
   root.innerHTML = `

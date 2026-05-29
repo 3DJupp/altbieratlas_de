@@ -588,5 +588,7 @@ export function brewRow(r, styles = []) {
     status: r.status,
     photoKey: r.photo_key || null,
     photoUrl: r.photo_key ? `/photos/${r.photo_key}` : null,
+    logoKey: r.logo_key || null,
+    logoUrl: r.logo_key ? `/logos/ort-logos/${r.logo_key}` : null,
   };
 }

@@ -854,6 +854,29 @@
             <div id="edit-photo-msg" style="font-size:12px;color:var(--ink-muted);align-self:center"></div>
           </div>
         </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.ortLogo">Logo</label>
+          <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div id="edit-ort-logo-preview" style="flex-shrink:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:var(--bg-page);border:1px solid var(--rule);border-radius:4px;overflow:hidden;cursor:pointer" title="Klicken zum Hochladen">
+              <span style="color:var(--ink-muted);font-size:11px">–</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label class="btn" style="cursor:pointer;margin:0">
+                <span data-i18n="admin.uploadLogo">Logo hochladen</span>
+                <input type="file" id="edit-ort-logo-file" accept="image/*" style="display:none">
+              </label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <select id="edit-ort-logo-select" style="max-width:220px;font-size:12px">
+                  <option value="" data-i18n="admin.fromLibrary">Aus Bibliothek…</option>
+                </select>
+                <button class="btn" id="edit-ort-logo-assign" type="button" style="font-size:12px;white-space:nowrap" data-i18n="admin.assignFromLibrary">Zuweisen</button>
+                <button class="btn btn-reject" id="edit-ort-logo-lib-del" type="button" style="font-size:12px;white-space:nowrap" data-i18n="admin.deleteFromLibrary">Löschen</button>
+              </div>
+              <button class="btn btn-reject" id="edit-ort-logo-delete" type="button" style="font-size:12px;display:none" data-i18n="admin.removeLogoRef">Referenz entfernen</button>
+            </div>
+            <div id="edit-ort-logo-msg" style="font-size:12px;color:var(--ink-muted);align-self:center"></div>
+          </div>
+        </div>
       </div>
       <div class="edit-msg" id="edit-msg" style="display:none"></div>
       <div class="edit-actions">
@@ -1412,7 +1435,8 @@ async function loadBreweriesTable() {
           data-description-en="${(b.description?.en || "").replace(/"/g, "&quot;")}"
           data-short="${(b.short || "").replace(/"/g, "&quot;")}"
           data-styles="${(b.styles || []).join(",")}"
-          data-photo-key="${b.photoKey || ""}">
+          data-photo-key="${b.photoKey || ""}"
+          data-logo-key="${b.logoKey || ""}">
         <td><a href="/ort?id=${b.id}" target="_blank">${b.name}</a></td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
@@ -1535,6 +1559,112 @@ async function openEditDialog(id, rowEl) {
 
   initPhotoPrev(rowEl.dataset.photoKey);
   photoPrev.onclick = () => photoFile.click();
+
+  // Ort-Logo
+  const ortLogoPrev   = document.getElementById("edit-ort-logo-preview");
+  const ortLogoFile   = document.getElementById("edit-ort-logo-file");
+  const ortLogoDel    = document.getElementById("edit-ort-logo-delete");
+  const ortLogoMsg    = document.getElementById("edit-ort-logo-msg");
+  const ortLogoSelect = document.getElementById("edit-ort-logo-select");
+  const ortLogoAssign = document.getElementById("edit-ort-logo-assign");
+  const ortLogoLibDel = document.getElementById("edit-ort-logo-lib-del");
+
+  function initOrtLogoPrev(logoKey) {
+    if (logoKey) {
+      ortLogoPrev.innerHTML = `<img src="/logos/ort-logos/${logoKey}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">`;
+      ortLogoDel.style.display = "block";
+    } else {
+      ortLogoPrev.innerHTML = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
+      ortLogoDel.style.display = "none";
+    }
+    ortLogoMsg.textContent = "";
+  }
+
+  initOrtLogoPrev(rowEl.dataset.logoKey);
+  ortLogoPrev.onclick = () => ortLogoFile.click();
+
+  (async () => {
+    try {
+      const { logos } = await window.AtlasAPI.admin.listBreweryLogos();
+      logos.forEach(({ key }) => {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = key;
+        ortLogoSelect.appendChild(opt);
+      });
+      if (rowEl.dataset.logoKey) ortLogoSelect.value = rowEl.dataset.logoKey;
+    } catch { /* R2 not reachable in dev/mock */ }
+  })();
+
+  ortLogoFile.onchange = async () => {
+    const file = ortLogoFile.files[0];
+    if (!file || !pendingEdit) return;
+    ortLogoMsg.textContent = window.t("admin.uploading");
+    try {
+      const res = await window.AtlasAPI.admin.uploadBreweryLogo(pendingEdit.id, file);
+      rowEl.dataset.logoKey = res.logoKey;
+      ortLogoPrev.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
+      ortLogoDel.style.display = "block";
+      ortLogoMsg.textContent = "✓";
+      if (!Array.from(ortLogoSelect.options).some((o) => o.value === res.logoKey)) {
+        const opt = document.createElement("option");
+        opt.value = res.logoKey;
+        opt.textContent = res.logoKey;
+        ortLogoSelect.appendChild(opt);
+      }
+    } catch (e) {
+      ortLogoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
+    }
+    ortLogoFile.value = "";
+  };
+
+  ortLogoAssign.onclick = async () => {
+    const key = ortLogoSelect.value;
+    if (!key) { ortLogoMsg.textContent = window.t("admin.noImageSelected"); return; }
+    ortLogoMsg.textContent = window.t("admin.assigning");
+    try {
+      await window.AtlasAPI.admin.updateBrewery(pendingEdit.id, { logo_key: key });
+      rowEl.dataset.logoKey = key;
+      const url = `/logos/ort-logos/${key}`;
+      ortLogoPrev.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
+      ortLogoDel.style.display = "block";
+      ortLogoMsg.textContent = "✓";
+    } catch (e) {
+      ortLogoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
+    }
+  };
+
+  ortLogoLibDel.onclick = async () => {
+    const key = ortLogoSelect.value;
+    if (!key) { ortLogoMsg.textContent = window.t("admin.noImageSelected"); return; }
+    if (!confirm(window.t("admin.confirmDeleteFromLibrary").replace("{key}", key))) return;
+    ortLogoMsg.textContent = window.t("admin.deleting");
+    try {
+      await window.AtlasAPI.admin.deleteBreweryLogoFile(key);
+      const opt = ortLogoSelect.querySelector(`option[value="${key}"]`);
+      if (opt) opt.remove();
+      ortLogoSelect.value = "";
+      if (rowEl.dataset.logoKey === key) {
+        rowEl.dataset.logoKey = "";
+        initOrtLogoPrev("");
+      }
+      ortLogoMsg.textContent = window.t("admin.deleted");
+    } catch (e) {
+      ortLogoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
+    }
+  };
+
+  ortLogoDel.onclick = async () => {
+    ortLogoMsg.textContent = window.t("admin.removing");
+    try {
+      await window.AtlasAPI.admin.deleteBreweryLogo(pendingEdit.id);
+      rowEl.dataset.logoKey = "";
+      initOrtLogoPrev("");
+      ortLogoMsg.textContent = "✓";
+    } catch (e) {
+      ortLogoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
+    }
+  };
 
   photoFile.onchange = async () => {
     const file = photoFile.files[0];
