@@ -769,7 +769,7 @@ export async function adminRequestReset(req, env) {
     ).bind(token, row.username, expires).run();
 
     const sc = siteConfig(env);
-    const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
+    const siteUrl = sc.siteUrl || "https://altbieratlas.de";
     const resetUrl = `${siteUrl}/admin.html?reset=${encodeURIComponent(token)}`;
     await sendPasswordResetEmail(env, { to: email, resetUrl });
   }

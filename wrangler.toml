@@ -128,9 +128,7 @@ persist = true
 #     "highlightedSizes": [0.25, 0.5],
 #     "requireModeration": true,
 #     "siteUrl":          "https://altbieratlas.de",
-#     "resendFrom":       "Altbieratlas <noreply@altbieratlas.de>",
-#     "author":    { "name": "Dein Name", "github": "https://github.com/..." },
-#     "impressum": { "owner": "Vor- und Nachname", "address": "…", "email": "…" }
+#     "resendFrom":       "Altbieratlas <noreply@altbieratlas.de>"
 #   }
 #
 #   priceSizes:       Dezimalzahlen ohne Einheit (UI ergänzt „l").
@@ -141,6 +139,7 @@ persist = true
 #                      Standard: true
 #   siteUrl:          Öffentliche URL, z. B. für E-Mail-Links.
 #   resendFrom:       Absenderadresse für alle Mails via Resend.
-#   author/impressum: Können auch im Admin-Panel (D1) gepflegt werden,
-#                     das Vorrang vor SITE_CONFIG hat.
+#
+# Autor/Social, Impressum und Banner werden ausschließlich im
+# Admin-Panel gepflegt (D1 site_settings) — nicht in SITE_CONFIG.
 # ============================================================

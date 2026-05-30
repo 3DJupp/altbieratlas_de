@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.9.5";
+export const APP_VERSION = "0.9.6";
 
 export const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -226,7 +226,7 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
 
   const sc = siteConfig(env);
   const de = lang !== "en";
-  const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
+  const siteUrl = sc.siteUrl || "https://altbieratlas.de";
   const typeLabels = {
     de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung" },
     en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event" },
@@ -310,7 +310,7 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
       method: "POST",
       headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: sc.resendFrom || env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        from: sc.resendFrom || "Altbieratlas <noreply@altbieratlas.de>",
         to, subject, text, html,
       }),
     });
@@ -385,7 +385,7 @@ function _emailDataRows(type, data, de) {
 export async function sendPasswordResetEmail(env, { to, resetUrl }) {
   if (!env.RESEND_API_KEY || !to) return;
   const sc = siteConfig(env);
-  const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
+  const siteUrl = sc.siteUrl || "https://altbieratlas.de";
 
   const subject = "Altbieratlas: Passwort zurücksetzen";
   const text = [
@@ -444,7 +444,7 @@ export async function sendPasswordResetEmail(env, { to, resetUrl }) {
       method: "POST",
       headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: sc.resendFrom || env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        from: sc.resendFrom || "Altbieratlas <noreply@altbieratlas.de>",
         to, subject, text, html,
       }),
     });
@@ -459,7 +459,7 @@ export async function sendAdminDigest(env) {
   if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
 
   const sc = siteConfig(env);
-  const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
+  const siteUrl = sc.siteUrl || "https://altbieratlas.de";
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   let rows;
   try {
@@ -555,7 +555,7 @@ export async function sendAdminDigest(env) {
       method: "POST",
       headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: sc.resendFrom || env.RESEND_FROM || "Altbieratlas <noreply@altbieratlas.de>",
+        from: sc.resendFrom || "Altbieratlas <noreply@altbieratlas.de>",
         to: env.ADMIN_EMAIL,
         subject, text, html,
       }),
