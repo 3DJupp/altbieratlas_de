@@ -1,10 +1,8 @@
 {
   "contactEmail": "kontakt@altbieratlas.de",
-  "ga4MeasurementId": "G-XXXXXXXXXX",
   "priceSizes": [0.2, 0.25, 0.4, 0.5],
   "highlightedSizes": [0.25],
   "requireModeration": true,
-  "untappdClientId": "XXXXXXXXXXXXXXXX",
   "siteUrl": "https://altbieratlas.de",
   "resendFrom": "Altbieratlas <noreply@altbieratlas.de>",
   "author": {

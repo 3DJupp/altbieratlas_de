@@ -1,4 +1,4 @@
-# Altbieratlas · v0.9.4
+# Altbieratlas · v0.9.5
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -171,17 +171,13 @@ Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vo
 ```json
 {
   "contactEmail":      "deine@email.de",
-  "ga4MeasurementId":  "G-XXXXXXXXXX",
   "priceSizes":        [0.2, 0.25, 0.4, 0.5],
   "highlightedSizes":  [0.25],
   "requireModeration": true,
-  "untappdClientId":   "XXXXXXXXXXXXXXXX",
   "siteUrl":           "https://altbieratlas.de",
   "resendFrom":        "Altbieratlas <noreply@altbieratlas.de>"
 }
 ```
-
-> **Turnstile gehört nicht mehr hier rein.** Den öffentlichen Site-Key am besten im **Admin-Panel** unter *Einstellungen → Turnstile* pflegen (liegt in D1, ohne Redeploy änderbar, höchste Priorität). Reihenfolge: D1 (Admin-Panel) → `TURNSTILE_SITE_KEY` als `[vars]` in `wrangler.toml` (deploy-fester Default, siehe unten) → `SITE_CONFIG.turnstileSiteKey` (Legacy). Das Secret `TURNSTILE_SECRET_KEY` bleibt ein Dashboard-Secret.
 
 | Feld | Beschreibung |
 |---|---|
@@ -190,28 +186,24 @@ Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vo
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
 | `resendFrom` | Absenderadresse für Mails via Resend |
 
+> `SITE_CONFIG` ist eine **Plaintext-Variable** und überlebt Deploys nur, weil `keep_vars = true` korrekt am **Top-Level** der `wrangler.toml` steht (steht es nach einer `[table]`-Überschrift, parst TOML es als deren Property und wrangler ignoriert es). Einzelwerte, die garantiert deploy-fest sein müssen, liegen daher als **Secret** (siehe unten) — Secrets werden von `wrangler deploy` nie gelöscht.
+
 > **Impressum, Social-Links (Ko-fi, GitHub, Mastodon …) und Ankündigungs-Banner** werden **nicht** hier gesetzt, sondern direkt im Admin-Panel unter *Einstellungen* (gespeichert in D1 `site_settings`). Die Felder werden dort per Formular gepflegt und greifen sofort ohne Redeploy.
 
-#### Secrets
+#### Secrets (Einzelwerte, deploy-fest)
 
-| Name | Type | Zweck |
-|---|---|---|
-| `TURNSTILE_SECRET_KEY` | **Secret** | Serverseitiger Turnstile-Key |
-| `RESEND_API_KEY` | **Secret** | [Resend](https://resend.com)-API-Key |
-| `ADMIN_EMAIL` | **Secret** | Empfänger des täglichen Digests |
-| `UNTAPPD_CLIENT_SECRET` | **Secret** | Untappd-App-Secret (optional) |
-| `INITIAL_ADMIN` | **Secret** | Ersteinrichtung — nach erstem Login löschen |
+Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-Site-Key und GA4-ID sind zwar öffentlich, werden hier aber als Secret gespeichert, damit sie Deploys sicher überleben (der Worker liest sie und gibt sie via `/api/config` ans Frontend).
 
-#### Öffentliche, deploy-feste Variablen (`wrangler.toml` → `[vars]`)
-
-Dashboard-**Plaintext-Variablen** werden bei `wrangler deploy` gelöscht, sofern `keep_vars = true` nicht greift — und das ist ein **Top-Level-Key**: steht er (wie zuvor versehentlich) nach einer `[table]`-Überschrift, parst TOML ihn als deren Property und wrangler ignoriert ihn. **Secrets** bleiben immer erhalten. Werte, die jeden Deploy überleben müssen und **nicht** sensibel sind, gehören als `[vars]` in `wrangler.toml`:
-
-```toml
-[vars]
-TURNSTILE_SITE_KEY = "0x..."   # öffentlicher Turnstile-Site-Key
-```
-
-`TURNSTILE_SITE_KEY` hat Vorrang vor `SITE_CONFIG.turnstileSiteKey`. **Nur öffentliche Werte** hier ablegen — niemals Secrets.
+| Name | Zweck |
+|---|---|
+| `TURNSTILE_SITE_KEY` | Öffentlicher Turnstile-Site-Key (aktiviert das Widget) |
+| `TURNSTILE_SECRET_KEY` | Serverseitiger Turnstile-Key |
+| `GA4_MEASUREMENT_ID` | GA4-Mess-ID (`G-XXXX…`); fehlt sie, kein Tracking |
+| `UNTAPPD_CLIENT_ID` | Untappd-App-Client-ID |
+| `UNTAPPD_CLIENT_SECRET` | Untappd-App-Secret |
+| `RESEND_API_KEY` | [Resend](https://resend.com)-API-Key |
+| `ADMIN_EMAIL` | Empfänger des täglichen Digests |
+| `INITIAL_ADMIN` | Ersteinrichtung — nach erstem Login löschen |
 
 ---
 

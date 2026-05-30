@@ -447,9 +447,6 @@ window.ATLAS_I18N = {
     // Settings tab
     "admin.settings": "Einstellungen",
     "admin.settingsSub": "Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.",
-    "admin.settingsTurnstile": "Turnstile (Bot-Schutz)",
-    "admin.settingsTurnstileSub": "Öffentlicher Site-Key für das Cloudflare-Turnstile-Widget. Überschreibt den in der Konfiguration hinterlegten Standard. Leer = Standard wird verwendet. Das geheime Secret bleibt in den Cloudflare-Secrets.",
-    "admin.settingsTurnstileKey": "Site-Key",
     "admin.settingsImpressum": "Impressum",
     "admin.settingsImpOwner": "Name / Betreiber",
     "admin.settingsImpAddress": "Adresse",
@@ -1079,9 +1076,6 @@ window.ATLAS_I18N = {
     // Settings tab
     "admin.settings": "Settings",
     "admin.settingsSub": "Site settings — saved directly to the database and override the Cloudflare configuration.",
-    "admin.settingsTurnstile": "Turnstile (bot protection)",
-    "admin.settingsTurnstileSub": "Public site key for the Cloudflare Turnstile widget. Overrides the default set in the configuration. Empty = the default is used. The secret key stays in the Cloudflare secrets.",
-    "admin.settingsTurnstileKey": "Site key",
     "admin.settingsImpressum": "Imprint",
     "admin.settingsImpOwner": "Name / Operator",
     "admin.settingsImpAddress": "Address",

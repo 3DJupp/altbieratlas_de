@@ -16,34 +16,15 @@ function contactEmail(env) {
   return siteConfig(env).contactEmail || "";
 }
 
-// Turnstile-Site-Key (öffentlich). Quellen-Vorrang:
-//   1. D1 site_settings['turnstile.site_key']  (Admin-Panel, ohne Redeploy änderbar)
-//   2. env.TURNSTILE_SITE_KEY                   (wrangler [vars] / Dashboard)
-//   3. SITE_CONFIG.turnstileSiteKey            (Legacy)
-function turnstileSiteKeyEnv(env) {
-  const k = env.TURNSTILE_SITE_KEY || siteConfig(env).turnstileSiteKey || null;
+// Turnstile-Site-Key (öffentlich, aber als CF-Secret gespeichert → deploy-fest).
+// Einzige Quelle: env.TURNSTILE_SITE_KEY (Dashboard-Secret).
+function turnstileSiteKey(env) {
+  const k = env.TURNSTILE_SITE_KEY || null;
   return k && String(k).trim().length > 0 ? String(k).trim() : null;
 }
-// Liest den in D1 gepflegten Site-Key; null wenn leer/ungesetzt/Tabelle fehlt.
-async function turnstileSiteKeyDB(env) {
-  try {
-    const row = await env.DB.prepare(
-      "SELECT value FROM site_settings WHERE key = 'turnstile.site_key'"
-    ).first();
-    if (!row) return null;
-    let val = row.value;
-    try { val = JSON.parse(val); } catch { /* roher String */ }
-    val = val == null ? "" : String(val).trim();
-    return val.length > 0 ? val : null;
-  } catch { return null; }
-}
-// Effektiver Site-Key: D1 hat Vorrang vor env/SITE_CONFIG.
-async function turnstileSiteKey(env) {
-  return (await turnstileSiteKeyDB(env)) || turnstileSiteKeyEnv(env);
-}
 // Turnstile aktiv = Site-Key gesetzt und kein Platzhalter
-async function turnstileActive(env) {
-  const k = await turnstileSiteKey(env);
+function turnstileActive(env) {
+  const k = turnstileSiteKey(env);
   return !!k && !k.includes("PLACEHOLDER");
 }
 
@@ -69,15 +50,16 @@ async function requireAdmin(req, env) {
 
 // GET /api/config
 // Liefert alle nicht-sensitiven Werte, die das Frontend zur Laufzeit benötigt.
-// Primärquelle: SITE_CONFIG (JSON-String). Der Turnstile-Site-Key kann
-// alternativ als eigenständige Variable TURNSTILE_SITE_KEY gesetzt werden
-// (parallel zum Secret TURNSTILE_SECRET_KEY) — siehe turnstileSiteKey().
+// Quellen: deploy-feste Werte als CF-Secrets (TURNSTILE_SITE_KEY, GA4_MEASUREMENT_ID)
+// über env.*; der Rest (Größen, Moderation, URLs, Autor/Impressum) aus SITE_CONFIG
+// bzw. — mit Vorrang — aus D1 site_settings (Admin-Panel).
 export async function getPublicConfig(req, env) {
   const v = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : null);
 
   const sc = siteConfig(env);
 
-  const ga      = v(sc.ga4MeasurementId);
+  const siteKey = turnstileSiteKey(env);
+  const ga      = v(env.GA4_MEASUREMENT_ID);
 
   const priceSizes = Array.isArray(sc.priceSizes) && sc.priceSizes.length > 0
     ? sc.priceSizes
@@ -91,15 +73,12 @@ export async function getPublicConfig(req, env) {
   const dbSettings = {};
   try {
     const rows = await env.DB.prepare(
-      "SELECT key, value FROM site_settings WHERE key LIKE 'author.%' OR key LIKE 'banner.%' OR key = 'turnstile.site_key'"
+      "SELECT key, value FROM site_settings WHERE key LIKE 'author.%' OR key LIKE 'banner.%'"
     ).all();
     for (const r of rows.results) {
       try { dbSettings[r.key] = JSON.parse(r.value); } catch { dbSettings[r.key] = r.value; }
     }
   } catch { /* Tabelle fehlt bei alten Instanzen */ }
-
-  // Turnstile-Site-Key: D1 (Admin) hat Vorrang vor env/SITE_CONFIG
-  const siteKey = v(dbSettings["turnstile.site_key"]) || turnstileSiteKeyEnv(env);
 
   const scAuthor = sc.author || {};
   const author = {
@@ -547,7 +526,7 @@ export async function postContribution(req, env, _params, ctx) {
 
   // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
   // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
-  const tsActive = await turnstileActive(env);
+  const tsActive = turnstileActive(env);
   const tsResult = await verifyTurnstile(
     body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req)
   );
@@ -709,7 +688,7 @@ export async function adminLogin(req, env) {
   // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
   // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
   // Fehlt der Site-Key, wird kein Widget angezeigt und kein Token gesendet.
-  const tsActive = await turnstileActive(env);
+  const tsActive = turnstileActive(env);
   const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, ip);
   if (!ts.success) return error(403, "turnstile-failed");
 
@@ -1862,8 +1841,7 @@ export async function adminStats(req, env) {
 // Proxy + 24h-D1-Cache für Untappd-Brauereisuchergebnisse.
 // Nur aktiv, wenn UNTAPPD_CLIENT_ID + UNTAPPD_CLIENT_SECRET gesetzt sind.
 export async function getUntappdBrewery(req, env, { id }) {
-  const sc = siteConfig(env);
-  const clientId = sc.untappdClientId || env.UNTAPPD_CLIENT_ID;
+  const clientId = env.UNTAPPD_CLIENT_ID;
   const clientSecret = env.UNTAPPD_CLIENT_SECRET;
   if (!clientId || !clientSecret) return json({ available: false });
 
@@ -2037,7 +2015,6 @@ export async function adminUpdateSettings(req, env) {
     "banner.text_de", "banner.text_en", "banner.enabled",
     "author.name", "author.github", "author.linkedin", "author.website",
     "author.instagram", "author.mastodon", "author.kofi",
-    "turnstile.site_key",
   ];
   const stmts = [];
   for (const key of allowed) {

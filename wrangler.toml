@@ -91,77 +91,23 @@ enabled = true
 head_sampling_rate = 1
 persist = true
 
-# --- [vars]: öffentliche, deploy-feste Werte -----------------
+# --- Konfiguration: Dashboard --------------------------------
 #
-# Nur NICHT-sensitive Werte, die jeden Deploy überleben müssen.
-# Quasi-Source-of-Truth: hier definierte Vars werden bei jedem
-# Deploy aus der Datei gesetzt — unabhängig vom Dashboard-Zustand.
-# Der Turnstile-SITE-Key ist öffentlich (steht ohnehin im HTML),
-# daher gehört er hierher; so kann er nicht mehr verschwinden, wie
-# es vorher passierte (keep_vars war fälschlich unter [[rules]]
-# eingerückt → wirkungslos → Site-Key bei jedem Deploy gelöscht).
-[vars]
-TURNSTILE_SITE_KEY = "0x4AAAAAAADANKhOfPfuzPK0H"
-
-# --- Restliche Konfiguration: Dashboard ----------------------
+# Bewusst KEINE [vars] in dieser Datei. Alle Werte werden im
+# Dashboard gepflegt. Deploy-feste Einzelwerte liegen als SECRET
+# (Secrets werden von `wrangler deploy` nie gelöscht), der Rest
+# als Plaintext-Variable SITE_CONFIG (überlebt Deploys dank des
+# korrekt am Top-Level platzierten keep_vars = true).
 #
-# Übriges (GA4-ID, priceSizes, Autor, Impressum …) wird im
-# Dashboard gepflegt. Der Worker liest env.* direkt zur Laufzeit;
-# fehlende Werte werden vom Frontend sauber als „nicht gesetzt"
-# behandelt (z. B. kein Social-Icon, kein GA4-Tracking).
-# Dashboard-Plaintext-Vars (z. B. SITE_CONFIG) überleben Deploys
-# nur dank des nun korrekt platzierten keep_vars = true; wer ganz
-# sichergehen will, legt Öffentliches analog oben unter [vars] ab.
-#
-# ── Sammel-Konfigurationsvariable: SITE_CONFIG ────────────────
-#
-#   SITE_CONFIG  (JSON-String, im Dashboard als Plaintext-Variable)
-#
-#   Vollständiges Beispiel:
-#   {
-#     "contactEmail":     "deine@email.de",
-#     "ga4MeasurementId": "G-XXXXXXXXXX",
-#     "turnstileSiteKey": "0x...",
-#     "priceSizes":       [0.2, 0.25, 0.4, 0.5],
-#     "highlightedSizes": [0.25, 0.5],
-#     "requireModeration": true,
-#     "untappdClientId":  "XXXXXXXXXXXXXXXX",
-#     "siteUrl":          "https://altbieratlas.de",
-#     "resendFrom":       "Altbieratlas <noreply@altbieratlas.de>",
-#     "author": {
-#       "name":     "Dein Name",
-#       "github":   "https://github.com/...",
-#       "linkedin": "https://linkedin.com/in/...",
-#       "website":  "https://example.com"
-#     },
-#     "impressum": {
-#       "owner":   "Vor- und Nachname",
-#       "address": "Musterstraße 1, 40213 Düsseldorf",
-#       "email":   "kontakt@example.de"
-#     }
-#   }
-#
-#   priceSizes:       Dezimalzahlen ohne Einheit (UI ergänzt „l").
-#                     Standard: [0.2, 0.25, 0.4, 0.5]
-#   highlightedSizes: Teilmenge von priceSizes, die in Ranglisten
-#                     hervorgehoben wird. 1–n Werte möglich.
-#   requireModeration: true = alle Beiträge landen in der Queue.
-#                      Standard: true
-#   untappdClientId:  Client-ID der Untappd-App (optional).
-#   siteUrl:          Öffentliche URL, z. B. für E-Mail-Links.
-#   resendFrom:       Absenderadresse für alle Mails via Resend.
-#
-# Secrets (nie in SITE_CONFIG — immer einzeln im Dashboard setzen):
-#   TURNSTILE_SECRET_KEY  — serverseitiger Turnstile-Key
-#   RESEND_API_KEY        — API-Key von resend.com (für alle Mails)
-#
-#   TURNSTILE_SITE_KEY    — öffentlicher Turnstile-Site-Key. Alternative zu
-#                           SITE_CONFIG.turnstileSiteKey; hat Vorrang davor.
-#                           Da öffentlich, ist Plaintext-Variable ausreichend,
-#                           ein Secret funktioniert aber genauso. Aktiviert das
-#                           Widget; ohne ihn bleibt der „Platzhalter" sichtbar.
-#   ADMIN_EMAIL           — Empfänger des täglichen Beitrags-Digests
-#   UNTAPPD_CLIENT_SECRET — Untappd-App-Secret (sensitiv)
+# ── Einzel-Secrets (Dashboard → Variables and Secrets) ────────
+#   TURNSTILE_SITE_KEY    — öffentlicher Turnstile-Site-Key (als Secret,
+#                           damit deploy-fest; Worker liefert ihn via /api/config).
+#   TURNSTILE_SECRET_KEY  — serverseitiger Turnstile-Key.
+#   GA4_MEASUREMENT_ID    — GA4-Mess-ID (G-XXXX…); fehlt sie, kein Tracking.
+#   UNTAPPD_CLIENT_ID     — Untappd-App-Client-ID.
+#   UNTAPPD_CLIENT_SECRET — Untappd-App-Secret.
+#   RESEND_API_KEY        — API-Key von resend.com (für alle Mails).
+#   ADMIN_EMAIL           — Empfänger des täglichen Beitrags-Digests.
 #
 #   INITIAL_ADMIN  (nur für die Ersteinrichtung, danach entfernen!)
 #     Legt beim ersten Request automatisch einen Admin-User an,
@@ -170,4 +116,31 @@ TURNSTILE_SITE_KEY = "0x4AAAAAAADANKhOfPfuzPK0H"
 #     {"username":"admin","password":"sicheres-passwort","email":"deine@email.de"}
 #     Setzen: wrangler secret put INITIAL_ADMIN
 #     Nach dem ersten Login im CF-Dashboard als Secret wieder löschen.
+#
+# ── Sammel-Plaintext-Variable: SITE_CONFIG ────────────────────
+#
+#   SITE_CONFIG  (JSON-String, im Dashboard als Plaintext-Variable)
+#
+#   Beispiel (nur noch nicht-sensitive Sammelwerte):
+#   {
+#     "contactEmail":     "deine@email.de",
+#     "priceSizes":       [0.2, 0.25, 0.4, 0.5],
+#     "highlightedSizes": [0.25, 0.5],
+#     "requireModeration": true,
+#     "siteUrl":          "https://altbieratlas.de",
+#     "resendFrom":       "Altbieratlas <noreply@altbieratlas.de>",
+#     "author":    { "name": "Dein Name", "github": "https://github.com/..." },
+#     "impressum": { "owner": "Vor- und Nachname", "address": "…", "email": "…" }
+#   }
+#
+#   priceSizes:       Dezimalzahlen ohne Einheit (UI ergänzt „l").
+#                     Standard: [0.2, 0.25, 0.4, 0.5]
+#   highlightedSizes: Teilmenge von priceSizes, die in Ranglisten
+#                     hervorgehoben wird. 1–n Werte möglich.
+#   requireModeration: true = alle Beiträge landen in der Queue.
+#                      Standard: true
+#   siteUrl:          Öffentliche URL, z. B. für E-Mail-Links.
+#   resendFrom:       Absenderadresse für alle Mails via Resend.
+#   author/impressum: Können auch im Admin-Panel (D1) gepflegt werden,
+#                     das Vorrang vor SITE_CONFIG hat.
 # ============================================================
