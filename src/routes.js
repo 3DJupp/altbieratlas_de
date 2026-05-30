@@ -80,15 +80,15 @@ export async function getPublicConfig(req, env) {
     }
   } catch { /* Tabelle fehlt bei alten Instanzen */ }
 
-  const scAuthor = sc.author || {};
+  // Autor/Social + Banner: einzige Quelle ist D1 (Admin-Panel).
   const author = {
-    name:      v(dbSettings["author.name"]      ?? scAuthor.name),
-    github:    v(dbSettings["author.github"]    ?? scAuthor.github),
-    linkedin:  v(dbSettings["author.linkedin"]  ?? scAuthor.linkedin),
-    website:   v(dbSettings["author.website"]   ?? scAuthor.website),
-    instagram: v(dbSettings["author.instagram"] ?? scAuthor.instagram),
-    mastodon:  v(dbSettings["author.mastodon"]  ?? scAuthor.mastodon),
-    kofi:      v(dbSettings["author.kofi"]      ?? scAuthor.kofi),
+    name:      v(dbSettings["author.name"]),
+    github:    v(dbSettings["author.github"]),
+    linkedin:  v(dbSettings["author.linkedin"]),
+    website:   v(dbSettings["author.website"]),
+    instagram: v(dbSettings["author.instagram"]),
+    mastodon:  v(dbSettings["author.mastodon"]),
+    kofi:      v(dbSettings["author.kofi"]),
   };
 
   const banner = (dbSettings["banner.text_de"] || dbSettings["banner.text_en"])
@@ -97,7 +97,7 @@ export async function getPublicConfig(req, env) {
         text_en:  dbSettings["banner.text_en"]  || null,
         enabled:  dbSettings["banner.enabled"] === "true",
       }
-    : (sc.banner || null);
+    : null;
 
   return json({
     version: APP_VERSION,
@@ -2456,23 +2456,21 @@ export async function serveImpressum(req, env) {
   const assetRes = await env.ASSETS.fetch(req);
   if (!assetRes.ok) return assetRes;
 
-  const sc = siteConfig(env);
   const v  = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : "");
 
-  // D1-Werte laden (Vorrang vor SITE_CONFIG)
-  const dbImpr = {};
+  // Impressum: einzige Quelle ist D1 (Admin-Panel).
+  const impr = {};
   try {
     const rows = await env.DB.prepare(
       "SELECT key, value FROM site_settings WHERE key IN ('impressum.owner','impressum.address','impressum.email')"
     ).all();
     for (const r of rows.results) {
       const k = r.key.replace("impressum.", "");
-      try { dbImpr[k] = JSON.parse(r.value); } catch { dbImpr[k] = r.value; }
+      try { impr[k] = JSON.parse(r.value); } catch { impr[k] = r.value; }
     }
   } catch { /* Tabelle fehlt bei alten Instanzen — ignorieren */ }
 
-  const impr = { ...(sc.impressum || {}), ...dbImpr };
-  const emailVal = v(impr.email) || v(sc.contactEmail);
+  const emailVal = v(impr.email);
   const parts = [];
   if (v(impr.owner))   parts.push(`i.owner=${JSON.stringify(v(impr.owner))};`);
   if (v(impr.address)) parts.push(`i.address=${JSON.stringify(v(impr.address))};`);

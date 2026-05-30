@@ -62,7 +62,7 @@ Runtime config lives in the **Cloudflare Dashboard** (Workers → Settings → V
 - **Single-value secrets** (read directly from `env.*`, never wiped by deploys): `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `GA4_MEASUREMENT_ID`, `UNTAPPD_CLIENT_ID`, `UNTAPPD_CLIENT_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAIL`. The site key and GA4 ID are public but stored as secrets so they reliably survive deploys (the worker reads them and returns them via `/api/config`). Each is defined **once**, only as the env var — no `SITE_CONFIG`/D1 fallback.
 - **`SITE_CONFIG`** (a JSON-string **plaintext** variable) holds the remaining non-sensitive collection: `priceSizes`, `highlightedSizes`, `requireModeration`, `siteUrl`, `resendFrom`, `contactEmail`, plus `author`/`impressum` fallbacks. Plaintext vars survive deploys **only** because `keep_vars = true` sits at the **top level** of `wrangler.toml` — if placed after any `[table]`/`[[table]]` header, TOML parses it as that table's property and wrangler silently ignores it (this bug once sat under `[[rules]]`). **Secrets always survive regardless of `keep_vars`.**
 
-Admin-configurable values (banner, social links, impressum) are stored in the `site_settings` D1 table and take precedence over `SITE_CONFIG`.
+Admin-configurable content (banner, social links/author, impressum) is stored **solely** in the `site_settings` D1 table and edited via the admin panel — there is no `SITE_CONFIG` fallback for these (single source).
 
 The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_D1_ID`, `REPLACE_WITH_YOUR_D1_NAME`). `scripts/deploy.sh` replaces these via `sed` at deploy time using `database_id` and `database_name` build environment variables set in the dashboard.
 
