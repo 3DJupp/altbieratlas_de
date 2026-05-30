@@ -1,24 +1,8 @@
 {
   "contactEmail": "kontakt@altbieratlas.de",
-  "ga4MeasurementId": "G-XXXXXXXXXX",
   "priceSizes": [0.2, 0.25, 0.4, 0.5],
   "highlightedSizes": [0.25],
   "requireModeration": true,
-  "untappdClientId": "XXXXXXXXXXXXXXXX",
   "siteUrl": "https://altbieratlas.de",
-  "resendFrom": "Altbieratlas <noreply@altbieratlas.de>",
-  "author": {
-    "name": "Max Mustermann",
-    "github": "https://github.com/dein-handle",
-    "linkedin": "https://linkedin.com/in/dein-handle",
-    "website": "https://example.com",
-    "instagram": "https://instagram.com/dein-handle",
-    "mastodon": "https://mastodon.social/@dein-handle",
-    "kofi": "https://ko-fi.com/dein-handle"
-  },
-  "impressum": {
-    "owner": "Vor- und Nachname",
-    "address": "Musterstraße 1, 40213 Düsseldorf",
-    "email": "kontakt@altbieratlas.de"
-  }
+  "resendFrom": "Altbieratlas <noreply@altbieratlas.de>"
 }

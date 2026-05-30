@@ -16,11 +16,10 @@ function contactEmail(env) {
   return siteConfig(env).contactEmail || "";
 }
 
-// Turnstile-Site-Key (öffentlich): bevorzugt eigenständige Variable
-// TURNSTILE_SITE_KEY (Dashboard, Plaintext oder Secret — beides funktioniert,
-// der Site-Key ist ohnehin öffentlich), sonst Fallback auf SITE_CONFIG.turnstileSiteKey.
+// Turnstile-Site-Key (öffentlich, aber als CF-Secret gespeichert → deploy-fest).
+// Einzige Quelle: env.TURNSTILE_SITE_KEY (Dashboard-Secret).
 function turnstileSiteKey(env) {
-  const k = env.TURNSTILE_SITE_KEY || siteConfig(env).turnstileSiteKey || null;
+  const k = env.TURNSTILE_SITE_KEY || null;
   return k && String(k).trim().length > 0 ? String(k).trim() : null;
 }
 // Turnstile aktiv = Site-Key gesetzt und kein Platzhalter
@@ -51,16 +50,16 @@ async function requireAdmin(req, env) {
 
 // GET /api/config
 // Liefert alle nicht-sensitiven Werte, die das Frontend zur Laufzeit benötigt.
-// Primärquelle: SITE_CONFIG (JSON-String). Der Turnstile-Site-Key kann
-// alternativ als eigenständige Variable TURNSTILE_SITE_KEY gesetzt werden
-// (parallel zum Secret TURNSTILE_SECRET_KEY) — siehe turnstileSiteKey().
+// Quellen: deploy-feste Werte als CF-Secrets (TURNSTILE_SITE_KEY, GA4_MEASUREMENT_ID)
+// über env.*; der Rest (Größen, Moderation, URLs, Autor/Impressum) aus SITE_CONFIG
+// bzw. — mit Vorrang — aus D1 site_settings (Admin-Panel).
 export async function getPublicConfig(req, env) {
   const v = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : null);
 
   const sc = siteConfig(env);
 
   const siteKey = turnstileSiteKey(env);
-  const ga      = v(sc.ga4MeasurementId);
+  const ga      = v(env.GA4_MEASUREMENT_ID);
 
   const priceSizes = Array.isArray(sc.priceSizes) && sc.priceSizes.length > 0
     ? sc.priceSizes
@@ -81,15 +80,15 @@ export async function getPublicConfig(req, env) {
     }
   } catch { /* Tabelle fehlt bei alten Instanzen */ }
 
-  const scAuthor = sc.author || {};
+  // Autor/Social + Banner: einzige Quelle ist D1 (Admin-Panel).
   const author = {
-    name:      v(dbSettings["author.name"]      ?? scAuthor.name),
-    github:    v(dbSettings["author.github"]    ?? scAuthor.github),
-    linkedin:  v(dbSettings["author.linkedin"]  ?? scAuthor.linkedin),
-    website:   v(dbSettings["author.website"]   ?? scAuthor.website),
-    instagram: v(dbSettings["author.instagram"] ?? scAuthor.instagram),
-    mastodon:  v(dbSettings["author.mastodon"]  ?? scAuthor.mastodon),
-    kofi:      v(dbSettings["author.kofi"]      ?? scAuthor.kofi),
+    name:      v(dbSettings["author.name"]),
+    github:    v(dbSettings["author.github"]),
+    linkedin:  v(dbSettings["author.linkedin"]),
+    website:   v(dbSettings["author.website"]),
+    instagram: v(dbSettings["author.instagram"]),
+    mastodon:  v(dbSettings["author.mastodon"]),
+    kofi:      v(dbSettings["author.kofi"]),
   };
 
   const banner = (dbSettings["banner.text_de"] || dbSettings["banner.text_en"])
@@ -98,7 +97,7 @@ export async function getPublicConfig(req, env) {
         text_en:  dbSettings["banner.text_en"]  || null,
         enabled:  dbSettings["banner.enabled"] === "true",
       }
-    : (sc.banner || null);
+    : null;
 
   return json({
     version: APP_VERSION,
@@ -770,7 +769,7 @@ export async function adminRequestReset(req, env) {
     ).bind(token, row.username, expires).run();
 
     const sc = siteConfig(env);
-    const siteUrl = sc.siteUrl || env.SITE_URL || "https://altbieratlas.de";
+    const siteUrl = sc.siteUrl || "https://altbieratlas.de";
     const resetUrl = `${siteUrl}/admin.html?reset=${encodeURIComponent(token)}`;
     await sendPasswordResetEmail(env, { to: email, resetUrl });
   }
@@ -1842,8 +1841,7 @@ export async function adminStats(req, env) {
 // Proxy + 24h-D1-Cache für Untappd-Brauereisuchergebnisse.
 // Nur aktiv, wenn UNTAPPD_CLIENT_ID + UNTAPPD_CLIENT_SECRET gesetzt sind.
 export async function getUntappdBrewery(req, env, { id }) {
-  const sc = siteConfig(env);
-  const clientId = sc.untappdClientId || env.UNTAPPD_CLIENT_ID;
+  const clientId = env.UNTAPPD_CLIENT_ID;
   const clientSecret = env.UNTAPPD_CLIENT_SECRET;
   if (!clientId || !clientSecret) return json({ available: false });
 
@@ -2458,23 +2456,21 @@ export async function serveImpressum(req, env) {
   const assetRes = await env.ASSETS.fetch(req);
   if (!assetRes.ok) return assetRes;
 
-  const sc = siteConfig(env);
   const v  = (x) => (x && String(x).trim().length > 0 ? String(x).trim() : "");
 
-  // D1-Werte laden (Vorrang vor SITE_CONFIG)
-  const dbImpr = {};
+  // Impressum: einzige Quelle ist D1 (Admin-Panel).
+  const impr = {};
   try {
     const rows = await env.DB.prepare(
       "SELECT key, value FROM site_settings WHERE key IN ('impressum.owner','impressum.address','impressum.email')"
     ).all();
     for (const r of rows.results) {
       const k = r.key.replace("impressum.", "");
-      try { dbImpr[k] = JSON.parse(r.value); } catch { dbImpr[k] = r.value; }
+      try { impr[k] = JSON.parse(r.value); } catch { impr[k] = r.value; }
     }
   } catch { /* Tabelle fehlt bei alten Instanzen — ignorieren */ }
 
-  const impr = { ...(sc.impressum || {}), ...dbImpr };
-  const emailVal = v(impr.email) || v(sc.contactEmail);
+  const emailVal = v(impr.email);
   const parts = [];
   if (v(impr.owner))   parts.push(`i.owner=${JSON.stringify(v(impr.owner))};`);
   if (v(impr.address)) parts.push(`i.address=${JSON.stringify(v(impr.address))};`);
