@@ -1,4 +1,4 @@
-# Altbieratlas · v0.9.3
+# Altbieratlas · v0.9.4
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -181,7 +181,7 @@ Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vo
 }
 ```
 
-> **Turnstile gehört nicht mehr hier rein.** Der Site-Key steht jetzt als `TURNSTILE_SITE_KEY` unter `[vars]` in `wrangler.toml` (deploy-fest, siehe unten) und hat Vorrang vor `SITE_CONFIG.turnstileSiteKey`.
+> **Turnstile gehört nicht mehr hier rein.** Den öffentlichen Site-Key am besten im **Admin-Panel** unter *Einstellungen → Turnstile* pflegen (liegt in D1, ohne Redeploy änderbar, höchste Priorität). Reihenfolge: D1 (Admin-Panel) → `TURNSTILE_SITE_KEY` als `[vars]` in `wrangler.toml` (deploy-fester Default, siehe unten) → `SITE_CONFIG.turnstileSiteKey` (Legacy). Das Secret `TURNSTILE_SECRET_KEY` bleibt ein Dashboard-Secret.
 
 | Feld | Beschreibung |
 |---|---|

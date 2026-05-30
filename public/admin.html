@@ -644,6 +644,22 @@
         <section id="tab-settings">
           <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.settingsSub">Site-Einstellungen — werden direkt in der Datenbank gespeichert und überschreiben die Cloudflare-Konfiguration.</p>
 
+          <!-- Turnstile / Bot-Schutz -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:4px" data-i18n="admin.settingsTurnstile">Turnstile (Bot-Schutz)</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin:0 0 16px" data-i18n="admin.settingsTurnstileSub">Öffentlicher Site-Key für das Cloudflare-Turnstile-Widget. Überschreibt den in der Konfiguration hinterlegten Standard. Leer = Standard wird verwendet. Das geheime Secret bleibt in den Cloudflare-Secrets.</p>
+            <form id="settings-turnstile-form" style="display:grid;gap:12px">
+              <div class="field" style="margin:0">
+                <label data-i18n="admin.settingsTurnstileKey">Site-Key</label>
+                <input id="turnstile-site-key" name="turnstile.site_key" type="text" maxlength="100" placeholder="0x4AAAAAAA..." />
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
+                <span id="settings-turnstile-msg" style="font-size:13px;display:none"></span>
+              </div>
+            </form>
+          </div>
+
           <!-- Impressum -->
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
             <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.settingsImpressum">Impressum</h3>
@@ -2645,6 +2661,8 @@ async function loadSettingsTab() {
   try {
     const r = await window.AtlasAPI.admin.getSettings();
     const s = r.settings || {};
+    // Turnstile
+    document.getElementById("turnstile-site-key").value = s["turnstile.site_key"] || "";
     const imp = s["impressum"] || {};
     document.getElementById("imp-owner").value   = imp.owner   || s["impressum.owner"]   || "";
     document.getElementById("imp-address").value = imp.address || s["impressum.address"] || "";
@@ -2683,6 +2701,10 @@ function settingsFormHandler(formId, msgId, getPayload) {
     }
   });
 }
+
+settingsFormHandler("settings-turnstile-form", "settings-turnstile-msg", (fd) => ({
+  "turnstile.site_key": fd.get("turnstile.site_key").trim(),
+}));
 
 settingsFormHandler("settings-impressum-form", "settings-impressum-msg", (fd) => ({
   "impressum.owner":   fd.get("impressum.owner").trim(),

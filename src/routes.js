@@ -16,16 +16,34 @@ function contactEmail(env) {
   return siteConfig(env).contactEmail || "";
 }
 
-// Turnstile-Site-Key (öffentlich): bevorzugt eigenständige Variable
-// TURNSTILE_SITE_KEY (Dashboard, Plaintext oder Secret — beides funktioniert,
-// der Site-Key ist ohnehin öffentlich), sonst Fallback auf SITE_CONFIG.turnstileSiteKey.
-function turnstileSiteKey(env) {
+// Turnstile-Site-Key (öffentlich). Quellen-Vorrang:
+//   1. D1 site_settings['turnstile.site_key']  (Admin-Panel, ohne Redeploy änderbar)
+//   2. env.TURNSTILE_SITE_KEY                   (wrangler [vars] / Dashboard)
+//   3. SITE_CONFIG.turnstileSiteKey            (Legacy)
+function turnstileSiteKeyEnv(env) {
   const k = env.TURNSTILE_SITE_KEY || siteConfig(env).turnstileSiteKey || null;
   return k && String(k).trim().length > 0 ? String(k).trim() : null;
 }
+// Liest den in D1 gepflegten Site-Key; null wenn leer/ungesetzt/Tabelle fehlt.
+async function turnstileSiteKeyDB(env) {
+  try {
+    const row = await env.DB.prepare(
+      "SELECT value FROM site_settings WHERE key = 'turnstile.site_key'"
+    ).first();
+    if (!row) return null;
+    let val = row.value;
+    try { val = JSON.parse(val); } catch { /* roher String */ }
+    val = val == null ? "" : String(val).trim();
+    return val.length > 0 ? val : null;
+  } catch { return null; }
+}
+// Effektiver Site-Key: D1 hat Vorrang vor env/SITE_CONFIG.
+async function turnstileSiteKey(env) {
+  return (await turnstileSiteKeyDB(env)) || turnstileSiteKeyEnv(env);
+}
 // Turnstile aktiv = Site-Key gesetzt und kein Platzhalter
-function turnstileActive(env) {
-  const k = turnstileSiteKey(env);
+async function turnstileActive(env) {
+  const k = await turnstileSiteKey(env);
   return !!k && !k.includes("PLACEHOLDER");
 }
 
@@ -59,7 +77,6 @@ export async function getPublicConfig(req, env) {
 
   const sc = siteConfig(env);
 
-  const siteKey = turnstileSiteKey(env);
   const ga      = v(sc.ga4MeasurementId);
 
   const priceSizes = Array.isArray(sc.priceSizes) && sc.priceSizes.length > 0
@@ -74,12 +91,15 @@ export async function getPublicConfig(req, env) {
   const dbSettings = {};
   try {
     const rows = await env.DB.prepare(
-      "SELECT key, value FROM site_settings WHERE key LIKE 'author.%' OR key LIKE 'banner.%'"
+      "SELECT key, value FROM site_settings WHERE key LIKE 'author.%' OR key LIKE 'banner.%' OR key = 'turnstile.site_key'"
     ).all();
     for (const r of rows.results) {
       try { dbSettings[r.key] = JSON.parse(r.value); } catch { dbSettings[r.key] = r.value; }
     }
   } catch { /* Tabelle fehlt bei alten Instanzen */ }
+
+  // Turnstile-Site-Key: D1 (Admin) hat Vorrang vor env/SITE_CONFIG
+  const siteKey = v(dbSettings["turnstile.site_key"]) || turnstileSiteKeyEnv(env);
 
   const scAuthor = sc.author || {};
   const author = {
@@ -527,7 +547,7 @@ export async function postContribution(req, env, _params, ctx) {
 
   // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
   // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
-  const tsActive = turnstileActive(env);
+  const tsActive = await turnstileActive(env);
   const tsResult = await verifyTurnstile(
     body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req)
   );
@@ -689,7 +709,7 @@ export async function adminLogin(req, env) {
   // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
   // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
   // Fehlt der Site-Key, wird kein Widget angezeigt und kein Token gesendet.
-  const tsActive = turnstileActive(env);
+  const tsActive = await turnstileActive(env);
   const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, ip);
   if (!ts.success) return error(403, "turnstile-failed");
 
@@ -2017,6 +2037,7 @@ export async function adminUpdateSettings(req, env) {
     "banner.text_de", "banner.text_en", "banner.enabled",
     "author.name", "author.github", "author.linkedin", "author.website",
     "author.instagram", "author.mastodon", "author.kofi",
+    "turnstile.site_key",
   ];
   const stmts = [];
   for (const key of allowed) {
