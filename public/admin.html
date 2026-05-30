@@ -1099,6 +1099,11 @@ function renderTurnstileWidget() {
     theme: turnstileTheme(),
     callback: (token) => { turnstileToken = token; },
     "expired-callback": () => { turnstileToken = null; },
+    "error-callback": (code) => {
+      console.error("[turnstile] Widget-Fehler:", code,
+        "— Site-Key/Domain prüfen (110200 = Domain nicht erlaubt).");
+      turnstileToken = null;
+    },
   });
 }
 
@@ -1132,10 +1137,16 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     me = r;
     showAdmin();
   } catch (err) {
+    const tsCodes = err.detail?.reason?.["error-codes"];
+    if (err.status === 403 && Array.isArray(tsCodes) && tsCodes.length) {
+      console.error("[turnstile] siteverify-Fehler:", tsCodes,
+        "— invalid-input-secret = TURNSTILE_SECRET_KEY falsch/Platzhalter.");
+    }
     loginErr.textContent = err.status === 429
       ? window.t("admin.tooManyAttempts")
       : err.status === 403
-      ? window.t("admin.botCheckFailed")
+      ? (window.t("admin.botCheckFailed")
+          + (Array.isArray(tsCodes) && tsCodes.length ? " (" + tsCodes.join(", ") + ")" : ""))
       : window.t("admin.loginFailed");
     loginErr.classList.add("visible");
     // Turnstile-Token ist einmalig → zurücksetzen

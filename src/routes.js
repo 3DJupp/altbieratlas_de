@@ -690,7 +690,7 @@ export async function adminLogin(req, env) {
   // Fehlt der Site-Key, wird kein Widget angezeigt und kein Token gesendet.
   const tsActive = turnstileActive(env);
   const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, ip);
-  if (!ts.success) return error(403, "turnstile-failed");
+  if (!ts.success) return error(403, "turnstile-failed", { reason: ts });
 
   // Rate-Limit Login (5 pro 5 min pro IP)
   const rl = await rateLimit(env.DB, `login:${ip}:${Math.floor(Date.now() / 300000)}`, 5, 300);

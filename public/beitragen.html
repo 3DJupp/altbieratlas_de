@@ -395,6 +395,11 @@ function renderTurnstileWidget() {
     theme: turnstileTheme(),
     callback: (token) => { turnstileToken = token; },
     "expired-callback": () => { turnstileToken = null; },
+    "error-callback": (code) => {
+      console.error("[turnstile] Widget-Fehler:", code,
+        "— Site-Key/Domain prüfen (110200 = Domain nicht erlaubt).");
+      turnstileToken = null;
+    },
   });
 }
 
@@ -739,8 +744,15 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     window.scrollTo({ top: document.getElementById("thanks").offsetTop - 90, behavior: "smooth" });
     renderRecent();
   } catch (err) {
+    const tsCodes = err.detail?.reason?.["error-codes"];
+    if (err.status === 403 && Array.isArray(tsCodes) && tsCodes.length) {
+      console.error("[turnstile] siteverify-Fehler:", tsCodes,
+        "— invalid-input-secret = TURNSTILE_SECRET_KEY falsch/Platzhalter.");
+    }
     const msg = err.status === 429 ? "Zu viele Einreichungen. Bitte später erneut versuchen."
-             : err.status === 403 ? "Bot-Prüfung fehlgeschlagen. Bitte Seite neu laden."
+             : err.status === 403 ? ("Bot-Prüfung fehlgeschlagen"
+                 + (Array.isArray(tsCodes) && tsCodes.length ? " (" + tsCodes.join(", ") + ")" : "")
+                 + ". Bitte Seite neu laden.")
              : err.status === 400 ? "Bitte Eingaben prüfen (" + (err.detail?.detail || "Validierung") + ")."
              : (window.t("contrib.error") || "Fehler.");
     errBox.textContent = msg;
