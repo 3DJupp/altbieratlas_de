@@ -580,6 +580,19 @@ window.ATLAS_DATA = {
         en: "From August 21–23, 2026, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for 32 years near the famous Benrath Palace, the event is known for its cosy beer gardens and authentic Rhineland atmosphere.",
       },
     },
+    {
+      id: "rheinkirmes-2026",
+      title: { de: "Rheinkirmes", en: "Rheinkirmes" },
+      breweryId: null,
+      date: "2026-07-17",
+      endDate: "2026-07-26",
+      location: "Oberkasseler Rheinwiesen (linksrheinisch), Düsseldorf",
+      url: null,
+      description: {
+        de: "Vom 17. bis 26. Juli 2026 findet die Rheinkirmes auf den linksrheinischen Oberkasseler Rheinwiesen statt — eines der größten Volksfeste am Rhein. In den Festzelten der Düsseldorfer Hausbrauereien wird Altbier ausgeschenkt: Schlüssel bietet das 0,25-Liter-Glas für 3,30 €, Uerige für 3,40 €, Schlösser das 0,2-Liter-Glas für 3,00 €, Kürzer ebenfalls im 0,2-Liter-Glas für 2,90 € und Schumacher das 0,25-Liter-Glas für 3,50 €.",
+        en: "From July 17 to 26, 2026, the Rheinkirmes takes place on the left-bank Oberkasseler Rheinwiesen — one of the largest folk festivals on the Rhine. Altbier is served in the festival tents of Düsseldorf's brewpubs: Schlüssel offers the 0.25-liter glass for €3.30, Uerige for €3.40, Schlösser the 0.2-liter glass for €3.00, Kürzer also in a 0.2-liter glass for €2.90, and Schumacher the 0.25-liter glass for €3.50.",
+      },
+    },
   ],
 
   glossary: [

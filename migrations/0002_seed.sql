@@ -324,11 +324,22 @@ VALUES
     'https://www.bierboerse.com/city/duesseldorf-benrath.htm',
     'Vom 21.–23. August 2026 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit 32 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.',
     'From August 21–23, 2026, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for 32 years near the famous Benrath Palace, the event is known for its cozy beer gardens and authentic Rhineland atmosphere.',
+    'approved'),
+  ('rheinkirmes-2026', 'Rheinkirmes', 'Rheinkirmes',
+    NULL, '2026-07-17', '2026-07-26', NULL, NULL, 'Oberkasseler Rheinwiesen (linksrheinisch), Düsseldorf',
+    NULL,
+    'Vom 17. bis 26. Juli 2026 findet die Rheinkirmes auf den linksrheinischen Oberkasseler Rheinwiesen statt — eines der größten Volksfeste am Rhein. In den Festzelten der Düsseldorfer Hausbrauereien wird Altbier ausgeschenkt: Schlüssel bietet das 0,25-Liter-Glas für 3,30 €, Uerige für 3,40 €, Schlösser das 0,2-Liter-Glas für 3,00 €, Kürzer ebenfalls im 0,2-Liter-Glas für 2,90 € und Schumacher das 0,25-Liter-Glas für 3,50 €.',
+    'From July 17 to 26, 2026, the Rheinkirmes takes place on the left-bank Oberkasseler Rheinwiesen — one of the largest folk festivals on the Rhine. Altbier is served in the festival tents of Düsseldorf''s brewpubs: Schlüssel offers the 0.25-liter glass for €3.30, Uerige for €3.40, Schlösser the 0.2-liter glass for €3.00, Kürzer also in a 0.2-liter glass for €2.90, and Schumacher the 0.25-liter glass for €3.50.',
     'approved');
 
 -- ============================================================
 -- Event beers
 -- ============================================================
-INSERT OR IGNORE INTO event_beers (event_id, name_de, name_en, size, price) VALUES
-  ('bierboerse-benrath', 'Kürzer Alt', NULL, '0.25l', 3.00),
-  ('bierboerse-benrath', 'Bolten alt', NULL, '0.25l', 2.50);
+INSERT OR IGNORE INTO event_beers (event_id, name_de, name_en, size, price, notes) VALUES
+  ('bierboerse-benrath', 'Kürzer Alt', NULL, '0.25l', 3.00, NULL),
+  ('bierboerse-benrath', 'Bolten alt', NULL, '0.25l', 2.50, NULL),
+  ('rheinkirmes-2026', 'Schlüssel Alt (Festzelt)',  'Schlüssel Alt (festival tent)',  '0.25l', 3.30, NULL),
+  ('rheinkirmes-2026', 'Uerige Alt (Festzelt)',     'Uerige Alt (festival tent)',     '0.25l', 3.40, NULL),
+  ('rheinkirmes-2026', 'Schlösser Alt (Festzelt)',  'Schlösser Alt (festival tent)',  '0.2l',  3.00, 'Fässer: 140 € (10 l) / 260 € (20 l)'),
+  ('rheinkirmes-2026', 'Kürzer Alt (Festzelt)',     'Kürzer Alt (festival tent)',     '0.2l',  2.90, '20-Liter-Fass: 290 €'),
+  ('rheinkirmes-2026', 'Schumacher Alt (Festzelt)', 'Schumacher Alt (festival tent)', '0.25l', 3.50, '10-Liter-Fass: 129 €');
