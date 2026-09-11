@@ -108,6 +108,11 @@ persist = true
 #   UNTAPPD_CLIENT_SECRET — Untappd-App-Secret.
 #   RESEND_API_KEY        — API-Key von resend.com (für alle Mails).
 #   ADMIN_EMAIL           — Empfänger des täglichen Beitrags-Digests.
+#   MAP_TILE_API_KEY      — API-Key des Kachel-Anbieters (CARTO Basemaps,
+#                           dashboard.basemaps.carto.com). Fehlt er, schaltet
+#                           das Frontend auf schlüssellose OSM-Standardkacheln
+#                           um (per CSS abgedunkelt), statt CARTOs
+#                           „API KEY REQUIRED"-Kacheln auszuliefern.
 #
 #   INITIAL_ADMIN  (nur für die Ersteinrichtung, danach entfernen!)
 #     Legt beim ersten Request automatisch einen Admin-User an,
@@ -128,7 +133,9 @@ persist = true
 #     "highlightedSizes": [0.25, 0.5],
 #     "requireModeration": true,
 #     "siteUrl":          "https://altbieratlas.de",
-#     "resendFrom":       "Altbieratlas <noreply@altbieratlas.de>"
+#     "resendFrom":       "Altbieratlas <noreply@altbieratlas.de>",
+#     "mapTileUrl":       "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key={apiKey}",
+#     "mapTileAttribution": "&copy; OSM &copy; CARTO"
 #   }
 #
 #   priceSizes:       Dezimalzahlen ohne Einheit (UI ergänzt „l").
@@ -139,6 +146,12 @@ persist = true
 #                      Standard: true
 #   siteUrl:          Öffentliche URL, z. B. für E-Mail-Links.
 #   resendFrom:       Absenderadresse für alle Mails via Resend.
+#   mapTileUrl:       Kachel-URL der Karte. "{apiKey}" wird durch
+#                     MAP_TILE_API_KEY ersetzt. CARTO erwartet den Schlüssel
+#                     als Parameter `key`. Nur nötig, wenn der Standard
+#                     (CARTO dark_all) nicht passt — etwa beim Anbieterwechsel.
+#   mapTileAttribution: Attribution-Zeile zur obigen Kachel-URL. CARTO verlangt,
+#                     dass CARTO- und OSM-Attribution sichtbar bleiben.
 #
 # Autor/Social, Impressum und Banner werden ausschließlich im
 # Admin-Panel gepflegt (D1 site_settings) — nicht in SITE_CONFIG.
