@@ -429,9 +429,7 @@ const isSsr = root.dataset.ssr === "1";
   const dm = L.map('detail-map', {
     center: b.coords, zoom: 14, zoomControl: false, scrollWheelZoom: false,
   });
-  L.tileLayer(window.ATLAS_CONFIG.map.tileUrl, {
-    attribution: window.ATLAS_CONFIG.map.tileAttribution,
-  }).addTo(dm);
+  window.atlasTileLayer(dm);
   L.marker(b.coords, {
     icon: L.divIcon({
       className: '',

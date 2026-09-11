@@ -1,4 +1,4 @@
-# Altbieratlas · v0.10.0
+# Altbieratlas · v0.10.1
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -186,6 +186,8 @@ Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vo
 | `requireModeration` | `true` = alle Beiträge landen in der Queue. Standard: `true` |
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
 | `resendFrom` | Absenderadresse für Mails via Resend |
+| `mapTileUrl` | Optional. Kachel-URL der Karte; `{apiKey}` wird durch `MAP_TILE_API_KEY` ersetzt. Nur nötig beim Wechsel des Kachel-Anbieters |
+| `mapTileAttribution` | Optional. Attribution-Zeile zur obigen Kachel-URL |
 
 > `SITE_CONFIG` ist eine **Plaintext-Variable** und überlebt Deploys nur, weil `keep_vars = true` korrekt am **Top-Level** der `wrangler.toml` steht (steht es nach einer `[table]`-Überschrift, parst TOML es als deren Property und wrangler ignoriert es). Einzelwerte, die garantiert deploy-fest sein müssen, liegen daher als **Secret** (siehe unten) — Secrets werden von `wrangler deploy` nie gelöscht.
 
@@ -204,6 +206,7 @@ Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-
 | `UNTAPPD_CLIENT_SECRET` | Untappd-App-Secret |
 | `RESEND_API_KEY` | [Resend](https://resend.com)-API-Key |
 | `ADMIN_EMAIL` | Empfänger des täglichen Digests |
+| `MAP_TILE_API_KEY` | API-Key des Kachel-Anbieters (CARTO). Ohne Key nutzt die Karte schlüssellose OSM-Kacheln |
 | `INITIAL_ADMIN` | Ersteinrichtung — nach erstem Login löschen |
 
 ---
@@ -212,6 +215,12 @@ Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-
 
 ### Karte & Suche
 - Interaktive Leaflet-Karte aller Brauereien / Gastronomien / Shops
+- **Kachel-Quelle konfigurierbar**: `MAP_TILE_API_KEY` wird in den `{apiKey}`-
+  Platzhalter der Kachel-URL eingesetzt. Ohne Key schaltet die Karte automatisch
+  auf schlüssellose OSM-Standardkacheln um (per CSS abgedunkelt), statt CARTOs
+  „API KEY REQUIRED"-Wasserzeichen anzuzeigen. Beide Karten (Startseite und
+  Ortsdetail) laufen über `window.atlasTileLayer()` in `shell.js`; der Key wird
+  nachgezogen, sobald `/api/config` geladen ist
 - Typ-spezifische Pin-Farben, Hover-Tooltips, Filter inkl. "Historisch"
 - Historische Brauereien (`is_historical`) grau hervorgehoben; `highlighted`/`sponsored`-CSS für gesponserte Einträge
 - Geocoder-Suche via Nominatim (serverseitig proxiert)

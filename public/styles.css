@@ -1076,3 +1076,10 @@ html { scroll-behavior: smooth; }
   color: var(--ink-soft); text-decoration: none;
 }
 .city-links a:hover { border-color: var(--copper); color: var(--copper); }
+
+/* --- Kartenkacheln ohne API-Key ----------------------------------- */
+/* OSM-Standardkacheln sind hell. Der Filter liegt nur auf der Kachel-
+   Ebene, nicht auf Markern/Popups, damit die Pins ihre Farbe behalten. */
+.tiles-dimmed .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.86) saturate(0.55);
+}

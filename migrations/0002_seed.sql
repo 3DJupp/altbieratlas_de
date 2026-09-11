@@ -1,5 +1,5 @@
 -- ============================================================
--- Altbieratlas — Seed data  v0.10.0
+-- Altbieratlas — Seed data  v0.10.1
 -- ============================================================
 -- Venue types, styles, glossary, breweries, prices and events.
 -- Applies to every deployment (dev, staging, production).
