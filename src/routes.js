@@ -99,6 +99,16 @@ export async function getPublicConfig(req, env) {
       }
     : null;
 
+  // Kartenkacheln: CARTO verlangt seit 2026 einen API-Key. Der Key liegt als
+  // Secret (deploy-fest), URL und Attribution sind optional über SITE_CONFIG
+  // überschreibbar, falls der Anbieter gewechselt wird.
+  const mapTileApiKey = v(env.MAP_TILE_API_KEY);
+  const map = {
+    tileApiKey:      mapTileApiKey,
+    tileUrl:         v(sc.mapTileUrl),
+    tileAttribution: v(sc.mapTileAttribution),
+  };
+
   // Städte mit eigener Landingpage — Footer/Shell verlinken sie site-weit,
   // damit die Stadtseiten nicht als verwaiste Seiten dastehen.
   const cities = Object.entries(await cityIndex(env))
@@ -109,6 +119,7 @@ export async function getPublicConfig(req, env) {
     priceSizes,
     highlightedSizes,
     cities,
+    map,
     turnstileSiteKey: siteKey,
     turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
     ga4MeasurementId: ga && ga !== "G-XXXXXXXXXX" ? ga : null,

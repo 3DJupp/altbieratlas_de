@@ -343,7 +343,7 @@ const map = L.map("map", {
   worldCopyJump: true,
 });
 L.control.zoom({ position: "bottomright" }).addTo(map);
-L.tileLayer(cfg.map.tileUrl, { attribution: cfg.map.tileAttribution }).addTo(map);
+window.atlasTileLayer(map);
 
 function pinIcon(type, opts = {}) {
   const classes = ["atlas-pin", type];

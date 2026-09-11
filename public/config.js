@@ -21,14 +21,28 @@ window.ATLAS_CONFIG = {
   apiBaseUrl: "/api",
 
   // --- Karte ---
+  // Kachel-Auswahl: Ist `tileApiKey` gesetzt (Secret MAP_TILE_API_KEY, kommt
+  // über /api/config), wird `tileUrl` verwendet und `{apiKey}` darin ersetzt.
+  // Ohne Key greift `tileUrlFallback` — CARTO liefert sonst nur noch Kacheln
+  // mit „API KEY REQUIRED"-Wasserzeichen.
   map: {
     defaultCenter: [51.2277, 6.7735], // Düsseldorf Altstadt
     defaultZoom: 13,
     minZoom: 3,
     maxZoom: 18,
-    tileUrl: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    tileUrl: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key={apiKey}",
     tileAttribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    tileApiKey: null, // wird vom Server via /api/config gesetzt
+
+    // Schlüsselloser Ersatz, solange kein API-Key hinterlegt ist.
+    // OSM-Standardkacheln sind hell — `tileFallbackDark` dunkelt sie per
+    // CSS-Filter ab, damit das Kartenbild zum Rest des Atlas passt.
+    tileUrlFallback: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    tileAttributionFallback:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende',
+    tileFallbackDark: true,
+
     geocodeEnabled: true,
     geocodeZoom: 13,
   },

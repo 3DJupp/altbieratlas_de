@@ -308,6 +308,46 @@ function loadAnalytics() {
   gtag("config", id, { anonymize_ip: true });
 }
 
+// ---- Kartenkacheln ------------------------------------------------
+// Einzige Stelle, an der ein Tile-Layer entsteht (Startseite + Ortsdetail).
+// Mit API-Key: konfigurierte tileUrl, "{apiKey}" wird ersetzt.
+// Ohne Key: schlüsselloser Fallback, optional per CSS-Filter abgedunkelt.
+window.atlasTileLayer = function (map) {
+  let layer = null;
+  let currentUrl = null;
+
+  function resolve() {
+    const m = (window.ATLAS_CONFIG && window.ATLAS_CONFIG.map) || {};
+    const key = m.tileApiKey;
+    const useFallback = !key && !!m.tileUrlFallback;
+    return {
+      url: useFallback
+        ? m.tileUrlFallback
+        : String(m.tileUrl || "").replace("{apiKey}", encodeURIComponent(key || "")),
+      attribution: useFallback
+        ? (m.tileAttributionFallback || m.tileAttribution)
+        : m.tileAttribution,
+      dim: useFallback && m.tileFallbackDark !== false,
+      maxZoom: m.maxZoom || 19,
+    };
+  }
+
+  function apply() {
+    const t = resolve();
+    if (!t.url || t.url === currentUrl) return;
+    if (layer) map.removeLayer(layer);
+    layer = L.tileLayer(t.url, { attribution: t.attribution, maxZoom: t.maxZoom }).addTo(map);
+    currentUrl = t.url;
+    map.getContainer().classList.toggle("tiles-dimmed", t.dim);
+  }
+
+  // Sofort zeichnen (ohne Key: Fallback) und nachziehen, sobald /api/config
+  // den API-Key geliefert hat — die Karte startet vor dem Config-Load.
+  apply();
+  document.addEventListener("atlas:config-ready", apply);
+  return () => layer;
+};
+
 window.atlasTrack = function (event, params = {}) {
   if (!window.ATLAS_CONFIG.analyticsEnabled) return;
   if (typeof window.gtag === "function") {

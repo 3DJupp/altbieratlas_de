@@ -41,6 +41,12 @@
     }
     if (srv.banner) cfg.banner = srv.banner;
     if (Array.isArray(srv.cities)) cfg.cities = srv.cities;
+    if (srv.map && typeof srv.map === "object") {
+      cfg.map = cfg.map || {};
+      for (const k of ["tileApiKey", "tileUrl", "tileAttribution"]) {
+        if (srv.map[k]) cfg.map[k] = srv.map[k];
+      }
+    }
   }
 
   async function probe() {
