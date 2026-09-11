@@ -25,12 +25,15 @@ window.ATLAS_CONFIG = {
   // über /api/config), wird `tileUrl` verwendet und `{apiKey}` darin ersetzt.
   // Ohne Key greift `tileUrlFallback` — CARTO liefert sonst nur noch Kacheln
   // mit „API KEY REQUIRED"-Wasserzeichen.
+  // CARTOs Raster-Basemaps erwarten den Schlüssel als Query-Parameter `key`
+  // (nicht `api_key`). Bei einem Anbieterwechsel die komplette URL über
+  // SITE_CONFIG.mapTileUrl überschreiben, statt hier zu editieren.
   map: {
     defaultCenter: [51.2277, 6.7735], // Düsseldorf Altstadt
     defaultZoom: 13,
     minZoom: 3,
     maxZoom: 18,
-    tileUrl: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key={apiKey}",
+    tileUrl: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key={apiKey}",
     tileAttribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     tileApiKey: null, // wird vom Server via /api/config gesetzt
