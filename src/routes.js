@@ -99,10 +99,16 @@ export async function getPublicConfig(req, env) {
       }
     : null;
 
+  // Städte mit eigener Landingpage — Footer/Shell verlinken sie site-weit,
+  // damit die Stadtseiten nicht als verwaiste Seiten dastehen.
+  const cities = Object.entries(await cityIndex(env))
+    .map(([slug, e]) => ({ slug, city: e.city, count: e.total }));
+
   return json({
     version: APP_VERSION,
     priceSizes,
     highlightedSizes,
+    cities,
     turnstileSiteKey: siteKey,
     turnstileEnabled: !!siteKey && !siteKey.includes("PLACEHOLDER"),
     ga4MeasurementId: ga && ga !== "G-XXXXXXXXXX" ? ga : null,
@@ -112,12 +118,33 @@ export async function getPublicConfig(req, env) {
   });
 }
 
+// Größenangaben sind historisch uneinheitlich gespeichert ("0.25", "0,25",
+// "0.25l"). Dieser SQL-Ausdruck normalisiert sie auf eine Dezimalzahl, damit
+// Aggregate nicht an der Schreibweise scheitern.
+export const sizeNumSql = (col = "size") =>
+  `CAST(REPLACE(REPLACE(REPLACE(${col}, ',', '.'), 'l', ''), ' ', '') AS REAL)`;
+
 // GET /api/stats
 export async function getStats(req, env) {
   const [brewCount, priceCount, avgRow] = await Promise.all([
     env.DB.prepare("SELECT COUNT(*) AS n FROM breweries WHERE status = 'approved'").first(),
     env.DB.prepare("SELECT COUNT(*) AS n FROM prices WHERE status = 'approved'").first(),
-    env.DB.prepare("SELECT AVG(price) AS avg FROM prices WHERE status = 'approved' AND size = '0.25l'").first(),
+    // „Aktuelles 0,25 l Alt im Schnitt" — wie in den Ranglisten zählt nur die
+    // jüngste Meldung je Brauerei, sonst zieht die Preishistorie den Wert nach unten.
+    env.DB.prepare(
+      `SELECT AVG(price) AS avg FROM (
+         SELECT p.price
+         FROM prices p
+         WHERE p.status = 'approved'
+           AND ABS(${sizeNumSql('p.size')} - 0.25) < 0.001
+           AND p.date = (
+             SELECT MAX(p2.date) FROM prices p2
+             WHERE p2.brewery_id = p.brewery_id AND p2.status = 'approved'
+               AND ABS(${sizeNumSql('p2.size')} - 0.25) < 0.001
+           )
+         GROUP BY p.brewery_id
+       )`
+    ).first(),
   ]);
   return json({
     breweryCount: brewCount?.n ?? 0,
@@ -1911,19 +1938,20 @@ export async function sitemap(req, env) {
 
   // Letztes inhaltliches Änderungsdatum pro Seite.
   // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
-  // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuер.
+  // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
   const PAGE_DATES = {
-    "/":           "2026-05-29",
-    "/ranglisten": "2026-05-29",
-    "/wissen":     "2026-05-29",
-    "/rivalen":    "2026-05-26",
-    "/beitragen":  "2026-05-24",
-    "/impressum":  "2026-05-13",
+    "/":           "2026-09-11",
+    "/ranglisten": "2026-09-11",
+    "/wissen":     "2026-09-11",
+    "/rivalen":    "2026-09-11",
+    "/beitragen":  "2026-09-11",
+    "/impressum":  "2026-09-11",
   };
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
   const today = new Date().toISOString().slice(0, 10);
+  const cities = await cityIndex(env);
   try {
     const [bRes, eRes] = await Promise.all([
       env.DB.prepare(
@@ -1956,16 +1984,16 @@ export async function sitemap(req, env) {
     <priority>${priority}</priority>
   </url>`;
     }),
-    ...Object.keys(CITY_SLUGS).map((slug) => `
+    ...Object.keys(cities).map((slug) => `
   <url>
     <loc>${esc(base + "/stadt/" + slug)}</loc>
     <lastmod>${lastMod ? lastMod.slice(0, 10) : today}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>`),
     ...breweryIds.map((b) => `
   <url>
-    <loc>${esc(base + "/ort?id=" + b.id)}</loc>
+    <loc>${esc(base + "/ort/" + encodeURIComponent(b.id))}</loc>
     <lastmod>${(b.lastmod || today).slice(0, 10)}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -2030,136 +2058,255 @@ export async function adminUpdateSettings(req, env) {
   return json({ ok: true });
 }
 
-// GET /impressum.html
-// Liefert die statische Seite, ergänzt um ein serverseitig eingebettetes
-// <script>-Block mit den Impressum-Daten. D1 hat Vorrang vor SITE_CONFIG.
-// GET /ort?id=... — SSR: title + meta tags mit echten Brauerei-Daten befüllen,
-// damit Google und andere Crawler den richtigen Seitentitel sehen (nicht "Ort"
-// oder den rohen i18n-Key "title.location").
-export async function serveOrt(req, env) {
-  const url = new URL(req.url);
-  const id = url.searchParams.get("id");
+// Preis/Größe/Datum serverseitig deutsch formatieren (Client nutzt i18n.js).
+function fmtPriceDe(n) {
+  return Number(n).toFixed(2).replace(".", ",");
+}
+function fmtSizeDe(s) {
+  const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
+  if (isNaN(num)) return String(s ?? "");
+  return num.toFixed(2).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",") + " l";
+}
+function sizeNum(s) {
+  const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
+  return isNaN(num) ? null : num;
+}
+function fmtDateDe(d) {
+  if (!d) return "";
+  const [y, m, day] = String(d).slice(0, 10).split("-");
+  return y && m && day ? `${day}.${m}.${y}` : String(d);
+}
 
-  // Ohne ID: statische Datei direkt ausliefern (kein SSR nötig)
-  if (!id) {
+// GET /ort/<slug> — SSR: Meta-Tags, JSON-LD UND Seiteninhalt aus D1.
+// Ohne Server-Rendering sehen Crawler auf Ortsseiten nur "Lade…" — der
+// gesamte Long-Tail ("Uerige Preis", "Füchschen Altbier") bliebe unsichtbar.
+export async function serveOrt(req, env, params = {}) {
+  const url = new URL(req.url);
+  const id = params.id || url.searchParams.get("id");
+
+  const staticFile = () => {
     const assetUrl = new URL(req.url);
     assetUrl.pathname = "/ort.html";
     return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
-  }
+  };
 
-  // Brauerei aus D1 laden
-  let row;
+  // Ohne ID: statische Datei direkt ausliefern (kein SSR nötig)
+  if (!id) return staticFile();
+
+  // Brauerei + Preise + Stile parallel aus D1 laden
+  let row, prices = [], styles = [];
   try {
-    row = await env.DB.prepare(
-      "SELECT id, name, city, country, type, description_de, description_en, lat, lng, address, website FROM breweries WHERE id = ? AND status = 'approved'"
-    ).bind(id).first();
+    const [bRes, pRes, sRes] = await Promise.all([
+      env.DB.prepare(
+        `SELECT b.*, COALESCE(v.name_de, b.type) AS type_label
+         FROM breweries b LEFT JOIN venue_types v ON v.id = b.type
+         WHERE b.id = ? AND b.status = 'approved'`
+      ).bind(id).first(),
+      env.DB.prepare(
+        "SELECT date, size, price, source FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC LIMIT 20"
+      ).bind(id).all(),
+      env.DB.prepare(
+        `SELECT s.id, s.name, s.abv, s.ibu, s.tasting_de
+         FROM brewery_styles bs JOIN styles s ON s.id = bs.style_id
+         WHERE bs.brewery_id = ? ORDER BY s.name`
+      ).bind(id).all(),
+    ]);
+    row = bRes;
+    prices = pRes?.results || [];
+    styles = sRes?.results || [];
   } catch { /* D1 nicht verfügbar — Fallback auf statische Datei */ }
 
   // Brauerei nicht gefunden oder DB-Fehler: statische Datei ausliefern
-  if (!row) {
-    const assetUrl = new URL(req.url);
-    assetUrl.pathname = "/ort.html";
-    return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
-  }
+  if (!row) return staticFile();
 
-  const assetUrl = new URL(req.url);
-  assetUrl.pathname = "/ort.html";
-  const assetRes = await env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  const assetRes = await staticFile();
   if (!assetRes.ok) return assetRes;
 
-  const pageUrl = `https://altbieratlas.de/ort?id=${row.id}`;
-  const ogImageUrl = `https://altbieratlas.de/api/og/ort?id=${row.id}`;
-  const title = `${row.name} · Altbieratlas`;
+  const pageUrl = `https://altbieratlas.de/ort/${encodeURIComponent(row.id)}`;
+  const ogImageUrl = `https://altbieratlas.de/api/og/ort?id=${encodeURIComponent(row.id)}`;
+  const slug = citySlug(row.city);
+  const cityUrl = slug ? `https://altbieratlas.de/stadt/${slug}` : null;
+  const title = `${row.name} · Altbier in ${row.city} · Altbieratlas`;
+
+  // Jüngste Meldung je Größe — das ist der Preis, der für Besucher zählt.
+  const latestBySize = [];
+  const seenSize = new Set();
+  for (const p of prices) {
+    const key = String(sizeNum(p.size) ?? p.size);
+    if (seenSize.has(key)) continue;
+    seenSize.add(key);
+    latestBySize.push(p);
+  }
+  latestBySize.sort((a, b) => (sizeNum(a.size) ?? 0) - (sizeNum(b.size) ?? 0));
+  const hero = latestBySize.find((p) => sizeNum(p.size) === 0.25)
+            || latestBySize.find((p) => sizeNum(p.size) === 0.5)
+            || latestBySize[0];
+
   const desc = (row.description_de || row.description_en || "")
     .slice(0, 155).replace(/\s+\S*$/, "").trim();
-  const metaDesc = desc
+  // Preis in die Meta-Description ziehen: das ist die Frage, mit der Leute suchen.
+  const priceBit = hero
+    ? `${fmtSizeDe(hero.size)} Alt für ${fmtPriceDe(hero.price)} € (Stand ${fmtDateDe(hero.date)}). `
+    : "";
+  const metaDesc = (priceBit + (desc
     ? desc + "…"
-    : `${row.name} — Altbier in ${row.city} im Altbieratlas.`;
+    : `${row.name} in ${row.city}: Adresse, Altbier-Sorten und aktuelle Preise im Altbieratlas.`)).slice(0, 300);
 
   const ld = JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "LocalBusiness",
+        "@type": row.is_historical ? "Place" : "BarOrPub",
         "@id": pageUrl + "#business",
         "name": row.name,
         "url": pageUrl,
         "image": ogImageUrl,
-        ...(metaDesc ? { "description": metaDesc } : {}),
+        "description": metaDesc,
         ...(row.address ? { "address": { "@type": "PostalAddress", "streetAddress": row.address, "addressLocality": row.city, "addressCountry": row.country || "DE" } } : {}),
         ...(row.lat && row.lng ? { "geo": { "@type": "GeoCoordinates", "latitude": row.lat, "longitude": row.lng } } : {}),
-        ...(row.website ? { "sameAs": row.website } : {}),
+        ...(row.website ? { "sameAs": [row.website] } : {}),
+        ...(row.founded ? { "foundingDate": String(row.founded) } : {}),
+        ...(latestBySize.length ? {
+          "hasMenu": {
+            "@type": "Menu",
+            "hasMenuSection": {
+              "@type": "MenuSection",
+              "name": "Altbier",
+              "hasMenuItem": latestBySize.map((p) => ({
+                "@type": "MenuItem",
+                "name": `Altbier ${fmtSizeDe(p.size)}`,
+                "offers": {
+                  "@type": "Offer",
+                  "price": Number(p.price).toFixed(2),
+                  "priceCurrency": "EUR",
+                },
+              })),
+            },
+          },
+        } : {}),
       },
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Altbieratlas", "item": "https://altbieratlas.de/" },
-          { "@type": "ListItem", "position": 2, "name": row.name, "item": pageUrl },
+          ...(cityUrl ? [{ "@type": "ListItem", "position": 2, "name": `Altbier in ${row.city}`, "item": cityUrl }] : []),
+          { "@type": "ListItem", "position": cityUrl ? 3 : 2, "name": row.name, "item": pageUrl },
         ],
       },
     ],
   });
 
+  // ---- Server-gerenderter Seiteninhalt -------------------------------
+  // Crawler (und Besucher ohne JS) sehen damit echten Text statt „Lade…".
+  // Das Client-Script ersetzt den Block anschließend durch die interaktive
+  // Fassung mit identischem Inhalt.
+  const initials = (str) => {
+    const words = (String(str || "").match(/\p{L}+/gu)) || [];
+    if (!words.length) return "?";
+    return (words.length >= 2 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
+  };
+  const photoUrl = row.photo_key ? `/photos/${row.photo_key}`
+                 : row.logo_key ? `/logos/orte/${row.logo_key}` : null;
+
+  const bodyHtml = `
+    <section class="brewery-hero">
+      <div class="container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Karte</a><span>›</span>
+          ${cityUrl ? `<a href="/stadt/${escHtml(slug)}">${escHtml(row.city)}</a>` : `<span>${escHtml(row.city)}</span>`}
+          <span>›</span> <span>${escHtml(row.name)}</span>
+        </nav>
+        <div class="brewery-head">
+          <div class="ort-photo-wrap">
+            <div class="ort-avatar">${
+              photoUrl
+                ? `<img src="${escHtml(photoUrl)}" alt="${escHtml(row.name)}" width="96" height="96" loading="eager" decoding="async">`
+                : `<span class="initials">${escHtml(initials(row.short_name || row.name))}</span>`
+            }</div>
+            <div class="ort-title-wrap">
+              <h1 class="brewery-title">${escHtml(row.name)}</h1>
+              <div class="brewery-meta">
+                <span>${escHtml(row.type_label || row.type)}</span>
+                <span class="dot"></span>
+                <span>${escHtml(row.city)}${row.country && row.country !== "DE" ? " · " + escHtml(row.country) : ""}</span>
+                ${row.founded ? `<span class="dot"></span><span>seit ${escHtml(row.founded)}</span>` : ""}
+                ${row.website ? `<span class="dot"></span><a href="${escHtml(row.website)}" target="_blank" rel="noopener">Website →</a>` : ""}
+              </div>
+            </div>
+          </div>
+          ${hero ? `
+            <div class="price-hero">
+              <div class="label">Aktuell ${escHtml(fmtSizeDe(hero.size))}</div>
+              <div class="big">€ ${escHtml(fmtPriceDe(hero.price))}</div>
+              <div class="small">gemeldet ${escHtml(fmtDateDe(hero.date))}</div>
+            </div>` : ""}
+        </div>
+      </div>
+    </section>
+
+    <section class="container grid-2col">
+      <div class="about card">
+        <h2>Über ${escHtml(row.name)}</h2>
+        <p>${escHtml(row.description_de || row.description_en || `${row.name} ist als ${row.type_label || row.type} in ${row.city} im Altbieratlas verzeichnet.`)}</p>
+        ${row.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${escHtml(row.address)}</p>` : ""}
+      </div>
+      <div><div class="detail-map" id="detail-map"></div></div>
+    </section>
+
+    ${styles.length ? `
+    <section class="container" style="padding-bottom:40px">
+      <h2>Altbier-Sorten</h2>
+      <ul>
+        ${styles.map((s) => `<li><strong>${escHtml(s.name)}</strong>${
+          s.abv != null ? ` — ${escHtml(String(s.abv).replace(".", ","))} % vol` : ""
+        }${s.tasting_de ? `: ${escHtml(s.tasting_de)}` : ""}</li>`).join("")}
+      </ul>
+    </section>` : ""}
+
+    <section class="container price-history">
+      <h2>Altbier-Preise bei ${escHtml(row.name)}</h2>
+      ${latestBySize.length ? `
+      <table class="ssr-price-table">
+        <thead><tr><th>Größe</th><th>Preis</th><th>gemeldet am</th></tr></thead>
+        <tbody>
+          ${latestBySize.map((p) => `<tr><td>${escHtml(fmtSizeDe(p.size))}</td><td>€ ${escHtml(fmtPriceDe(p.price))}</td><td>${escHtml(fmtDateDe(p.date))}</td></tr>`).join("")}
+        </tbody>
+      </table>` : `<p>Für ${escHtml(row.name)} liegt noch keine Preismeldung vor.</p>`}
+      <p><a class="btn btn-primary" href="/beitragen?typ=preis&brauerei=${escHtml(encodeURIComponent(row.id))}">Preis melden</a></p>
+    </section>`;
+
   let html = await assetRes.text();
 
-  // <title>
+  // Hinweis: überall Funktions-Replacements, damit "$" in Daten nicht als
+  // Ersetzungsmuster interpretiert wird.
+  html = html.replace(/<title>[^<]*<\/title>/, () => `<title>${escHtml(title)}</title>`);
+  html = html.replace(/(<meta name="description" content=")[^"]*(")/, (m, a, b) => `${a}${escHtml(metaDesc)}${b}`);
+
+  // canonical + OG/Twitter über die id-Attribute in ort.html adressieren
+  const swap = (attr, idAttr, value) => {
+    const re = new RegExp(`(<[^>]*${attr}=")[^"]*(" id="${idAttr}")`);
+    html = html.replace(re, (m, a, b) => `${a}${escHtml(value)}${b}`);
+  };
+  swap("href", "meta-canonical", pageUrl);
+  swap("content", "meta-og-title", title);
+  swap("content", "meta-og-desc", metaDesc);
+  swap("content", "meta-og-url", pageUrl);
+  swap("content", "meta-tw-title", title);
+  swap("content", "meta-tw-desc", metaDesc);
+  swap("content", "meta-og-img-alt", `${row.name} — Altbieratlas`);
+  html = html.replace(/(<meta property="og:image" content=")[^"]*(")/, (m, a, b) => `${a}${escHtml(ogImageUrl)}${b}`);
+  html = html.replace(/(<meta name="twitter:image" content=")[^"]*(")/, (m, a, b) => `${a}${escHtml(ogImageUrl)}${b}`);
+
+  // Inhalt in <main id="brewery-root"> rendern
   html = html.replace(
-    /<title>[^<]*<\/title>/,
-    `<title>${escHtml(title)}</title>`,
+    /<main id="brewery-root"[^>]*>[\s\S]*?<\/main>/,
+    () => `<main id="brewery-root" data-ssr="1">${bodyHtml}</main>`,
   );
-  // meta description
-  html = html.replace(
-    /(<meta name="description" content=")[^"]*(")/,
-    `$1${escHtml(metaDesc)}$2`,
-  );
-  // canonical
-  html = html.replace(
-    /(<link rel="canonical" href=")[^"]*(" id="meta-canonical")/,
-    `$1${escHtml(pageUrl)}$2`,
-  );
-  // og:title
-  html = html.replace(
-    /(<meta property="og:title" content=")[^"]*(" id="meta-og-title")/,
-    `$1${escHtml(title)}$2`,
-  );
-  // og:description
-  html = html.replace(
-    /(<meta property="og:description" content=")[^"]*(" id="meta-og-desc")/,
-    `$1${escHtml(metaDesc)}$2`,
-  );
-  // og:url
-  html = html.replace(
-    /(<meta property="og:url" content=")[^"]*(" id="meta-og-url")/,
-    `$1${escHtml(pageUrl)}$2`,
-  );
-  // twitter:title
-  html = html.replace(
-    /(<meta name="twitter:title" content=")[^"]*(" id="meta-tw-title")/,
-    `$1${escHtml(title)}$2`,
-  );
-  // twitter:description
-  html = html.replace(
-    /(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/,
-    `$1${escHtml(metaDesc)}$2`,
-  );
-  // og:image + twitter:image dynamisch
-  html = html.replace(
-    /(<meta property="og:image" content=")[^"]*(")/,
-    `$1${escHtml(ogImageUrl)}$2`,
-  );
-  html = html.replace(
-    /(<meta name="twitter:image" content=")[^"]*(")/,
-    `$1${escHtml(ogImageUrl)}$2`,
-  );
-  // og:image:alt mit Brauereinamen
-  html = html.replace(
-    /(<meta property="og:image:alt" content=")[^"]*(" id="meta-og-img-alt")/,
-    `$1${escHtml(row.name + " — Altbieratlas")}$2`,
-  );
+
   // JSON-LD + hreflang-Alternates vor </head> einfügen
   const hreflang =
     `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
-    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "&lang=en")}" />\n` +
+    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "?lang=en")}" />\n` +
     `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
   html = html.replace(
     "</head>",
@@ -2172,7 +2319,6 @@ export async function serveOrt(req, env) {
 
   return new Response(html, { status: 200, headers });
 }
-
 function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -2194,13 +2340,14 @@ export async function serveOgBrewery(req, env) {
 
   if (!row) return new Response("not found", { status: 404 });
 
-  // Preise: Durchschnitt pro Größe, absteigend nach Anzahl der Einträge
+  // Preise: Durchschnitt je Größe. Über die normalisierte Größe gruppieren —
+  // sonst erscheinen "0.25" und "0.25l" als zwei getrennte Zeilen im Bild.
   let prices = [];
   try {
     const res = await env.DB.prepare(
-      `SELECT size, AVG(price) AS avg_price, COUNT(*) AS n
+      `SELECT ${sizeNumSql()} AS size, AVG(price) AS avg_price, COUNT(*) AS n
        FROM prices WHERE brewery_id = ? AND status = 'approved'
-       GROUP BY size ORDER BY n DESC, size ASC LIMIT 5`
+       GROUP BY ${sizeNumSql()} ORDER BY n DESC, size ASC LIMIT 5`
     ).bind(id).all();
     prices = res.results || [];
   } catch { /* ignorieren — Bild wird ohne Preis gerendert */ }
@@ -2347,28 +2494,81 @@ export async function serveEvent(req, env) {
 // ============================================================
 // GET /stadt/<slug> — Pilot: nur Düsseldorf.
 // Whitelist hier erweitern, um weitere Städte freizuschalten.
-export const CITY_SLUGS = {
-  duesseldorf: "Düsseldorf",
-};
+// ---------- Stadt-Landingpages ----------
+// Städte bekommen ihre Slugs aus der Datenbank, damit jede Stadt mit einem
+// freigegebenen Ort automatisch eine eigene, indexierbare Seite hat.
+export function citySlug(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
-export function citySlugLabels() {
-  // Slug → Anzeigename, für Sitemap & Routing
-  return CITY_SLUGS;
+// Slug → { city, total, current } für alle Städte mit freigegebenen Orten.
+export async function cityIndex(env) {
+  const out = {};
+  try {
+    const res = await env.DB.prepare(
+      `SELECT city, COUNT(*) AS total,
+              SUM(CASE WHEN is_historical = 0 THEN 1 ELSE 0 END) AS current
+       FROM breweries WHERE status = 'approved'
+       GROUP BY city ORDER BY current DESC, total DESC, city ASC`
+    ).all();
+    for (const r of res.results || []) {
+      const slug = citySlug(r.city);
+      if (slug) out[slug] = { city: r.city, total: r.total, current: r.current };
+    }
+  } catch { /* keine DB → keine Stadt-Seiten */ }
+  return out;
 }
 
 export async function serveCity(req, env) {
   const url = new URL(req.url);
   const slug = (url.pathname.split("/")[2] || "").toLowerCase();
-  const city = CITY_SLUGS[slug];
-  if (!city) return new Response("Not found", { status: 404 });
+  const index = await cityIndex(env);
+  const entry = index[slug];
+  if (!entry) {
+    // Leerer Index = D1 nicht erreichbar. Dann die statische Seite ausliefern
+    // und clientseitig rendern lassen, statt eine existierende Stadt zu 404en.
+    if (Object.keys(index).length === 0) {
+      const assetUrl = new URL(req.url);
+      assetUrl.pathname = "/stadt.html";
+      return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+    }
+    return new Response("Not found", { status: 404 });
+  }
+  const city = entry.city;
 
   let rows = [];
+  let priceRows = [];
   try {
-    const res = await env.DB.prepare(
-      "SELECT id, name, type, is_historical FROM breweries WHERE status = 'approved' AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
-    ).bind(city).all();
-    rows = res.results || [];
+    const [bRes, pRes] = await Promise.all([
+      env.DB.prepare(
+        "SELECT id, name, type, is_historical FROM breweries WHERE status = 'approved' AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
+      ).bind(city).all(),
+      // Jüngste 0,25-l-Meldung je Ort dieser Stadt
+      env.DB.prepare(
+        `SELECT p.brewery_id, p.price, p.date
+         FROM prices p JOIN breweries b ON b.id = p.brewery_id
+         WHERE p.status = 'approved' AND b.status = 'approved' AND LOWER(b.city) = LOWER(?)
+           AND ABS(${sizeNumSql('p.size')} - 0.25) < 0.001
+         ORDER BY p.date DESC`
+      ).bind(city).all(),
+    ]);
+    rows = bRes.results || [];
+    priceRows = pRes.results || [];
   } catch { /* D1 nicht verfügbar — statische Datei mit Client-Rendering ausliefern */ }
+
+  const priceByBrewery = new Map();
+  for (const p of priceRows) {
+    if (!priceByBrewery.has(p.brewery_id)) priceByBrewery.set(p.brewery_id, p);
+  }
+  const priceVals = [...priceByBrewery.values()].map((p) => Number(p.price));
+  const avgPrice = priceVals.length
+    ? priceVals.reduce((a, b) => a + b, 0) / priceVals.length
+    : null;
 
   const assetUrl = new URL(req.url);
   assetUrl.pathname = "/stadt.html";
@@ -2377,22 +2577,41 @@ export async function serveCity(req, env) {
 
   const pageUrl = `https://altbieratlas.de/stadt/${slug}`;
   const current = rows.filter((r) => !r.is_historical);
-  const title = `Altbier in ${city} · Altbieratlas`;
-  const metaDesc = `Alle ${rows.length} Altbier-Brauereien, Ausschankorte und Händler in ${city} — mit aktuellen Preisen im Altbieratlas.`;
+  const historical = rows.filter((r) => r.is_historical);
+  const title = `Altbier in ${city} — Brauereien, Ausschank & Preise · Altbieratlas`;
+  const metaDesc = avgPrice
+    ? `Altbier in ${city}: ${current.length} Orte im Atlas, 0,25 l kosten im Schnitt ${fmtPriceDe(avgPrice)} €. Brauereien, Ausschank und Händler mit aktuellen Preisen.`
+    : `Altbier in ${city}: ${rows.length} Brauereien, Ausschankorte und Händler mit aktuellen Preisen im Altbieratlas.`;
 
-  // Server-gerenderte Liste, damit Crawler & No-JS-Besucher Inhalt sehen
   const TYPE_DE = {
     brewpub: "Brauerei / Brewpub", brewery: "Brauerei / Brewpub",
     pub: "Gastronomie", restaurant: "Gastronomie",
     kiosk: "Handel", supermarket: "Handel", beverage_store: "Handel",
   };
-  const cardHtml = (r) =>
-    `<a class="city-card${r.is_historical ? " historical" : ""}" href="/ort?id=${escHtml(encodeURIComponent(r.id))}">` +
-    `<span class="cc-name">${escHtml(r.name)}</span>` +
-    `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span></a>`;
+  const cardHtml = (r) => {
+    const p = priceByBrewery.get(r.id);
+    return `<a class="city-card${r.is_historical ? " historical" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
+      `<span class="cc-name">${escHtml(r.name)}</span>` +
+      `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
+      (p ? `<span class="cc-price">€ ${escHtml(fmtPriceDe(p.price))} <span style="opacity:.55;font-size:11px">/ 0,25 l</span></span>` : "") +
+      `</a>`;
+  };
   const venuesHtml = current.length
     ? current.map(cardHtml).join("")
-    : `<p class="city-empty">Noch keine Orte in ${escHtml(city)} im Atlas. <a href="/beitragen?typ=ort">Ort eintragen →</a></p>`;
+    : `<p class="city-empty">Noch keine aktiven Orte in ${escHtml(city)} im Atlas. <a href="/beitragen?typ=ort">Ort eintragen →</a></p>`;
+  const historicalHtml = historical.map(cardHtml).join("");
+
+  // Querverlinkung: ohne interne Links bleiben Stadtseiten verwaiste Seiten.
+  const otherCities = Object.entries(index)
+    .filter(([s]) => s !== slug)
+    .map(([s, e]) => `<a href="/stadt/${escHtml(s)}">Altbier in ${escHtml(e.city)}</a>`)
+    .join("");
+
+  const lede = `Alle Brauereien, Ausschankorte und Händler mit Altbier in ${city}` +
+    (avgPrice
+      ? ` — im Schnitt kostet ein 0,25 l Alt hier ${fmtPriceDe(avgPrice)} €.`
+      : ".") +
+    ` Die Preise stammen aus Meldungen der Community und werden laufend aktualisiert.`;
 
   const ld = JSON.stringify({
     "@context": "https://schema.org",
@@ -2417,7 +2636,7 @@ export async function serveCity(req, env) {
         "itemListElement": current.map((r, i) => ({
           "@type": "ListItem",
           "position": i + 1,
-          "url": `https://altbieratlas.de/ort?id=${encodeURIComponent(r.id)}`,
+          "url": `https://altbieratlas.de/ort/${encodeURIComponent(r.id)}`,
           "name": r.name,
         })),
       },
@@ -2425,19 +2644,41 @@ export async function serveCity(req, env) {
   });
 
   let html = await assetRes.text();
-  html = html.replace(/<title>[^<]*<\/title>/, `<title>${escHtml(title)}</title>`);
-  html = html.replace(/(<meta name="description" content=")[^"]*(")/, `$1${escHtml(metaDesc)}$2`);
-  html = html.replace(/(<link rel="canonical" href=")[^"]*(" id="meta-canonical")/, `$1${escHtml(pageUrl)}$2`);
-  html = html.replace(/(<meta property="og:title" content=")[^"]*(" id="meta-og-title")/, `$1${escHtml(title)}$2`);
-  html = html.replace(/(<meta property="og:description" content=")[^"]*(" id="meta-og-desc")/, `$1${escHtml(metaDesc)}$2`);
-  html = html.replace(/(<meta property="og:url" content=")[^"]*(" id="meta-og-url")/, `$1${escHtml(pageUrl)}$2`);
-  html = html.replace(/(<meta name="twitter:title" content=")[^"]*(" id="meta-tw-title")/, `$1${escHtml(title)}$2`);
-  html = html.replace(/(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/, `$1${escHtml(metaDesc)}$2`);
-  // H1 + server-gerenderte Liste (Funktion-Replacement: $ in Daten nicht interpretieren)
+  html = html.replace(/<title>[^<]*<\/title>/, () => `<title>${escHtml(title)}</title>`);
+  html = html.replace(/(<meta name="description" content=")[^"]*(")/, (m, a, b) => `${a}${escHtml(metaDesc)}${b}`);
+  html = html.replace(/(<link rel="canonical" href=")[^"]*(" id="meta-canonical")/, (m, a, b) => `${a}${escHtml(pageUrl)}${b}`);
+  html = html.replace(/(<meta property="og:title" content=")[^"]*(" id="meta-og-title")/, (m, a, b) => `${a}${escHtml(title)}${b}`);
+  html = html.replace(/(<meta property="og:description" content=")[^"]*(" id="meta-og-desc")/, (m, a, b) => `${a}${escHtml(metaDesc)}${b}`);
+  html = html.replace(/(<meta property="og:url" content=")[^"]*(" id="meta-og-url")/, (m, a, b) => `${a}${escHtml(pageUrl)}${b}`);
+  html = html.replace(/(<meta name="twitter:title" content=")[^"]*(" id="meta-tw-title")/, (m, a, b) => `${a}${escHtml(title)}${b}`);
+  html = html.replace(/(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/, (m, a, b) => `${a}${escHtml(metaDesc)}${b}`);
+  // H1, Lede und server-gerenderte Listen
   html = html.replace(/<h1 id="city-h1">[^<]*<\/h1>/, () => `<h1 id="city-h1">${escHtml("Altbier in " + city)}</h1>`);
+  html = html.replace(/<p class="lede" id="city-lede"><\/p>/, () => `<p class="lede" id="city-lede">${escHtml(lede)}</p>`);
   html = html.replace(
     /<div class="city-grid" id="city-venues" data-ssr="0">[\s\S]*?<\/div>/,
     () => `<div class="city-grid" id="city-venues" data-ssr="1">${venuesHtml}</div>`,
+  );
+  if (historical.length) {
+    html = html.replace(
+      /<section class="city-section" id="city-historical-section" hidden>/,
+      () => `<section class="city-section" id="city-historical-section">`,
+    );
+    html = html.replace(
+      /<div class="city-grid" id="city-historical"><\/div>/,
+      () => `<div class="city-grid" id="city-historical">${historicalHtml}</div>`,
+    );
+  }
+  if (otherCities) {
+    html = html.replace(
+      /<div class="city-links" id="city-other"><\/div>/,
+      () => `<div class="city-links" id="city-other">${otherCities}</div>`,
+    );
+  }
+  // Stadtname für das Client-Script hinterlegen (kein hartkodierter Slug mehr)
+  html = html.replace(
+    /<body>/,
+    () => `<body data-city="${escHtml(city)}" data-city-slug="${escHtml(slug)}">`,
   );
 
   const hreflang =
@@ -2452,6 +2693,9 @@ export async function serveCity(req, env) {
   return new Response(html, { status: 200, headers });
 }
 
+// GET /impressum.html
+// Liefert die statische Seite, ergänzt um einen serverseitig eingebetteten
+// <script>-Block mit den Impressum-Daten (Quelle: D1 site_settings).
 export async function serveImpressum(req, env) {
   const assetRes = await env.ASSETS.fetch(req);
   if (!assetRes.ok) return assetRes;

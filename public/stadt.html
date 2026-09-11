@@ -110,6 +110,14 @@
     </div>
   </section>
 
+  <section class="city-section" id="city-other-section">
+    <div class="container">
+      <div class="eyebrow" data-i18n="city.otherEyebrow">Weitere Städte</div>
+      <h2 data-i18n="city.other">Altbier anderswo</h2>
+      <div class="city-links" id="city-other"></div>
+    </div>
+  </section>
+
   <div id="shell-footer"></div>
   <div id="shell-cookie"></div>
 </div>
@@ -122,13 +130,16 @@
 <script>
 renderShell({ activeNav: "" });
 
-// Slug → Stadtname (Pilot: nur Düsseldorf)
-const CITIES = {
-  duesseldorf: { name: "Düsseldorf", ledeKey: "city.lede.duesseldorf" },
-};
+// Der Worker rendert die Seite serverseitig und hinterlegt die Stadt in
+// <body data-city="…">. Ohne Backend (Mock-Modus) aus dem Slug ableiten.
 const slug = (location.pathname.split("/")[2] || "duesseldorf").toLowerCase();
-const cityInfo = CITIES[slug] || CITIES.duesseldorf;
-const CITY = cityInfo.name;
+const SLUG_FALLBACK = { duesseldorf: "Düsseldorf", koeln: "Köln", krefeld: "Krefeld",
+  neuss: "Neuss", moenchengladbach: "Mönchengladbach", hilden: "Hilden", bottrop: "Bottrop" };
+const CITY = document.body.dataset.city
+  || SLUG_FALLBACK[slug]
+  || slug.replace(/(^|-)([a-z])/g, (m, a, b) => a + b.toUpperCase());
+// Eigener Lede-Text nur für Düsseldorf; sonst rendert der Server ihn.
+const ledeKey = slug === "duesseldorf" ? "city.lede.duesseldorf" : null;
 
 let breweriesCache = null;
 let pricesByBrewery = new Map();
@@ -155,7 +166,8 @@ function paint() {
   document.getElementById("city-h1").textContent = fillTpl("city.h1", { city: CITY });
   document.documentElement.lang = lang;
   document.title = fillTpl("city.h1", { city: CITY }) + " · Altbieratlas";
-  document.getElementById("city-lede").textContent = window.t(cityInfo.ledeKey);
+  const ledeEl = document.getElementById("city-lede");
+  if (ledeKey) ledeEl.textContent = window.t(ledeKey);
 
   if (!breweriesCache) return;
   const inCity = breweriesCache.filter((b) => (b.city || "").toLowerCase() === CITY.toLowerCase());
@@ -182,7 +194,7 @@ function paint() {
 
   const card = (b) => {
     const p = pricesByBrewery.get(b.id);
-    return `<a class="city-card${b.isHistorical ? " historical" : ""}" href="/ort?id=${encodeURIComponent(b.id)}">
+    return `<a class="city-card${b.isHistorical ? " historical" : ""}" href="/ort/${encodeURIComponent(b.id)}">
       <span class="cc-name">${b.name}</span>
       <span class="cc-type">${typeLabel(b.type)}</span>
       ${p ? `<span class="cc-price">€ ${window.formatPrice(p)} <span style="opacity:.55;font-size:11px">/ 0,25 l</span></span>` : ""}
@@ -196,6 +208,16 @@ function paint() {
   } else {
     cont.innerHTML = `<p class="city-empty">${fillTpl("city.empty", { city: CITY })} <a href="/beitragen?typ=ort">${window.t("city.contribute")}</a></p>`;
   }
+
+  // Querverlinkung: der Server rendert sie vor; im Mock-Modus aus der Config.
+  const otherEl = document.getElementById("city-other");
+  if (otherEl && !otherEl.children.length) {
+    const cities = (window.ATLAS_CONFIG.cities || []).filter((c) => c.slug !== slug);
+    otherEl.innerHTML = cities
+      .map((c) => `<a href="/stadt/${encodeURIComponent(c.slug)}">${fillTpl("city.h1", { city: c.city })}</a>`)
+      .join("");
+  }
+  document.getElementById("city-other-section").hidden = !otherEl.children.length;
 
   const histSec = document.getElementById("city-historical-section");
   if (historical.length) {
@@ -216,10 +238,12 @@ function paint() {
     breweriesCache = brews.breweries || [];
     // neuesten 0,25 l-Preis je Brauerei bestimmen
     const want = 0.25;
+    // Größen stehen uneinheitlich als "0.25", "0,25" oder "0.25l" in der DB.
+    const normSize = (v) => parseFloat(String(v ?? "").replace(",", ".").replace(/\s*l$/i, ""));
     const latest = new Map();
     (prices.prices || []).forEach((p) => {
-      const size = Number(p.size);
-      if (Math.abs(size - want) > 0.001) return;
+      const size = normSize(p.size);
+      if (!(Math.abs(size - want) <= 0.001)) return;
       const prev = latest.get(p.breweryId);
       if (!prev || new Date(p.date) > new Date(prev.date)) latest.set(p.breweryId, p);
     });

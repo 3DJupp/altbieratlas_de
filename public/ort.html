@@ -34,12 +34,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="/styles.css" />
 <style>
 .brewery-hero { padding: 40px 0 30px; border-bottom: 1px solid var(--rule); }
 .breadcrumb {
@@ -177,7 +176,7 @@
   <div id="shell-banner" hidden></div>
   <div id="shell-header"></div>
 
-  <main id="brewery-root">
+  <main id="brewery-root" data-ssr="0">
     <div class="container" style="padding:80px 24px">
       <p style="color:var(--ink-muted)" data-i18n="common.loading">Lade…</p>
     </div>
@@ -187,17 +186,29 @@
   <div id="shell-cookie"></div>
 </div>
 
-<script src="config.js"></script>
-<script src="i18n.js"></script>
-<script src="data.js"></script>
-<script src="api-client.js"></script>
-<script src="shell.js"></script>
+<!-- Leaflet erst hier: im <head> blockiert es das Rendern der Textinhalte. -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="/config.js"></script>
+<script src="/i18n.js"></script>
+<script src="/data.js"></script>
+<script src="/api-client.js"></script>
+<script src="/shell.js"></script>
 <script>
 renderShell({ activeNav: "map" });
 
 const params = new URLSearchParams(location.search);
-const id = params.get("id") || "uerige";
+// Kanonisch ist /ort/<slug>; ?id= bleibt als Fallback (Mock-Modus, Altlinks).
+const pathSlug = decodeURIComponent((location.pathname.match(/^\/ort\/([^/]+)/) || [])[1] || "");
+const id = pathSlug || params.get("id") || "uerige";
 const root = document.getElementById("brewery-root");
+// Muss mit citySlug() in src/routes.js übereinstimmen.
+const citySlug = (name) => String(name || "").toLowerCase()
+  .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+// Hat der Worker die Seite schon gerendert, sind Meta-Tags und JSON-LD gesetzt.
+const isSsr = root.dataset.ssr === "1";
 
 (async () => {
   let result, stylesRes;
@@ -249,9 +260,9 @@ const root = document.getElementById("brewery-root");
 
   document.title = `${b.name} · Altbieratlas`;
 
-  // SEO: Meta-Tags dynamisch befüllen
-  (function() {
-    const pageUrl = `https://altbieratlas.de/ort?id=${b.id}`;
+  // SEO: Meta-Tags dynamisch befüllen — nur ohne SSR, sonst doppeltes JSON-LD
+  if (!isSsr) (function() {
+    const pageUrl = `https://altbieratlas.de/ort/${encodeURIComponent(b.id)}`;
     const desc = (b.description && (b.description.de || b.description.en))
       ? (b.description.de || b.description.en).slice(0, 155).replace(/\s+\S*$/, "") + "…"
       : `${b.name} — Altbier ${window.t ? window.t("type." + b.type) : b.type} in ${b.city} im Altbieratlas.`;
@@ -281,7 +292,7 @@ const root = document.getElementById("brewery-root");
         "itemListElement": ldPrices.map((p) => ({
           "@type": "Offer",
           "itemOffered": {"@type": "Product", "name": `Altbier${p.size ? " (" + p.size + ")" : ""}`},
-          "price": (p.price / 100).toFixed(2),
+          "price": Number(p.price).toFixed(2),
           "priceCurrency": "EUR"
         }))
       };
@@ -311,11 +322,11 @@ const root = document.getElementById("brewery-root");
   root.innerHTML = `
     <section class="brewery-hero">
       <div class="container">
-        <div class="breadcrumb">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
           <a href="/" data-i18n="nav.map">Karte</a>
-          <span>›</span> <span>${b.city}</span>
+          <span>›</span> <a href="/stadt/${citySlug(b.city)}">${b.city}</a>
           <span>›</span> <span>${b.name}</span>
-        </div>
+        </nav>
         <div class="brewery-head">
           <div class="ort-photo-wrap">
             <div class="ort-avatar">${avatarHtml}</div>

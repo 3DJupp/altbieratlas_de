@@ -1,4 +1,4 @@
-# Altbieratlas · v0.9.8
+# Altbieratlas · v0.10.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -15,10 +15,11 @@ altbieratlas/
 │   ├── ranglisten.html      # Preis-Ranglisten
 │   ├── wissen.html          # Glossar & Hintergrund
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
-│   ├── stadt.html           # Stadt-Landingpage (SSR, Pilot: /stadt/duesseldorf)
+│   ├── stadt.html           # Stadt-Landingpage (SSR, Slugs kommen aus D1)
 │   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
 │   ├── impressum.html       # Impressum & Datenschutz
 │   ├── admin.html           # Moderations-Dashboard
+│   ├── 404.html             # Eigene Fehlerseite (Status 404, noindex)
 │   ├── api-client.js        # Einheitliche API-Schnittstelle (live / mock)
 │   ├── config.js            # Fallback-Konfiguration (Mock-Modus)
 │   ├── i18n.js              # DE/EN
@@ -216,16 +217,28 @@ Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-
 - Geocoder-Suche via Nominatim (serverseitig proxiert)
 - **„In meiner Nähe"** — Browser-Geolocation schwenkt die Karte auf den Standort und zeigt den nächstgelegenen Ort (Haversine, ohne Backend)
 
-### Brauerei-Detail
+### Ort-Detail (`/ort/<slug>`)
+- **Sprechende URLs**: `/ort/uerige` statt `/ort?id=uerige`.
+  `/ort?id=…`, `/ort.html?id=…`, `/brauerei?id=…` und Trailing-Slash-Varianten
+  leiten mit einem einzigen 301 auf die kanonische Form
+- **Serverseitig gerendert**: H1, Beschreibung, Adresse, Sorten und eine
+  Preistabelle (jüngste Meldung je Größe) stehen im HTML, bevor JavaScript läuft.
+  Crawler ohne JS-Rendering und Social-Previews sehen damit echten Inhalt statt „Lade…"
+- JSON-LD `BarOrPub` (historische Orte: `Place`) mit Adresse, Geo, Gründungsjahr
+  und `Menu`/`Offer`-Preisen, dazu `BreadcrumbList` mit Stadt-Zwischenstufe
 - Preisverlauf als SVG-Chart, Stile, Geschmacksnotizen (DE/EN)
 - **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
 
 ### Stadt-Landingpages (SEO)
-- Serverseitig gerenderte Seiten unter `/stadt/<slug>` (Pilot: `/stadt/duesseldorf`)
-- Listet alle freigegebenen Orte einer Stadt + Ø-Preis, mit `CollectionPage`-,
-  `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang-Alternates
-- Weitere Städte über die `CITY_SLUGS`-Whitelist in `src/routes.js` freischalten;
-  Sitemap-Einträge entstehen automatisch
+- Serverseitig gerenderte Seiten unter `/stadt/<slug>`
+- **Slugs entstehen automatisch** aus den Städten der freigegebenen Orte
+  (`citySlug()` in `src/routes.js`, umlautfest: Düsseldorf → `duesseldorf`,
+  Mönchengladbach → `moenchengladbach`). Keine Whitelist mehr zu pflegen —
+  ein neuer Ort in einer neuen Stadt erzeugt Seite und Sitemap-Eintrag von selbst
+- Listet aktive **und historische** Orte einer Stadt inkl. Ø-Preis und Preis je Ort,
+  mit `CollectionPage`-, `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang
+- Querverlinkung „Weitere Städte" auf jeder Stadtseite; zusätzlich verlinkt der
+  Footer site-weit alle Städte (Daten via `/api/config`)
 
 ### Beitragen
 Fünf Einreichungstypen mit Moderation:
@@ -266,6 +279,27 @@ Fünf Einreichungstypen mit Moderation:
 - Dark Mode, PWA-Manifest, Cookie-Banner (DSGVO)
 - Mock-Modus: ohne Backend läuft das UI auf Seed-Daten aus `data.js`
 
+### SEO & Auffindbarkeit
+- **Kanonische URLs**: `/ort/<slug>` und `/stadt/<slug>`; alle Altformen leiten
+  mit genau einem 301 weiter (keine Redirect-Ketten)
+- **Server-Rendering** auf `/ort/<slug>` und `/stadt/<slug>` — Inhalt steht im
+  HTML, nicht erst nach dem JS-Rendering
+- **`robots.txt`**: `/api/` bleibt gesperrt, aber `/api/og/` und die Event-Feeds
+  sind ausdrücklich freigegeben — sonst können Google, WhatsApp & Co. die
+  dynamischen OG-Bilder der Ortsseiten nicht laden und Linkvorschauen bleiben leer
+- **Eigene 404-Seite** mit Status 404 und `noindex, follow` statt der nackten
+  Default-Antwort
+- **Leaflet** wird am Seitenende statt im `<head>` geladen; der Textinhalt
+  rendert dadurch, bevor die 150 kB Karten-JS über das Netz sind
+
+> **Messung beachten:** GA4 startet erst, wenn im Cookie-Banner *„Alle
+> akzeptieren"* gewählt wurde (`localStorage["atlas-consent"] === "all"`).
+> Besucher, die „Nur notwendige" wählen oder den Banner ignorieren, tauchen in
+> GA4 nie auf — ebenso wenig Safari-Nutzer, deren `localStorage` nach sieben
+> Tagen gelöscht wird. Für die echte Besucherzahl sind die Request- und
+> Visits-Zahlen im Cloudflare-Dashboard (Workers-Analytics) die verlässlichere
+> Quelle; GA4 misst nur den einwilligenden Teil.
+
 ---
 
 ## 3 · Lokal entwickeln
@@ -287,7 +321,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 
 | Methode | Pfad | Zweck |
 |---|---|---|
-| GET | `/api/config` | Turnstile-Key, GA4-ID, priceSizes, highlightedSizes … |
+| GET | `/api/config` | Turnstile-Key, GA4-ID, priceSizes, highlightedSizes, `cities` … |
 | GET | `/api/stats` | Kennzahlen |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |
@@ -302,7 +336,8 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/geocode?q=…` | Nominatim-Proxy |
 | POST | `/api/contributions` | Beitrag einreichen |
 | GET | `/api/untappd/brewery/:id` | Untappd-Bewertung (24h Cache) |
-| GET | `/sitemap.xml` | Dynamische Sitemap |
+| GET | `/api/og/ort?id=…` | Dynamisches 1200×630-OG-Bild je Ort (in `robots.txt` freigegeben) |
+| GET | `/sitemap.xml` | Dynamische Sitemap (statische Seiten, Städte, Orte, Events) |
 
 ### Admin (Session-Cookie erforderlich)
 

@@ -283,7 +283,7 @@ function paintStyles() {
         ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${window.formatABV(s.abv)}</span></div>` : ""}
         ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
         <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
-        ${s.primaryBrewery ? `<a href="/ort?id=${s.primaryBrewery.id}" style="display:inline-block;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--copper);text-decoration:none;border:none;letter-spacing:0.04em">→ ${s.primaryBrewery.name}</a>` : ""}
+        ${s.primaryBrewery ? `<a href="/ort/${encodeURIComponent(s.primaryBrewery.id)}" style="display:inline-block;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--copper);text-decoration:none;border:none;letter-spacing:0.04em">→ ${s.primaryBrewery.name}</a>` : ""}
       </div>
     </article>
   `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
