@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<meta name="theme-color" content="#b57a3a" />
+<meta name="robots" content="noindex, follow" />
+<title>Seite nicht gefunden · Altbieratlas</title>
+<meta name="description" content="Diese Seite gibt es im Altbieratlas nicht (mehr)." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css" />
+<style>
+.nf-wrap { padding: 90px 24px 110px; max-width: 720px; }
+.nf-code { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em;
+           text-transform: uppercase; color: var(--ink-muted); }
+.nf-wrap h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 500; margin: 12px 0 16px; }
+.nf-wrap p { color: var(--ink-soft); max-width: 54ch; }
+.nf-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-banner" hidden></div>
+  <div id="shell-header"></div>
+
+  <main class="container nf-wrap">
+    <div class="nf-code">Fehler 404</div>
+    <h1>Diese Seite ist ausgetrunken.</h1>
+    <p>Die angeforderte Adresse gibt es im Altbieratlas nicht (mehr). Vielleicht
+       wurde ein Ort umbenannt oder der Link ist veraltet — die Karte hilft weiter.</p>
+    <div class="nf-links">
+      <a class="btn btn-primary" href="/">Zur Karte</a>
+      <a class="btn" href="/ranglisten">Ranglisten</a>
+      <a class="btn" href="/wissen">Altbier-Wissen</a>
+      <a class="btn btn-ghost" href="/beitragen?typ=ort">Ort eintragen</a>
+    </div>
+  </main>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="/config.js"></script>
+<script src="/i18n.js"></script>
+<script src="/data.js"></script>
+<script src="/api-client.js"></script>
+<script src="/shell.js"></script>
+<script>renderShell({ activeNav: "" });</script>
+</body>
+</html>

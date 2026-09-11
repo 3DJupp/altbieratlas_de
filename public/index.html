@@ -37,10 +37,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <link rel="stylesheet" href="styles.css" />
 <script type="application/ld+json">
@@ -321,6 +320,9 @@
 }
 </style>
 
+<!-- Leaflet erst hier: im <head> verzögert es das Rendern von Hero und Text. -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="config.js"></script>
 <script src="i18n.js"></script>
 <script src="data.js"></script>
@@ -424,7 +426,7 @@ function renderMarkers(filter = "all", search = "") {
         </div>
       </div>
       ${priceText}
-      <div style="margin-top:10px"><a href="/ort?id=${b.id}">Details →</a></div>
+      <div style="margin-top:10px"><a href="/ort/${encodeURIComponent(b.id)}">Details →</a></div>
     `);
     marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
     markerMap.set(b.id, marker);
@@ -617,7 +619,7 @@ function userPopupHtml() {
     const km = userNearest.km < 10 ? userNearest.km.toFixed(1) : Math.round(userNearest.km);
     const line = window.t("map.nearMe.nearest").replace("{name}", userNearest.brewery.name).replace("{km}", km);
     body = `<div style="font-size:12px;opacity:.85">${line}</div>
-            <div style="margin-top:8px"><a href="/ort?id=${userNearest.brewery.id}">${window.t("map.goto")} →</a></div>`;
+            <div style="margin-top:8px"><a href="/ort/${encodeURIComponent(userNearest.brewery.id)}">${window.t("map.goto")} →</a></div>`;
   } else {
     body = `<div style="font-size:12px;opacity:.75">${window.t("map.nearMe.none")}</div>`;
   }
@@ -775,7 +777,7 @@ function renderRankings(prices) {
       <li>
         <span class="pos">${String(i + 1).padStart(2, "0")}</span>
         <span class="name">
-          <a href="/ort?id=${it.id}">${it.short || it.name}</a>
+          <a href="/ort/${encodeURIComponent(it.id)}">${it.short || it.name}</a>
           <span class="city">${it.city}</span>
         </span>
         <span class="price">${it.priceText}</span>

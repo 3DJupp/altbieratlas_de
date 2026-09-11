@@ -42,6 +42,30 @@ async function bootstrapInitialAdmin(env) {
   console.log(`[bootstrap] Initialer Admin '${cfg.username}' angelegt.`);
 }
 
+// Kanonische Ziel-URL einer Ortsseite: /ort/<slug> bzw. /ort ohne ID.
+// Wird von allen Legacy-Weiterleitungen genutzt, damit keine Redirect-Ketten
+// entstehen (/brauerei.html?id=x → /ort?id=x → /ort/x kostet zwei Hops).
+function ortUrl(request) {
+  const dest = new URL(request.url);
+  const id = dest.searchParams.get("id");
+  dest.pathname = id ? `/ort/${encodeURIComponent(id)}` : "/ort";
+  dest.searchParams.delete("id");
+  return dest.toString();
+}
+
+// Eigene 404-Seite (public/404.html) mit korrektem Status ausliefern.
+async function notFoundPage(env, request) {
+  if (!env.ASSETS) return new Response("Not found", { status: 404 });
+  const assetUrl = new URL(request.url);
+  assetUrl.pathname = "/404.html";
+  const res = await env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+  if (!res.ok) return new Response("Not found", { status: 404 });
+  return new Response(res.body, {
+    status: 404,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
 const ROUTES = [
   // --- Public ---
   ["GET",    "/api/config",                                R.getPublicConfig],
@@ -213,11 +237,9 @@ export default {
         dest.pathname = "/";
         return Response.redirect(dest.toString(), 301);
       }
-      // Legacy: /brauerei.html → /ort (canonical rename)
-      if (name === "brauerei") {
-        const dest = new URL(request.url);
-        dest.pathname = "/ort";
-        return Response.redirect(dest.toString(), 301);
+      // Legacy: /brauerei.html → /ort/<slug> (canonical rename)
+      if (name === "brauerei" || name === "ort") {
+        return Response.redirect(ortUrl(request), 301);
       }
       if (ALL_PAGES.includes(name)) {
         const dest = new URL(request.url);
@@ -233,20 +255,34 @@ export default {
       return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
     }
 
-    // Legacy-Redirect: /brauerei → /ort (kanonische URL-Umbenennung, Query-String erhalten)
-    if (request.method === "GET" && url.pathname === "/brauerei") {
+    // Legacy-Redirect: /brauerei → /ort/<slug> (kanonische URL-Umbenennung)
+    // und /ort?id=<slug> → /ort/<slug> (sprechende URL statt Query-Parameter).
+    if (request.method === "GET"
+        && (url.pathname === "/brauerei"
+            || (url.pathname === "/ort" && url.searchParams.get("id")))) {
+      return Response.redirect(ortUrl(request), 301);
+    }
+
+    // Trailing Slash auf Ortsseiten vereinheitlichen: /ort/<slug>/ → /ort/<slug>
+    if (request.method === "GET" && /^\/ort\/.+\/$/.test(url.pathname)) {
       const dest = new URL(request.url);
-      dest.pathname = "/ort";
+      dest.pathname = dest.pathname.replace(/\/+$/, "");
       return Response.redirect(dest.toString(), 301);
     }
 
-    // /ort?id=... — SSR: title + meta tags mit echten Brauerei-Daten befüllen
-    if (url.pathname === "/ort" && request.method === "GET" && env.ASSETS && env.DB) {
-      try {
-        return await R.serveOrt(request, env);
-      } catch (e) {
-        console.error("[worker] serveOrt threw:", e?.stack || e);
-        // Fallback: statische Datei ohne SSR ausliefern
+    // /ort/<slug> und /ort — SSR: Meta-Tags, JSON-LD und Seiteninhalt aus D1
+    if (request.method === "GET" && (url.pathname === "/ort" || url.pathname.startsWith("/ort/"))
+        && env.ASSETS && env.DB) {
+      const slug = url.pathname.startsWith("/ort/")
+        ? decodeURIComponent(url.pathname.slice(5)).replace(/\/+$/, "")
+        : "";
+      if (!slug.includes("/")) {
+        try {
+          return await R.serveOrt(request, env, slug ? { id: slug } : {});
+        } catch (e) {
+          console.error("[worker] serveOrt threw:", e?.stack || e);
+          // Fallback: statische Datei ohne SSR ausliefern
+        }
       }
     }
 
@@ -274,10 +310,12 @@ export default {
     // /stadt/<slug> — SSR Stadt-Landingpage (Meta + JSON-LD + server-gerenderte Liste)
     if (url.pathname.startsWith("/stadt/") && request.method === "GET" && env.ASSETS) {
       try {
-        return await R.serveCity(request, env);
+        const res = await R.serveCity(request, env);
+        if (res.status === 404) return notFoundPage(env, request);
+        return res;
       } catch (e) {
         console.error("[worker] serveCity threw:", e?.stack || e);
-        return new Response("Not found", { status: 404 });
+        return notFoundPage(env, request);
       }
     }
 
@@ -293,11 +331,23 @@ export default {
         assetUrl.pathname = `/${name}.html`;
         return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
       }
+      // /ort/<slug> ohne D1 (oder nach SSR-Fehler): Seite clientseitig rendern lassen
+      if (bare.startsWith("/ort/")) {
+        const assetUrl = new URL(request.url);
+        assetUrl.pathname = "/ort.html";
+        return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+      }
     }
 
     // Statische Dateien über ASSETS-Binding
     if (env.ASSETS) {
-      return env.ASSETS.fetch(request);
+      const res = await env.ASSETS.fetch(request);
+      // Eigene 404-Seite statt der nackten Default-Antwort — hält Besucher,
+      // die auf einem toten Link landen, statt sie zurückspringen zu lassen.
+      if (res.status === 404 && request.method === "GET" && !url.pathname.includes(".")) {
+        return notFoundPage(env, request);
+      }
+      return res;
     }
     return new Response("Not found", { status: 404 });
   },

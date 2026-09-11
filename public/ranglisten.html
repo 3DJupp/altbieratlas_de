@@ -394,7 +394,7 @@ function render() {
     return `
       <div class="rank-row">
         <span class="nm">
-          <a href="/ort?id=${it.brewery.id}">${it.brewery.name}</a>
+          <a href="/ort/${encodeURIComponent(it.brewery.id)}">${it.brewery.name}</a>
           <div class="sub">${sub}</div>
         </span>
         <span class="pr-cell">

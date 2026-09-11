@@ -77,6 +77,10 @@ window.ATLAS_CONFIG = {
   // Banner (null = deaktiviert)
   banner: null,
 
+  // Städte mit eigener Landingpage — im Live-Betrieb aus /api/config
+  // (abgeleitet aus den Orten in der Datenbank).
+  cities: [],
+
   // ============================================================
   // Impressum-Daten — Fallback für lokale Entwicklung (Mock-Modus).
   // Im Deployment injiziert der Worker die Werte aus SITE_CONFIG

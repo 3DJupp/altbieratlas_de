@@ -40,6 +40,7 @@
       }
     }
     if (srv.banner) cfg.banner = srv.banner;
+    if (Array.isArray(srv.cities)) cfg.cities = srv.cities;
   }
 
   async function probe() {

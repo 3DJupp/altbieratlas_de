@@ -85,6 +85,17 @@ window.renderShell = function ({ activeNav }) {
     if (window.setLang) window.setLang(window.__atlasLang);
   }
 
+  // ---- Städte im Footer (site-weite interne Links auf /stadt/<slug>) ----
+  function renderCityRow() {
+    const host = document.getElementById("shell-cities");
+    if (!host) return;
+    const cities = cfg.cities || [];
+    host.innerHTML = cities
+      .map((c) => `<li><a href="/stadt/${encodeURIComponent(c.slug)}">${c.city}</a></li>`)
+      .join("");
+    host.parentElement.hidden = cities.length === 0;
+  }
+
   // ---- Footer ----
   const footer = `
     <footer class="atlas-footer">
@@ -111,7 +122,12 @@ window.renderShell = function ({ activeNav }) {
             <ul>
               <li><a href="/wissen" data-i18n="know.title">Altbier-Wissen</a></li>
               <li><a href="/ranglisten" data-i18n="nav.rankings">Ranglisten</a></li>
+              <li><a href="/rivalen" data-i18n="nav.rivals">Rivalen</a></li>
             </ul>
+          </div>
+          <div>
+            <h4 data-i18n="footer.cities">Städte</h4>
+            <ul id="shell-cities"></ul>
           </div>
           <div>
             <h4 data-i18n="footer.legal">Rechtliches</h4>
@@ -143,6 +159,7 @@ window.renderShell = function ({ activeNav }) {
   document.getElementById("shell-header").innerHTML = header;
   document.getElementById("shell-footer").innerHTML = footer;
   document.getElementById("shell-cookie").innerHTML = cookieBanner;
+  renderCityRow();
 
   // ---- Banner ----
   function renderBanner() {
@@ -164,6 +181,9 @@ window.renderShell = function ({ activeNav }) {
   // Server-Config nachgeladen ist.
   renderSocialRow();
   document.addEventListener("atlas:config-ready", renderSocialRow);
+
+  // Städte kommen erst mit /api/config — danach neu rendern.
+  document.addEventListener("atlas:config-ready", renderCityRow);
 
   // Versionsnummer aus Server-Config übernehmen, sobald verfügbar
   document.addEventListener("atlas:config-ready", () => {

@@ -1,9 +1,14 @@
 User-agent: *
 Allow: /
+
+# OG-Bilder und Feeds müssen crawlbar bleiben — sonst können Google,
+# WhatsApp, Mastodon & Co. keine Linkvorschau erzeugen.
+Allow: /api/og/
+Allow: /api/events/feed.xml
+Allow: /api/events/calendar.ics
+
 Disallow: /api/
 Disallow: /admin
 Disallow: /admin.html
-Disallow: /impressum
-Disallow: /impressum.html
 
 Sitemap: https://altbieratlas.de/sitemap.xml
