@@ -1,4 +1,4 @@
-# Altbieratlas · v0.10.2
+# Altbieratlas · v0.11.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -7,6 +7,7 @@ altbieratlas/
 ├── src/
 │   ├── worker.js            # Router (API + ASSETS)
 │   ├── routes.js            # Public- & Admin-API
+│   ├── seo.js               # llms.txt, SSR für /, /ranglisten, /wissen, ?lang=en, IndexNow
 │   └── utils.js             # PBKDF2, Turnstile, Rate-Limit, E-Mail
 ├── public/
 │   ├── index.html           # Landing + Karte (Leaflet)
@@ -207,6 +208,7 @@ Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-
 | `RESEND_API_KEY` | [Resend](https://resend.com)-API-Key |
 | `ADMIN_EMAIL` | Empfänger des täglichen Digests |
 | `MAP_TILE_API_KEY` | API-Key der CARTO Basemaps ([dashboard.basemaps.carto.com](https://dashboard.basemaps.carto.com/)). Ohne Key nutzt die Karte schlüssellose OSM-Kacheln |
+| `INDEXNOW_KEY` | Optional. [IndexNow](https://www.indexnow.org)-Schlüssel (8–128 Zeichen `a–z A–Z 0–9 -`). Der Worker liefert ihn unter `/<key>.txt` aus und meldet nach Admin-Änderungen die betroffenen Seiten an Bing, Yandex & Co. (Bing speist u. a. die ChatGPT-Suche). Ohne Key keine Meldung |
 | `INITIAL_ADMIN` | Ersteinrichtung — nach erstem Login löschen |
 
 ---
@@ -276,9 +278,12 @@ Fünf Einreichungstypen mit Moderation:
 
 ### Ranglisten
 - Günstigste Brauereien, neueste Preismeldungen, Meistgemeldet
+- Top 10 (0,25 l), Kennzahlen und Meta-Description werden serverseitig gerendert;
+  JSON-LD mit `ItemList` und `Dataset` (Altbier-Preise)
 
 ### Altbier-Wissen
 - Glossar (aus D1), Hintergrundtexte, Stilkunde
+- Sorten und Glossar serverseitig gerendert; JSON-LD `Article` + `DefinedTermSet`
 
 ### Das Rheinderby (`/rivalen`)
 - Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz
@@ -295,11 +300,31 @@ Fünf Einreichungstypen mit Moderation:
 ### SEO & Auffindbarkeit
 - **Kanonische URLs**: `/ort/<slug>` und `/stadt/<slug>`; alle Altformen leiten
   mit genau einem 301 weiter (keine Redirect-Ketten)
-- **Server-Rendering** auf `/ort/<slug>` und `/stadt/<slug>` — Inhalt steht im
-  HTML, nicht erst nach dem JS-Rendering
-- **`robots.txt`**: `/api/` bleibt gesperrt, aber `/api/og/` und die Event-Feeds
-  sind ausdrücklich freigegeben — sonst können Google, WhatsApp & Co. die
-  dynamischen OG-Bilder der Ortsseiten nicht laden und Linkvorschauen bleiben leer
+- **Server-Rendering** auf `/`, `/ranglisten`, `/wissen`, `/ort/<slug>` und
+  `/stadt/<slug>` — Inhalt steht im HTML, nicht erst nach dem JS-Rendering.
+  Das zählt doppelt, weil die meisten KI-Crawler (GPTBot, ClaudeBot,
+  PerplexityBot …) kein JavaScript ausführen
+- **`/llms.txt` und `/llms-full.txt`** ([llmstxt.org](https://llmstxt.org)):
+  dynamisch aus D1 erzeugt. `llms.txt` ist der verlinkte Überblick (Seiten,
+  Städte, Kennzahlen), `llms-full.txt` enthält alle Orte mit Adresse, Sorten und
+  jüngsten Preisen, dazu Sorten, Glossar und Termine als ein Markdown-Dokument
+- **`robots.txt`**: Such- und KI-Crawler ausdrücklich zugelassen, inkl.
+  `Content-Signal: search=yes, ai-input=yes, ai-train=yes`. `/api/` bleibt
+  gesperrt, aber `/api/og/` und die Event-Feeds sind freigegeben — sonst können
+  Google, WhatsApp & Co. die OG-Bilder nicht laden und Linkvorschauen bleiben leer.
+  **Achtung:** Hat die Cloudflare-Zone „Block AI bots" oder die verwaltete
+  robots.txt aktiviert, überschreibt das diese Datei (Dashboard → Security → Bots)
+- **Sprachvarianten**: Die hreflang-Links zeigen auf `<url>?lang=en`. `i18n.js`
+  übernimmt den Parameter, der Worker setzt dafür `lang="en"`, eine
+  selbstreferenzierende Canonical und `og:locale` — sonst verwirft Google das
+  hreflang-Paar
+- **Strukturierte Daten**: `WebSite`/`Organization` (Start), `Brewery`,
+  `BarOrPub`, `Restaurant` bzw. Laden-Typen je Ort, `Event` mit Adresse,
+  `CollectionPage` je Stadt, `Article` auf `/wissen` und `/rivalen`,
+  `Dataset` der Preise, `BreadcrumbList` überall
+- **IndexNow** (optional, Secret `INDEXNOW_KEY`): geänderte Orte, Stadtseiten
+  und Termine werden nach jeder Admin-Änderung sofort gemeldet
+- **Sitemap** ohne `/impressum` (die Seite ist `noindex`)
 - **Eigene 404-Seite** mit Status 404 und `noindex, follow` statt der nackten
   Default-Antwort
 - **Leaflet** wird am Seitenende statt im `<head>` geladen; der Textinhalt
@@ -351,6 +376,8 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/untappd/brewery/:id` | Untappd-Bewertung (24h Cache) |
 | GET | `/api/og/ort?id=…` | Dynamisches 1200×630-OG-Bild je Ort (in `robots.txt` freigegeben) |
 | GET | `/sitemap.xml` | Dynamische Sitemap (statische Seiten, Städte, Orte, Events) |
+| GET | `/llms.txt` | Überblick für Sprachmodelle (Markdown, aus D1) |
+| GET | `/llms-full.txt` | Volltext: alle Orte mit Preisen, Sorten, Glossar, Termine |
 
 ### Admin (Session-Cookie erforderlich)
 

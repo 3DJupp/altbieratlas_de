@@ -6,6 +6,7 @@
 // ============================================================
 
 import * as R from "./routes.js";
+import * as SEO from "./seo.js";
 import { error, hashPassword, sendAdminDigest } from "./utils.js";
 
 // Minimaler Router mit Pfad-Parameter-Matching (/x/:id)
@@ -148,207 +149,261 @@ export default {
   },
 
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
+    const res = await handle(request, env, ctx);
+    const path = new URL(request.url).pathname;
+    // Admin-Änderung erfolgreich → geänderte Seiten per IndexNow melden
+    if (request.method !== "GET" && path.startsWith("/api/admin/") && res.ok
+        && !path.startsWith("/api/admin/log") && !path.includes("reset")) {
+      ctx.waitUntil(SEO.pingIndexNow(env, request));
+    }
+    if (request.method === "GET" && !path.startsWith("/api/")) {
+      return SEO.applyLangVariant(request, res);
+    }
+    return res;
+  },
+};
 
-    // Initialen Admin aus Secret anlegen (nur solange INITIAL_ADMIN gesetzt und keine User existieren)
-    if (env.INITIAL_ADMIN) await bootstrapInitialAdmin(env);
+async function handle(request, env, ctx) {
+  const url = new URL(request.url);
 
-    // API-Routen
-    if (url.pathname.startsWith("/api/")) {
-      if (request.method === "OPTIONS") {
-        return new Response(null, {
-          status: 204,
-          headers: {
-            "access-control-allow-origin": request.headers.get("origin") || "*",
-            "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-            "access-control-allow-headers": "content-type",
-            "access-control-allow-credentials": "true",
-          },
-        });
-      }
-      for (const [method, pattern, handler] of ROUTES) {
-        if (method !== request.method) continue;
-        const params = match(pattern, url.pathname);
-        if (params) {
-          try {
-            return await handler(request, env, params, ctx);
-          } catch (e) {
-            console.error("[worker] handler threw:", e?.stack || e);
-            return error(500, "internal-error", { detail: String(e?.message || e) });
-          }
+  // Initialen Admin aus Secret anlegen (nur solange INITIAL_ADMIN gesetzt und keine User existieren)
+  if (env.INITIAL_ADMIN) await bootstrapInitialAdmin(env);
+
+  // API-Routen
+  if (url.pathname.startsWith("/api/")) {
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "access-control-allow-origin": request.headers.get("origin") || "*",
+          "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
+          "access-control-allow-headers": "content-type",
+          "access-control-allow-credentials": "true",
+        },
+      });
+    }
+    for (const [method, pattern, handler] of ROUTES) {
+      if (method !== request.method) continue;
+      const params = match(pattern, url.pathname);
+      if (params) {
+        try {
+          return await handler(request, env, params, ctx);
+        } catch (e) {
+          console.error("[worker] handler threw:", e?.stack || e);
+          return error(500, "internal-error", { detail: String(e?.message || e) });
         }
       }
-      return error(404, "api-route-not-found", { path: url.pathname });
     }
+    return error(404, "api-route-not-found", { path: url.pathname });
+  }
 
-    // Foto-Auslieferung aus R2 (Brauerei-/Ortfotos, kein Fallback)
-    if (url.pathname.startsWith("/photos/") && request.method === "GET") {
-      const filename = url.pathname.slice(8); // strip "/photos/"
-      if (filename && !filename.includes("..") && env.LOGOS) {
-        const obj = await env.LOGOS.get(`orte/fotos/${filename}`);
-        if (obj) {
-          const headers = new Headers();
-          headers.set("Content-Type", obj.httpMetadata?.contentType || "image/jpeg");
-          headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
-          return new Response(obj.body, { headers });
-        }
-      }
-      return new Response("Not found", { status: 404 });
-    }
-
-    // Logo-Auslieferung aus R2 (mit Fallback auf SVG-Platzhalter)
-    if (url.pathname.startsWith("/logos/") && request.method === "GET") {
-      const key = url.pathname.slice(7); // strip "/logos/"
-      if (key && !key.includes("..") && env.LOGOS) {
-        const obj = await env.LOGOS.get(key);
-        if (obj) {
-          const headers = new Headers();
-          headers.set("Content-Type", obj.httpMetadata?.contentType || "image/png");
-          headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
-          return new Response(obj.body, { headers });
-        }
-      }
-      // Fallback: SVG-Platzhalter aus public/images/
-      if (env.ASSETS) {
-        const fallback = new URL(request.url);
-        fallback.pathname = "/images/logo-fallback.svg";
-        return env.ASSETS.fetch(new Request(fallback.toString(), request));
-      }
-      return new Response("Not found", { status: 404 });
-    }
-
-    // Dynamische Sitemap (außerhalb /api, damit Crawler sie unter /sitemap.xml finden)
-    if (url.pathname === "/sitemap.xml" && request.method === "GET") {
-      try {
-        return await R.sitemap(request, env, {});
-      } catch (e) {
-        console.error("[worker] sitemap threw:", e?.stack || e);
-        return new Response("sitemap error", { status: 500 });
+  // Foto-Auslieferung aus R2 (Brauerei-/Ortfotos, kein Fallback)
+  if (url.pathname.startsWith("/photos/") && request.method === "GET") {
+    const filename = url.pathname.slice(8); // strip "/photos/"
+    if (filename && !filename.includes("..") && env.LOGOS) {
+      const obj = await env.LOGOS.get(`orte/fotos/${filename}`);
+      if (obj) {
+        const headers = new Headers();
+        headers.set("Content-Type", obj.httpMetadata?.contentType || "image/jpeg");
+        headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
+        return new Response(obj.body, { headers });
       }
     }
+    return new Response("Not found", { status: 404 });
+  }
 
-    // /<page>.html → /<page>  (301, kanonische Clean URLs)
-    // /index.html  → /
-    const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "impressum", "admin", "ort", "brauerei", "event"];
-    if (request.method === "GET" && url.pathname.endsWith(".html")) {
-      const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
-      if (name === "index") {
-        const dest = new URL(request.url);
-        dest.pathname = "/";
-        return Response.redirect(dest.toString(), 301);
-      }
-      // Legacy: /brauerei.html → /ort/<slug> (canonical rename)
-      if (name === "brauerei" || name === "ort") {
-        return Response.redirect(ortUrl(request), 301);
-      }
-      if (ALL_PAGES.includes(name)) {
-        const dest = new URL(request.url);
-        dest.pathname = `/${name}`;
-        return Response.redirect(dest.toString(), 301);
+  // Logo-Auslieferung aus R2 (mit Fallback auf SVG-Platzhalter)
+  if (url.pathname.startsWith("/logos/") && request.method === "GET") {
+    const key = url.pathname.slice(7); // strip "/logos/"
+    if (key && !key.includes("..") && env.LOGOS) {
+      const obj = await env.LOGOS.get(key);
+      if (obj) {
+        const headers = new Headers();
+        headers.set("Content-Type", obj.httpMetadata?.contentType || "image/png");
+        headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
+        return new Response(obj.body, { headers });
       }
     }
-
-    // Startseite: / → index.html (html_handling=none deaktiviert Auto-Index)
-    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "") && env.ASSETS) {
-      const assetUrl = new URL(request.url);
-      assetUrl.pathname = "/index.html";
-      return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+    // Fallback: SVG-Platzhalter aus public/images/
+    if (env.ASSETS) {
+      const fallback = new URL(request.url);
+      fallback.pathname = "/images/logo-fallback.svg";
+      return env.ASSETS.fetch(new Request(fallback.toString(), request));
     }
+    return new Response("Not found", { status: 404 });
+  }
 
-    // Legacy-Redirect: /brauerei → /ort/<slug> (kanonische URL-Umbenennung)
-    // und /ort?id=<slug> → /ort/<slug> (sprechende URL statt Query-Parameter).
-    if (request.method === "GET"
-        && (url.pathname === "/brauerei"
-            || (url.pathname === "/ort" && url.searchParams.get("id")))) {
-      return Response.redirect(ortUrl(request), 301);
+  // Dynamische Sitemap (außerhalb /api, damit Crawler sie unter /sitemap.xml finden)
+  if (url.pathname === "/sitemap.xml" && request.method === "GET") {
+    try {
+      return await R.sitemap(request, env, {});
+    } catch (e) {
+      console.error("[worker] sitemap threw:", e?.stack || e);
+      return new Response("sitemap error", { status: 500 });
     }
+  }
 
-    // Trailing Slash auf Ortsseiten vereinheitlichen: /ort/<slug>/ → /ort/<slug>
-    if (request.method === "GET" && /^\/ort\/.+\/$/.test(url.pathname)) {
+  // llms.txt (Überblick) und llms-full.txt (Volltext) für Sprachmodelle
+  if ((request.method === "GET" || request.method === "HEAD")
+      && (url.pathname === "/llms.txt" || url.pathname === "/llms-full.txt")) {
+    try {
+      return url.pathname === "/llms.txt"
+        ? await SEO.llmsTxt(request, env)
+        : await SEO.llmsFullTxt(request, env);
+    } catch (e) {
+      console.error("[worker] llms threw:", e?.stack || e);
+      return new Response("llms.txt error", { status: 500 });
+    }
+  }
+
+  // IndexNow-Schlüsseldatei (/<INDEXNOW_KEY>.txt), nur wenn das Secret gesetzt ist
+  if (request.method === "GET" && url.pathname.endsWith(".txt")) {
+    const keyRes = SEO.serveIndexNowKey(env, url.pathname);
+    if (keyRes) return keyRes;
+  }
+
+  // /<page>.html → /<page>  (301, kanonische Clean URLs)
+  // /index.html  → /
+  const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "impressum", "admin", "ort", "brauerei", "event"];
+  if (request.method === "GET" && url.pathname.endsWith(".html")) {
+    const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
+    if (name === "index") {
       const dest = new URL(request.url);
-      dest.pathname = dest.pathname.replace(/\/+$/, "");
+      dest.pathname = "/";
       return Response.redirect(dest.toString(), 301);
     }
+    // Legacy: /brauerei.html → /ort/<slug> (canonical rename)
+    if (name === "brauerei" || name === "ort") {
+      return Response.redirect(ortUrl(request), 301);
+    }
+    if (ALL_PAGES.includes(name)) {
+      const dest = new URL(request.url);
+      dest.pathname = `/${name}`;
+      return Response.redirect(dest.toString(), 301);
+    }
+  }
 
-    // /ort/<slug> und /ort — SSR: Meta-Tags, JSON-LD und Seiteninhalt aus D1
-    if (request.method === "GET" && (url.pathname === "/ort" || url.pathname.startsWith("/ort/"))
-        && env.ASSETS && env.DB) {
-      const slug = url.pathname.startsWith("/ort/")
-        ? decodeURIComponent(url.pathname.slice(5)).replace(/\/+$/, "")
-        : "";
-      if (!slug.includes("/")) {
-        try {
-          return await R.serveOrt(request, env, slug ? { id: slug } : {});
-        } catch (e) {
-          console.error("[worker] serveOrt threw:", e?.stack || e);
-          // Fallback: statische Datei ohne SSR ausliefern
-        }
+  // Startseite: / → index.html (html_handling=none deaktiviert Auto-Index)
+  if (request.method === "GET" && (url.pathname === "/" || url.pathname === "") && env.ASSETS) {
+    // SSR: Kennzahlen und Preis-Top-5 direkt im HTML (Fallback: statisch)
+    if (env.DB) {
+      try {
+        return await SEO.serveIndex(request, env);
+      } catch (e) {
+        console.error("[worker] serveIndex threw:", e?.stack || e);
       }
     }
+    const assetUrl = new URL(request.url);
+    assetUrl.pathname = "/index.html";
+    return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+  }
 
-    // Impressum: SSI-Block muss VOR dem PAGES-Block liegen, damit serveImpressum() greift
-    if (url.pathname === "/impressum" && request.method === "GET" && env.ASSETS) {
-      try {
-        const assetReq = new Request(request.url.replace("/impressum", "/impressum.html"), request);
-        return await R.serveImpressum(assetReq, env);
-      } catch (e) {
-        console.error("[worker] impressum threw:", e?.stack || e);
-        // Fallback: statische Datei ohne SSI ausliefern
-      }
-    }
+  // Legacy-Redirect: /brauerei → /ort/<slug> (kanonische URL-Umbenennung)
+  // und /ort?id=<slug> → /ort/<slug> (sprechende URL statt Query-Parameter).
+  if (request.method === "GET"
+      && (url.pathname === "/brauerei"
+          || (url.pathname === "/ort" && url.searchParams.get("id")))) {
+    return Response.redirect(ortUrl(request), 301);
+  }
 
-    // /event?id=... — SSR: title + meta tags mit echten Event-Daten befüllen
-    if (url.pathname === "/event" && request.method === "GET" && env.ASSETS && env.DB) {
+  // Trailing Slash auf Ortsseiten vereinheitlichen: /ort/<slug>/ → /ort/<slug>
+  if (request.method === "GET" && /^\/ort\/.+\/$/.test(url.pathname)) {
+    const dest = new URL(request.url);
+    dest.pathname = dest.pathname.replace(/\/+$/, "");
+    return Response.redirect(dest.toString(), 301);
+  }
+
+  // /ort/<slug> und /ort — SSR: Meta-Tags, JSON-LD und Seiteninhalt aus D1
+  if (request.method === "GET" && (url.pathname === "/ort" || url.pathname.startsWith("/ort/"))
+      && env.ASSETS && env.DB) {
+    const slug = url.pathname.startsWith("/ort/")
+      ? decodeURIComponent(url.pathname.slice(5)).replace(/\/+$/, "")
+      : "";
+    if (!slug.includes("/")) {
       try {
-        return await R.serveEvent(request, env);
+        return await R.serveOrt(request, env, slug ? { id: slug } : {});
       } catch (e) {
-        console.error("[worker] serveEvent threw:", e?.stack || e);
+        console.error("[worker] serveOrt threw:", e?.stack || e);
         // Fallback: statische Datei ohne SSR ausliefern
       }
     }
+  }
 
-    // /stadt/<slug> — SSR Stadt-Landingpage (Meta + JSON-LD + server-gerenderte Liste)
-    if (url.pathname.startsWith("/stadt/") && request.method === "GET" && env.ASSETS) {
-      try {
-        const res = await R.serveCity(request, env);
-        if (res.status === 404) return notFoundPage(env, request);
-        return res;
-      } catch (e) {
-        console.error("[worker] serveCity threw:", e?.stack || e);
-        return notFoundPage(env, request);
-      }
+  // Impressum: SSI-Block muss VOR dem PAGES-Block liegen, damit serveImpressum() greift
+  if (url.pathname === "/impressum" && request.method === "GET" && env.ASSETS) {
+    try {
+      const assetReq = new Request(request.url.replace("/impressum", "/impressum.html"), request);
+      return await R.serveImpressum(assetReq, env);
+    } catch (e) {
+      console.error("[worker] impressum threw:", e?.stack || e);
+      // Fallback: statische Datei ohne SSI ausliefern
     }
+  }
 
-    // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
-    // impressum ausgenommen — wird oben mit SSI bedient
-    // brauerei ausgenommen — wird oben auf /ort weitergeleitet
-    const PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "admin", "ort", "event"];
-    if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
-      const bare = url.pathname.replace(/\/$/, "");
-      const name = bare.slice(1); // strip leading /
-      if (bare && PAGES.includes(name)) {
-        const assetUrl = new URL(request.url);
-        assetUrl.pathname = `/${name}.html`;
-        return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
-      }
-      // /ort/<slug> ohne D1 (oder nach SSR-Fehler): Seite clientseitig rendern lassen
-      if (bare.startsWith("/ort/")) {
-        const assetUrl = new URL(request.url);
-        assetUrl.pathname = "/ort.html";
-        return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
-      }
+  // /event?id=... — SSR: title + meta tags mit echten Event-Daten befüllen
+  if (url.pathname === "/event" && request.method === "GET" && env.ASSETS && env.DB) {
+    try {
+      return await R.serveEvent(request, env);
+    } catch (e) {
+      console.error("[worker] serveEvent threw:", e?.stack || e);
+      // Fallback: statische Datei ohne SSR ausliefern
     }
+  }
 
-    // Statische Dateien über ASSETS-Binding
-    if (env.ASSETS) {
-      const res = await env.ASSETS.fetch(request);
-      // Eigene 404-Seite statt der nackten Default-Antwort — hält Besucher,
-      // die auf einem toten Link landen, statt sie zurückspringen zu lassen.
-      if (res.status === 404 && request.method === "GET" && !url.pathname.includes(".")) {
-        return notFoundPage(env, request);
-      }
+  // /stadt/<slug> — SSR Stadt-Landingpage (Meta + JSON-LD + server-gerenderte Liste)
+  if (url.pathname.startsWith("/stadt/") && request.method === "GET" && env.ASSETS) {
+    try {
+      const res = await R.serveCity(request, env);
+      if (res.status === 404) return notFoundPage(env, request);
       return res;
+    } catch (e) {
+      console.error("[worker] serveCity threw:", e?.stack || e);
+      return notFoundPage(env, request);
     }
-    return new Response("Not found", { status: 404 });
-  },
-};
+  }
+
+  // /ranglisten und /wissen — SSR: Daten, die sonst erst per JS kommen,
+  // stehen für Crawler direkt im HTML (Fallback: statische Datei)
+  if (request.method === "GET" && (url.pathname === "/ranglisten" || url.pathname === "/wissen")
+      && env.ASSETS && env.DB) {
+    try {
+      return url.pathname === "/ranglisten"
+        ? await SEO.serveRanglisten(request, env)
+        : await SEO.serveWissen(request, env);
+    } catch (e) {
+      console.error("[worker] SSR threw:", e?.stack || e);
+    }
+  }
+
+  // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
+  // impressum ausgenommen — wird oben mit SSI bedient
+  // brauerei ausgenommen — wird oben auf /ort weitergeleitet
+  const PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "admin", "ort", "event"];
+  if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
+    const bare = url.pathname.replace(/\/$/, "");
+    const name = bare.slice(1); // strip leading /
+    if (bare && PAGES.includes(name)) {
+      const assetUrl = new URL(request.url);
+      assetUrl.pathname = `/${name}.html`;
+      return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+    }
+    // /ort/<slug> ohne D1 (oder nach SSR-Fehler): Seite clientseitig rendern lassen
+    if (bare.startsWith("/ort/")) {
+      const assetUrl = new URL(request.url);
+      assetUrl.pathname = "/ort.html";
+      return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+    }
+  }
+
+  // Statische Dateien über ASSETS-Binding
+  if (env.ASSETS) {
+    const res = await env.ASSETS.fetch(request);
+    // Eigene 404-Seite statt der nackten Default-Antwort — hält Besucher,
+    // die auf einem toten Link landen, statt sie zurückspringen zu lassen.
+    if (res.status === 404 && request.method === "GET" && !url.pathname.includes(".")) {
+      return notFoundPage(env, request);
+    }
+    return res;
+  }
+  return new Response("Not found", { status: 404 });
+}

@@ -165,7 +165,7 @@ function paint() {
   const lang = window.__atlasLang;
   document.getElementById("city-h1").textContent = fillTpl("city.h1", { city: CITY });
   document.documentElement.lang = lang;
-  document.title = fillTpl("city.h1", { city: CITY }) + " · Altbieratlas";
+  document.title = fillTpl("city.title", { city: CITY }) + " · Altbieratlas";
   const ledeEl = document.getElementById("city-lede");
   if (ledeKey) ledeEl.textContent = window.t(ledeKey);
 

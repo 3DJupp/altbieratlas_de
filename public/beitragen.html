@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#b57a3a" />
-<title>Beitragen · Altbieratlas</title>
+<title>Altbier-Preis melden &amp; Ort eintragen · Altbieratlas</title>
 <meta name="description" content="Preis melden, Ort eintragen oder Korrektur einreichen — hilf den Altbieratlas aktuell zu halten." />
 <link rel="canonical" href="https://altbieratlas.de/beitragen" />
 <link rel="alternate" hreflang="de" href="https://altbieratlas.de/beitragen" />
@@ -184,6 +184,12 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
   .contrib-row .date { grid-column: 2; text-align: right; }
 }
 </style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Altbieratlas","item":"https://altbieratlas.de/"},{"@type":"ListItem","position":2,"name":"Beitragen","item":"https://altbieratlas.de/beitragen"}]},
+ {"@type":"WebPage","@id":"https://altbieratlas.de/beitragen#webpage","url":"https://altbieratlas.de/beitragen","name":"Altbier-Preis melden & Ort eintragen","description":"Preise melden, neue Altbier-Orte eintragen, Korrekturen und Termine einreichen.","isPartOf":{"@id":"https://altbieratlas.de/#website"},"inLanguage":"de","potentialAction":{"@type":"CreateAction","name":"Altbier-Preis melden","target":"https://altbieratlas.de/beitragen?typ=preis"}}
+]}
+</script>
 </head>
 <body>
 <div class="page">
@@ -576,6 +582,10 @@ function forms(typ) {
   return "";
 }
 
+// setLang() feuert atlas:lang-changed, dessen Listener wiederum renderForm()
+// aufruft — ohne Sperre endet das in einer Endlosrekursion.
+let renderingForm = false;
+
 function renderForm(typ) {
   currentTyp = typ;
   document.querySelectorAll(".type-switcher button").forEach((b) => {
@@ -585,7 +595,8 @@ function renderForm(typ) {
   document.getElementById("thanks").classList.remove("visible");
   document.getElementById("contrib-form").style.display = "block";
   document.getElementById("submit-error").classList.remove("visible");
-  window.setLang(window.__atlasLang);
+  renderingForm = true;
+  try { window.setLang(window.__atlasLang); } finally { renderingForm = false; }
   const url = new URL(location.href);
   url.searchParams.set("typ", typ);
   history.replaceState(null, "", url.toString());
@@ -661,7 +672,7 @@ document.querySelectorAll(".type-switcher button").forEach((btn) => {
 
 // Bei Sprachwechsel Formular neu rendern (Templates nutzen t()-Werte inline)
 document.addEventListener("atlas:lang-changed", () => {
-  if (currentTyp) renderForm(currentTyp);
+  if (currentTyp && !renderingForm) renderForm(currentTyp);
   renderRecent();
 });
 

@@ -114,6 +114,11 @@ persist = true
 #                           um (per CSS abgedunkelt), statt CARTOs
 #                           „API KEY REQUIRED"-Kacheln auszuliefern.
 #
+#   INDEXNOW_KEY          — optional: IndexNow-Schlüssel (8–128 Zeichen a–z,
+#                           A–Z, 0–9, -). Wird unter /<key>.txt ausgeliefert;
+#                           nach Admin-Änderungen meldet der Worker geänderte
+#                           Seiten an api.indexnow.org (Bing, Yandex …).
+#
 #   INITIAL_ADMIN  (nur für die Ersteinrichtung, danach entfernen!)
 #     Legt beim ersten Request automatisch einen Admin-User an,
 #     sofern noch keine Admin-User in der Datenbank existieren.

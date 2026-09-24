@@ -44,6 +44,7 @@ window.ATLAS_I18N = {
     // Stadt-Landingpages
     "city.eyebrow": "Altbier vor Ort",
     "city.h1": "Altbier in {city}",
+    "city.title": "Altbier in {city} — Brauereien, Ausschank & Preise",
     "city.count": "{n} Orte im Atlas",
     "city.stat.places": "Orte im Atlas",
     "city.stat.price": "Ø 0,25 l Alt",
@@ -168,12 +169,12 @@ window.ATLAS_I18N = {
     "common.cancel": "Abbrechen",
     "common.error": "Fehler",
     // Page titles
-    "title.map": "Altbieratlas — Die interaktive Karte des Altbiers",
+    "title.map": "Altbieratlas — Altbier-Karte mit Brauereien, Kneipen & Preisen",
     "title.brewery": "Ort · Altbieratlas",
     "title.location": "Ort · Altbieratlas",
-    "title.rankings": "Ranglisten · Altbieratlas",
-    "title.knowledge": "Wissen · Altbieratlas",
-    "title.contribute": "Beitragen · Altbieratlas",
+    "title.rankings": "Altbier-Preise im Vergleich: Wo ist Alt am günstigsten? · Altbieratlas",
+    "title.knowledge": "Was ist Altbier? Geschichte, Sorten & Glossar · Altbieratlas",
+    "title.contribute": "Altbier-Preis melden & Ort eintragen · Altbieratlas",
     "title.imprint": "Impressum & Datenschutz · Altbieratlas",
     "title.admin": "Admin · Altbieratlas",
     // Index / Landing
@@ -568,7 +569,7 @@ window.ATLAS_I18N = {
     "rank.hero.eyebrow": "Ranglisten",
     // Rivalen-Seite
     "nav.rivals": "Rivalen",
-    "title.rivals": "Das Rheinderby · Altbieratlas",
+    "title.rivals": "Altbier vs. Kölsch: Das Rheinderby · Altbieratlas",
     "rivals.heroEyebrow": "Das Rheinderby",
     "rivals.heroTitleHtml": "Zwei Städte. Zwei Biere. Ein <em>Streit seit Generationen.</em>",
     "rivals.heroLede": "Altbier gegen Kölsch: 47 Kilometer Autobahn, weltanschauliche Abgründe in Bierfragen — aber mehr Gemeinsamkeiten, als beide Seiten zugeben wollen. Gut recherchiert, gerne provokant.",
@@ -685,6 +686,7 @@ window.ATLAS_I18N = {
     // City landing pages
     "city.eyebrow": "Altbier locally",
     "city.h1": "Altbier in {city}",
+    "city.title": "Altbier in {city}: breweries, pubs & prices",
     "city.count": "{n} places in the atlas",
     "city.stat.places": "places in the atlas",
     "city.stat.price": "avg 0.25 l Alt",
@@ -800,12 +802,12 @@ window.ATLAS_I18N = {
     "common.cancel": "Cancel",
     "common.error": "Error",
     // Page titles
-    "title.map": "Altbieratlas — The interactive atlas of Altbier",
+    "title.map": "Altbieratlas — Altbier map with breweries, pubs & prices",
     "title.brewery": "Location · Altbieratlas",
     "title.location": "Location · Altbieratlas",
-    "title.rankings": "Rankings · Altbieratlas",
-    "title.knowledge": "Knowledge · Altbieratlas",
-    "title.contribute": "Contribute · Altbieratlas",
+    "title.rankings": "Altbier prices compared: where is Alt cheapest? · Altbieratlas",
+    "title.knowledge": "What is Altbier? History, styles & glossary · Altbieratlas",
+    "title.contribute": "Report an Altbier price or add a place · Altbieratlas",
     "title.imprint": "Imprint & Privacy · Altbieratlas",
     "title.admin": "Admin · Altbieratlas",
     // Index / Landing
@@ -1200,7 +1202,7 @@ window.ATLAS_I18N = {
     "rank.hero.eyebrow": "Rankings",
     // Rivals page
     "nav.rivals": "Rivals",
-    "title.rivals": "The Rhine Derby · Altbieratlas",
+    "title.rivals": "Altbier vs. Kölsch: The Rhine Derby · Altbieratlas",
     "rivals.heroEyebrow": "The Rhine Derby",
     "rivals.heroTitleHtml": "Two cities. Two beers. A <em>feud for generations.</em>",
     "rivals.heroLede": "Altbier versus Kölsch: 47 kilometres of motorway, deep ideological rifts over beer — but more in common than either side will admit. Well researched, happily provocative.",
@@ -1286,8 +1288,17 @@ window.t = function (key) {
 
 window.setLang = function (lang) {
   window.__atlasLang = lang;
-  localStorage.setItem("atlas-lang", lang);
+  try { localStorage.setItem("atlas-lang", lang); } catch (e) {}
   document.documentElement.lang = lang;
+  // Steht ?lang= in der Adresse, mitziehen — sonst gewinnt beim Neuladen
+  // wieder der URL-Parameter gegen die eben gewählte Sprache.
+  try {
+    const u = new URL(location.href);
+    if (u.searchParams.has("lang")) {
+      if (lang === "en") u.searchParams.set("lang", "en"); else u.searchParams.delete("lang");
+      history.replaceState(history.state, "", u.pathname + u.search + u.hash);
+    }
+  } catch (e) {}
   // DOM zuerst aktualisieren, danach Event feuern — damit Listener wie paintImpressum()
   // bereits auf den neu gerenderten [data-i18n-html]-Elementen arbeiten können.
   document.querySelectorAll("[data-i18n]").forEach((el) => {
@@ -1368,7 +1379,14 @@ window.formatSize = function (s) {
 };
 
 (function () {
-  const stored = localStorage.getItem("atlas-lang");
-  window.__atlasLang = stored || (window.ATLAS_CONFIG && window.ATLAS_CONFIG.defaultLang) || "de";
+  // ?lang=en|de hat Vorrang: die hreflang-Alternates zeigen auf <url>?lang=en,
+  // Crawler und geteilte Links müssen dort die englische Fassung sehen.
+  let fromUrl = null;
+  try { fromUrl = new URLSearchParams(location.search).get("lang"); } catch (e) {}
+  if (fromUrl !== "de" && fromUrl !== "en") fromUrl = null;
+  let stored = null;
+  try { stored = localStorage.getItem("atlas-lang"); } catch (e) {}
+  window.__atlasLang = fromUrl || stored || (window.ATLAS_CONFIG && window.ATLAS_CONFIG.defaultLang) || "de";
+  if (fromUrl) { try { localStorage.setItem("atlas-lang", fromUrl); } catch (e) {} }
   document.documentElement.lang = window.__atlasLang;
 })();
