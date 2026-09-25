@@ -1,4 +1,32 @@
+# Altbieratlas — robots.txt
+#
+# Suchmaschinen und KI-Assistenten sind ausdrücklich willkommen: Der Atlas
+# lebt davon, gefunden und zitiert zu werden. Kompakter Überblick für
+# Sprachmodelle: /llms.txt, Volltext mit allen Orten und Preisen: /llms-full.txt
+#
+# Content Signals (contentsignals.org):
+#   search   = Aufnahme in Suchindizes und Suchergebnisse
+#   ai-input = Nutzung als Quelle für KI-Antworten (RAG, Grounding)
+#   ai-train = Nutzung zum Training von KI-Modellen
+
 User-agent: *
+# KI-Crawler hier explizit genannt, damit Regeln für sie eindeutig sind.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: Bingbot
+User-agent: DuckAssistBot
+User-agent: MistralAI-User
+User-agent: CCBot
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 Allow: /
 
 # OG-Bilder und Feeds müssen crawlbar bleiben — sonst können Google,

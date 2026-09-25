@@ -258,7 +258,8 @@ const isSsr = root.dataset.ssr === "1";
     return key ? window.t(key) : src;
   }
 
-  document.title = `${b.name} · Altbieratlas`;
+  // Gleiches Schema wie das SSR-Title — Google wertet den gerenderten Titel
+  document.title = `${b.name} · Altbier in ${b.city} · Altbieratlas`;
 
   // SEO: Meta-Tags dynamisch befüllen — nur ohne SSR, sonst doppeltes JSON-LD
   if (!isSsr) (function() {

@@ -37,10 +37,14 @@ Browser
       ├─ /api/*              → route handlers in src/routes.js
       │    └─ utilities       (src/utils.js): auth, hashing, rate-limiting, email
       ├─ /sitemap.xml        → R.sitemap()
+      ├─ /llms.txt, /llms-full.txt → SEO.llmsTxt() / SEO.llmsFullTxt() (src/seo.js, aus D1)
+      ├─ /, /ranglisten, /wissen → SEO.serveIndex/serveRanglisten/serveWissen (SSR, Fallback: statisch)
       ├─ /impressum.html     → R.serveImpressum() (SSI: site_settings injected into HTML)
       ├─ /<page> (no .html) → 301 redirect to /<page>.html (known pages only, not /)
       └─ everything else     → ASSETS binding (static files from public/)
 ```
+
+Every GET HTML response passes through `SEO.applyLangVariant()`: with `?lang=en` it sets `lang="en"`, a self-referencing canonical and `og:locale` (the hreflang alternates point to `?lang=en`; `i18n.js` reads the same parameter). Successful admin mutations trigger `SEO.pingIndexNow()` (no-op without the `INDEXNOW_KEY` secret).
 
 `worker.js` contains a minimal hand-rolled router (`match()`) — there is no routing framework. Routes are registered as `[METHOD, pattern, handler]` tuples in the `ROUTES` array.
 
@@ -59,7 +63,7 @@ Pages call `window.ATLAS_API.*` methods which work identically in both modes.
 
 Runtime config lives in the **Cloudflare Dashboard** (Workers → Settings → Variables and Secrets). There are no `[vars]` in `wrangler.toml`. The split:
 
-- **Single-value secrets** (read directly from `env.*`, never wiped by deploys): `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `GA4_MEASUREMENT_ID`, `UNTAPPD_CLIENT_ID`, `UNTAPPD_CLIENT_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAIL`, `MAP_TILE_API_KEY`. The site key and GA4 ID are public but stored as secrets so they reliably survive deploys (the worker reads them and returns them via `/api/config`). Each is defined **once**, only as the env var — no `SITE_CONFIG`/D1 fallback.
+- **Single-value secrets** (read directly from `env.*`, never wiped by deploys): `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `GA4_MEASUREMENT_ID`, `UNTAPPD_CLIENT_ID`, `UNTAPPD_CLIENT_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAIL`, `MAP_TILE_API_KEY`, `INDEXNOW_KEY` (optional). The site key and GA4 ID are public but stored as secrets so they reliably survive deploys (the worker reads them and returns them via `/api/config`). Each is defined **once**, only as the env var — no `SITE_CONFIG`/D1 fallback.
 - **`SITE_CONFIG`** (a JSON-string **plaintext** variable) holds the remaining non-sensitive collection: `priceSizes`, `highlightedSizes`, `requireModeration`, `siteUrl`, `resendFrom`, `contactEmail`, `mapTileUrl`, `mapTileAttribution`, plus `author`/`impressum` fallbacks. Plaintext vars survive deploys **only** because `keep_vars = true` sits at the **top level** of `wrangler.toml` — if placed after any `[table]`/`[[table]]` header, TOML parses it as that table's property and wrangler silently ignores it (this bug once sat under `[[rules]]`). **Secrets always survive regardless of `keep_vars`.**
 
 Map tiles: `MAP_TILE_API_KEY` is substituted into the `{apiKey}` placeholder of the tile URL — CARTO's raster basemaps expect it as the query parameter `key` (not `api_key`); a different provider is handled by overriding `SITE_CONFIG.mapTileUrl`, never by editing the substitution. Without the key the frontend falls back to keyless OSM tiles (dimmed via the `.tiles-dimmed` CSS filter) instead of CARTO's "API KEY REQUIRED" tiles. Both maps (`index.html`, `ort.html`) go through `window.atlasTileLayer()` in `shell.js` — never create a `L.tileLayer` directly.
@@ -121,11 +125,12 @@ All transactional mail (contribution confirmations, password-reset, daily admin 
 
 **Sitemap** (`src/routes.js`, `staticPaths`-Array in der `sitemap()`-Funktion) muss bei jeder neuen öffentlichen Seite aktualisiert werden:
 - Neue Seite in `public/` → URL zur `staticPaths`-Liste hinzufügen
-- Prioritäten: `/` = 1.0, Inhaltsseiten = 0.7, Rechtliches (`/impressum`) = 0.3
-- Nicht in die Sitemap: `/admin`, dynamische Detail-URLs (werden separat über DB-Queries generiert)
-- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/rivalen`, `/beitragen`, `/impressum`
+- Prioritäten: `/` = 1.0, Inhaltsseiten = 0.7
+- Nicht in die Sitemap: `/admin`, `noindex`-Seiten (`/impressum`, 404), dynamische Detail-URLs (werden separat über DB-Queries generiert)
+- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/rivalen`, `/beitragen`
+- Neue öffentliche Seite → auch in `llmsTxt()` (`src/seo.js`, Abschnitt „Seiten") aufnehmen
 
-**Sitemap-Datum (`PAGE_DATES` in `sitemap()`)**: Jede statische Seite hat ein eigenes `lastmod`-Datum in der `PAGE_DATES`-Map. Dieses Datum **muss** aktualisiert werden, wenn:
+**Sitemap-Datum (`PAGE_DATES`, exportiert direkt über `sitemap()` in `src/routes.js`, auch für JSON-LD `dateModified` genutzt)**: Jede statische Seite hat ein eigenes `lastmod`-Datum in der `PAGE_DATES`-Map. Dieses Datum **muss** aktualisiert werden, wenn:
 - Eine `public/*.html`-Seite inhaltlich geändert wird → zugehöriges Datum auf aktuellen Tag setzen
 - Globale Änderungen alle Seiten betreffen (z.B. neue Nav-Links in `shell.js`, neue i18n-Keys, CSS-Redesign) → alle betroffenen Seiten-Daten aktualisieren
 - Reine Bugfixes ohne Inhaltsänderung (Tippfehler, Syntax) müssen das Datum **nicht** ändern

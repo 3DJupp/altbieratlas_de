@@ -1938,6 +1938,17 @@ export async function getUntappdBrewery(req, env, { id }) {
 // ============================================================
 //  SITEMAP (öffentlich)
 // ============================================================
+// Letztes inhaltliches Änderungsdatum pro Seite (Sitemap-lastmod, JSON-LD).
+// Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
+// / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
+export const PAGE_DATES = {
+  "/":           "2026-09-24",
+  "/ranglisten": "2026-09-24",
+  "/wissen":     "2026-09-24",
+  "/rivalen":    "2026-09-24",
+  "/beitragen":  "2026-09-24",
+};
+
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
 export async function sitemap(req, env) {
   const url = new URL(req.url);
@@ -1945,19 +1956,9 @@ export async function sitemap(req, env) {
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
                               .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
                               .replace(/'/g, "&apos;");
-  const staticPaths = ["/", "/ranglisten", "/wissen", "/rivalen", "/beitragen", "/impressum"];
-
-  // Letztes inhaltliches Änderungsdatum pro Seite.
-  // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
-  // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
-  const PAGE_DATES = {
-    "/":           "2026-09-11",
-    "/ranglisten": "2026-09-11",
-    "/wissen":     "2026-09-11",
-    "/rivalen":    "2026-09-11",
-    "/beitragen":  "2026-09-11",
-    "/impressum":  "2026-09-11",
-  };
+  // /impressum fehlt bewusst: die Seite ist noindex, und noindex-URLs in der
+  // Sitemap meldet die Search Console als Fehler.
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/rivalen", "/beitragen"];
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
@@ -1986,7 +1987,7 @@ export async function sitemap(req, env) {
       const useDate = (p === "/" || p === "/ranglisten") && dbDate && dbDate > pageDate
         ? dbDate
         : pageDate;
-      const priority = p === "/" ? "1.0" : p === "/impressum" ? "0.3" : "0.7";
+      const priority = p === "/" ? "1.0" : "0.7";
       return `
   <url>
     <loc>${esc(base + p)}</loc>
@@ -2070,23 +2071,31 @@ export async function adminUpdateSettings(req, env) {
 }
 
 // Preis/Größe/Datum serverseitig deutsch formatieren (Client nutzt i18n.js).
-function fmtPriceDe(n) {
+export function fmtPriceDe(n) {
   return Number(n).toFixed(2).replace(".", ",");
 }
-function fmtSizeDe(s) {
+export function fmtSizeDe(s) {
   const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
   if (isNaN(num)) return String(s ?? "");
   return num.toFixed(2).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",") + " l";
 }
-function sizeNum(s) {
+export function sizeNum(s) {
   const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
   return isNaN(num) ? null : num;
 }
-function fmtDateDe(d) {
+export function fmtDateDe(d) {
   if (!d) return "";
   const [y, m, day] = String(d).slice(0, 10).split("-");
   return y && m && day ? `${day}.${m}.${y}` : String(d);
 }
+
+// Venue-Typ → schema.org-Typ. Genauere Typen helfen Suchmaschinen und
+// KI-Assistenten, einen Ort richtig einzuordnen („Brauerei“ statt „Kneipe“).
+const SCHEMA_TYPE = {
+  brewery: "Brewery", brewpub: "Brewery",
+  pub: "BarOrPub", restaurant: "Restaurant",
+  beverage_store: "LiquorStore", supermarket: "GroceryStore", kiosk: "ConvenienceStore",
+};
 
 // GET /ort/<slug> — SSR: Meta-Tags, JSON-LD UND Seiteninhalt aus D1.
 // Ohne Server-Rendering sehen Crawler auf Ortsseiten nur "Lade…" — der
@@ -2167,7 +2176,7 @@ export async function serveOrt(req, env, params = {}) {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": row.is_historical ? "Place" : "BarOrPub",
+        "@type": row.is_historical ? "Place" : (SCHEMA_TYPE[row.type] || "BarOrPub"),
         "@id": pageUrl + "#business",
         "name": row.name,
         "url": pageUrl,
@@ -2330,7 +2339,7 @@ export async function serveOrt(req, env, params = {}) {
 
   return new Response(html, { status: 200, headers });
 }
-function escHtml(s) {
+export function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
@@ -2404,7 +2413,8 @@ export async function serveEvent(req, env) {
     row = await env.DB.prepare(
       `SELECT e.id, e.title_de, e.title_en, e.date, e.time, e.end_date, e.end_time,
               e.location, e.url, e.description_de, e.description_en,
-              b.name AS brewery_name, b.city AS brewery_city
+              b.id AS brewery_id, b.name AS brewery_name, b.city AS brewery_city,
+              b.address AS brewery_address, b.country AS brewery_country
        FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
        WHERE e.id = ? AND e.status = 'approved'`
     ).bind(id).first();
@@ -2446,10 +2456,19 @@ export async function serveEvent(req, env) {
     ? row.brewery_name + (row.brewery_city ? ", " + row.brewery_city : "")
     : row.location;
   if (locName) {
+    // Google verlangt für Event-Rich-Results eine Adresse am Veranstaltungsort.
     ld.location = {
       "@type": "Place",
       "name": locName,
-      ...(row.brewery_city ? { "address": { "@type": "PostalAddress", "addressLocality": row.brewery_city, "addressCountry": "DE" } } : {}),
+      ...(row.brewery_id ? { "url": `https://altbieratlas.de/ort/${encodeURIComponent(row.brewery_id)}` } : {}),
+      "address": row.brewery_city
+        ? {
+            "@type": "PostalAddress",
+            ...(row.brewery_address ? { "streetAddress": row.brewery_address } : {}),
+            "addressLocality": row.brewery_city,
+            "addressCountry": row.brewery_country || "DE",
+          }
+        : locName,
     };
   }
 
