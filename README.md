@@ -1,4 +1,4 @@
-# Altbieratlas · v0.11.0
+# Altbieratlas · v0.11.1
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -8,6 +8,8 @@ altbieratlas/
 │   ├── worker.js            # Router (API + ASSETS)
 │   ├── routes.js            # Public- & Admin-API
 │   ├── seo.js               # llms.txt, SSR für /, /ranglisten, /wissen, ?lang=en, IndexNow
+│   ├── cache.js             # Edge-Cache (Cache API) für öffentliche GET-Antworten
+│   ├── d1meter.js           # Zählt D1-Abfragen/gelesene Zeilen pro Request ([d1]-Logzeile)
 │   └── utils.js             # PBKDF2, Turnstile, Rate-Limit, E-Mail
 ├── public/
 │   ├── index.html           # Landing + Karte (Leaflet)
@@ -329,6 +331,34 @@ Fünf Einreichungstypen mit Moderation:
   Default-Antwort
 - **Leaflet** wird am Seitenende statt im `<head>` geladen; der Textinhalt
   rendert dadurch, bevor die 150 kB Karten-JS über das Netz sind
+
+### Edge-Cache & D1-Lesekontingent
+Das D1-Free-Limit (5 Mio. gelesene Zeilen pro Tag, **pro Account**) hängt allein
+an der Zahl der Requests, nicht an der Datenmenge. Öffentliche GET-Antworten
+liegen deshalb fertig gerendert im Cloudflare-Cache der jeweiligen Colo
+(`src/cache.js`, TTL `EDGE_CACHE_TTL` = 10 min). Ein Treffer kostet keine
+D1-Abfrage.
+- **Gecacht:** SSR-Seiten (`/`, `/ranglisten`, `/wissen`, `/ort/*`, `/stadt/*`,
+  `/event`, `/impressum`), `/sitemap.xml`, `/llms*.txt` und die öffentlichen
+  `/api/*`-GETs (config, stats, breweries, styles, prices, events inkl. ICS/Atom,
+  venue-types, glossary, rivals/votes, OG-Bild). Cache-Key ist die volle URL
+  inkl. `?lang=en` (die Sprachvariante wird vor dem Ablegen umgeschrieben);
+  Tracking-Parameter (`utm_*`, `fbclid`, `gclid` …) fallen aus dem Key.
+- **Nie gecacht:** `/api/admin/*`, Nicht-GET, `/api/geocode`, `/api/untappd/*`,
+  Requests mit `atlas_session`-Cookie (eingeloggte Admins sehen immer den
+  Live-Stand), Antworten mit `Set-Cookie`, Status ≠ 200 und Antworten, bei
+  denen eine D1-Abfrage fehlschlug (statischer Fallback).
+- **Invalidierung:** Jede Colo führt eine Cache-Generation, die selbst im Cache
+  liegt und Teil jedes Keys ist. Eine erfolgreiche Admin-Mutation setzt sie neu
+  → in der Colo des Admins ist die Änderung beim nächsten Reload sichtbar,
+  andere Colos folgen spätestens nach 10 min. Eine neue Rivalen-Stimme löscht
+  gezielt `/api/rivals/votes`.
+- **Browser-Caching** bleibt wie vom jeweiligen Handler gesetzt; `/api/config`
+  darf 60 s im Browser liegen. Antworten tragen `x-edge-cache: HIT|MISS`.
+- **Messen:** Jeder Request, der D1 anfasst, schreibt `[d1] GET /pfad q=<Abfragen>
+  rows=<gelesene Zeilen>` in die Worker-Logs (Observability → nach `[d1]`
+  filtern). Cache-Treffer erzeugen keine Zeile.
+- Die Cache API wirkt nur auf der eigenen Domain, nicht auf `*.workers.dev`.
 
 > **Messung beachten:** GA4 startet erst, wenn im Cookie-Banner *„Alle
 > akzeptieren"* gewählt wurde (`localStorage["atlas-consent"] === "all"`).

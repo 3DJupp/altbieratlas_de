@@ -126,6 +126,10 @@ export async function getPublicConfig(req, env) {
     author,
     banner,
     requireModeration: sc.requireModeration !== false,
+  }, {
+    // Jede Seite fragt /api/config beim Laden ab. Kurzes Browser-Caching spart
+    // beim Weiterklicken Requests; Banner-Änderungen kommen nach ≤ 1 min an.
+    headers: { "cache-control": "public, max-age=60, stale-while-revalidate=600" },
   });
 }
 

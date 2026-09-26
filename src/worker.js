@@ -8,6 +8,8 @@
 import * as R from "./routes.js";
 import * as SEO from "./seo.js";
 import { error, hashPassword, sendAdminDigest } from "./utils.js";
+import { meterEnv } from "./d1meter.js";
+import { isCacheable, withEdgeCache, bumpGeneration, purge } from "./cache.js";
 
 // Minimaler Router mit Pfad-Parameter-Matching (/x/:id)
 function match(pattern, path) {
@@ -29,13 +31,16 @@ function match(pattern, path) {
 // falls noch keine Admin-User existieren.
 // Secret-Format (JSON): {"username":"...","password":"...","email":"..."}
 // Nach dem ersten Login sollte das Secret im Dashboard entfernt werden.
+// Pro Isolate nur so lange prüfen, bis ein Admin existiert — sonst kostet
+// ein vergessenes INITIAL_ADMIN-Secret bei jedem Request eine D1-Abfrage.
+let adminExists = false;
 async function bootstrapInitialAdmin(env) {
-  if (!env.INITIAL_ADMIN) return;
+  if (!env.INITIAL_ADMIN || adminExists) return;
   let cfg;
   try { cfg = JSON.parse(env.INITIAL_ADMIN); } catch { return; }
   if (!cfg.username || !cfg.password || String(cfg.password).length < 10) return;
-  const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM admin_users").first();
-  if (row?.n > 0) return;
+  const row = await env.DB.prepare("SELECT 1 AS n FROM admin_users LIMIT 1").first();
+  if (row) { adminExists = true; return; }
   const hash = await hashPassword(String(cfg.password));
   await env.DB.prepare(
     "INSERT OR IGNORE INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)"
@@ -148,16 +153,33 @@ export default {
     ctx.waitUntil(sendAdminDigest(env));
   },
 
-  async fetch(request, env, ctx) {
-    const res = await handle(request, env, ctx);
-    const path = new URL(request.url).pathname;
-    // Admin-Änderung erfolgreich → geänderte Seiten per IndexNow melden
+  async fetch(request, rawEnv, ctx) {
+    const { env, stats } = meterEnv(rawEnv);
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const render = async () => {
+      const res = await handle(request, env, ctx);
+      // Sprachvariante vor dem Cachen anwenden → ?lang=en wird als eigene,
+      // fertig umgeschriebene Antwort abgelegt
+      return request.method === "GET" && !path.startsWith("/api/")
+        ? SEO.applyLangVariant(request, res)
+        : res;
+    };
+    const res = isCacheable(request, url)
+      ? await withEdgeCache(request, url, ctx, render, () => stats.failed > 0)
+      : await render();
+    if (stats.queries) console.log(`[d1] ${request.method} ${path} q=${stats.queries} rows=${stats.rowsRead}`);
+
+    // Admin-Änderung erfolgreich → Edge-Cache dieser Colo verwerfen und
+    // geänderte Seiten per IndexNow melden
     if (request.method !== "GET" && path.startsWith("/api/admin/") && res.ok
         && !path.startsWith("/api/admin/log") && !path.includes("reset")) {
+      bumpGeneration(ctx);
       ctx.waitUntil(SEO.pingIndexNow(env, request));
     }
-    if (request.method === "GET" && !path.startsWith("/api/")) {
-      return SEO.applyLangVariant(request, res);
+    // Neue Stimme → Abstimmungsstand nicht erst nach Ablauf der TTL zeigen
+    if (request.method === "POST" && path === "/api/rivals/vote" && res.ok) {
+      ctx.waitUntil(purge(`${url.origin}/api/rivals/votes`, ctx));
     }
     return res;
   },
