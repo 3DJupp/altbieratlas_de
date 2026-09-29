@@ -2081,7 +2081,7 @@ export function fmtPriceDe(n) {
 export function fmtSizeDe(s) {
   const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
   if (isNaN(num)) return String(s ?? "");
-  return num.toFixed(2).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",") + " l";
+  return num.toFixed(3).replace(/0+$/, "").replace(/\.$/, "").replace(".", ",") + " l";
 }
 export function sizeNum(s) {
   const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));

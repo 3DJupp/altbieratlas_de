@@ -563,7 +563,7 @@
               </div>
               <div class="field" style="margin:0">
                 <label data-i18n="field.size">Größe</label>
-                <select name="size" required id="price-size-select" onchange="handleAdminSizeChange(this)"></select>
+                <select name="size" required id="price-size-select" onchange="handleAdminSizeChange(this, 'price-size-custom')"></select>
                 <input id="price-size-custom" type="text" maxlength="20" placeholder="z. B. 1l" style="display:none;margin-top:6px" />
               </div>
               <div class="field" style="margin:0">
@@ -1006,12 +1006,8 @@
         </div>
         <div class="field" style="margin:0">
           <label>Größe</label>
-          <select id="pe-size">
-            <option value="0.25l">0,25 l</option>
-            <option value="0.33l">0,33 l</option>
-            <option value="0.4l">0,4 l</option>
-            <option value="0.5l">0,5 l</option>
-          </select>
+          <select id="pe-size" onchange="handleAdminSizeChange(this, 'pe-size-custom')"></select>
+          <input id="pe-size-custom" type="text" maxlength="20" placeholder="z. B. 0,3" style="display:none;margin-top:6px" />
         </div>
         <div class="field" style="margin:0">
           <label>Preis (€)</label>
@@ -1256,22 +1252,51 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
 });
 
 // ============ Size Select ============
-function buildAdminSizeSelect() {
-  const sel = document.getElementById("price-size-select");
-  if (!sel) return;
-  const sizes = window.ATLAS_CONFIG.priceSizes || [0.2, 0.25, 0.4, 0.5];
+// Admin-Auswahl: die öffentlichen priceSizes (Ranglisten) plus gängige
+// Sondergrößen. Alles außerhalb der priceSizes landet in den Ranglisten
+// unter „Andere“. Gespeichert wird immer die Dezimalform ("0.2").
+const ADMIN_EXTRA_SIZES = [0.33, 1, 0.284, 0.568];
+const PINT_LABELS = { "0.284": "Half Pint", "0.568": "Pint" };
+
+function parseSizeNum(s) {
+  const n = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, "").trim());
+  return isNaN(n) ? null : n;
+}
+
+function adminSizeList() {
+  const base = (window.ATLAS_CONFIG.priceSizes || [0.2, 0.25, 0.4, 0.5]).map(parseSizeNum).filter((n) => n != null);
+  const all = [...base];
+  ADMIN_EXTRA_SIZES.forEach((n) => { if (!all.some((m) => Math.abs(m - n) < 0.0005)) all.push(n); });
+  return all.sort((x, y) => x - y);
+}
+
+function fillAdminSizeSelect(sel, preselect) {
   const otherLabel = window.__atlasLang === "en" ? "Other…" : "Andere…";
-  sel.innerHTML = sizes.map((s) => {
-    const num = typeof s === "number" ? s : parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+  sel.innerHTML = adminSizeList().map((num) => {
     const val = String(num);
-    const label = window.formatSize ? window.formatSize(val) : val + " l";
-    const isDefault = Math.abs(num - 0.25) < 0.001;
-    return `<option value="${val}"${isDefault ? " selected" : ""}>${label}</option>`;
+    const size = window.formatSize ? window.formatSize(val) : val + " l";
+    const label = PINT_LABELS[val] ? `${PINT_LABELS[val]} (${size})` : size;
+    const isSel = preselect != null && Math.abs(num - preselect) < 0.0005;
+    return `<option value="${val}"${isSel ? " selected" : ""}>${label}</option>`;
   }).join("") + `<option value="custom">${otherLabel}</option>`;
 }
 
-function handleAdminSizeChange(sel) {
-  const custom = document.getElementById("price-size-custom");
+// Liefert die zu speichernde Größe aus Select + Freitextfeld (null = ungültig)
+function readAdminSize(sel, customId) {
+  if (sel.value !== "custom") return sel.value;
+  const raw = document.getElementById(customId).value.trim();
+  if (!raw) return null;
+  const n = parseSizeNum(raw);
+  return n == null ? raw : String(n);
+}
+
+function buildAdminSizeSelect() {
+  const sel = document.getElementById("price-size-select");
+  if (sel) fillAdminSizeSelect(sel, 0.25);
+}
+
+function handleAdminSizeChange(sel, customId) {
+  const custom = document.getElementById(customId);
   if (!custom) return;
   custom.style.display = sel.value === "custom" ? "" : "none";
   if (sel.value === "custom") custom.focus();
@@ -2369,6 +2394,9 @@ async function loadPricesTab() {
   const tbody = document.getElementById("prices-tbody");
   tbody.innerHTML = `<tr><td colspan="7" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
 
+  // Größen neu aufbauen: Server-Config (priceSizes) ist erst nach ready() gemerged
+  if (document.getElementById("price-size-select").value !== "custom") buildAdminSizeSelect();
+
   // Brauerei-Dropdown befüllen (Add-Form, nur einmal)
   const sel = document.getElementById("price-brewery-select");
   if (sel.options.length <= 1) {
@@ -2435,7 +2463,20 @@ let pendingPriceEdit = null;
 async function openPriceEditDialog(id, rowEl) {
   pendingPriceEdit = { id, rowEl };
   document.getElementById("pe-date").value   = rowEl.dataset.date || "";
-  document.getElementById("pe-size").value   = rowEl.dataset.size || "0.25l";
+  // Größe: gespeicherte Schreibweise ("0.25", "0,25l" …) normalisieren und vorauswählen,
+  // unbekannte Größen über „Andere…“ mit vorbefülltem Freitext
+  const sizeSel    = document.getElementById("pe-size");
+  const sizeCustom = document.getElementById("pe-size-custom");
+  const curNum     = parseSizeNum(rowEl.dataset.size);
+  fillAdminSizeSelect(sizeSel, curNum);
+  const known = curNum != null && adminSizeList().some((n) => Math.abs(n - curNum) < 0.0005);
+  if (!known && rowEl.dataset.size) {
+    sizeSel.value = "custom";
+    sizeCustom.value = curNum != null ? String(curNum).replace(".", ",") : rowEl.dataset.size;
+  } else {
+    sizeCustom.value = "";
+  }
+  sizeCustom.style.display = sizeSel.value === "custom" ? "" : "none";
   document.getElementById("pe-price").value  = rowEl.dataset.price || "";
   document.getElementById("pe-source").value = rowEl.dataset.source || "";
   document.getElementById("pe-status").value = rowEl.dataset.status || "approved";
@@ -2468,10 +2509,17 @@ document.getElementById("price-edit-save").addEventListener("click", async () =>
   if (!pendingPriceEdit) return;
   const msg = document.getElementById("price-edit-msg");
   msg.style.display = "none";
+  const size = readAdminSize(document.getElementById("pe-size"), "pe-size-custom");
+  if (!size) {
+    msg.textContent = window.t("admin.errorPrefix") + window.t("field.size");
+    msg.style.color = "#9b1f1f";
+    msg.style.display = "block";
+    return;
+  }
   const patch = {
     brewery_id: document.getElementById("pe-brewery-select").value,
     date:       document.getElementById("pe-date").value,
-    size:       document.getElementById("pe-size").value,
+    size,
     price:      parseFloat(document.getElementById("pe-price").value),
     source:     document.getElementById("pe-source").value.trim() || null,
     status:     document.getElementById("pe-status").value,
@@ -2509,13 +2557,8 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
   const msg = document.getElementById("add-price-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
-  let size = fd.get("size");
-  if (size === "custom") {
-    const raw = document.getElementById("price-size-custom").value.trim();
-    if (!raw) { msg.textContent = window.t("admin.errorPrefix") + window.t("field.size"); msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
-    const n = parseFloat(raw.replace(",", ".").replace(/\s*l$/i, ""));
-    size = isNaN(n) ? raw : n + "l";
-  }
+  const size = readAdminSize(document.getElementById("price-size-select"), "price-size-custom");
+  if (!size) { msg.textContent = window.t("admin.errorPrefix") + window.t("field.size"); msg.style.color = "#9b1f1f"; msg.style.display = "block"; return; }
   try {
     await window.AtlasAPI.admin.addPrice({
       breweryId: fd.get("breweryId"),
@@ -2528,6 +2571,7 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
+    buildAdminSizeSelect();
     document.getElementById("price-size-custom").style.display = "none";
     loadPricesTab();
     loadDashboard();

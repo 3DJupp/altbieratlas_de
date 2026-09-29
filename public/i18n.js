@@ -1373,7 +1373,7 @@ window.formatSize = function (s) {
   if (!s) return "";
   const num = parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
   if (isNaN(num)) return String(s);
-  let dec = num.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  let dec = num.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
   if (window.__atlasLang !== "en") dec = dec.replace(".", ",");
   return dec + " l";
 };
