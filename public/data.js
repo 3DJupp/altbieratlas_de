@@ -580,6 +580,19 @@ window.ATLAS_DATA = {
         en: "From August 21–23, 2026, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for 32 years near the famous Benrath Palace, the event is known for its cosy beer gardens and authentic Rhineland atmosphere.",
       },
     },
+    {
+      id: "uerige-sticke-2026-10",
+      title: { de: "Sticke-Ausschank im Uerige", en: "Sticke tapping at Uerige" },
+      breweryId: "uerige",
+      date: "2026-10-20",
+      endDate: null,
+      location: "Düsseldorf Altstadt",
+      url: "https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige/",
+      description: {
+        de: "Am dritten Dienstag im Oktober wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird.",
+        en: "On the third Tuesday of October, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October).",
+      },
+    },
   ],
 
   glossary: [
