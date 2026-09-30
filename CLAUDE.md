@@ -95,9 +95,9 @@ Für Live-Upgrades bestehender Instanzen: Upgrade-SQL direkt in der D1-Dashboard
 
 Das normale Deploy spielt den Seed **nicht** ein (nur `deploy.sh --seed` bei Neuinstallation). Änderungen an `0002_seed.sql`/`public/data.js` erreichen die Produktion also nicht.
 
-- **Wichtige Einträge** (das erste bzw. aktuell laufende/nächste Event, Kern-Brauereien) → zusätzlich in `0002_seed.sql` **und** `public/data.js` (Mock-Modus).
-- **Alles andere** (weitere/zukünftige Events, ungeprüfte Funde aus der Datenrecherche) → **nicht** in den Seed, sondern per `INSERT OR IGNORE … status = 'pending'` in die Live-D1 (`wrangler d1 execute <db> --remote --command "…"` oder Admin-Panel). Der Admin prüft sie und schaltet sie frei.
-- Geplante Daten-Recherche-Routinen: Funde im PR als fertiges `pending`-SQL dokumentieren; nur das erste/aktuelle Event zusätzlich in den Seed. Nie ungeprüft mit `approved` in die Produktion schreiben.
+- **Events** (insbesondere die neusten/aktuellen) → immer **beides**: in `0002_seed.sql` **und** `public/data.js` (Mock-Modus) **sowie** per `INSERT OR IGNORE` in die Live-D1 (`wrangler d1 execute <db> --remote --command "…"`, Cloudflare-MCP `d1_database_query` oder Admin-Panel). Am Ende stehen dort also i. d. R. mehrere Events.
+- **Status:** ungeprüfte Funde (z. B. aus der Daten-Recherche) → `status = 'pending'` (im Seed wie in der DB); der Admin prüft und schaltet frei. Nur verifizierte Einträge `approved`. Nie ungeprüft mit `approved` in die Produktion schreiben.
+- Geplante Daten-Recherche-Routinen: Funde im PR dokumentieren und zusätzlich mit `pending` in die Live-D1 schreiben; vorher prüfen, ob IDs/Brauereien existieren.
 
 ### Auth & Security
 
