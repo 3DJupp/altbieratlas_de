@@ -330,18 +330,6 @@ VALUES
     'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige/',
     'Am dritten Dienstag im Oktober wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird.',
     'On the third Tuesday of October, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October).',
-    'approved'),
-  ('schluessel-stike-2026-10', 'Stike-Ausschank im Schlüssel', 'Stike tapping at Schlüssel',
-    'schluessel', '2026-10-21', NULL, NULL, NULL, 'Düsseldorf Altstadt',
-    'https://www.zumschluessel.de/en/events/stike-season/',
-    'Der Original Schlüssel Stike, das Starkbier der Hausbrauerei, wird zweimal im Jahr (März und Oktober) frisch vom Holzfass ausgeschenkt. Die Oktober-Ausgabe 2026 startet am 21. Oktober.',
-    'The Original Schlüssel Stike, the brewpub''s strong Alt, is tapped fresh from the wooden barrel twice a year (March and October). The October 2026 edition starts on 21 October.',
-    'approved'),
-  ('schumacher-latzen-2026-11', 'Latzenbier-Ausschank bei Schumacher', 'Latzenbier tapping at Schumacher',
-    'schumacher', '2026-11-19', NULL, NULL, NULL, 'Düsseldorf',
-    'https://schumacher-alt.de',
-    'Das Schumacher Latzenbier wird dreimal im Jahr gebraut und am dritten Donnerstag im März, September und November vom Latzen-Fass ausgeschenkt. Nächster Termin: 19. November 2026.',
-    'Schumacher Latzenbier is brewed three times a year and tapped from the Latzen barrel on the third Thursday of March, September and November. Next date: 19 November 2026.',
     'approved');
 
 -- ============================================================
