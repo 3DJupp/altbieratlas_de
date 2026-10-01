@@ -91,6 +91,14 @@ Wird das Schema oder die Seed-Daten geändert (neue Spalte, neue Brauerei, neue 
 
 Für Live-Upgrades bestehender Instanzen: Upgrade-SQL direkt in der D1-Dashboard-Console ausführen.
 
+### Daten-Updates (Events, neue Orte) — Seed vs. Live-DB
+
+Das normale Deploy spielt den Seed **nicht** ein (nur `deploy.sh --seed` bei Neuinstallation). Änderungen an `0002_seed.sql`/`public/data.js` erreichen die Produktion also nicht.
+
+- **Events** (insbesondere die neusten/aktuellen) → immer **beides**: in `0002_seed.sql` **und** `public/data.js` (Mock-Modus) **sowie** per `INSERT OR IGNORE` in die Live-D1 (`wrangler d1 execute <db> --remote --command "…"`, Cloudflare-MCP `d1_database_query` oder Admin-Panel). Am Ende stehen dort also i. d. R. mehrere Events.
+- **Status:** ungeprüfte Funde (z. B. aus der Daten-Recherche) → `status = 'pending'` (im Seed wie in der DB); der Admin prüft und schaltet frei. Nur verifizierte Einträge `approved`. Nie ungeprüft mit `approved` in die Produktion schreiben.
+- Geplante Daten-Recherche-Routinen: Funde im PR dokumentieren und zusätzlich mit `pending` in die Live-D1 schreiben; vorher prüfen, ob IDs/Brauereien existieren.
+
 ### Auth & Security
 
 - Admin sessions use a 32-byte random token in a `HttpOnly; Secure; SameSite=Strict` cookie named `atlas_session` (8h TTL)

@@ -86,6 +86,8 @@ bash scripts/db-setup.sh [--remote]
 | `0001_schema.sql` | Vollständiges Schema — alle Tabellen, Indizes, FK-Kaskaden. Idempotent. |
 | `0002_seed.sql` | Alle Seed-Daten: Venue-Typen (7), Bierstile, Glossar, Brauereien, Preise, Events. Idempotent via `INSERT OR IGNORE`. |
 
+> **Seed vs. Live-DB:** Der Seed wird nur bei Neuinstallationen eingespielt. Events (vor allem die neusten) stehen deshalb immer sowohl im Seed/`data.js` als auch in der Live-D1 (`INSERT OR IGNORE`, `wrangler d1 execute --remote`, Cloudflare-MCP oder Admin-Panel). Ungeprüfte Funde erhalten `status='pending'` und werden im Admin freigegeben.
+
 **Genau zwei Dateien — immer.** Neue Spalten, Brauereien, Stile etc. werden direkt in `0001` bzw. `0002` eingebaut, **nicht** als neue Datei `0003_…`. Für Upgrades bestehender Produktionsinstanzen: SQL direkt in der D1-Dashboard-Console ausführen.
 
 > ⚠️ **Wichtig: FK-Kaskaden und Datenverlust**
