@@ -593,6 +593,21 @@ window.ATLAS_DATA = {
         en: "On the third Tuesday of October, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October).",
       },
     },
+    {
+      id: "schumacher-latzen-2026-11",
+      title: { de: "Latzenbier im Brauhof", en: "Latzenbier at the Brauhof" },
+      breweryId: "schumacher",
+      date: "2026-11-19",
+      endDate: null,
+      time: "15:00",
+      endTime: "22:00",
+      location: "Oststraße 123, Düsseldorf",
+      url: "https://schumacher-alt.de/veranstaltungen/",
+      description: {
+        de: "Am dritten Donnerstag im November gibt es bei Schumacher wieder das Latzenbier — stärker und malziger als das normale Alt (ca. 5,5 % vol.), nur dreimal im Jahr (März, September, November). Mit Live-Musik von „Die Kleinenbroicher“.",
+        en: "On the third Thursday of November Schumacher serves its Latzenbier again — stronger and maltier than the regular Alt (about 5.5% ABV), available only three times a year (March, September, November). With live music by \"Die Kleinenbroicher\".",
+      },
+    },
   ],
 
   glossary: [

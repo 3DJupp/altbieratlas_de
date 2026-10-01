@@ -330,6 +330,12 @@ VALUES
     'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige/',
     'Am dritten Dienstag im Oktober wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird.',
     'On the third Tuesday of October, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October).',
+    'approved'),
+  ('schumacher-latzen-2026-11', 'Latzenbier im Brauhof', 'Latzenbier at the Brauhof',
+    'schumacher', '2026-11-19', NULL, '15:00', '22:00', 'Oststraße 123, Düsseldorf',
+    'https://schumacher-alt.de/veranstaltungen/',
+    'Am dritten Donnerstag im November gibt es bei Schumacher wieder das Latzenbier — stärker und malziger als das normale Alt (ca. 5,5 % vol.), nur dreimal im Jahr (März, September, November). Mit Live-Musik von „Die Kleinenbroicher“.',
+    'On the third Thursday of November Schumacher serves its Latzenbier again — stronger and maltier than the regular Alt (about 5.5% ABV), available only three times a year (March, September, November). With live music by "Die Kleinenbroicher".',
     'approved');
 
 -- ============================================================
