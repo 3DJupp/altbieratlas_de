@@ -1479,6 +1479,7 @@ async function loadBreweriesTable() {
         <td><span class="status-${b.status}">${b.status}</span></td>
         <td>${b.verified ? "✓" : "—"}</td>
         <td class="actions">
+          ${b.status !== "approved" ? `<button class="btn btn-approve" data-act="approve">${t("admin.approve")}</button>` : ""}
           <button class="btn" data-act="edit">${t("admin.actionEdit")}</button>
           <button class="btn" data-act="toggle-verified">${b.verified ? t("admin.actionUnverify") : t("admin.actionVerify")}</button>
           <button class="btn btn-reject" data-act="delete">${t("admin.actionDelete")}</button>
@@ -1508,6 +1509,17 @@ async function handleBreweryAction(id, act, rowEl) {
       rowEl.remove();
       loadDashboard();
     } catch (e) { alert(t("admin.errorPrefix") + e.message); }
+  } else if (act === "approve") {
+    // Freigabe = öffentlich schalten (status) + als geprüft markieren (verified)
+    try {
+      await window.AtlasAPI.admin.updateBrewery(id, { status: "approved", verified: 1 });
+      rowEl.dataset.status = "approved";
+      rowEl.querySelector("td:nth-child(4)").innerHTML = `<span class="status-approved">approved</span>`;
+      rowEl.querySelector("td:nth-child(5)").textContent = "✓";
+      rowEl.querySelector("button[data-act='toggle-verified']").textContent = t("admin.actionUnverify");
+      rowEl.querySelector("button[data-act='approve']")?.remove();
+      loadDashboard();
+    } catch (e) { alert(t("admin.approveError") + e.message); }
   } else if (act === "toggle-verified") {
     const currentBadge = rowEl.querySelector("td:nth-child(5)").textContent.trim();
     const nowVerified = currentBadge === "✓" ? 0 : 1;
