@@ -192,7 +192,7 @@ VALUES
     51.2264, 6.7722, 2026, NULL,
     'Die älteste Kellerkneipe der Düsseldorfer Altstadt, bis Ende 2024 rund 50 Jahre lang einfach „Kneipe“. Seit Juli 2026 unter neuem Namen von den Altus-Gründern Tim Kasparek und Anthony Boniteau betrieben: erste eigene Ausschankstätte für Altus, Düsseldorfs erstes Bio-Altbier, frisch vom Fass. Dazu gibt es wieder den Kultschnaps „Stress“.',
     'The oldest cellar bar in Düsseldorf''s old town, known simply as "Kneipe" for around 50 years until it closed at the end of 2024. Reopened in July 2026 under a new name by Altus founders Tim Kasparek and Anthony Boniteau as the first dedicated outlet for Altus, Düsseldorf''s first organic Altbier, on tap. The cult house schnapps "Stress" is back too.',
-    0, 'pending', 0),
+    1, 'approved', 0),
 
   ('frankenheim', 'Frankenheim Brauerei', 'Frankenheim', 'brewery', 'Düsseldorf', 'DE',
     'Grafenberger Allee 101, 40237 Düsseldorf',

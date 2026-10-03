@@ -192,7 +192,7 @@ window.ATLAS_DATA = {
         en: "The oldest cellar bar in Düsseldorf's old town, known simply as \"Kneipe\" for around 50 years until it closed at the end of 2024. Reopened in July 2026 under a new name by Altus founders Tim Kasparek and Anthony Boniteau as the first dedicated outlet for Altus, Düsseldorf's first organic Altbier, on tap. The cult house schnapps \"Stress\" is back too.",
       },
       styles: ["altus-alt"],
-      verified: false,
+      verified: true,
       logoKey: null,
       logoUrl: null,
     },
