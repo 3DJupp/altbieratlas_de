@@ -186,6 +186,14 @@ VALUES
     'The first certified organic Altbier from Düsseldorf, contract-brewed to organic standards using ecologically grown malt and hops.',
     1, 'approved', 0),
 
+  ('kneipe-kneipe', 'Kneipe Kneipe', 'Kneipe Kneipe', 'pub', 'Düsseldorf', 'DE',
+    'Liefergasse 1, 40213 Düsseldorf',
+    'https://maps.google.com/maps?q=Liefergasse+1,+40213+D%C3%BCsseldorf',
+    51.2264, 6.7722, 2026, NULL,
+    'Die älteste Kellerkneipe der Düsseldorfer Altstadt, bis Ende 2024 rund 50 Jahre lang einfach „Kneipe“. Seit Juli 2026 unter neuem Namen von den Altus-Gründern Tim Kasparek und Anthony Boniteau betrieben: erste eigene Ausschankstätte für Altus, Düsseldorfs erstes Bio-Altbier, frisch vom Fass. Dazu gibt es wieder den Kultschnaps „Stress“.',
+    'The oldest cellar bar in Düsseldorf''s old town, known simply as "Kneipe" for around 50 years until it closed at the end of 2024. Reopened in July 2026 under a new name by Altus founders Tim Kasparek and Anthony Boniteau as the first dedicated outlet for Altus, Düsseldorf''s first organic Altbier, on tap. The cult house schnapps "Stress" is back too.',
+    0, 'pending', 0),
+
   ('frankenheim', 'Frankenheim Brauerei', 'Frankenheim', 'brewery', 'Düsseldorf', 'DE',
     'Grafenberger Allee 101, 40237 Düsseldorf',
     'https://maps.app.goo.gl/KnFrFzpqZX1Kz1JF8',
@@ -280,6 +288,7 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('hannen',          'hannen-alt'),
   ('hellers',         'hellers-alt'),
   ('altus',           'altus-alt'),
+  ('kneipe-kneipe',   'altus-alt'),
   ('bolten',          'bolten-uralt'),
   ('diebels',         'diebels-alt'),
   ('frankenheim',     'frankenheim-alt');
