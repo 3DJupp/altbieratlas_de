@@ -577,7 +577,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Rheydter Straße 138, 41352 Korschenbroich",
       mapsUrl: "https://maps.google.com/maps?q=Rheydter+Stra%C3%9Fe+138%2C+41352+Korschenbroich",
-      coords: [51.18333, 6.49917],
+      coords: [51.183277, 6.4994],
       founded: 1266,
       website: "https://www.bolten-brauerei.de",
       description: {
@@ -728,10 +728,9 @@ window.ATLAS_DATA = {
         en: "Seventh-generation family brewery in Münster's Kuhviertel, founded in 1816 and the last of the city's once roughly 150 Altbier breweries. An organic pioneer that brews exclusively with organically grown ingredients. Original Pinkus Alt is a pale Münster-style Alt, quite different from the dark Rhineland Alt. Restaurant with Altbier kitchen right at the brewery.",
       },
       styles: ["pinkus-alt"],
-      verified: false,
+      verified: true,
       isHistorical: false,
-      status: "pending",
-      pending: true,
+      status: "approved",
       logoKey: null,
       logoUrl: null,
     },
@@ -1044,10 +1043,6 @@ window.ATLAS_DATA = {
         de: "Vom 20.–22. August 2027 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit über 30 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.",
         en: "From August 20–22, 2027, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for more than 30 years near the famous Benrath Palace, the event is known for its cozy beer gardens and authentic Rhineland atmosphere.",
       },
-      beers: [
-        { name: { de: "Kürzer Alt", en: null }, size: "0.25l", price: 3.0, notes: null },
-        { name: { de: "Bolten alt", en: null }, size: "0.25l", price: 2.5, notes: null },
-      ],
     },
     {
       id: "rheinkirmes-2026",

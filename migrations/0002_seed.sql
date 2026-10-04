@@ -346,7 +346,7 @@ VALUES
   ('bolten', 'Privatbrauerei Bolten', 'Bolten', 'brewery', 'Korschenbroich', 'DE',
     'Rheydter Straße 138, 41352 Korschenbroich',
     'https://maps.google.com/maps?q=Rheydter+Stra%C3%9Fe+138%2C+41352+Korschenbroich',
-    51.18333, 6.49917, 1266, 'https://www.bolten-brauerei.de',
+    51.183277, 6.4994, 1266, 'https://www.bolten-brauerei.de',
     'Gegründet 1266 und nach eigener Aussage die älteste Altbierbrauerei der Welt. Neben Bolten Alt und dem unfiltrierten Ur-Alt braut Bolten seit 2023 auch wieder Hannen Alt; seit 2022 gehört außerdem Gatz Altbier zum Haus. Ausgeschenkt wird im Gasthaus Hoff Marie und in der Landwirtschaft direkt gegenüber der Brauerei.',
     'Founded in 1266 and, by its own account, the oldest Altbier brewery in the world. Besides Bolten Alt and the unfiltered Ur-Alt, Bolten has brewed Hannen Alt again since 2023, and Gatz Altbier has also been part of the house since 2022. Its beer is served at Gasthaus Hoff Marie and at the Landwirtschaft directly opposite the brewery.',
     0, 'pending', 0, NULL, NULL),
@@ -398,7 +398,7 @@ VALUES
     51.96556, 7.62167, 1816, 'https://www.pinkus.de',
     'Familienbrauerei in siebter Generation im Münsteraner Kuhviertel, gegründet 1816 und die letzte von einst rund 150 Altbierbrauereien der Stadt. Bio-Pionier: Gebraut wird ausschließlich mit Rohstoffen aus ökologischem Anbau. Das Original Pinkus Alt ist ein heller Münsteraner Alt und damit deutlich anders als das dunkle rheinische Alt. Gaststätte mit Altbierküche direkt an der Brauerei.',
     'Seventh-generation family brewery in Münster''s Kuhviertel, founded in 1816 and the last of the city''s once roughly 150 Altbier breweries. An organic pioneer that brews exclusively with organically grown ingredients. Original Pinkus Alt is a pale Münster-style Alt, quite different from the dark Rhineland Alt. Restaurant with Altbier kitchen right at the brewery.',
-    0, 'pending', 0, NULL, NULL),
+    1, 'approved', 0, NULL, NULL),
 
   -- ========== Köln / Hilden ==========
   ('hellers', 'Hellers Brauhaus', 'Hellers', 'brewpub', 'Köln', 'DE',
@@ -548,8 +548,6 @@ Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschic
 -- event_beers hat keinen natürlichen Schlüssel: nur einfügen, was am Event noch fehlt (idempotent)
 INSERT INTO event_beers (event_id, name_de, name_en, size, price)
 SELECT v.column1, v.column2, NULL, v.column3, v.column4 FROM (VALUES
-  ('bierboerse-benrath', 'Kürzer Alt', '0.25l', 3.0),
-  ('bierboerse-benrath', 'Bolten alt', '0.25l', 2.5),
   ('rheinkirmes-2026', 'Schlüssel', '0.25l', 3.3),
   ('rheinkirmes-2026', 'Uerige', '0.25l', 3.4),
   ('rheinkirmes-2026', 'Schumacher', '0.25l', 3.5),
