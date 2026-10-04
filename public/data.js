@@ -14,7 +14,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Berger Straße 1, 40213 Düsseldorf",
       mapsUrl: "https://maps.app.goo.gl/7LRrNJg6GxJD8J6y7",
-      coords: [51.2253, 6.7722],
+      coords: [51.2249806, 6.7721837],
       founded: 1862,
       website: "https://uerige.de",
       description: {
@@ -37,7 +37,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Ratinger Straße 28, 40213 Düsseldorf",
       mapsUrl: "https://maps.app.goo.gl/SjsbNAnc7h29xwiK8",
-      coords: [51.2278, 6.7715],
+      coords: [51.22952, 6.77549],
       founded: 1848,
       website: "https://fuechschen.de",
       description: {
@@ -60,7 +60,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Oststraße 123, 40210 Düsseldorf",
       mapsUrl: "https://maps.app.goo.gl/txBSi9QNHmm7hn5b6",
-      coords: [51.2224, 6.7912],
+      coords: [51.2216, 6.7854],
       founded: 1838,
       website: "https://schumacher-alt.de",
       description: {
@@ -83,7 +83,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Bolkerstraße 41-47, 40213 Düsseldorf",
       mapsUrl: "https://maps.app.goo.gl/rAoikQk3Z7kRWPMcA",
-      coords: [51.2268, 6.7728],
+      coords: [51.226093, 6.774437],
       founded: 1850,
       website: "https://zumschluessel.de",
       description: {
@@ -106,7 +106,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Kurze Straße 18-20, 40213 Düsseldorf",
       mapsUrl: "https://maps.app.goo.gl/6ggY8aBHTgjhKB7b7",
-      coords: [51.2262, 6.7733],
+      coords: [51.226955, 6.773337],
       founded: 2010,
       website: "https://brauerei-kuerzer.de",
       description: {
@@ -130,7 +130,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Fichtenstraße 21, 40233 Düsseldorf",
       mapsUrl: "https://maps.app.goo.gl/XpnPvsgYyfjHLXR29",
-      coords: [51.2337, 6.8151],
+      coords: [51.2168285, 6.808743],
       founded: 2020,
       website: "https://brauerei-kuerzer.de",
       description: {
@@ -176,7 +176,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Bolkerstraße 44, 40213 Düsseldorf",
       mapsUrl: "https://maps.google.com/maps?q=Bolkerstra%C3%9Fe+44%2C+40213+D%C3%BCsseldorf",
-      coords: [51.22645, 6.7752],
+      coords: [51.226315, 6.775122],
       founded: null,
       website: "https://schumacher-alt.de/gaststaetten/im-goldenen-kessel/",
       description: {
@@ -200,7 +200,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Liefergasse 1, 40213 Düsseldorf",
       mapsUrl: "https://maps.google.com/maps?q=Liefergasse+1,+40213+D%C3%BCsseldorf",
-      coords: [51.2264, 6.7722],
+      coords: [51.2285, 6.7731],
       founded: 2026,
       website: null,
       description: {
@@ -221,9 +221,9 @@ window.ATLAS_DATA = {
       type: "brewery",
       city: "Düsseldorf",
       country: "DE",
-      address: "Sonnbornstr. 2, 40625 Düsseldorf",
-      mapsUrl: "https://maps.app.goo.gl/6zbs82wR9AruhKYX7",
-      coords: [51.2157, 6.8633],
+      address: "Roßstraße 19, 40476 Düsseldorf",
+      mapsUrl: "https://maps.google.com/maps?q=Ro%C3%9Fstra%C3%9Fe+19%2C+40476+D%C3%BCsseldorf",
+      coords: [51.24569, 6.77934],
       founded: 2021,
       website: "https://altus-braeu.de",
       description: {
@@ -430,14 +430,14 @@ window.ATLAS_DATA = {
       type: "brewery",
       city: "Düsseldorf",
       country: "DE",
-      address: "Münsterstraße, Düsseldorf-Derendorf",
+      address: "Münsterstraße, 40476 Düsseldorf (heute Campus Derendorf der Hochschule Düsseldorf)",
       mapsUrl: null,
-      coords: [51.247, 6.793],
+      coords: [51.2468622, 6.7916869],
       founded: 1873,
       website: null,
       description: {
-        de: "Gegründet 1873 von der Bäckerfamilie Schlösser, ab 1932 Teil der Schwabenbrauerei. Schlösser Alt wurde bis in die 1970er Jahre in der Altstadt gebraut, ab 1972 in einem Neubau in Derendorf zwischen Münster- und Rather Straße. 2002 wurde die Brauerei geschlossen und später abgerissen; Schlösser Alt wird seitdem in Dortmund gebraut (Radeberger Gruppe).",
-        en: "Founded in 1873 by the Schlösser baking family, part of Schwabenbrauerei from 1932. Schlösser Alt was brewed in the old town until the 1970s, then from 1972 in a new plant in Derendorf between Münsterstraße and Rather Straße. The brewery closed in 2002 and was later demolished; Schlösser Alt has since been brewed in Dortmund (Radeberger Group).",
+        de: "Gegründet 1873 von der Bäckerfamilie Schlösser, ab 1932 Teil der Schwabenbrauerei. Schlösser Alt wurde bis in die 1970er Jahre in der Altstadt gebraut, ab 1972 in einem Neubau in Derendorf zwischen Münster- und Rather Straße. 2002 wurde die Brauerei geschlossen und abgerissen, heute steht dort der Campus Derendorf der Hochschule Düsseldorf. Schlösser Alt wird seitdem in Dortmund gebraut (Radeberger Gruppe).",
+        en: "Founded in 1873 by the Schlösser baking family, part of Schwabenbrauerei from 1932. Schlösser Alt was brewed in the old town until the 1970s, then from 1972 in a new plant in Derendorf between Münsterstraße and Rather Straße. The brewery closed in 2002 and was demolished; the Hochschule Düsseldorf's Derendorf campus now stands on the site. Schlösser Alt has since been brewed in Dortmund (Radeberger Group).",
       },
       styles: [],
       verified: false,
@@ -454,9 +454,9 @@ window.ATLAS_DATA = {
       type: "brewery",
       city: "Düsseldorf",
       country: "DE",
-      address: "Viersener Straße 52, 40549 Düsseldorf",
+      address: "Viersener Straße, 40549 Düsseldorf (heute Vodafone-Campus)",
       mapsUrl: null,
-      coords: [51.2373, 6.7283],
+      coords: [51.235583, 6.732747],
       founded: 1963,
       website: null,
       description: {
@@ -481,7 +481,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Obergath 68-112, 47805 Krefeld",
       mapsUrl: "https://maps.app.goo.gl/mqMMdLwZaMuUshtA6",
-      coords: [51.3172, 6.5603],
+      coords: [51.31599, 6.5717876],
       founded: 2003,
       website: "https://brauereikoenigshof.de",
       description: {
@@ -504,7 +504,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Sternstraße 12, 47798 Krefeld",
       mapsUrl: "https://maps.google.com/maps?q=Sternstra%C3%9Fe+12%2C+47798+Krefeld",
-      coords: [51.3328, 6.5636],
+      coords: [51.338, 6.55962],
       founded: 1807,
       website: "https://ausschank-gleumes.de",
       description: {
@@ -528,7 +528,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Marktstraße 41, 47798 Krefeld",
       mapsUrl: null,
-      coords: [51.3335, 6.5625],
+      coords: [51.3305, 6.5623],
       founded: 1838,
       website: null,
       description: {
@@ -551,14 +551,14 @@ window.ATLAS_DATA = {
       type: "brewery",
       city: "Mönchengladbach",
       country: "DE",
-      address: "Bismarckstraße 115, 41061 Mönchengladbach",
+      address: "Senefelderstraße 25, 41066 Mönchengladbach",
       mapsUrl: null,
-      coords: [51.1805, 6.4428],
+      coords: [51.2283518, 6.4763886],
       founded: 1725,
       website: "https://de.wikipedia.org/wiki/Hannen-Brauerei",
       description: {
-        de: "Traditionsmarke aus Mönchengladbach und eines der bekanntesten Alt-Biere außerhalb Düsseldorfs. Seit April 2022 gehört Hannen Alt zur Privatbrauerei Bolten und wird seit 2023 wieder in Korschenbroich gebraut.",
-        en: "Heritage brand from Mönchengladbach and one of the best-known Alts outside Düsseldorf. Since April 2022 Hannen Alt has belonged to Privatbrauerei Bolten and has been brewed in Korschenbroich again since 2023.",
+        de: "Traditionsmarke vom Niederrhein und eines der bekanntesten Alt-Biere außerhalb Düsseldorfs. Ab 1968 entstand die Großbrauerei in Mönchengladbach-Neuwerk, 1975 wurden die alten Standorte in Korschenbroich und Willich geschlossen. 2003 ging die Brauerei an Oettinger, die Marke 2005 an Carlsberg. Seit April 2022 gehört Hannen Alt zur Privatbrauerei Bolten und wird seit 2023 wieder in Korschenbroich gebraut.",
+        en: "Heritage brand from the Lower Rhine and one of the best-known Alts outside Düsseldorf. The large brewery in Mönchengladbach-Neuwerk was built from 1968, and the old sites in Korschenbroich and Willich closed in 1975. The brewery went to Oettinger in 2003 and the brand to Carlsberg in 2005. Since April 2022 Hannen Alt has belonged to Privatbrauerei Bolten and has been brewed in Korschenbroich again since 2023.",
       },
       styles: ["hannen-alt"],
       verified: true,
@@ -577,7 +577,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Rheydter Straße 138, 41352 Korschenbroich",
       mapsUrl: "https://maps.google.com/maps?q=Rheydter+Stra%C3%9Fe+138%2C+41352+Korschenbroich",
-      coords: [51.1855, 6.502],
+      coords: [51.18333, 6.49917],
       founded: 1266,
       website: "https://www.bolten-brauerei.de",
       description: {
@@ -601,7 +601,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Sebastianusstraße 9, 41352 Korschenbroich",
       mapsUrl: "https://maps.google.com/maps?q=Sebastianusstra%C3%9Fe+9%2C+41352+Korschenbroich",
-      coords: [51.1912, 6.5141],
+      coords: [51.1900011, 6.512603],
       founded: 2024,
       website: "https://www.bolten-brauerei.de/de/Gasthaus-Hoff-Marie.htm",
       description: {
@@ -625,7 +625,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Rheydter Straße 145, 41352 Korschenbroich",
       mapsUrl: "https://maps.google.com/maps?q=Rheydter+Stra%C3%9Fe+145%2C+41352+Korschenbroich",
-      coords: [51.1857, 6.5023],
+      coords: [51.18327, 6.499772],
       founded: null,
       website: "https://www.bolten-brauerei.de",
       description: {
@@ -672,7 +672,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Brauerei-Diebels-Straße 1, 47661 Issum",
       mapsUrl: "https://maps.google.com/maps?q=Brauerei-Diebels-Stra%C3%9Fe+1%2C+47661+Issum",
-      coords: [51.534, 6.4279],
+      coords: [51.534786, 6.419453],
       founded: 1878,
       website: "https://www.diebels.de",
       description: {
@@ -720,7 +720,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Kreuzstraße 4-10, 48143 Münster",
       mapsUrl: "https://maps.google.com/maps?q=Kreuzstra%C3%9Fe+4-10%2C+48143+M%C3%BCnster",
-      coords: [51.9654, 7.6219],
+      coords: [51.96556, 7.62167],
       founded: 1816,
       website: "https://www.pinkus.de",
       description: {
@@ -745,7 +745,7 @@ window.ATLAS_DATA = {
       country: "DE",
       address: "Roonstraße 33, 50674 Köln",
       mapsUrl: "https://maps.app.goo.gl/JKUZo3D88FwnceN87",
-      coords: [50.9284, 6.9408],
+      coords: [50.9306759, 6.9382923],
       founded: 1996,
       website: "https://www.hellers.koeln",
       description: {
@@ -1041,9 +1041,13 @@ window.ATLAS_DATA = {
       location: "Benrath",
       url: "https://www.bierboerse.com/city/duesseldorf-benrath.htm",
       description: {
-        de: "Vom 20.–22. August 2026 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit 32 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.",
-        en: "From August 20-22, 2026, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for 32 years near the famous Benrath Palace, the event is known for its cozy beer gardens and authentic Rhineland atmosphere.",
+        de: "Vom 20.–22. August 2027 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit über 30 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.",
+        en: "From August 20–22, 2027, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for more than 30 years near the famous Benrath Palace, the event is known for its cozy beer gardens and authentic Rhineland atmosphere.",
       },
+      beers: [
+        { name: { de: "Kürzer Alt", en: null }, size: "0.25l", price: 3.0, notes: null },
+        { name: { de: "Bolten alt", en: null }, size: "0.25l", price: 2.5, notes: null },
+      ],
     },
     {
       id: "rheinkirmes-2026",
@@ -1059,6 +1063,13 @@ window.ATLAS_DATA = {
         de: "Die Rheinkirmes („Größte Kirmes am Rhein\") ist Düsseldorfs großes Sommer-Volksfest, jedes Jahr im Juli auf den Rheinwiesen in Oberkassel gegenüber der Altstadt. Ausgerichtet vom St. Sebastianus Schützenverein, kommen an neun Tagen rund vier Millionen Besucher. Eintritt frei, etwa 300 Fahrgeschäfte und Stände, Altbier-Zelte, Schützenumzug und zum Abschluss Höhenfeuerwerk über dem Rhein.",
         en: "The Rheinkirmes (\"Größte Kirmes am Rhein\") is Düsseldorf's big summer funfair, held every July on the Rheinwiesen in Oberkassel across from the Altstadt. Organised by the St. Sebastianus Schützenverein, it draws about four million visitors over nine days. Free entry, around 300 rides and stalls, Altbier tents, a Schützen parade, and fireworks over the Rhine to close.",
       },
+      beers: [
+        { name: { de: "Schlüssel", en: null }, size: "0.25l", price: 3.3, notes: null },
+        { name: { de: "Uerige", en: null }, size: "0.25l", price: 3.4, notes: null },
+        { name: { de: "Schumacher", en: null }, size: "0.25l", price: 3.5, notes: null },
+        { name: { de: "Kürzer", en: null }, size: "0.2l", price: 2.9, notes: null },
+        { name: { de: "Schlösser", en: null }, size: "0.2l", price: 3.0, notes: null },
+      ],
     },
     {
       id: "schluessel-stike-2026-10",
@@ -1104,6 +1115,9 @@ window.ATLAS_DATA = {
         de: "Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 19. November 2026.",
         en: "Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 19 November 2026.",
       },
+      beers: [
+        { name: { de: "Latzenbier", en: null }, size: "1l", price: null, notes: null },
+      ],
     },
   ],
 

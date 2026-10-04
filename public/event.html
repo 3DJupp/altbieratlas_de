@@ -339,10 +339,9 @@ if (!eventId) {
 } else {
   (async function() {
     try {
-      const data = await fetch("/api/events/" + encodeURIComponent(eventId)).then(function(r) {
-        if (!r.ok) throw new Error("not-found");
-        return r.json();
-      });
+      // Über AtlasAPI statt fetch, damit die Seite auch im Mock-Modus (inkl. Event-Biere) funktioniert
+      const data = await window.AtlasAPI.getEvent(eventId);
+      if (!data || data.error || !data.event) throw new Error("not-found");
       _evData = data;
       renderEvent();
       document.addEventListener("atlas:lang-changed", renderEvent);

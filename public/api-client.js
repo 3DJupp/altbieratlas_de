@@ -139,7 +139,9 @@
     async getEvent(id) {
       const ev = (window.ATLAS_DATA.events || []).find((e) => e.id === id);
       if (!ev) return { error: "not-found" };
-      return { event: { ...ev, breweryName: null, breweryCity: null }, beers: [] };
+      const { beers = [], ...event } = ev;
+      const b = (window.ATLAS_DATA.breweries || []).find((x) => x.id === ev.breweryId);
+      return { event: { ...event, breweryName: b ? b.name : null, breweryCity: b ? b.city : null }, beers };
     },
     async listGlossary() { return { glossary: window.ATLAS_DATA.glossary }; },
     async geocode(q) {
