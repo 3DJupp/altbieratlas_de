@@ -286,16 +286,36 @@ const isSsr = root.dataset.ssr === "1";
     if (b.address) ld.address = {"@type":"PostalAddress","streetAddress":b.address,"addressLocality":b.city,"addressCountry":b.country||"DE"};
     if (b.lat && b.lon) ld.geo = {"@type":"GeoCoordinates","latitude":b.lat,"longitude":b.lon};
     if (b.website) ld.sameAs = b.website;
-    const ldPrices = prices.filter((p) => p.price);
+    // Preise als Menu/MenuItem+Offer — identisch zum SSR-Pfad (serveOrt in
+    // src/routes.js). Kein Product: ein Product-Knoten ohne eigene "offers"
+    // (der Preis hing am umgebenden Offer) ist für Google ein unvollständiges
+    // Produkt-Snippet — "offers, review oder aggregateRating fehlt".
+    // Jüngste Meldung je Größe, nicht die ganze Preis-Historie.
+    const ldPrices = [];
+    const ldSeenSize = new Set();
+    for (const p of prices.filter((x) => x.price)
+                          .sort((x, y) => String(y.date || "").localeCompare(String(x.date || "")))) {
+      const key = String(p.size || "");
+      if (ldSeenSize.has(key)) continue;
+      ldSeenSize.add(key);
+      ldPrices.push(p);
+    }
     if (ldPrices.length > 0) {
-      ld.hasOfferCatalog = {
-        "@type": "OfferCatalog",
-        "itemListElement": ldPrices.map((p) => ({
-          "@type": "Offer",
-          "itemOffered": {"@type": "Product", "name": `Altbier${p.size ? " (" + p.size + ")" : ""}`},
-          "price": Number(p.price).toFixed(2),
-          "priceCurrency": "EUR"
-        }))
+      ld.hasMenu = {
+        "@type": "Menu",
+        "hasMenuSection": {
+          "@type": "MenuSection",
+          "name": "Altbier",
+          "hasMenuItem": ldPrices.map((p) => ({
+            "@type": "MenuItem",
+            "name": `Altbier${p.size ? " " + p.size : ""}`,
+            "offers": {
+              "@type": "Offer",
+              "price": Number(p.price).toFixed(2),
+              "priceCurrency": "EUR"
+            }
+          }))
+        }
       };
     }
     const s = document.createElement("script");
