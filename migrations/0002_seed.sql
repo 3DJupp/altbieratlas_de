@@ -309,6 +309,14 @@ VALUES
     0, 'pending', 1, NULL, NULL),
 
   -- ========== Krefeld ==========
+  ('schlueffken', 'Brauerei Schlüffken', 'Schlüffken', 'brewery', 'Krefeld', 'DE',
+    'Preußenring (am Nordbahnhof), Krefeld',
+    NULL,
+    51.3487, 6.5662, 2018, NULL,
+    'Neue Krefelder Brauerei am Nordbahnhof, gegründet 2018 von Anne und Johannes Furth als Teil des Restaurants Nordbahnhof. Das malzig-rustikale Schlüffken Alt mit markanter Hopfennote ist Krefelds jüngstes Altbier; der Name ehrt die Dampflok „Schluff“ („Mit Volldampf gebraut“). Adresse und Koordinaten noch zu prüfen.',
+    'New Krefeld brewery at the Nordbahnhof, founded in 2018 by Anne and Johannes Furth as part of the Nordbahnhof restaurant. The malty, rustic Schlüffken Alt with a distinct hop note is Krefeld''s newest Altbier; the name honours the steam locomotive "Schluff" ("brewed at full steam"). Address and coordinates still to be verified.',
+    0, 'pending', 0, NULL, NULL),
+
   ('koenigshof', 'Brauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
     'Obergath 68-112, 47805 Krefeld',
     'https://maps.app.goo.gl/mqMMdLwZaMuUshtA6',
