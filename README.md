@@ -283,7 +283,7 @@ Fünf Einreichungstypen mit Moderation:
 ### Ranglisten
 - Günstigste Brauereien, neueste Preismeldungen, Meistgemeldet
 - Top 10 (0,25 l), Kennzahlen und Meta-Description werden serverseitig gerendert;
-  JSON-LD mit `ItemList` und `Dataset` (Altbier-Preise)
+  JSON-LD mit `ItemList` und `Dataset` (Altbier-Preise, Lizenz CC BY-SA 4.0)
 
 ### Altbier-Wissen
 - Glossar (aus D1), Hintergrundtexte, Stilkunde
@@ -325,7 +325,13 @@ Fünf Einreichungstypen mit Moderation:
 - **Strukturierte Daten**: `WebSite`/`Organization` (Start), `Brewery`,
   `BarOrPub`, `Restaurant` bzw. Laden-Typen je Ort, `Event` mit Adresse,
   `CollectionPage` je Stadt, `Article` auf `/wissen` und `/rivalen`,
-  `Dataset` der Preise, `BreadcrumbList` überall
+  `Dataset` der Preise, `BreadcrumbList` überall. `creator`/`author`/`publisher`
+  stehen als vollständiger `Organization`-Knoten im Markup, nicht als bloße
+  `@id`-Referenz — die zeigt außerhalb der Startseite ins Leere und wird in der
+  Search Console als ungültiger Objekttyp gemeldet
+- **Datenlizenz**: die Preismeldungen stehen unter
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — genannt im
+  `license`-Feld des `Dataset` und im Kopf von `llms.txt`/`llms-full.txt`
 - **IndexNow** (optional, Secret `INDEXNOW_KEY`): geänderte Orte, Stadtseiten
   und Termine werden nach jeder Admin-Änderung sofort gemeldet
 - **Sitemap** ohne `/impressum` (die Seite ist `noindex`)

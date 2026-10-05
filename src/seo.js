@@ -14,7 +14,29 @@ import {
 } from "./routes.js";
 
 const SITE = "https://altbieratlas.de";
-const ORG_REF = { "@id": `${SITE}/#organization` };
+// Datenlizenz der Preismeldungen — als URL, wie Google sie im Dataset-Feld
+// „license“ erwartet. Gleiche Angabe in llms.txt und llms-full.txt, damit
+// Markup und Seiteninhalt nicht auseinanderlaufen.
+const LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/";
+const LICENSE_NAME = "CC BY-SA 4.0";
+
+// Vollständige Organization, nicht bloß eine @id-Referenz: der Knoten mit
+// dieser @id steht nur im JSON-LD der Startseite. Auf allen anderen Seiten
+// zeigte die Referenz ins Leere — die Search Console meldete das als
+// „ungültiger Objekttyp für Feld ‘creator’“. Die @id bleibt erhalten, damit
+// Parser den Knoten mit dem der Startseite zusammenführen.
+const ORG = {
+  "@type": "Organization",
+  "@id": `${SITE}/#organization`,
+  "name": "Altbieratlas",
+  "url": `${SITE}/`,
+  "logo": {
+    "@type": "ImageObject",
+    "url": `${SITE}/icon-512.png`,
+    "width": 512,
+    "height": 512,
+  },
+};
 
 // ---------- Datenbasis ----------------------------------------
 // Ein gemeinsamer Loader für alle SSR-/LLM-Ausgaben: freigegebene Orte,
@@ -131,7 +153,7 @@ Altbier ist ein obergäriges, bernsteinfarbenes bis dunkles Bier aus dem Rheinla
 
 Stand ${today}${venues.length ? ` · ${current.length} aktive Orte in ${Object.keys(cities).length} Städten · ${priceCount} Preismeldungen` : ""}${avg025 ? ` · 0,25 l Alt kostet im Schnitt ${fmtPriceDe(avg025)} €` : ""}.
 
-Preise sind Meldungen der Community mit Datum und können veralten. Beim Zitieren bitte „Altbieratlas (altbieratlas.de)“ und das Meldedatum nennen.
+Preise sind Meldungen der Community mit Datum und können veralten. Beim Zitieren bitte „Altbieratlas (altbieratlas.de)“ und das Meldedatum nennen. Die Daten stehen unter ${LICENSE_NAME} (${LICENSE_URL}): Weiterverwendung mit Namensnennung, Bearbeitungen unter derselben Lizenz.
 
 English: Altbieratlas is a community-maintained map of Altbier, the top-fermented beer style from Düsseldorf and the Lower Rhine, with venues, current prices, events and background knowledge. Content is German; append \`?lang=en\` to any page for the English interface.
 
@@ -198,7 +220,7 @@ export async function llmsFullTxt(req, env) {
 
 > Gemeinschaftlich gepflegte Karte des Altbiers mit Orten, Preisen, Sorten, Glossar und Terminen. Quelle: ${base}/ · Stand: ${today}
 
-Preise sind Meldungen der Community mit Datum und können veralten. Beim Zitieren bitte „Altbieratlas (altbieratlas.de)“ und das Meldedatum nennen. Detailseite je Ort: ${base}/ort/<id>, Übersicht je Stadt: ${base}/stadt/<slug>.
+Preise sind Meldungen der Community mit Datum und können veralten. Beim Zitieren bitte „Altbieratlas (altbieratlas.de)“ und das Meldedatum nennen. Die Daten stehen unter ${LICENSE_NAME} (${LICENSE_URL}): Weiterverwendung mit Namensnennung, Bearbeitungen unter derselben Lizenz. Detailseite je Ort: ${base}/ort/<id>, Übersicht je Stadt: ${base}/stadt/<slug>.
 
 ## Was ist Altbier?
 
@@ -416,7 +438,8 @@ export async function serveRanglisten(req, env) {
         "inLanguage": "de",
         "isAccessibleForFree": true,
         "keywords": ["Altbier", "Bierpreise", "Düsseldorf", "Niederrhein", "Brauereien"],
-        "creator": ORG_REF,
+        "license": LICENSE_URL,
+        "creator": ORG,
         "spatialCoverage": { "@type": "Place", "name": "Deutschland" },
         ...(dates.length ? { "temporalCoverage": `${dates[0].slice(0, 10)}/${dates.at(-1).slice(0, 10)}` } : {}),
         "variableMeasured": "Preis pro Glas Altbier in Euro",
@@ -495,8 +518,8 @@ export async function serveWissen(req, env) {
         "inLanguage": "de",
         "image": `${SITE}/og-image.png`,
         "dateModified": PAGE_DATES["/wissen"],
-        "author": ORG_REF,
-        "publisher": ORG_REF,
+        "author": ORG,
+        "publisher": ORG,
         "about": { "@type": "Thing", "name": "Altbier", "sameAs": "https://de.wikipedia.org/wiki/Altbier" },
         "mainEntityOfPage": pageUrl,
       },
