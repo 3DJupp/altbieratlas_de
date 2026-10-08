@@ -1120,6 +1120,21 @@ window.ATLAS_DATA = {
       },
     },
     {
+      id: "uerige-sticke-2027-01",
+      title: { de: "Sticke-Ausschank im Uerige", en: "Sticke tapping at Uerige" },
+      breweryId: "uerige",
+      date: "2027-01-19",
+      endDate: null,
+      time: null,
+      endTime: null,
+      location: "Düsseldorf Altstadt",
+      url: "https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige/",
+      description: {
+        de: "Am dritten Dienstag im Januar wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird. Termin aus der Regel „dritter Dienstag“ abgeleitet, bitte vor Besuch beim Uerige bestätigen.",
+        en: "On the third Tuesday of January, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October). Date derived from the \"third Tuesday\" rule; please confirm with Uerige before visiting.",
+      },
+    },
+    {
       id: "schumacher-latzen-2026-11",
       title: { de: "Latzenbier-Ausschank bei Schumacher", en: "Latzenbier tapping at Schumacher" },
       breweryId: "schumacher",
