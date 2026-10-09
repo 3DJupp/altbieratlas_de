@@ -548,7 +548,13 @@ Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschic
     'https://schumacher-alt.de',
     'Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 19. November 2026.',
     'Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 19 November 2026.',
-    'approved');
+    'approved'),
+  ('uerige-sticke-2027-01', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
+    'uerige', '2027-01-19', NULL, NULL, NULL, 'Düsseldorf Altstadt',
+    'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige/',
+    'Am dritten Dienstag im Januar wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird. Termin rechnerisch aus der Regel „dritter Dienstag" abgeleitet, offizielle Ankündigung steht noch aus.',
+    'On the third Tuesday of January, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October). Date derived from the "third Tuesday" rule; no official announcement yet.',
+    'pending');
 
 -- ============================================================
 -- Event beers
