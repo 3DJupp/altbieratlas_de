@@ -1,4 +1,4 @@
-# Altbieratlas · v0.11.1
+# Altbieratlas · v0.11.2
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -38,7 +38,8 @@ altbieratlas/
 ├── scripts/
 │   ├── create-admin.mjs     # Admin-User anlegen
 │   ├── db-setup.sh          # DB-Setup (Schema + Seed + Upgrade)
-│   └── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen)
+│   ├── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen)
+│   └── indexnow.sh          # IndexNow-Submit (Sitemap oder Einzel-URLs)
 ├── wrangler.toml
 └── package.json
 ```
@@ -212,8 +213,113 @@ Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-
 | `RESEND_API_KEY` | [Resend](https://resend.com)-API-Key |
 | `ADMIN_EMAIL` | Empfänger des täglichen Digests |
 | `MAP_TILE_API_KEY` | API-Key der CARTO Basemaps ([dashboard.basemaps.carto.com](https://dashboard.basemaps.carto.com/)). Ohne Key nutzt die Karte schlüssellose OSM-Kacheln |
-| `INDEXNOW_KEY` | Optional. [IndexNow](https://www.indexnow.org)-Schlüssel (8–128 Zeichen `a–z A–Z 0–9 -`). Der Worker liefert ihn unter `/<key>.txt` aus und meldet nach Admin-Änderungen die betroffenen Seiten an Bing, Yandex & Co. (Bing speist u. a. die ChatGPT-Suche). Ohne Key keine Meldung |
+| `INDEXNOW_KEY` | Optional. [IndexNow](https://www.indexnow.org)-Schlüssel (8–128 Zeichen `a–z A–Z 0–9 -`). Der Worker liefert ihn unter `/<key>.txt` aus und meldet nach Admin-Änderungen die betroffenen Seiten an Bing, Yandex & Co. (Bing speist u. a. die ChatGPT-Suche). Ohne Key keine Meldung. Einrichtung: [1.5](#15-indexnow-aktivieren-optional-empfohlen) |
 | `INITIAL_ADMIN` | Ersteinrichtung — nach erstem Login löschen |
+
+---
+
+### 1.5 IndexNow aktivieren (optional, empfohlen)
+
+[IndexNow](https://www.indexnow.org) meldet geänderte Seiten direkt an die
+teilnehmenden Suchmaschinen (Bing, Yandex, Seznam, Naver, Yep) — ein Request an
+`api.indexnow.org` genügt, die Verteilung übernimmt der Dienst. Bing speist u. a.
+die ChatGPT-Suche. Google nimmt an IndexNow **nicht** teil und bleibt bei
+Sitemap und Search Console.
+
+**Schritt 1 — Schlüssel erzeugen** (8–128 Zeichen aus `a–z A–Z 0–9 -`):
+
+```bash
+node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
+# oder: openssl rand -hex 16
+```
+
+**Schritt 2 — Schlüssel als Secret setzen.** Dashboard → Workers → `altbieratlas`
+→ *Settings → Variables and Secrets* → **Add → Secret**, Name `INDEXNOW_KEY`,
+Wert der Schlüssel. Alternativ per CLI:
+
+```bash
+npx wrangler secret put INDEXNOW_KEY
+```
+
+Danach einmal deployen bzw. das automatische Deploy abwarten. Mehr ist nicht
+nötig: der Worker liefert die Schlüsseldatei unter `/<key>.txt` aus
+(`SEO.serveIndexNowKey()`) und meldet nach jeder erfolgreichen Admin-Änderung
+die betroffenen Orte, Stadtseiten und Termine selbst (`SEO.pingIndexNow()`).
+Ohne das Secret passiert nichts — kein Fehler, nur keine Meldung.
+
+**Schritt 3 — Schlüsseldatei prüfen.** Muss den Schlüssel im Klartext liefern,
+sonst antwortet IndexNow mit `403`:
+
+```bash
+KEY=dein-indexnow-key
+curl -i "https://altbieratlas.de/$KEY.txt"
+# → 200, Body = $KEY, content-type: text/plain; charset=utf-8
+```
+
+**Schritt 4 — Erst-Anmeldung aller Seiten.** Einmal nach dem Aktivieren alle
+Sitemap-URLs melden (das Script prüft die Schlüsseldatei, liest
+`/sitemap.xml` und sendet in Blöcken à 1 000 URLs):
+
+```bash
+INDEXNOW_KEY=$KEY npm run seo:indexnow            # alles aus der Sitemap
+INDEXNOW_KEY=$KEY npm run seo:indexnow -- --dry-run   # vorher nur ansehen
+INDEXNOW_KEY=$KEY npm run seo:indexnow -- /ort/uerige /ranglisten  # Einzel-URLs
+```
+
+#### curl direkt
+
+Einzelne URL (GET, der einfachste Weg):
+
+```bash
+curl -i "https://api.indexnow.org/indexnow?url=https://altbieratlas.de/ort/uerige&key=$KEY&keyLocation=https://altbieratlas.de/$KEY.txt"
+```
+
+Mehrere URLs (POST, bis 10 000 pro Request):
+
+```bash
+curl -i -X POST "https://api.indexnow.org/indexnow" \
+  -H "Content-Type: application/json; charset=utf-8" \
+  -d '{
+    "host": "altbieratlas.de",
+    "key": "'"$KEY"'",
+    "keyLocation": "https://altbieratlas.de/'"$KEY"'.txt",
+    "urlList": [
+      "https://altbieratlas.de/",
+      "https://altbieratlas.de/ranglisten",
+      "https://altbieratlas.de/wissen",
+      "https://altbieratlas.de/rivalen",
+      "https://altbieratlas.de/beitragen"
+    ]
+  }'
+```
+
+Alle Sitemap-URLs in einem Durchgang, ohne das Script:
+
+```bash
+curl -s https://altbieratlas.de/sitemap.xml |
+  grep -o '<loc>[^<]*</loc>' | sed -e 's/<[^>]*>//g' -e 's/&amp;/\&/g' |
+  python3 -c 'import json,sys;u=[l.strip() for l in sys.stdin if l.strip()];print(json.dumps({"host":"altbieratlas.de","key":"'"$KEY"'","keyLocation":"https://altbieratlas.de/'"$KEY"'.txt","urlList":u}))' |
+  curl -i -X POST "https://api.indexnow.org/indexnow" \
+    -H "Content-Type: application/json; charset=utf-8" --data-binary @-
+```
+
+Statt `api.indexnow.org` lässt sich auch direkt an eine einzelne Engine melden
+(`https://www.bing.com/indexnow?…`, `https://yandex.com/indexnow?…`) — nötig ist
+das nicht, der gemeinsame Endpunkt verteilt an alle.
+
+| Status | Bedeutung |
+|---|---|
+| `200` | angenommen |
+| `202` | angenommen, Schlüssel wird noch geprüft (normal beim ersten Mal) |
+| `400` | fehlerhaftes Format |
+| `403` | Schlüssel ungültig — Schlüsseldatei unter `/<key>.txt` nicht erreichbar |
+| `422` | URLs gehören nicht zum angegebenen `host`, oder Schlüssel passt nicht |
+| `429` | zu viele Anfragen — später erneut |
+
+> Nicht im Minutentakt dieselben URLs melden. Der automatische Ping des Workers
+> deckt den Normalbetrieb ab; das Script ist für die Erst-Anmeldung und für
+> Änderungen gedacht, die direkt in der D1-Console gemacht wurden (dort läuft
+> kein Worker-Request, also auch kein Ping).
 
 ---
 
@@ -333,7 +439,12 @@ Fünf Einreichungstypen mit Moderation:
   [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — genannt im
   `license`-Feld des `Dataset` und im Kopf von `llms.txt`/`llms-full.txt`
 - **IndexNow** (optional, Secret `INDEXNOW_KEY`): geänderte Orte, Stadtseiten
-  und Termine werden nach jeder Admin-Änderung sofort gemeldet
+  und Termine werden nach jeder Admin-Änderung sofort an Bing, Yandex, Seznam,
+  Naver und Yep gemeldet (Bing speist u. a. die ChatGPT-Suche; Google nimmt an
+  IndexNow nicht teil). Die Schlüsseldatei liefert der Worker unter
+  `/<key>.txt`. Für die Erst-Anmeldung und für Änderungen, die direkt in der
+  D1-Console gemacht wurden, gibt es `npm run seo:indexnow`
+  (→ [1.5 IndexNow aktivieren](#15-indexnow-aktivieren-optional-empfohlen))
 - **Sitemap** ohne `/impressum` (die Seite ist `noindex`)
 - **Eigene 404-Seite** mit Status 404 und `noindex, follow` statt der nackten
   Default-Antwort
