@@ -23,6 +23,12 @@ bash scripts/deploy.sh --seed   # First-time: schema + seed + deploy
 
 # Admin user
 npm run admin:create -- admin <password> --email=x@example.com --remote
+
+# IndexNow (needs the INDEXNOW_KEY secret; the worker pings automatically after
+# admin mutations — this is for the initial submission and for changes made
+# straight in the D1 console)
+INDEXNOW_KEY=<key> npm run seo:indexnow              # all sitemap URLs
+INDEXNOW_KEY=<key> npm run seo:indexnow -- --dry-run # list only
 ```
 
 **UI-only testing without a backend:** Open any `public/*.html` file directly in a browser — `api-client.js` detects the missing backend and activates **mock mode**, serving data from `public/data.js` and LocalStorage.
