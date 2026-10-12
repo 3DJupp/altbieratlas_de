@@ -138,8 +138,8 @@ INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES
     'Kein offizielles Gesetz, sondern ein augenzwinkerndes Selbstverständnis: ein richtiges Alt braucht nichts außer Wasser, Gerste, Hopfen und obergäriger Hefe — und einen Köbes, der es hinstellt.',
     'Not an actual law, but a tongue-in-cheek self-understanding: a proper Alt needs nothing but water, barley, hops and top-fermenting yeast — and a Köbes to set it down.'),
   ('Discounter-Altbier',
-    'Altbier aus dem Supermarkt-Regal, z. B. die Aldi-Eigenmarke Schultenbräu. Solche Handelsmarken werden meist bei Auftragsbrauereien gebraut, teils im Ausland (laut Bierdatenbank bei Martens in Belgien), und nicht im Rheinland. Sie werden nirgends ausgeschenkt und tauchen deshalb nicht auf der Karte auf.',
-    'Altbier from the supermarket shelf, e.g. the Aldi private label Schultenbräu. Such store brands are usually contract-brewed, sometimes abroad (per a beer database at Martens in Belgium) rather than in the Rhineland. They are not served on tap anywhere, so they do not appear on the map.');
+    'Altbier aus dem Supermarkt-Regal, z. B. die Aldi-Eigenmarke Schultenbräu. Solche Handelsmarken werden meist bei Auftragsbrauereien gebraut, teils im Ausland (z. B. in Belgien), und nicht im Rheinland. Sie werden nirgends ausgeschenkt und tauchen deshalb nicht auf der Karte auf.',
+    'Altbier from the supermarket shelf, e.g. the Aldi private label Schultenbräu. Such store brands are usually contract-brewed, sometimes abroad (e.g. in Belgium) rather than in the Rhineland. They are not served on tap anywhere, so they do not appear on the map.');
 
 -- ============================================================
 -- Breweries / taprooms / retail

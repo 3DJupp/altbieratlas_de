@@ -1213,8 +1213,8 @@ window.ATLAS_DATA = {
     {
       term: "Discounter-Altbier",
       definition: {
-        de: "Altbier aus dem Supermarkt-Regal, z. B. die Aldi-Eigenmarke Schultenbräu. Solche Handelsmarken werden meist bei Auftragsbrauereien gebraut, teils im Ausland (laut Bierdatenbank bei Martens in Belgien), und nicht im Rheinland. Sie werden nirgends ausgeschenkt und tauchen deshalb nicht auf der Karte auf.",
-        en: "Altbier from the supermarket shelf, e.g. the Aldi private label Schultenbräu. Such store brands are usually contract-brewed, sometimes abroad (per a beer database at Martens in Belgium) rather than in the Rhineland. They are not served on tap anywhere, so they do not appear on the map.",
+        de: "Altbier aus dem Supermarkt-Regal, z. B. die Aldi-Eigenmarke Schultenbräu. Solche Handelsmarken werden meist bei Auftragsbrauereien gebraut, teils im Ausland (z. B. in Belgien), und nicht im Rheinland. Sie werden nirgends ausgeschenkt und tauchen deshalb nicht auf der Karte auf.",
+        en: "Altbier from the supermarket shelf, e.g. the Aldi private label Schultenbräu. Such store brands are usually contract-brewed, sometimes abroad (e.g. in Belgium) rather than in the Rhineland. They are not served on tap anywhere, so they do not appear on the map.",
       },
     },
   ],
