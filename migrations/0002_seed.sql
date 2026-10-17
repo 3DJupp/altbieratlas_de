@@ -106,6 +106,10 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Hausalt des Brauhauses Alter Bahnhof in Oberkassel, früher als Gulasch Alt ausgeschenkt. Malzig und würzig.',
     'House Alt of the Brauhaus Alter Bahnhof in Oberkassel, formerly served as Gulasch Alt. Malty and flavourful.',
     NULL),
+  ('albrecht-alt', 'Joh. Albrecht Alt', NULL, NULL, NULL,
+    'Hausalt des Brauhauses Joh. Albrecht in Niederkassel, typisch im Düsseldorfer Stil gebraut.',
+    'House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the typical Düsseldorf style.',
+    NULL),
   ('long-trail-ale', 'Long Trail Ale', 4.6, 25, '#a56030',
     'Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.',
     'Vermont take: malty, mildly sweet, with American hop character.',
@@ -251,6 +255,14 @@ VALUES
     51.2311, 6.7457, NULL, 'https://www.brauhaus-alterbahnhof.de',
     'Brauhaus im ehemaligen Oberkasseler Bahnhof von 1853 am Belsenplatz. Das hauseigene Alt hieß früher Gulasch Alt und wird heute als Belsen Alt ausgeschenkt. Koordinaten noch zu prüfen.',
     'Brewhouse in the former Oberkassel railway station (1853) on Belsenplatz. Its house Alt used to be called Gulasch Alt and is now served as Belsen Alt. Coordinates still to be verified.',
+    0, 'pending', 0, NULL, NULL),
+
+  ('joh-albrecht-duesseldorf', 'Brauhaus Joh. Albrecht Düsseldorf', 'Joh. Albrecht', 'brewpub', 'Düsseldorf', 'DE',
+    'Niederkasseler Straße 104, 40547 Düsseldorf',
+    'https://maps.app.goo.gl/iWrpToGTPFxEeaVc7',
+    51.2428, 6.7405, NULL, 'http://duesseldorf.brauhaus-joh-albrecht.de/',
+    'Hausbrauerei in Niederkassel, Teil der Brauhaus-Joh.-Albrecht-Gruppe. Neben dem eigenen Alt im „Düsseldorf-Style“ gibt es das helle Messing, das dunkle Kupfer und ein Craftbeer. Koordinaten noch zu prüfen.',
+    'Brewpub in Niederkassel, part of the Brauhaus Joh. Albrecht group. Besides its own Düsseldorf-style Alt it serves the pale Messing, the dark Kupfer and a craft beer. Coordinates still to be verified.',
     0, 'pending', 0, NULL, NULL),
 
   -- ========== Düsseldorf — Gastronomie ==========
@@ -477,6 +489,7 @@ UPDATE styles SET primary_brewery_id = 'hellers' WHERE id = 'hellers-alt' AND pr
 UPDATE styles SET primary_brewery_id = 'altus' WHERE id = 'altus-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'hitchcoq' WHERE id = 'altfred' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'alter-bahnhof-oberkassel' WHERE id = 'belsen-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'joh-albrecht-duesseldorf' WHERE id = 'albrecht-alt' AND primary_brewery_id IS NULL;
 
 -- ============================================================
 -- Style assignments
@@ -515,7 +528,8 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('hemingway-hilden', 'schumacher-alt'),
   ('hitchcoq', 'altfred'),
   ('alter-bahnhof-oberkassel', 'belsen-alt'),
-  ('schaukelstuehlchen', 'kuerzer-alt');
+  ('schaukelstuehlchen', 'kuerzer-alt'),
+  ('joh-albrecht-duesseldorf', 'albrecht-alt');
 
 -- ============================================================
 -- Prices (approved, Stand Live-DB Oktober 2026)
@@ -553,7 +567,10 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('brauerei-im-dom', '2025-12-31', '0.5', 5.5, 'Speisekarte', NULL, 'approved'),
   ('hitchcoq', '2026-10-17', '0.3l', 4.5, 'Beitrag', NULL, 'pending'),
   ('alter-bahnhof-oberkassel', '2026-10-17', '0.25l', 3.1, 'Speisekarte', NULL, 'pending'),
-  ('schaukelstuehlchen', '2026-10-17', '0.2', 2.8, 'Beitrag', NULL, 'pending');
+  ('schaukelstuehlchen', '2026-10-17', '0.2', 2.8, 'Beitrag', NULL, 'pending'),
+  ('joh-albrecht-duesseldorf', '2024-09-09', '0.2', 2.5, 'Speisekarte', NULL, 'pending'),
+  ('joh-albrecht-duesseldorf', '2024-09-09', '0.4', 4.7, 'Speisekarte', NULL, 'pending'),
+  ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending');
 
 -- ============================================================
 -- Events — bestätigte Veranstaltungen

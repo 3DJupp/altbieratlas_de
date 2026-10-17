@@ -1949,7 +1949,7 @@ export const PAGE_DATES = {
   "/":           "2026-09-24",
   "/ranglisten": "2026-10-05",
   "/wissen":     "2026-10-12",
-  "/rivalen":    "2026-09-24",
+  "/rivalen":    "2026-10-17",
   "/beitragen":  "2026-09-24",
 };
 

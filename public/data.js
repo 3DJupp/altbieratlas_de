@@ -283,6 +283,29 @@ window.ATLAS_DATA = {
       logoKey: null,
       logoUrl: null,
     },
+    {
+      id: "joh-albrecht-duesseldorf",
+      name: "Brauhaus Joh. Albrecht Düsseldorf",
+      short: "Joh. Albrecht",
+      type: "brewpub",
+      city: "Düsseldorf",
+      country: "DE",
+      address: "Niederkasseler Straße 104, 40547 Düsseldorf",
+      mapsUrl: "https://maps.app.goo.gl/iWrpToGTPFxEeaVc7",
+      coords: [51.2428, 6.7405],
+      founded: null,
+      website: "http://duesseldorf.brauhaus-joh-albrecht.de/",
+      description: {
+        de: "Hausbrauerei in Niederkassel, Teil der Brauhaus-Joh.-Albrecht-Gruppe. Neben dem eigenen Alt im „Düsseldorf-Style“ gibt es das helle Messing, das dunkle Kupfer und ein Craftbeer. Koordinaten noch zu prüfen.",
+        en: "Brewpub in Niederkassel, part of the Brauhaus Joh. Albrecht group. Besides its own Düsseldorf-style Alt it serves the pale Messing, the dark Kupfer and a craft beer. Coordinates still to be verified.",
+      },
+      styles: ["albrecht-alt"],
+      verified: false,
+      isHistorical: false,
+      status: "pending",
+      logoKey: null,
+      logoUrl: null,
+    },
     // ========== Düsseldorf — Gastronomie ==========
     {
       id: "schaukelstuehlchen",
@@ -1097,6 +1120,17 @@ window.ATLAS_DATA = {
       },
     },
     {
+      id: "albrecht-alt",
+      name: "Joh. Albrecht Alt",
+      abv: null,
+      ibu: null,
+      color: null,
+      tasting: {
+        de: "Hausalt des Brauhauses Joh. Albrecht in Niederkassel, typisch im Düsseldorfer Stil gebraut.",
+        en: "House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the typical Düsseldorf style.",
+      },
+    },
+    {
       id: "long-trail-ale",
       name: "Long Trail Ale",
       abv: 4.6,
@@ -1144,6 +1178,9 @@ window.ATLAS_DATA = {
     { breweryId: "hitchcoq", date: "2026-10-17", size: "0,3l", price: 4.50, source: "Beitrag" },
     { breweryId: "alter-bahnhof-oberkassel", date: "2026-10-17", size: "0,25l", price: 3.10, source: "Speisekarte" },
     { breweryId: "schaukelstuehlchen", date: "2026-10-17", size: "0,2l", price: 2.80, source: "Beitrag" },
+    { breweryId: "joh-albrecht-duesseldorf", date: "2024-09-09", size: "0,2l", price: 2.50, source: "Speisekarte" },
+    { breweryId: "joh-albrecht-duesseldorf", date: "2024-09-09", size: "0,4l", price: 4.70, source: "Speisekarte" },
+    { breweryId: "joh-albrecht-duesseldorf", date: "2024-09-09", size: "1,5l", price: 16.00, source: "Speisekarte" },
   ],
 
   events: [

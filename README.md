@@ -398,7 +398,7 @@ Fünf Einreichungstypen mit Moderation:
 ### Das Rheinderby (`/rivalen`)
 - Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz
 - Hebt überraschende Gemeinsamkeiten hervor (beide obergärig, beide Köbes, beide 0,2 l)
-- Prosa-Abschnitt zur Rivalität (Kölschkonvention 1986, g.g.A.-Geschichte)
+- Prosa-Abschnitt zur Rivalität (Kölschkonvention 1986, g.g.A. für Kölsch, Altbier ohne Herkunftsschutz)
 - Lokale Abstimmung „Team Alt vs. Team Kölsch" (localStorage, kein Tracking)
 - Vollständig DE/EN übersetzt
 
