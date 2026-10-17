@@ -55,8 +55,9 @@
 }
 /* Flex-Spalte: Karten einer Reihe sind gleich hoch, der Brauerei-Link sitzt immer unten */
 .spec-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
+/* min-height = Logo (52px) + Padding (2 × 18px), damit Karten mit und ohne Logo gleich hoch sind */
 .spec-head {
-  min-height: 80px; position: relative;
+  min-height: 88px; position: relative;
   padding: 18px 20px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
 }
