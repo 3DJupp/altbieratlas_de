@@ -90,7 +90,7 @@
     <div class="map-filters">
       <select id="type-filter" class="filter-select" aria-label="Kategorie filtern">
         <option value="all" data-i18n="map.filter.all">Alle</option>
-        <option value="brauerei" data-i18n="map.filter.brauerei">Brauerei / Brewpub</option>
+        <option value="brauerei" data-i18n="map.filter.brauerei">Brauereien &amp; Ausschank</option>
         <option value="gastronomie" data-i18n="map.filter.gastronomie">Gastronomie</option>
         <option value="handel" data-i18n="map.filter.handel">Handel</option>
         <option value="historisch" data-i18n="map.filter.historisch">Historisch</option>
@@ -394,9 +394,9 @@ function renderMarkers(filter = "all", search = "") {
     } else if (filter !== "all") {
       if (b.isHistorical) return; // historische nicht in normalen Filtern
       const groups = {
-        brauerei:   ["brewery", "brewpub"],
-        gastronomie:["pub", "restaurant"],
-        handel:     ["kiosk", "supermarket", "beverage_store"],
+        brauerei:   ["brewery", "brewpub", "taproom"],
+        gastronomie:["pub", "restaurant", "gastronomie"],
+        handel:     ["kiosk", "supermarket", "beverage_store", "handel"],
       };
       const allowed = groups[filter] || [filter];
       if (!allowed.includes(b.type)) return;

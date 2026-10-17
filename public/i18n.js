@@ -22,12 +22,12 @@ window.ATLAS_I18N = {
     // Karte
     "map.title": "Brauereien & Ausschankorte",
     "map.filter.all":          "Alle",
-    "map.filter.brauerei":     "Brauerei / Brewpub",
+    "map.filter.brauerei":     "Brauereien & Ausschank",
     "map.filter.gastronomie":  "Gastronomie",
     "map.filter.handel":       "Handel",
     "map.filter.historisch":   "Historisch",
     // Legacy
-    "map.filter.hausbrauerei": "Brauerei / Brewpub",
+    "map.filter.hausbrauerei": "Brauereien & Ausschank",
     "map.filter.shop":         "Handel",
     "map.search": "Stadt, Brauerei, Ort…",
     "map.reset": "Ansicht zurücksetzen",
@@ -235,6 +235,7 @@ window.ATLAS_I18N = {
     // Venue-Typen — aktuelle DB-IDs (v0.6.0)
     "type.brewery":        "Brauerei",
     "type.brewpub":        "Hausbrauerei",
+    "type.taproom":        "Brauereiausschank",
     "type.pub":            "Kneipe",
     "type.restaurant":     "Restaurant",
     "type.kiosk":          "Kiosk",
@@ -672,12 +673,12 @@ window.ATLAS_I18N = {
     "hero.toRankings": "to the Rankings →",
     "map.title": "Breweries & taprooms",
     "map.filter.all":          "All",
-    "map.filter.brauerei":     "Brewery / Brewpub",
+    "map.filter.brauerei":     "Breweries & taprooms",
     "map.filter.gastronomie":  "Gastronomy",
     "map.filter.handel":       "Retail",
     "map.filter.historisch":   "Historical",
     // Legacy
-    "map.filter.hausbrauerei": "Brewery / Brewpub",
+    "map.filter.hausbrauerei": "Breweries & taprooms",
     "map.filter.shop":         "Retail",
     "map.search": "City, brewery, place…",
     "map.reset": "Reset view",
@@ -876,6 +877,7 @@ window.ATLAS_I18N = {
     // Venue types — current DB IDs (v0.6.0)
     "type.brewery":        "Brewery",
     "type.brewpub":        "Brewpub",
+    "type.taproom":        "Taproom",
     "type.pub":            "Pub",
     "type.restaurant":     "Restaurant",
     "type.kiosk":          "Kiosk",

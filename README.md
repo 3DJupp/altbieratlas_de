@@ -387,7 +387,7 @@ Fünf Einreichungstypen mit Moderation:
 - **Preise** — Alle Preise einsehen, löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten, löschen
 - **Glossar** — Einträge anlegen, bearbeiten, löschen
-- **Typen** — Venue-Typen (7: brewpub, brewery, pub, restaurant, kiosk, supermarket, beverage_store) anlegen, bearbeiten, löschen
+- **Typen** — Venue-Typen (brewpub, brewery, taproom, gastronomie, pub, restaurant, kiosk, handel, supermarket, beverage_store) anlegen, bearbeiten, löschen
 - **Einstellungen** — Impressum, Ankündigungs-Banner (DE/EN, aktivierbar), Social-Links (GitHub, LinkedIn, Instagram, Mastodon, Ko-fi, Website)
 - **Passwort-Reset per E-Mail** (DE/EN)
 - Mobile-optimierte Tab-Navigation

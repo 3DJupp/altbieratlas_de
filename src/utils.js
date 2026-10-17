@@ -332,9 +332,14 @@ function _emailDataRows(type, data, de) {
   ];
   if (type === "brewery") {
     const brewTypeMap = {
-      brewery: { de: "Hausbrauerei", en: "Brewpub" },
-      pub:     { de: "Gastronomie",  en: "Bar / Restaurant" },
-      shop:    { de: "Handel",       en: "Retail" },
+      brewery:        { de: "Brauerei",          en: "Brewery" },
+      brewpub:        { de: "Hausbrauerei",      en: "Brewpub" },
+      taproom:        { de: "Brauereiausschank", en: "Taproom" },
+      pub:            { de: "Kneipe",            en: "Pub" },
+      restaurant:     { de: "Restaurant",        en: "Restaurant" },
+      kiosk:          { de: "Kiosk",             en: "Kiosk" },
+      supermarket:    { de: "Supermarkt",        en: "Supermarket" },
+      beverage_store: { de: "Getränkeshop",      en: "Beverage store" },
     };
     const brewTypeLabel = data.type
       ? (brewTypeMap[data.type]?.[de ? "de" : "en"] || data.type.charAt(0).toUpperCase() + data.type.slice(1))

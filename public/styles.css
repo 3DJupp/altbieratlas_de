@@ -473,6 +473,7 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
 /* type-specific colours */
 .atlas-pin.brewpub    { background: var(--copper-glow); }
 .atlas-pin.brewery    { background: #b57a3a; }
+.atlas-pin.taproom    { background: #cf8f4a; }
 .atlas-pin.pub        { background: #c47a3a; }
 .atlas-pin.restaurant { background: #a0623a; }
 .atlas-pin.kiosk,

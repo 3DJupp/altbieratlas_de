@@ -153,9 +153,9 @@ const fillTpl = (key, vars) => {
 
 // Venue-Typ → lokalisiertes Label (gleiche Gruppen wie der Kartenfilter)
 const TYPE_GROUP = {
-  brewpub: "brauerei", brewery: "brauerei",
-  pub: "gastronomie", restaurant: "gastronomie",
-  kiosk: "handel", supermarket: "handel", beverage_store: "handel",
+  brewpub: "brauerei", brewery: "brauerei", taproom: "brauerei",
+  pub: "gastronomie", restaurant: "gastronomie", gastronomie: "gastronomie",
+  kiosk: "handel", supermarket: "handel", beverage_store: "handel", handel: "handel",
 };
 const typeLabel = (type) => {
   const g = TYPE_GROUP[type];

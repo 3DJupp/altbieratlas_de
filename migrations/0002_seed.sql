@@ -14,6 +14,7 @@
 INSERT OR IGNORE INTO venue_types (id, name_de, name_en, header_de, header_en, is_producer) VALUES
   ('brewery',        'Brauerei',      'Brewery',         'Was hier gebraut wird',                 'What is brewed here',            1),
   ('brewpub',        'Hausbrauerei',  'Brewpub',         'Was hier gebraut und ausgeschenkt wird', 'What is brewed and served here', 1),
+  ('taproom',        'Brauereiausschank', 'Taproom',     'Was hier ausgeschenkt wird',             'What is served here',            0),
   ('gastronomie',    'Gastronomie',   'Bar / Restaurant','Was hier ausgeschenkt wird',             'What is served here',            0),
   ('pub',            'Kneipe',        'Pub',             'Was hier ausgeschenkt wird',             'What is served here',            0),
   ('restaurant',     'Restaurant',    'Restaurant',      'Was hier ausgeschenkt wird',             'What is served here',            0),
@@ -213,7 +214,7 @@ VALUES
     'Second Kürzer site in Düsseldorf-Flingern. Full production brewery with taproom, beer garden and six specialty beers available only here.',
     1, 'approved', 0, NULL, NULL),
 
-  ('frankenheim-brauereiausschank', 'Frankenheim Brauereiausschank', 'Frankenheim', 'brewpub', 'Düsseldorf', 'DE',
+  ('frankenheim-brauereiausschank', 'Frankenheim Brauereiausschank', 'Frankenheim', 'taproom', 'Düsseldorf', 'DE',
     'Wielandstraße 12-14,  40211 Düsseldorf',
     'https://maps.app.goo.gl/trgyQ5Hf3BixGaK18',
     51.229568, 6.793521, 1873, 'https://www.frankenheim.de',
@@ -221,7 +222,7 @@ VALUES
     'Frankenheim Brauereiausschank is a historic brewery pub in Düsseldorf with a strong Altbier tradition. Even after leaving family ownership, the venue has remained true to its heritage and is known for freshly poured Frankenheim Alt, hearty brewery-style cuisine, a social atmosphere, and a popular beer garden.',
     1, 'approved', 0, NULL, NULL),
 
-  ('im-goldenen-kessel', 'Im Goldenen Kessel', 'Goldener Kessel', 'gastronomie', 'Düsseldorf', 'DE',
+  ('im-goldenen-kessel', 'Im Goldenen Kessel', 'Goldener Kessel', 'taproom', 'Düsseldorf', 'DE',
     'Bolkerstraße 44, 40213 Düsseldorf',
     'https://maps.google.com/maps?q=Bolkerstra%C3%9Fe+44%2C+40213+D%C3%BCsseldorf',
     51.226315, 6.775122, NULL, 'https://schumacher-alt.de/gaststaetten/im-goldenen-kessel/',
@@ -368,7 +369,7 @@ VALUES
     'Small Krefeld brewery on Preußenring, right next to the Nordbahnhof restaurant. Founded in 2018 by Anne and Johannes Furth; the name honours the steam locomotive "Schluff" ("brewed at full steam"). The malty, rustic Schlüffken Alt with a distinct hop note is Krefeld''s newest Altbier, alongside a Pils, a wheat beer, alcohol-free versions and seasonal beers such as a Summer Ale, Märzen and Festbier. It is served at the Nordbahnhof next door. Coordinates still to be verified.',
     0, 'pending', 0, NULL, NULL),
 
-  ('nordbahnhof-krefeld', 'Schlüffken im Nordbahnhof', 'Nordbahnhof', 'restaurant', 'Krefeld', 'DE',
+  ('nordbahnhof-krefeld', 'Schlüffken im Nordbahnhof', 'Nordbahnhof', 'taproom', 'Krefeld', 'DE',
     'Oranierring 91, 47798 Krefeld',
     'https://maps.app.goo.gl/sAZRiDKBztcLveL58',
     51.33924, 6.55253, NULL, 'http://www.nordbahnhof.de',
@@ -418,7 +419,7 @@ VALUES
     'Founded in 1266 and, by its own account, the oldest Altbier brewery in the world. Besides Bolten Alt and the unfiltered Ur-Alt, Bolten has brewed Hannen Alt again since 2023, and Gatz Altbier has also been part of the house since 2022. Its beer is served at Gasthaus Hoff Marie and at the Landwirtschaft directly opposite the brewery.',
     0, 'pending', 0, NULL, NULL),
 
-  ('hoff-marie', 'Gasthaus Hoff Marie', 'Hoff Marie', 'gastronomie', 'Korschenbroich', 'DE',
+  ('hoff-marie', 'Gasthaus Hoff Marie', 'Hoff Marie', 'taproom', 'Korschenbroich', 'DE',
     'Sebastianusstraße 9, 41352 Korschenbroich',
     'https://maps.google.com/maps?q=Sebastianusstra%C3%9Fe+9%2C+41352+Korschenbroich',
     51.1900011, 6.512603, 2024, 'https://www.bolten-brauerei.de/de/Gasthaus-Hoff-Marie.htm',
@@ -426,7 +427,7 @@ VALUES
     'Privatbrauerei Bolten''s tap house in Korschenbroich''s oldest building, a listed stone house around 500 years old. Formerly the "Zum Anker" inn, it reopened as Gasthaus Hoff Marie in November 2024 after Bolten''s gastronomy arm took it over and renovated it. Bolten Alt on tap.',
     0, 'pending', 0, NULL, NULL),
 
-  ('bolten-landwirtschaft', 'Bolten Landwirtschaft', 'Landwirtschaft', 'gastronomie', 'Korschenbroich', 'DE',
+  ('bolten-landwirtschaft', 'Bolten Landwirtschaft', 'Landwirtschaft', 'taproom', 'Korschenbroich', 'DE',
     'Rheydter Straße 145, 41352 Korschenbroich',
     'https://maps.google.com/maps?q=Rheydter+Stra%C3%9Fe+145%2C+41352+Korschenbroich',
     51.18327, 6.499772, NULL, 'https://www.bolten-brauerei.de',
@@ -434,7 +435,7 @@ VALUES
     'Privatbrauerei Bolten''s restaurant directly opposite the brewery, with a picnic beer garden. Bolten Alt fresh from across the street.',
     0, 'pending', 0, NULL, NULL),
 
-  ('brauerei-im-dom', 'Brauerei Im Dom', 'Im Dom', 'brewery', 'Neuss', 'DE',
+  ('brauerei-im-dom', 'Brauerei Im Dom', 'Im Dom', 'brewpub', 'Neuss', 'DE',
     'Michaelstraße 75-77, 41460 Neuss',
     'https://maps.app.goo.gl/eGvSJmfdcRP7NrW59',
     51.196253, 6.693359, 1601, 'https://im-dom.de',
