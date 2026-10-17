@@ -174,11 +174,10 @@
       this._pushUserContrib({ type: body.type, data: body.data });
       return { ok: true, status: "pending", mock: true };
     },
-    async getRivalVotes() { return { alt: 42, kolsch: 31, total: 73 }; },
+    async getRivalVotes() { return { alt: 42, kolsch: 31, neutral: 5, total: 73 }; },
     async postRivalVote(choice) {
-      const counts = { alt: 42, kolsch: 31 };
-      if (choice === "alt") counts.alt++;
-      else counts.kolsch++;
+      const counts = { alt: 42, kolsch: 31, neutral: 5 };
+      if (choice in counts) counts[choice]++;
       return { ok: true, ...counts, total: counts.alt + counts.kolsch };
     },
   };
