@@ -644,10 +644,11 @@ html[data-theme="dark"] #atlas-mode.mode-mock { color: #e8cc85; }
   display: flex;
   align-items: stretch;
 }
+/* Hängt per JS direkt an <body> und wird fixed neben dem Suchfeld platziert,
+   damit weder das overflow:hidden der Karte noch die scrollende
+   Filterleiste (Mobil) die Liste abschneiden. */
 .map-search-suggest {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  position: fixed;
   min-width: 320px;
   max-width: 440px;
   background: color-mix(in oklab, var(--bg-card) 98%, transparent);
@@ -657,7 +658,7 @@ html[data-theme="dark"] #atlas-mode.mode-mock { color: #e8cc85; }
   box-shadow: var(--shadow);
   max-height: 60vh;
   overflow: auto;
-  z-index: 20;
+  z-index: 30;
   display: none;
 }
 .map-search-suggest.visible { display: block; }
@@ -975,10 +976,8 @@ html { scroll-behavior: smooth; }
     font-size: 12px;
   }
   .map-search-suggest {
-    right: auto;
-    left: 0;
-    min-width: min(320px, calc(100vw - 30px));
-    max-width: calc(100vw - 30px);
+    min-width: min(320px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
   }
 
   /* Hero-Overlay mit mehr Bodenabstand, damit Filterleiste nicht über Copy liegt */
