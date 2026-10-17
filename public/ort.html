@@ -86,11 +86,17 @@
   border: 1px solid var(--rule);
 }
 .ort-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ort-avatar.has-logo { background: var(--bg-card); }
+.ort-avatar.has-logo img { object-fit: contain; padding: 6px; }
 .ort-avatar .initials {
   font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
   color: #fff; letter-spacing: -0.02em; line-height: 1;
 }
 .ort-title-wrap { flex: 1; min-width: 0; }
+.ort-photo {
+  width: 100%; max-height: 300px; object-fit: cover; display: block;
+  border-radius: var(--radius-lg); border: 1px solid var(--rule);
+}
 
 .grid-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px; padding-top: 40px; padding-bottom: 40px; }
 .about { display: flex; flex-direction: column; gap: 12px; }
@@ -167,7 +173,9 @@
   .price-log-row { grid-template-columns: 1fr auto; gap: 6px 14px; }
   .price-log-row .src { grid-column: 1 / -1; order: 3; }
   .ort-avatar { width: 52px; height: 52px; }
-  .ort-avatar .initials { font-size: 1.2rem; }
+  .ort-avatar.has-logo { background: var(--bg-card); }
+.ort-avatar.has-logo img { object-fit: contain; padding: 6px; }
+.ort-avatar .initials { font-size: 1.2rem; }
 }
 </style>
 </head>
@@ -326,17 +334,14 @@ const isSsr = root.dataset.ssr === "1";
 
   const typeLabel = window.t("type." + b.type);
 
-  // Avatar: Foto oder Initialen
+  // Avatar: Logo oder Initialen. Das Foto ist kein Logo und steht separat im „Über"-Block.
   function initials(str) {
     const words = (str || "").match(/\p{L}+/gu) || [];
     if (words.length === 0) return "?";
     return (words.length >= 2 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
   }
-  const avatarHtml = b.photoUrl
-    ? `<img src="${b.photoUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-        + `<span class="initials" style="display:none">${initials(b.short || b.name)}</span>`
-    : b.logoUrl
-    ? `<img src="${b.logoUrl}" alt="" style="object-fit:contain;padding:6px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+  const avatarHtml = b.logoUrl
+    ? `<img src="${b.logoUrl}" alt="" onerror="this.parentNode.classList.remove('has-logo');this.style.display='none';this.nextElementSibling.style.display='flex'">`
         + `<span class="initials" style="display:none">${initials(b.short || b.name)}</span>`
     : `<span class="initials">${initials(b.short || b.name)}</span>`;
 
@@ -350,7 +355,7 @@ const isSsr = root.dataset.ssr === "1";
         </nav>
         <div class="brewery-head">
           <div class="ort-photo-wrap">
-            <div class="ort-avatar">${avatarHtml}</div>
+            <div class="ort-avatar${b.logoUrl ? ' has-logo' : ''}">${avatarHtml}</div>
             <div class="ort-title-wrap">
               <h1 class="brewery-title">${b.name}</h1>
               <div class="brewery-meta">
@@ -377,6 +382,7 @@ const isSsr = root.dataset.ssr === "1";
 
     <section class="container grid-2col">
       <div class="about card">
+        ${b.photoUrl ? `<img class="ort-photo" src="${b.photoUrl}" alt="${b.name}" loading="lazy" onerror="this.remove()">` : ''}
         <h3 data-i18n="brewery.about">Über</h3>
         <p id="b-description">${(b.description && (b.description[lang] || b.description.de)) || ''}</p>
         ${b.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${b.address}</p>` : ''}

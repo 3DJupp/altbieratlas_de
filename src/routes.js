@@ -2235,8 +2235,9 @@ export async function serveOrt(req, env, params = {}) {
     if (!words.length) return "?";
     return (words.length >= 2 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
   };
-  const photoUrl = row.photo_key ? `/photos/${row.photo_key}`
-                 : row.logo_key ? `/logos/orte/${row.logo_key}` : null;
+  // Logo → Avatar, Foto → eigenes Bild im „Über"-Block (Foto ist kein Logo)
+  const logoUrl  = row.logo_key  ? `/logos/orte/${row.logo_key}` : null;
+  const photoUrl = row.photo_key ? `/photos/${row.photo_key}` : null;
 
   const bodyHtml = `
     <section class="brewery-hero">
@@ -2248,9 +2249,9 @@ export async function serveOrt(req, env, params = {}) {
         </nav>
         <div class="brewery-head">
           <div class="ort-photo-wrap">
-            <div class="ort-avatar">${
-              photoUrl
-                ? `<img src="${escHtml(photoUrl)}" alt="${escHtml(row.name)}" width="96" height="96" loading="eager" decoding="async">`
+            <div class="ort-avatar${logoUrl ? " has-logo" : ""}">${
+              logoUrl
+                ? `<img src="${escHtml(logoUrl)}" alt="Logo ${escHtml(row.name)}" width="96" height="96" loading="eager" decoding="async">`
                 : `<span class="initials">${escHtml(initials(row.short_name || row.name))}</span>`
             }</div>
             <div class="ort-title-wrap">
@@ -2276,6 +2277,7 @@ export async function serveOrt(req, env, params = {}) {
 
     <section class="container grid-2col">
       <div class="about card">
+        ${photoUrl ? `<img class="ort-photo" src="${escHtml(photoUrl)}" alt="${escHtml(row.name)}" loading="lazy" decoding="async">` : ""}
         <h2>Über ${escHtml(row.name)}</h2>
         <p>${escHtml(row.description_de || row.description_en || `${row.name} ist als ${row.type_label || row.type} in ${row.city} im Altbieratlas verzeichnet.`)}</p>
         ${row.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${escHtml(row.address)}</p>` : ""}
