@@ -15,9 +15,9 @@ window.renderShell = function ({ activeNav }) {
         </a>
         <nav class="nav" aria-label="primary">
           <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
-          <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
           <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
           <a href="/sorten" class="${activeNav === "styles" ? "active" : ""}" data-i18n="nav.styles">Sorten</a>
+          <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
           <a href="/rivalen" class="${activeNav === "rivals" ? "active" : ""}" data-i18n="nav.rivals">Rivalen</a>
           <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
         </nav>
@@ -31,9 +31,9 @@ window.renderShell = function ({ activeNav }) {
       </div>
       <nav class="mobile-nav" id="mobile-nav" aria-label="Hauptnavigation" hidden>
         <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
-        <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
         <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
         <a href="/sorten" class="${activeNav === "styles" ? "active" : ""}" data-i18n="nav.styles">Sorten</a>
+        <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
         <a href="/rivalen" class="${activeNav === "rivals" ? "active" : ""}" data-i18n="nav.rivals">Rivalen</a>
         <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
       </nav>
