@@ -19,6 +19,7 @@ altbieratlas/
 │   ├── wissen.html          # Glossar & Hintergrund
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
 │   ├── stadt.html           # Stadt-Landingpage (SSR, Slugs kommen aus D1)
+│   ├── staedte.html         # Übersicht aller Städte (/staedte, SSR-Liste)
 │   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
 │   ├── impressum.html       # Impressum & Datenschutz
 │   ├── admin.html           # Moderations-Dashboard
@@ -365,7 +366,10 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
   Größenangabe). Ungeprüfte Orte („In Prüfung“, `verified = 0`) erscheinen hier nicht,
   mit `CollectionPage`-, `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang
 - Querverlinkung „Weitere Städte" auf jeder Stadtseite; zusätzlich verlinkt der
-  Footer site-weit alle Städte (Daten via `/api/config`)
+  Footer site-weit die bis zu fünf größten Städte mit mehr als einem aktiven Ort
+  (Daten via `/api/config`), dahinter „Weitere →“ auf die Übersicht `/staedte`
+- `/staedte`: Übersicht aller Städte (SSR-Liste, `ItemList`-JSON-LD); `/stadt` und
+  `/stadt/` leiten per 301 dorthin
 
 ### Beitragen
 Fünf Einreichungstypen mit Moderation:

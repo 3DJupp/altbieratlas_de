@@ -112,7 +112,7 @@ export async function getPublicConfig(req, env) {
   // Städte mit eigener Landingpage — Footer/Shell verlinken sie site-weit,
   // damit die Stadtseiten nicht als verwaiste Seiten dastehen.
   const cities = Object.entries(await cityIndex(env))
-    .map(([slug, e]) => ({ slug, city: e.city, count: e.total }));
+    .map(([slug, e]) => ({ slug, city: e.city, count: e.total, current: e.current }));
 
   return json({
     version: APP_VERSION,
@@ -1951,6 +1951,7 @@ export const PAGE_DATES = {
   "/wissen":     "2026-10-12",
   "/rivalen":    "2026-10-17",
   "/beitragen":  "2026-09-24",
+  "/staedte":    "2026-10-17",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -1962,7 +1963,7 @@ export async function sitemap(req, env) {
                               .replace(/'/g, "&apos;");
   // /impressum fehlt bewusst: die Seite ist noindex, und noindex-URLs in der
   // Sitemap meldet die Search Console als Fehler.
-  const staticPaths = ["/", "/ranglisten", "/wissen", "/rivalen", "/beitragen"];
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/rivalen", "/beitragen", "/staedte"];
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
@@ -2668,7 +2669,8 @@ export async function serveCity(req, env) {
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Altbieratlas", "item": "https://altbieratlas.de/" },
-          { "@type": "ListItem", "position": 2, "name": `Altbier in ${city}`, "item": pageUrl },
+          { "@type": "ListItem", "position": 2, "name": "Städte", "item": "https://altbieratlas.de/staedte" },
+          { "@type": "ListItem", "position": 3, "name": `Altbier in ${city}`, "item": pageUrl },
         ],
       },
       {
@@ -2725,6 +2727,61 @@ export async function serveCity(req, env) {
     `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
     `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "?lang=en")}" />\n` +
     `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
+  html = html.replace("</head>", `${hreflang}<script type="application/ld+json">${ld}</script>\n</head>`);
+
+  const headers = new Headers(assetRes.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+  return new Response(html, { status: 200, headers });
+}
+
+// GET /staedte — Übersicht aller Städte mit eigener Landingpage (SSR-Liste)
+export async function serveCities(req, env) {
+  const index = await cityIndex(env);
+  const assetUrl = new URL(req.url);
+  assetUrl.pathname = "/staedte.html";
+  const assetRes = await env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  if (!assetRes.ok) return assetRes;
+
+  const entries = Object.entries(index);
+  let html = await assetRes.text();
+  if (entries.length) {
+    const cards = entries.map(([slug, e]) =>
+      `<a class="city-card" href="/stadt/${escHtml(slug)}">` +
+      `<span class="cc-name">${escHtml(e.city)}</span>` +
+      `<span class="cc-type">${e.current === 0 ? "nur historisch" : e.current === 1 ? "1 Ort im Atlas" : `${escHtml(String(e.current))} Orte im Atlas`}</span></a>`
+    ).join("");
+    html = html.replace(
+      /<div class="city-grid" id="cities-list" data-ssr="0">[\s\S]*?<\/div>/,
+      () => `<div class="city-grid" id="cities-list" data-ssr="1">${cards}</div>`,
+    );
+  }
+  const pageUrl = "https://altbieratlas.de/staedte";
+  const ld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Altbieratlas", "item": "https://altbieratlas.de/" },
+          { "@type": "ListItem", "position": 2, "name": "Städte", "item": pageUrl },
+        ],
+      },
+      {
+        "@type": "ItemList",
+        "itemListElement": entries.map(([slug, e], i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "url": `https://altbieratlas.de/stadt/${slug}`,
+          "name": `Altbier in ${e.city}`,
+        })),
+      },
+    ],
+  });
+  const hreflang =
+    `<link rel="alternate" hreflang="de" href="${pageUrl}" />\n` +
+    `<link rel="alternate" hreflang="en" href="${pageUrl}?lang=en" />\n` +
+    `<link rel="alternate" hreflang="x-default" href="${pageUrl}" />\n`;
   html = html.replace("</head>", `${hreflang}<script type="application/ld+json">${ld}</script>\n</head>`);
 
   const headers = new Headers(assetRes.headers);

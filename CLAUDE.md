@@ -141,7 +141,7 @@ All transactional mail (contribution confirmations, password-reset, daily admin 
 - Neue Seite in `public/` → URL zur `staticPaths`-Liste hinzufügen
 - Prioritäten: `/` = 1.0, Inhaltsseiten = 0.7
 - Nicht in die Sitemap: `/admin`, `noindex`-Seiten (`/impressum`, 404), dynamische Detail-URLs (werden separat über DB-Queries generiert)
-- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/rivalen`, `/beitragen`
+- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/rivalen`, `/beitragen`, `/staedte`
 - Neue öffentliche Seite → auch in `llmsTxt()` (`src/seo.js`, Abschnitt „Seiten") aufnehmen
 
 **Sitemap-Datum (`PAGE_DATES`, exportiert direkt über `sitemap()` in `src/routes.js`, auch für JSON-LD `dateModified` genutzt)**: Jede statische Seite hat ein eigenes `lastmod`-Datum in der `PAGE_DATES`-Map. Dieses Datum **muss** aktualisiert werden, wenn:
