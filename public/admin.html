@@ -841,8 +841,8 @@
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.photo">Foto</label>
           <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-            <div id="edit-photo-preview" style="width:72px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--copper);display:flex;align-items:center;justify-content:center;border:1px solid var(--rule);cursor:pointer">
-              <span id="edit-photo-initials" style="color:#fff;font-size:1.3rem;font-weight:600">?</span>
+            <div id="edit-photo-preview" style="width:72px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg-page);display:flex;align-items:center;justify-content:center;border:1px solid var(--rule);cursor:pointer">
+              <span style="color:var(--ink-muted);font-size:11px">–</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
               <label class="btn" style="cursor:pointer;margin:0">
@@ -857,8 +857,8 @@
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.ortLogo">Logo</label>
           <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-            <div id="edit-ort-logo-preview" style="flex-shrink:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:var(--bg-page);border:1px solid var(--rule);border-radius:4px;overflow:hidden;cursor:pointer" title="Klicken zum Hochladen">
-              <span style="color:var(--ink-muted);font-size:11px">–</span>
+            <div id="edit-ort-logo-preview" style="flex-shrink:0;width:72px;height:72px;display:flex;align-items:center;justify-content:center;background:var(--copper);border:1px solid var(--rule);border-radius:8px;overflow:hidden;cursor:pointer" title="Klicken zum Hochladen">
+              <span style="color:#fff;font-size:1.3rem;font-weight:600">?</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
               <label class="btn" style="cursor:pointer;margin:0">
@@ -1574,24 +1574,22 @@ async function openEditDialog(id, rowEl) {
 
   // Photo
   const photoPrev    = document.getElementById("edit-photo-preview");
-  const photoInitials = document.getElementById("edit-photo-initials");
   const photoFile    = document.getElementById("edit-photo-file");
   const photoDel     = document.getElementById("edit-photo-delete");
   const photoMsg     = document.getElementById("edit-photo-msg");
 
+  // Foto ist optional und kein Logo: ohne Foto nur ein Platzhalter, keine Initialen
+  const PHOTO_EMPTY = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
   function initPhotoPrev(photoKey) {
-    photoPrev.style.background = "";
-    photoPrev.innerHTML = "";
+    photoPrev.innerHTML = PHOTO_EMPTY;
     if (photoKey) {
       const img = document.createElement("img");
       img.src = `/photos/${photoKey}`;
       img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block";
-      img.onerror = () => { photoPrev.innerHTML = `<span id="edit-photo-initials" style="color:#fff;font-size:1.3rem;font-weight:600">${getEditInitials()}</span>`; photoPrev.style.background = "var(--copper)"; };
-      photoPrev.appendChild(img);
+      img.onerror = () => { photoPrev.innerHTML = PHOTO_EMPTY; };
+      photoPrev.replaceChildren(img);
       photoDel.style.display = "block";
     } else {
-      photoPrev.style.background = "var(--copper)";
-      photoPrev.innerHTML = `<span id="edit-photo-initials" style="color:#fff;font-size:1.3rem;font-weight:600">${getEditInitials()}</span>`;
       photoDel.style.display = "none";
     }
     photoMsg.textContent = "";
@@ -1617,12 +1615,26 @@ async function openEditDialog(id, rowEl) {
   const ortLogoAssign = document.getElementById("edit-ort-logo-assign");
   const ortLogoLibDel = document.getElementById("edit-ort-logo-lib-del");
 
+  // Logo-Vorschau wie öffentlich: Logo, sonst (oder wenn es nicht lädt) Initialen
+  function showOrtLogoInitials() {
+    ortLogoPrev.style.background = "var(--copper)";
+    ortLogoPrev.innerHTML = `<span style="color:#fff;font-size:1.3rem;font-weight:600">${getEditInitials()}</span>`;
+  }
+  function showOrtLogo(url) {
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "";
+    img.style.cssText = "width:100%;height:100%;object-fit:contain;padding:6px;display:block";
+    img.onerror = showOrtLogoInitials;
+    ortLogoPrev.style.background = "var(--bg-card)";
+    ortLogoPrev.replaceChildren(img);
+    ortLogoDel.style.display = "block";
+  }
   function initOrtLogoPrev(logoKey) {
     if (logoKey) {
-      ortLogoPrev.innerHTML = `<img src="/logos/orte/${logoKey}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">`;
-      ortLogoDel.style.display = "block";
+      showOrtLogo(`/logos/orte/${logoKey}`);
     } else {
-      ortLogoPrev.innerHTML = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
+      showOrtLogoInitials();
       ortLogoDel.style.display = "none";
     }
     ortLogoMsg.textContent = "";
@@ -1654,8 +1666,7 @@ async function openEditDialog(id, rowEl) {
     try {
       const res = await window.AtlasAPI.admin.uploadBreweryLogo(pendingEdit.id, file);
       rowEl.dataset.logoKey = res.logoKey;
-      ortLogoPrev.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
-      ortLogoDel.style.display = "block";
+      showOrtLogo(`${res.logoUrl}?t=${Date.now()}`);
       ortLogoMsg.textContent = "✓";
       if (!Array.from(ortLogoSelect.options).some((o) => o.value === res.logoKey)) {
         const opt = document.createElement("option");
@@ -1677,8 +1688,7 @@ async function openEditDialog(id, rowEl) {
       await window.AtlasAPI.admin.updateBrewery(pendingEdit.id, { logo_key: key });
       rowEl.dataset.logoKey = key;
       const url = `/logos/orte/${key}`;
-      ortLogoPrev.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
-      ortLogoDel.style.display = "block";
+      showOrtLogo(`${url}?t=${Date.now()}`);
       ortLogoMsg.textContent = "✓";
     } catch (e) {
       ortLogoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);

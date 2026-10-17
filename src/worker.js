@@ -246,7 +246,10 @@ async function handle(request, env, ctx) {
         return new Response(obj.body, { headers });
       }
     }
-    // Fallback: SVG-Platzhalter aus public/images/
+    // Fallback: SVG-Platzhalter aus public/images/ — nur für Stil-Logos.
+    // Fehlt ein Orts-Logo, soll der Client auf die Initialen zurückfallen
+    // (onerror), statt ein Bierglas als vermeintliches Logo zu zeigen.
+    if (key.startsWith("orte/")) return new Response("Not found", { status: 404 });
     if (env.ASSETS) {
       const fallback = new URL(request.url);
       fallback.pathname = "/images/logo-fallback.svg";
