@@ -7,7 +7,7 @@ altbieratlas/
 ├── src/
 │   ├── worker.js            # Router (API + ASSETS)
 │   ├── routes.js            # Public- & Admin-API
-│   ├── seo.js               # llms.txt, SSR für /, /ranglisten, /wissen, ?lang=en, IndexNow
+│   ├── seo.js               # llms.txt, SSR für /, /ranglisten, /wissen, /sorten, ?lang=en, IndexNow
 │   ├── cache.js             # Edge-Cache (Cache API) für öffentliche GET-Antworten
 │   ├── d1meter.js           # Zählt D1-Abfragen/gelesene Zeilen pro Request ([d1]-Logzeile)
 │   └── utils.js             # PBKDF2, Turnstile, Rate-Limit, E-Mail
@@ -16,7 +16,8 @@ altbieratlas/
 │   ├── ort.html             # Ort-Detail + Preisverlauf + Untappd
 │   ├── event.html           # Event-Detail
 │   ├── ranglisten.html      # Preis-Ranglisten
-│   ├── wissen.html          # Glossar & Hintergrund
+│   ├── wissen.html          # Geschichte, Köbes-Kultur, Glossar
+│   ├── sorten.html          # Alle Altbier-Sorten (ABV, IBU, Geschmack)
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
 │   ├── stadt.html           # Stadt-Landingpage (SSR, Slugs kommen aus D1)
 │   ├── staedte.html         # Übersicht aller Städte (/staedte, SSR-Liste)
@@ -288,6 +289,7 @@ curl -i -X POST "https://api.indexnow.org/indexnow" \
       "https://altbieratlas.de/",
       "https://altbieratlas.de/ranglisten",
       "https://altbieratlas.de/wissen",
+      "https://altbieratlas.de/sorten",
       "https://altbieratlas.de/rivalen",
       "https://altbieratlas.de/beitragen"
     ]
@@ -398,8 +400,14 @@ Fünf Einreichungstypen mit Moderation:
   JSON-LD mit `ItemList` und `Dataset` (Altbier-Preise, Lizenz CC BY-SA 4.0)
 
 ### Altbier-Wissen
-- Glossar (aus D1), Hintergrundtexte, Stilkunde
-- Sorten und Glossar serverseitig gerendert; JSON-LD `Article` + `DefinedTermSet`
+- Geschichte, drei Köbes-Regeln für den ersten Besuch, Brauhaus-Glossar (aus D1)
+- Glossar serverseitig gerendert; JSON-LD `Article` + `DefinedTermSet`
+- Querverweis auf `/sorten`
+
+### Altbier-Sorten (`/sorten`)
+- Alle Sorten aus D1 mit ABV, IBU, Geschmack und Link zur Hauptbrauerei
+- Kurz eingeordnet: obergärig, Hausbrauerei, Alt aus dem Supermarkt
+- Serverseitig gerendert; JSON-LD `CollectionPage` mit `ItemList`
 
 ### Das Rheinderby (`/rivalen`)
 - Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz
@@ -416,7 +424,7 @@ Fünf Einreichungstypen mit Moderation:
 ### SEO & Auffindbarkeit
 - **Kanonische URLs**: `/ort/<slug>` und `/stadt/<slug>`; alle Altformen leiten
   mit genau einem 301 weiter (keine Redirect-Ketten)
-- **Server-Rendering** auf `/`, `/ranglisten`, `/wissen`, `/ort/<slug>` und
+- **Server-Rendering** auf `/`, `/ranglisten`, `/wissen`, `/sorten`, `/ort/<slug>` und
   `/stadt/<slug>` — Inhalt steht im HTML, nicht erst nach dem JS-Rendering.
   Das zählt doppelt, weil die meisten KI-Crawler (GPTBot, ClaudeBot,
   PerplexityBot …) kein JavaScript ausführen
@@ -436,7 +444,7 @@ Fünf Einreichungstypen mit Moderation:
   hreflang-Paar
 - **Strukturierte Daten**: `WebSite`/`Organization` (Start), `Brewery`,
   `BarOrPub`, `Restaurant` bzw. Laden-Typen je Ort, `Event` mit Adresse,
-  `CollectionPage` je Stadt, `Article` auf `/wissen` und `/rivalen`,
+  `CollectionPage` je Stadt und auf `/sorten`, `Article` auf `/wissen` und `/rivalen`,
   `Dataset` der Preise, `BreadcrumbList` überall. `creator`/`author`/`publisher`
   stehen als vollständiger `Organization`-Knoten im Markup, nicht als bloße
   `@id`-Referenz — die zeigt außerhalb der Startseite ins Leere und wird in der
@@ -463,7 +471,7 @@ an der Zahl der Requests, nicht an der Datenmenge. Öffentliche GET-Antworten
 liegen deshalb fertig gerendert im Cloudflare-Cache der jeweiligen Colo
 (`src/cache.js`, TTL `EDGE_CACHE_TTL` = 10 min). Ein Treffer kostet keine
 D1-Abfrage.
-- **Gecacht:** SSR-Seiten (`/`, `/ranglisten`, `/wissen`, `/ort/*`, `/stadt/*`,
+- **Gecacht:** SSR-Seiten (`/`, `/ranglisten`, `/wissen`, `/sorten`, `/ort/*`, `/stadt/*`,
   `/event`, `/impressum`), `/sitemap.xml`, `/llms*.txt` und die öffentlichen
   `/api/*`-GETs (config, stats, breweries, styles, prices, events inkl. ICS/Atom,
   venue-types, glossary, rivals/votes, OG-Bild). Cache-Key ist die volle URL

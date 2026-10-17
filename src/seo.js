@@ -2,7 +2,7 @@
 // Altbieratlas — SEO & Auffindbarkeit
 // ============================================================
 // - /llms.txt, /llms-full.txt  → Überblick bzw. Volltext für LLMs/KI-Suche
-// - SSR für /, /ranglisten, /wissen → Crawler sehen echte Daten statt „Lade…"
+// - SSR für /, /ranglisten, /wissen, /sorten → Crawler sehen echte Daten statt „Lade…"
 // - ?lang=en                   → <html lang>, canonical & og:locale passend
 // - IndexNow                   → Bing/Yandex (und damit u. a. ChatGPT-Suche)
 //                                 zeitnah über geänderte Seiten informieren
@@ -161,7 +161,8 @@ English: Altbieratlas is a community-maintained map of Altbier, the top-fermente
 
 - [Karte](${base}/): Interaktive Karte aller Altbier-Orte mit Preis-Schnellübersicht und kommenden Terminen
 - [Ranglisten](${base}/ranglisten): Wo Altbier am günstigsten und am teuersten ist, Preisvergleich je Glasgröße
-- [Wissen](${base}/wissen): Geschichte des Altbiers, Sorten mit Alkoholgehalt und Bittere, Köbes-Kultur, Glossar
+- [Wissen](${base}/wissen): Geschichte des Altbiers, Köbes-Kultur und Brauhaus-Glossar
+- [Sorten](${base}/sorten): Alle Altbier-Sorten mit Alkoholgehalt, Bittere und Geschmack
 - [Alt vs. Kölsch](${base}/rivalen): Das Rheinderby zwischen Düsseldorf und Köln, Fakten und Abstimmung
 - [Städte](${base}/staedte): Übersicht aller Städte mit Altbier-Orten im Atlas
 - [Beitragen](${base}/beitragen): Preise melden, Orte eintragen, Korrekturen und Termine einreichen
@@ -457,20 +458,78 @@ export async function serveRanglisten(req, env) {
 //  SSR: Wissen
 // ============================================================
 export async function serveWissen(req, env) {
-  const [assetRes, sRes, gRes] = await Promise.all([
+  const [assetRes, gRes] = await Promise.all([
     fetchAsset(req, env, "/wissen.html"),
+    env.DB.prepare("SELECT term, definition_de FROM glossary ORDER BY term").all(),
+  ]);
+  if (!assetRes.ok) return assetRes;
+  const glossary = gRes.results || [];
+  const pageUrl = `${SITE}/wissen`;
+
+  let html = await assetRes.text();
+  if (glossary.length) {
+    const items = glossary.map((g) => `
+    <div class="gloss-item">
+      <h3>${escHtml(g.term)}</h3>
+      <p>${escHtml(g.definition_de || "")}</p>
+    </div>`).join("");
+    html = html.replace(
+      /(<div class="glossary-grid" id="gloss-grid"[^>]*>)[\s\S]*?(<\/div>)/,
+      (m, a, b) => `${a}${items}${b}`,
+    );
+  }
+
+  html = injectLd(html, {
+    "@context": "https://schema.org",
+    "@graph": [
+      breadcrumb([["Altbieratlas", `${SITE}/`], ["Wissen", pageUrl]]),
+      {
+        "@type": "Article",
+        "@id": `${pageUrl}#article`,
+        "headline": "Altbier: Geschichte, Köbes-Kultur und Glossar",
+        "description": "Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst.",
+        "url": pageUrl,
+        "inLanguage": "de",
+        "image": `${SITE}/og-image.png`,
+        "dateModified": PAGE_DATES["/wissen"],
+        "author": ORG,
+        "publisher": ORG,
+        "about": { "@type": "Thing", "name": "Altbier", "sameAs": "https://de.wikipedia.org/wiki/Altbier" },
+        "mainEntityOfPage": pageUrl,
+      },
+      ...(glossary.length ? [{
+        "@type": "DefinedTermSet",
+        "@id": `${pageUrl}#glossar`,
+        "name": "Altbier-Glossar",
+        "url": `${pageUrl}#glossar`,
+        "hasDefinedTerm": glossary.map((g) => ({
+          "@type": "DefinedTerm",
+          "name": g.term,
+          "description": g.definition_de,
+          "inDefinedTermSet": `${pageUrl}#glossar`,
+        })),
+      }] : []),
+    ],
+  });
+  return htmlResponse(html, assetRes);
+}
+
+// ============================================================
+//  SSR: Sorten
+// ============================================================
+export async function serveSorten(req, env) {
+  const [assetRes, sRes] = await Promise.all([
+    fetchAsset(req, env, "/sorten.html"),
     env.DB.prepare(
       `SELECT s.name, s.abv, s.ibu, s.color, s.tasting_de, s.logo_key,
               b.id AS bid, b.name AS bname
        FROM styles s LEFT JOIN breweries b ON b.id = s.primary_brewery_id AND b.status = 'approved'
        ORDER BY s.name`
     ).all(),
-    env.DB.prepare("SELECT term, definition_de FROM glossary ORDER BY term").all(),
   ]);
   if (!assetRes.ok) return assetRes;
   const styles = sRes.results || [];
-  const glossary = gRes.results || [];
-  const pageUrl = `${SITE}/wissen`;
+  const pageUrl = `${SITE}/sorten`;
   // Farbe landet in einem style-Attribut → nur Hex-Werte zulassen
   const color = (c) => (/^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "#8b4513");
 
@@ -494,48 +553,32 @@ export async function serveWissen(req, env) {
       (m, a, b) => `${a}${cards}${b}`,
     );
   }
-  if (glossary.length) {
-    const items = glossary.map((g) => `
-    <div class="gloss-item">
-      <h3>${escHtml(g.term)}</h3>
-      <p>${escHtml(g.definition_de || "")}</p>
-    </div>`).join("");
-    html = html.replace(
-      /(<div class="glossary-grid" id="gloss-grid"[^>]*>)[\s\S]*?(<\/div>)/,
-      (m, a, b) => `${a}${items}${b}`,
-    );
-  }
 
   html = injectLd(html, {
     "@context": "https://schema.org",
     "@graph": [
-      breadcrumb([["Altbieratlas", `${SITE}/`], ["Wissen", pageUrl]]),
+      breadcrumb([["Altbieratlas", `${SITE}/`], ["Sorten", pageUrl]]),
       {
-        "@type": "Article",
-        "@id": `${pageUrl}#article`,
-        "headline": "Altbier: Geschichte, Sorten, Köbes-Kultur und Glossar",
-        "description": "Alles über Altbier: warum es „Alt“ heißt, welche Sorten es gibt, wie der Köbes ausschenkt und die wichtigsten Begriffe.",
+        "@type": "CollectionPage",
+        "@id": `${pageUrl}#page`,
+        "name": "Altbier-Sorten",
+        "description": "Alle Altbier-Sorten im Atlas mit Alkoholgehalt, Bittere und Geschmack.",
         "url": pageUrl,
         "inLanguage": "de",
-        "image": `${SITE}/og-image.png`,
-        "dateModified": PAGE_DATES["/wissen"],
-        "author": ORG,
+        "dateModified": PAGE_DATES["/sorten"],
         "publisher": ORG,
         "about": { "@type": "Thing", "name": "Altbier", "sameAs": "https://de.wikipedia.org/wiki/Altbier" },
-        "mainEntityOfPage": pageUrl,
+        ...(styles.length ? {
+          "mainEntity": {
+            "@type": "ItemList",
+            "numberOfItems": styles.length,
+            "itemListElement": styles.map((s, i) => ({
+              "@type": "ListItem", "position": i + 1, "name": s.name,
+              ...(s.bid ? { "url": `${SITE}/ort/${encodeURIComponent(s.bid)}` } : {}),
+            })),
+          },
+        } : {}),
       },
-      ...(glossary.length ? [{
-        "@type": "DefinedTermSet",
-        "@id": `${pageUrl}#glossar`,
-        "name": "Altbier-Glossar",
-        "url": `${pageUrl}#glossar`,
-        "hasDefinedTerm": glossary.map((g) => ({
-          "@type": "DefinedTerm",
-          "name": g.term,
-          "description": g.definition_de,
-          "inDefinedTermSet": `${pageUrl}#glossar`,
-        })),
-      }] : []),
     ],
   });
   return htmlResponse(html, assetRes);

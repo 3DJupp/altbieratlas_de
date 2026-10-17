@@ -295,7 +295,7 @@ async function handle(request, env, ctx) {
 
   // /<page>.html → /<page>  (301, kanonische Clean URLs)
   // /index.html  → /
-  const ALL_PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "impressum", "admin", "ort", "brauerei", "event"];
+  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "impressum", "admin", "ort", "brauerei", "event"];
   if (request.method === "GET" && url.pathname.endsWith(".html")) {
     const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
     if (name === "index") {
@@ -409,14 +409,12 @@ async function handle(request, env, ctx) {
     }
   }
 
-  // /ranglisten und /wissen — SSR: Daten, die sonst erst per JS kommen,
+  // /ranglisten, /wissen und /sorten — SSR: Daten, die sonst erst per JS kommen,
   // stehen für Crawler direkt im HTML (Fallback: statische Datei)
-  if (request.method === "GET" && (url.pathname === "/ranglisten" || url.pathname === "/wissen")
-      && env.ASSETS && env.DB) {
+  const SSR_PAGES = { "/ranglisten": SEO.serveRanglisten, "/wissen": SEO.serveWissen, "/sorten": SEO.serveSorten };
+  if (request.method === "GET" && SSR_PAGES[url.pathname] && env.ASSETS && env.DB) {
     try {
-      return url.pathname === "/ranglisten"
-        ? await SEO.serveRanglisten(request, env)
-        : await SEO.serveWissen(request, env);
+      return await SSR_PAGES[url.pathname](request, env);
     } catch (e) {
       console.error("[worker] SSR threw:", e?.stack || e);
     }
@@ -425,7 +423,7 @@ async function handle(request, env, ctx) {
   // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
   // impressum ausgenommen — wird oben mit SSI bedient
   // brauerei ausgenommen — wird oben auf /ort weitergeleitet
-  const PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "admin", "ort", "event", "staedte"];
+  const PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "admin", "ort", "event", "staedte"];
   if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
     const bare = url.pathname.replace(/\/$/, "");
     const name = bare.slice(1); // strip leading /

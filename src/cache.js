@@ -25,7 +25,7 @@ const GEN_TTL = 7 * 24 * 3600;
 // Bewusst NICHT dabei: /api/admin/*, /api/geocode und /api/untappd/*
 // (eigene Logik bzw. eigener Cache), statische Dateien (ASSETS cached selbst).
 const EXACT = new Set([
-  "/", "/ranglisten", "/wissen", "/ort", "/event", "/impressum",
+  "/", "/ranglisten", "/wissen", "/sorten", "/ort", "/event", "/impressum",
   "/sitemap.xml", "/llms.txt", "/llms-full.txt",
   "/api/config", "/api/stats", "/api/breweries", "/api/styles", "/api/prices",
   "/api/events", "/api/venue-types", "/api/glossary", "/api/rivals/votes",

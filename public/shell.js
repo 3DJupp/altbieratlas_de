@@ -129,6 +129,7 @@ window.renderShell = function ({ activeNav }) {
             <h4 data-i18n="footer.about">Über den Atlas</h4>
             <ul>
               <li><a href="/wissen" data-i18n="know.title">Altbier-Wissen</a></li>
+              <li><a href="/sorten" data-i18n="know.styles">Sorten</a></li>
               <li><a href="/ranglisten" data-i18n="nav.rankings">Ranglisten</a></li>
               <li><a href="/rivalen" data-i18n="nav.rivals">Rivalen</a></li>
             </ul>

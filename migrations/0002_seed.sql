@@ -95,29 +95,25 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Erstes Bio-Altbier aus Düsseldorf. Mild-malzig, ausgewogen, mit ökologisch angebautem Hopfen und Malz.',
     'The first certified organic Altbier from Düsseldorf. Mildly malty, balanced, brewed with organically grown hops and malt.',
     'stile/altus-alt.png'),
-  ('dom-alt', 'Dom Alt', 4.8, 32, NULL,
-    NULL,
-    NULL,
+  ('dom-alt', 'Dom Alt', 4.8, 32, '#84431a',
+    'Unfiltriertes Hausalt der Brauerei Im Dom in Neuss, vollmundig, mit Malz aus der Region und Hallertauer Hopfen.',
+    'Unfiltered house Alt of the Brauerei Im Dom in Neuss, full-bodied, with regional malt and Hallertau hops.',
     NULL),
-  ('altfred', 'ALTfred', NULL, NULL, NULL,
+  ('altfred', 'ALTfred', NULL, NULL, '#874419',
     'Hausalt der Hausbrauerei Hitchcoq in Pempelfort, nach Reinheitsgebot gebraut. Malzig mit leicht hopfigem Abgang.',
     'House Alt of the Hitchcoq brewpub in Pempelfort, brewed to the Reinheitsgebot. Malty with a gently hoppy finish.',
     NULL),
-  ('belsen-alt', 'Belsen Alt', NULL, NULL, NULL,
+  ('belsen-alt', 'Belsen Alt', NULL, NULL, '#8c4a1e',
     'Hausalt des Brauhauses Alter Bahnhof in Oberkassel, früher als Gulasch Alt ausgeschenkt. Malzig und würzig.',
     'House Alt of the Brauhaus Alter Bahnhof in Oberkassel, formerly served as Gulasch Alt. Malty and flavourful.',
     NULL),
-  ('albrecht-alt', 'Joh. Albrecht Alt', NULL, NULL, NULL,
-    'Hausalt des Brauhauses Joh. Albrecht in Niederkassel, typisch im Düsseldorfer Stil gebraut.',
-    'House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the typical Düsseldorf style.',
+  ('albrecht-alt', 'Joh. Albrecht Alt', NULL, NULL, '#8b4a20',
+    'Hausalt des Brauhauses Joh. Albrecht in Niederkassel, im Düsseldorfer Stil gebraut, hopfig und fruchtig.',
+    'House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the Düsseldorf style, hoppy and fruity.',
     NULL),
-  ('schlueffken-alt', 'Schlüffken Altbier', NULL, NULL, NULL,
+  ('schlueffken-alt', 'Schlüffken Altbier', NULL, NULL, '#7f3f17',
     'Hausalt der Krefelder Brauerei Schlüffken, malzig-rustikal mit markanter Hopfennote.',
     'House Alt of Krefeld''s Schlüffken brewery, malty and rustic with a distinct hop note.',
-    NULL),
-  ('long-trail-ale', 'Long Trail Ale', 4.6, 25, '#a56030',
-    'Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.',
-    'Vermont take: malty, mildly sweet, with American hop character.',
     NULL);
 
 -- ============================================================
@@ -125,38 +121,29 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
 -- ============================================================
 INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES
   ('Altbier',
-    'Obergäriges, dunkel-bernsteinfarbenes Bier aus dem Rheinland. "Alt" verweist auf die alte, obergärige Brauart (im Gegensatz zum später aufgekommenen, untergärigen Lager).',
-    'A top-fermented, amber-to-copper beer from the Rhineland. "Alt" refers to the old, top-fermenting brewing method (as opposed to later bottom-fermented lagers).'),
-  ('Köbes',
-    'Die traditionelle Bedienung in Düsseldorfer Hausbrauereien. Typischerweise in blauer Schürze, wortkarg, direkt, oft mit trockenem Humor. Ein Köbes ist keine Servicekraft im modernen Sinn — er ist Teil des Rituals.',
-    'The traditional server in Düsseldorf brewpubs. Typically in a blue apron, taciturn, direct, often with a dry wit. A Köbes is not a service worker in the modern sense — he is part of the ritual.'),
-  ('Sticke',
-    'Ein stärker eingebrautes, hopfenbetonteres Alt. Im Uerige wird es nur zweimal jährlich ausgeschenkt — im Januar und Oktober, jeweils am dritten Dienstag.',
-    'A stronger, more hop-forward Alt. At Uerige it is served only twice a year — on the third Tuesday of January and October.'),
+    'Obergäriges, dunkles Bier aus dem Rheinland. Das „Alt“ steht für die alte Brauart, nicht fürs Alter.',
+    'Top-fermented dark beer from the Rhineland. The "Alt" refers to the old way of brewing, not the beer''s age.'),
   ('Doppelsticke',
-    'Die noch stärkere Variante der Sticke, rund 8,5 % Alkohol. Ursprünglich für den Export in die USA gebraut.',
-    'An even stronger variant of Sticke, around 8.5% ABV. Originally brewed for export to the USA.'),
+    'Eine Stufe stärker als die Sticke, um die 8,5 % Alkohol. Lieber langsam trinken.',
+    'One step up from Sticke, around 8.5% ABV. Best taken slowly.'),
+  ('Halve Hahn',
+    'Kein halbes Hähnchen, sondern ein Roggenbrötchen mit einer dicken Scheibe mittelaltem Gouda, dazu Senf und Zwiebeln. Der Klassiker zum Alt.',
+    'Not half a chicken but a rye roll with a thick slice of medium-aged Gouda, mustard and onions. The classic snack with Alt.'),
+  ('Köbes',
+    'Die Bedienung im Brauhaus, klassisch mit blauer Schürze. Bringt das Alt, bevor du fragst, und hat immer einen Spruch parat.',
+    'The server in a brewpub, classically in a blue apron. Brings your Alt before you ask and always has a quip ready.'),
   ('Kranz',
-    'Das runde Holztablett, auf dem der Köbes die 0,25-l-Gläser stapelt. Fasst typisch 12 bis 15 Gläser.',
-    'The round wooden tray the Köbes uses to stack 0.25 l glasses. Typically holds 12 to 15 glasses.'),
-  ('Strichliste',
-    'Der Bierdeckel, auf dem der Köbes für jedes neue Alt einen Strich macht. Abgerechnet wird am Ende — keiner prüft nach.',
-    'The coaster on which the Köbes tallies a stroke for each new Alt. Settled at the end — nobody double-checks.'),
+    'Das runde Tablett, auf dem der Köbes die Gläser durch den Laden trägt. Voll beladen passen locker ein Dutzend drauf.',
+    'The round tray the Köbes uses to carry glasses through the room. Fully loaded it easily holds a dozen.'),
   ('Latzenbier',
-    'Ein stärker eingebrautes Saison-Alt bei Schumacher, das vom hochgelegten Latzen-Fass gezapft wird. Traditionell im Herbst.',
-    'A stronger seasonal Alt at Schumacher, tapped from an elevated Latzen barrel. Traditionally in autumn.'),
-  ('Obergärig',
-    'Bezeichnet die Gärweise: Hefe, die bei wärmeren Temperaturen (15-20 °C) oben auf dem Sud arbeitet. Führt zu fruchtigeren Aromen als untergärige Hefen.',
-    'Describes the fermentation: yeast that works at warmer temperatures (15-20 °C) on top of the wort. Produces fruitier aromas than bottom-fermenting yeasts.'),
-  ('Hausbrauerei',
-    'Eine Brauerei, die direkt im angeschlossenen Gastraum ausschenkt. Die vier klassischen Düsseldorfer Hausbrauereien sind Uerige, Füchschen, Schumacher und Schlüssel.',
-    'A brewery that pours directly in its attached taproom. The four classic Düsseldorf brewpubs are Uerige, Füchschen, Schumacher and Schlüssel.'),
-  ('Rheinisches Reinheitsgebot',
-    'Kein offizielles Gesetz, sondern ein augenzwinkerndes Selbstverständnis: ein richtiges Alt braucht nichts außer Wasser, Gerste, Hopfen und obergäriger Hefe — und einen Köbes, der es hinstellt.',
-    'Not an actual law, but a tongue-in-cheek self-understanding: a proper Alt needs nothing but water, barley, hops and top-fermenting yeast — and a Köbes to set it down.'),
-  ('Discounter-Altbier',
-    'Altbier aus dem Supermarkt-Regal, z. B. die Aldi-Eigenmarke Schultenbräu. Solche Handelsmarken werden meist bei Auftragsbrauereien gebraut, teils im Ausland (z. B. in Belgien), und nicht im Rheinland. Sie werden nirgends ausgeschenkt und tauchen deshalb nicht auf der Karte auf.',
-    'Altbier from the supermarket shelf, e.g. the Aldi private label Schultenbräu. Such store brands are usually contract-brewed, sometimes abroad (e.g. in Belgium) rather than in the Rhineland. They are not served on tap anywhere, so they do not appear on the map.');
+    'Ein stärker eingebrautes Spezial-Alt, das es nur an wenigen Tagen im Jahr gibt. Der Name kommt von „op de Latt“: Besonders gelungene Sude kamen im Keller aufs oberste Regalbrett.',
+    'A stronger special Alt that''s only poured on a few days a year. The name comes from "op de Latt": particularly good brews went on the top shelf in the cellar.'),
+  ('Sticke',
+    'Das „heimliche“ Alt: stärker eingebraut, kräftiger gehopft und nur an wenigen Tagen im Jahr im Ausschank. Der Name kommt vom niederdeutschen „stickum“ für heimlich.',
+    'The "secret" Alt: brewed stronger, hopped harder and only poured on a few days a year. The name comes from the Low German "stickum", meaning secretly.'),
+  ('Strichliste',
+    'Die Striche auf deinem Bierdeckel. Einer pro Alt, am Ende wird gezählt.',
+    'The marks on your coaster. One per Alt, counted up at the end.');
 
 -- ============================================================
 -- Breweries / taprooms / retail
@@ -504,6 +491,10 @@ UPDATE styles SET primary_brewery_id = 'hitchcoq' WHERE id = 'altfred' AND prima
 UPDATE styles SET primary_brewery_id = 'alter-bahnhof-oberkassel' WHERE id = 'belsen-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'joh-albrecht-duesseldorf' WHERE id = 'albrecht-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'schlueffken' WHERE id = 'schlueffken-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'schluessel' WHERE id = 'schluessel-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'koenigshof' WHERE id = 'koenigshof-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'hannen' WHERE id = 'hannen-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'brauerei-im-dom' WHERE id = 'dom-alt' AND primary_brewery_id IS NULL;
 
 -- ============================================================
 -- Style assignments

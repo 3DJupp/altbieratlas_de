@@ -1955,8 +1955,9 @@ export async function getUntappdBrewery(req, env, { id }) {
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
   "/":           "2026-10-17",
-  "/ranglisten": "2026-10-05",
-  "/wissen":     "2026-10-12",
+  "/ranglisten": "2026-10-17",
+  "/wissen":     "2026-10-17",
+  "/sorten":     "2026-10-17",
   "/rivalen":    "2026-10-17",
   "/beitragen":  "2026-10-17",
   "/staedte":    "2026-10-17",
@@ -1971,7 +1972,7 @@ export async function sitemap(req, env) {
                               .replace(/'/g, "&apos;");
   // /impressum fehlt bewusst: die Seite ist noindex, und noindex-URLs in der
   // Sitemap meldet die Search Console als Fehler.
-  const staticPaths = ["/", "/ranglisten", "/wissen", "/rivalen", "/beitragen", "/staedte"];
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/sorten", "/rivalen", "/beitragen", "/staedte"];
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
