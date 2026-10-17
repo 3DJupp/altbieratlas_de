@@ -230,7 +230,7 @@ VALUES
     'Brauerei Schumacher''s old-town tap house on Bolkerstraße. Schumacher Alt fresh from the barrel, with classic brewhouse fare such as pork knuckle and bratwurst. Alongside the main house on Oststraße, Schumacher''s second address and one of the old town''s most traditional Altbier spots.',
     0, 'pending', 0, NULL, NULL),
 
-  ('kneipe-kneipe', 'Kneipe Kneipe', 'Kneipe Kneipe', 'pub', 'Düsseldorf', 'DE',
+  ('kneipe-kneipe', 'Kneipe Kneipe', 'Kneipe Kneipe', 'taproom', 'Düsseldorf', 'DE',
     'Liefergasse 1, 40213 Düsseldorf',
     'https://maps.google.com/maps?q=Liefergasse+1,+40213+D%C3%BCsseldorf',
     51.2285, 6.7731, 2026, NULL,

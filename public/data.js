@@ -195,7 +195,7 @@ window.ATLAS_DATA = {
       id: "kneipe-kneipe",
       name: "Kneipe Kneipe",
       short: "Kneipe Kneipe",
-      type: "pub",
+      type: "taproom",
       city: "Düsseldorf",
       country: "DE",
       address: "Liefergasse 1, 40213 Düsseldorf",
