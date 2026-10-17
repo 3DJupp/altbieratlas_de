@@ -212,7 +212,7 @@ Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-
 | `UNTAPPD_CLIENT_ID` | Untappd-App-Client-ID |
 | `UNTAPPD_CLIENT_SECRET` | Untappd-App-Secret |
 | `RESEND_API_KEY` | [Resend](https://resend.com)-API-Key |
-| `ADMIN_EMAIL` | Empfänger des täglichen Digests |
+| `ADMIN_EMAIL` | Empfänger der Sofort-Benachrichtigung pro Einreichung und des Digests |
 | `MAP_TILE_API_KEY` | API-Key der CARTO Basemaps ([dashboard.basemaps.carto.com](https://dashboard.basemaps.carto.com/)). Ohne Key nutzt die Karte schlüssellose OSM-Kacheln |
 | `INDEXNOW_KEY` | Optional. [IndexNow](https://www.indexnow.org)-Schlüssel (8–128 Zeichen `a–z A–Z 0–9 -`). Der Worker liefert ihn unter `/<key>.txt` aus und meldet nach Admin-Änderungen die betroffenen Seiten an Bing, Yandex & Co. (Bing speist u. a. die ChatGPT-Suche). Ohne Key keine Meldung. Einrichtung: [1.5](#15-indexnow-aktivieren-optional-empfohlen) |
 | `INITIAL_ADMIN` | Ersteinrichtung — nach erstem Login löschen |
@@ -599,7 +599,7 @@ Alle Mails laufen via [Resend](https://resend.com):
 |---|---|
 | Beitrags-Bestätigung | Einreichung mit E-Mail-Angabe |
 | Passwort-Reset | „Passwort vergessen?" im Admin-Login |
-| Admin-Digest | Täglich 07:00 UTC |
+| Admin-Digest | 10:00 und 22:00 Uhr (Europe/Berlin), Einreichungen seit dem letzten Digest |
 
 1. Account bei [resend.com](https://resend.com) anlegen
 2. Domain verifizieren, API-Key erstellen

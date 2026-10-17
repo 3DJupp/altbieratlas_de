@@ -7,7 +7,7 @@ import {
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
-  clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail,
+  clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification,
   siteConfig,
 } from "./utils.js";
 
@@ -657,6 +657,9 @@ export async function postContribution(req, env, _params, ctx) {
     const mailPromise = sendConfirmationEmail(env, { to: email, type, id, data, ip, lang, submittedAt: new Date().toISOString() });
     if (ctx?.waitUntil) ctx.waitUntil(mailPromise);
   }
+  // Admin sofort informieren — unabhängig davon, ob eine E-Mail angegeben wurde
+  const notifyPromise = sendAdminNotification(env, { type, id, data, email });
+  if (ctx?.waitUntil) ctx.waitUntil(notifyPromise);
 
   return json({ ok: true, id, status: "pending" }, { status: 201 });
 }

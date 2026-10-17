@@ -66,12 +66,14 @@ database_id   = "REPLACE_WITH_YOUR_D1_ID"
 binding     = "LOGOS"
 bucket_name = "altbieratlas-logos"
 
-# --- Cron: täglicher Admin-Digest ----------------------------
-# Sendet einmal täglich eine Zusammenfassung aller neuen
-# Beiträge an ADMIN_EMAIL (siehe Secrets unten).
-# Zeitzone: UTC → 07:00 UTC = 08:00 / 09:00 Uhr Berlin.
+# --- Cron: Admin-Digest (10 und 22 Uhr Berlin) ----------------
+# Sendet eine Zusammenfassung aller Beiträge seit dem letzten Digest
+# an ADMIN_EMAIL (siehe Secrets unten).
+# Zeitzone: UTC. Gewollt ist 10 und 22 Uhr Berlin; deshalb feuert der Cron
+# zu beiden möglichen UTC-Stunden (Sommer-/Winterzeit) und scheduled() lässt
+# nur den passenden Lauf durch.
 [triggers]
-crons = ["0 7 * * *"]
+crons = ["0 8,9,20,21 * * *"]
 
 # --- Observability --------------------------------------------
 # Spiegelt die Dashboard-Einstellungen wider, damit Wrangler sie
