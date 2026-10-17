@@ -464,6 +464,34 @@ function flyToGeo(result) {
 // ============ Search-Suggest ============
 const searchEl = document.getElementById("map-search");
 const suggestEl = document.getElementById("map-search-suggest");
+// Aus der Filterleiste lösen: .hero-wrap (overflow:hidden) und die mobil
+// scrollende .map-filters würden die Liste sonst abschneiden
+document.body.appendChild(suggestEl);
+
+// Neben dem Suchfeld platzieren; klappt dorthin auf, wo mehr Platz ist
+// (die Leiste sitzt unten auf der Karte → meist nach oben)
+function positionSuggest() {
+  if (!suggestEl.classList.contains("visible")) return;
+  const r = searchEl.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight, gap = 6, edge = 12;
+  const width = Math.min(Math.max(r.width, 320), 440, vw - 2 * edge);
+  const left = Math.min(Math.max(r.right - width, edge), vw - width - edge);
+  const below = vh - r.bottom - gap - edge;
+  const above = r.top - gap - edge;
+  const s = suggestEl.style;
+  s.left = left + "px";
+  s.width = width + "px";
+  if (below >= 240 || below >= above) {
+    s.top = (r.bottom + gap) + "px"; s.bottom = "auto";
+    s.maxHeight = Math.min(vh * 0.6, below) + "px";
+  } else {
+    s.bottom = (vh - r.top + gap) + "px"; s.top = "auto";
+    s.maxHeight = Math.min(vh * 0.6, above) + "px";
+  }
+}
+window.addEventListener("resize", positionSuggest);
+window.addEventListener("scroll", positionSuggest, { passive: true });
+document.querySelector(".map-filters")?.addEventListener("scroll", positionSuggest, { passive: true });
 
 function debounce(fn, ms) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
@@ -511,6 +539,7 @@ function renderSuggest(query, local, geo) {
   }
   suggestEl.innerHTML = parts.join("");
   suggestEl.classList.add("visible");
+  positionSuggest();
 
   // Wire row clicks
   let geoResults = geo || [];
@@ -561,7 +590,7 @@ searchEl.addEventListener("focus", () => {
 });
 // Close on outside click
 document.addEventListener("click", (e) => {
-  if (!e.target.closest(".map-search-wrap")) suggestEl.classList.remove("visible");
+  if (!e.target.closest(".map-search-wrap, #map-search-suggest")) suggestEl.classList.remove("visible");
 });
 // Enter → erste Option nehmen
 searchEl.addEventListener("keydown", (e) => {
