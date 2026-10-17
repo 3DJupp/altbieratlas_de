@@ -1332,8 +1332,8 @@ window.ATLAS_DATA = {
     {
       term: "Köbes",
       definition: {
-        de: "Der Kellner im Brauhaus, meist in blauer Schürze. Bringt das Alt, bevor du fragst, und hat immer einen Spruch parat.",
-        en: "The waiter in a brewpub, usually in a blue apron. Brings your Alt before you ask and always has a quip ready.",
+        de: "Die Bedienung im Brauhaus, klassisch mit blauer Schürze. Bringt das Alt, bevor du fragst, und hat immer einen Spruch parat.",
+        en: "The server in a brewpub, classically in a blue apron. Brings your Alt before you ask and always has a quip ready.",
       },
     },
     {

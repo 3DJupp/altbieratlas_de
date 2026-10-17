@@ -121,6 +121,21 @@
 }
 .gloss-item p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
 
+.know-nav a.know-nav-ext { color: var(--copper); }
+
+.know-teaser { padding: 40px 0; border-bottom: 1px solid var(--rule); }
+.teaser-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 28px;
+  background: var(--bg-card); border: 1px solid var(--rule); border-left: 4px solid var(--copper);
+  border-radius: var(--radius-lg); padding: 28px 32px; color: inherit;
+  transition: border-color .15s;
+}
+.teaser-card:hover { border-color: var(--copper); }
+.teaser-card .eyebrow { margin-bottom: 6px; }
+.teaser-card h2 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); font-weight: 500; margin: 0 0 8px; }
+.teaser-card p { color: var(--ink-soft); font-size: 15px; line-height: 1.6; margin: 0; max-width: 60ch; }
+.teaser-card .btn { flex-shrink: 0; }
+
 .koebes-cards {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 18px; margin-top: 28px;
@@ -134,6 +149,7 @@
   .glossary-grid { grid-template-columns: 1fr; }
   .gloss-item { border-right: none; }
   .koebes-cards { grid-template-columns: 1fr; }
+  .teaser-card { flex-direction: column; align-items: flex-start; padding: 22px; }
 }
 </style>
 </head>
@@ -145,7 +161,7 @@
   <section class="know-hero">
     <div class="container">
       <div class="eyebrow" data-i18n="know.heroEyebrow">Altbier-Wissen</div>
-      <h1 data-i18n-html="know.heroTitleHtml">Ein obergäriges Bier, eine Stadt, eine <em>Kultur</em>.</h1>
+      <h1 data-i18n-html="know.heroTitleHtml">Ein Bier, eine Stadt, eine <em>Kultur</em>.</h1>
       <p class="lede" data-i18n="know.heroLede">Altbier ist mehr als ein Bier. Dazu gehören der Köbes, die Striche auf dem Deckel und ein paar Regeln, die keiner aufschreibt. Hier stehen sie.</p>
     </div>
   </section>
@@ -155,6 +171,7 @@
       <a href="#geschichte" class="active" data-i18n="know.nav.history">Geschichte</a>
       <a href="#koebes" data-i18n="know.nav.koebes">Köbes</a>
       <a href="#glossar" data-i18n="know.nav.glossary">Glossar</a>
+      <a href="/sorten" class="know-nav-ext" data-i18n="know.nav.styles">Sorten →</a>
       <button class="know-nav-top" id="know-nav-top" aria-label="Zum Seitenanfang">↑ Top</button>
     </div>
   </nav>
@@ -162,14 +179,26 @@
   <section class="know-section" id="geschichte">
     <div class="container">
       <div class="eyebrow" data-i18n="know.historyEyebrow">Geschichte</div>
-      <h2 data-i18n="know.historyTitle">Warum „Alt"?</h2>
+      <h2 data-i18n="know.historyTitle">Warum „Alt“?</h2>
       <div class="prose">
         <p data-i18n-html="know.historyP1Html">Mit dem Alter hat der Name nichts zu tun. „Alt“ steht für die <em>alte</em> Brauart: obergärig, mit einer Hefe, die es warm mag und oben auf dem Sud arbeitet. Die untergärigen Lagerbiere kamen erst später.</p>
         <p data-i18n-html="know.historyP2Html">In Düsseldorf und am Niederrhein ist das so geblieben. Als im 19. Jahrhundert fast überall auf Pils und Export umgestellt wurde, blieben die Düsseldorfer bei ihrem dunklen, würzig-herben Alt. Vier klassische Hausbrauereien gibt es bis heute: <em>Uerige</em>, <em>Füchschen</em> und <em>Schlüssel</em> in der Altstadt und <em>Schumacher</em> an der Oststraße. 2010 kam <em>Kürzer</em> dazu, auch in der Altstadt.</p>
         <p data-i18n-html="know.historyP3Html">Außerhalb des Rheinlands ist Altbier selten. Ein paar Craft-Brauer in den USA, in Japan oder den Niederlanden machen eins, mal nah am Original, mal ganz eigen.</p>
-        <p style="margin-top:10px" data-i18n-html="know.stylesCtaHtml">→ Was die Hausbrauereien und viele andere ausschenken, findest du unter <a href="/sorten">Sorten</a></p>
-        <p data-i18n-html="know.cityCtaHtml">→ Alle Altbier-Orte in <a href="/stadt/duesseldorf">Düsseldorf</a> ansehen</p>
+        <p style="margin-top:10px" data-i18n-html="know.cityCtaHtml">→ Alle Altbier-Orte in <a href="/stadt/duesseldorf">Düsseldorf</a> ansehen</p>
       </div>
+    </div>
+  </section>
+
+  <section class="know-teaser">
+    <div class="container">
+      <a class="teaser-card" href="/sorten">
+        <div>
+          <div class="eyebrow" data-i18n="know.stylesTeaserEyebrow">Sorten</div>
+          <h2 data-i18n="know.stylesTeaserTitle">Von mild bis Doppelsticke</h2>
+          <p data-i18n="know.stylesTeaserBody">Jede Brauerei braut ihr Alt ein bisschen anders. Alle Sorten mit Alkohol, Bittere und Geschmack findest du auf einer eigenen Seite.</p>
+        </div>
+        <span class="btn btn-primary" data-i18n="know.stylesTeaserCta">Alle Sorten ansehen →</span>
+      </a>
     </div>
   </section>
 
@@ -177,13 +206,13 @@
     <div class="container">
       <div class="eyebrow" data-i18n="know.koebesEyebrow">Köbes-Kultur</div>
       <h2 data-i18n="know.koebesTitle">Drei Dinge für deinen ersten Besuch</h2>
-      <p style="color:var(--ink-soft);max-width:60ch" data-i18n="know.koebesLede">Der Köbes ist kein Kellner. Er bringt Alt, macht Striche und hat immer einen Spruch parat. Nimm's nicht persönlich.</p>
+      <p style="color:var(--ink-soft);max-width:60ch" data-i18n="know.koebesLede">Der Köbes ist mehr als ein Kellner. Er bringt Alt, macht Striche und hat immer einen Spruch parat. Nimm's nicht persönlich.</p>
 
       <div class="koebes-cards">
         <div class="koebes-card">
           <div class="num">01</div>
           <h3 data-i18n="know.koebes1Title">Deckel drauf, dann ist Schluss</h3>
-          <p data-i18n="know.koebes1Body">Ist dein Glas leer, steht schon das nächste da. Ungefragt. Wenn du nichts mehr willst, leg den Bierdeckel aufs Glas. Dann kommt kein neues mehr auf den Tisch.</p>
+          <p data-i18n="know.koebes1Body">Ist dein Glas leer, steht schon das nächste da. Ungefragt. Willst du nichts mehr, leg den Bierdeckel aufs Glas. Dann kommt kein neues.</p>
         </div>
         <div class="koebes-card">
           <div class="num">02</div>
@@ -309,6 +338,7 @@ document.getElementById("know-nav-top").addEventListener("click", () => {
 // ---- Klick-Handler ----
 navLinks.forEach((link) => {
   link.addEventListener("click", (e) => {
+    if (!link.getAttribute("href").startsWith("#")) return;
     e.preventDefault();
     const id     = link.getAttribute("href").slice(1);
     const target = document.getElementById(id);
