@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
+<title>Altbier nach Stadt · Altbieratlas</title>
+<meta name="description" content="Alle Städte im Altbieratlas: Brauereien, Ausschankorte und Händler mit Altbier, nach Stadt sortiert." />
+<link rel="canonical" href="https://altbieratlas.de/staedte" id="meta-canonical" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Altbier nach Stadt · Altbieratlas" id="meta-og-title" />
+<meta property="og:description" content="Alle Städte im Altbieratlas: Brauereien, Ausschankorte und Händler mit Altbier." id="meta-og-desc" />
+<meta property="og:url" content="https://altbieratlas.de/staedte" id="meta-og-url" />
+<meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+<meta property="og:locale" content="de_DE" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Altbier nach Stadt · Altbieratlas" id="meta-tw-title" />
+<meta name="twitter:description" content="Alle Städte im Altbieratlas: Brauereien, Ausschankorte und Händler mit Altbier." id="meta-tw-desc" />
+<meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/styles.css" />
+<style>
+.city-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); }
+.city-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; margin: 8px 0 0; }
+.city-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
+.city-back { display: inline-block; margin-top: 22px; font-size: 13px; color: var(--ink-muted); }
+.city-section { padding: 60px 0; border-bottom: 1px solid var(--rule); }
+.city-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.city-card {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  padding: 24px; text-decoration: none; color: inherit;
+  transition: border-color .15s, transform .1s, box-shadow .15s;
+}
+.city-card:hover { border-color: var(--copper); transform: translateY(-2px); box-shadow: var(--shadow); }
+.city-card .cc-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; color: var(--ink); line-height: 1.2; }
+.city-card .cc-type { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.city-empty { color: var(--ink-muted); padding: 16px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-banner" hidden></div>
+  <div id="shell-header"></div>
+
+  <section class="city-hero">
+    <div class="container">
+      <div class="eyebrow" data-i18n="cities.eyebrow">Altbier vor Ort</div>
+      <h1 data-i18n="cities.h1">Altbier nach Stadt</h1>
+      <p class="lede" data-i18n="cities.lede">Alle Städte mit Altbier-Orten im Atlas. Jede Stadtseite listet Brauereien, Ausschank und Händler mit den aktuellen Preisen.</p>
+      <a class="city-back" href="/" data-i18n="city.backToMap">← Zur Karte</a>
+    </div>
+  </section>
+
+  <section class="city-section">
+    <div class="container">
+      <div class="city-grid" id="cities-list" data-ssr="0">
+        <p class="city-empty" data-i18n="common.loading">Lade…</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="/config.js"></script>
+<script src="/i18n.js"></script>
+<script src="/data.js"></script>
+<script src="/api-client.js"></script>
+<script src="/shell.js"></script>
+<script>
+renderShell({ activeNav: "" });
+
+const fillTpl = (key, vars) => {
+  let s = window.t(key);
+  for (const k in vars) s = s.replace("{" + k + "}", vars[k]);
+  return s;
+};
+
+const countLabel = (n) => n === 0 ? window.t("cities.historicalOnly")
+  : n === 1 ? window.t("cities.one") : fillTpl("city.count", { n });
+
+// Der Worker rendert die Liste serverseitig vor; der Client übernimmt sie
+// (Sprache) bzw. baut sie im Mock-Modus aus der Config.
+function paint() {
+  document.title = window.t("cities.h1") + " · Altbieratlas";
+  const cities = window.ATLAS_CONFIG.cities || [];
+  const el = document.getElementById("cities-list");
+  if (!cities.length) {
+    if (el.dataset.ssr !== "1") el.innerHTML = `<p class="city-empty">${window.t("cities.empty")}</p>`;
+    return;
+  }
+  el.innerHTML = cities.map((c) => `<a class="city-card" href="/stadt/${encodeURIComponent(c.slug)}">
+      <span class="cc-name">${c.city}</span>
+      <span class="cc-type">${countLabel(c.current ?? c.count)}</span>
+    </a>`).join("");
+}
+
+paint();
+document.addEventListener("atlas:config-ready", paint);
+document.addEventListener("atlas:lang-changed", paint);
+</script>
+</body>
+</html>

@@ -372,6 +372,22 @@ async function handle(request, env, ctx) {
     }
   }
 
+  // /stadt und /stadt/ haben keine eigene Seite → Städte-Übersicht
+  if (request.method === "GET" && (url.pathname === "/stadt" || url.pathname === "/stadt/")) {
+    const dest = new URL(request.url);
+    dest.pathname = "/staedte";
+    return Response.redirect(dest.toString(), 301);
+  }
+
+  // /staedte — Übersicht aller Städte (SSR-Liste, Fallback: statische Datei)
+  if (url.pathname === "/staedte" && request.method === "GET" && env.ASSETS && env.DB) {
+    try {
+      return await R.serveCities(request, env);
+    } catch (e) {
+      console.error("[worker] serveCities threw:", e?.stack || e);
+    }
+  }
+
   // /stadt/<slug> — SSR Stadt-Landingpage (Meta + JSON-LD + server-gerenderte Liste)
   if (url.pathname.startsWith("/stadt/") && request.method === "GET" && env.ASSETS) {
     try {
@@ -400,7 +416,7 @@ async function handle(request, env, ctx) {
   // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
   // impressum ausgenommen — wird oben mit SSI bedient
   // brauerei ausgenommen — wird oben auf /ort weitergeleitet
-  const PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "admin", "ort", "event"];
+  const PAGES = ["ranglisten", "wissen", "beitragen", "rivalen", "admin", "ort", "event", "staedte"];
   if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
     const bare = url.pathname.replace(/\/$/, "");
     const name = bare.slice(1); // strip leading /

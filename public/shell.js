@@ -86,14 +86,22 @@ window.renderShell = function ({ activeNav }) {
   }
 
   // ---- Städte im Footer (site-weite interne Links auf /stadt/<slug>) ----
+  // Nur Städte mit mehr als einem aktiven Ort, höchstens fünf (die Liste kommt
+  // nach Ortanzahl sortiert). Der Rest steckt hinter „Weitere“ → /staedte.
+  const FOOTER_CITY_MAX = 5;
   function renderCityRow() {
     const host = document.getElementById("shell-cities");
     if (!host) return;
     const cities = cfg.cities || [];
-    host.innerHTML = cities
+    const shown = cities.filter((c) => (c.current ?? c.count) > 1).slice(0, FOOTER_CITY_MAX);
+    host.innerHTML = shown
       .map((c) => `<li><a href="/stadt/${encodeURIComponent(c.slug)}">${c.city}</a></li>`)
-      .join("");
+      .join("") +
+      (cities.length > shown.length
+        ? `<li><a href="/staedte" data-i18n="footer.moreCities">Weitere →</a></li>`
+        : "");
     host.parentElement.hidden = cities.length === 0;
+    if (cities.length > shown.length && window.setLang) window.setLang(window.__atlasLang);
   }
 
   // ---- Footer ----

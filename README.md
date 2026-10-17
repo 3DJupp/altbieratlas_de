@@ -19,6 +19,7 @@ altbieratlas/
 │   ├── wissen.html          # Glossar & Hintergrund
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
 │   ├── stadt.html           # Stadt-Landingpage (SSR, Slugs kommen aus D1)
+│   ├── staedte.html         # Übersicht aller Städte (/staedte, SSR-Liste)
 │   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
 │   ├── impressum.html       # Impressum & Datenschutz
 │   ├── admin.html           # Moderations-Dashboard
@@ -356,14 +357,19 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 
 ### Stadt-Landingpages (SEO)
 - Serverseitig gerenderte Seiten unter `/stadt/<slug>`
-- **Slugs entstehen automatisch** aus den Städten der freigegebenen Orte
+- **Slugs entstehen automatisch** aus den Städten der freigegebenen und geprüften Orte
   (`citySlug()` in `src/routes.js`, umlautfest: Düsseldorf → `duesseldorf`,
   Mönchengladbach → `moenchengladbach`). Keine Whitelist mehr zu pflegen —
   ein neuer Ort in einer neuen Stadt erzeugt Seite und Sitemap-Eintrag von selbst
-- Listet aktive **und historische** Orte einer Stadt inkl. Ø-Preis und Preis je Ort,
+- Listet aktive **und historische** Orte einer Stadt inkl. Ø-Preis (nur 0,25 l, damit
+  vergleichbar) und Preis je Ort (jüngster Preis der kleinsten gemeldeten Größe, mit
+  Größenangabe). Ungeprüfte Orte („In Prüfung“, `verified = 0`) erscheinen hier nicht,
   mit `CollectionPage`-, `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang
 - Querverlinkung „Weitere Städte" auf jeder Stadtseite; zusätzlich verlinkt der
-  Footer site-weit alle Städte (Daten via `/api/config`)
+  Footer site-weit die bis zu fünf größten Städte mit mehr als einem aktiven Ort
+  (Daten via `/api/config`), dahinter „Weitere →“ auf die Übersicht `/staedte`
+- `/staedte`: Übersicht aller Städte (SSR-Liste, `ItemList`-JSON-LD); `/stadt` und
+  `/stadt/` leiten per 301 dorthin
 
 ### Beitragen
 Fünf Einreichungstypen mit Moderation:
@@ -398,7 +404,7 @@ Fünf Einreichungstypen mit Moderation:
 ### Das Rheinderby (`/rivalen`)
 - Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz
 - Hebt überraschende Gemeinsamkeiten hervor (beide obergärig, beide Köbes, beide 0,2 l)
-- Prosa-Abschnitt zur Rivalität (Kölschkonvention 1986, g.g.A.-Geschichte)
+- Prosa-Abschnitt zur Rivalität (Kölschkonvention 1986, g.g.A. für Kölsch, Altbier ohne Herkunftsschutz)
 - Lokale Abstimmung „Team Alt vs. Team Kölsch" (localStorage, kein Tracking)
 - Vollständig DE/EN übersetzt
 

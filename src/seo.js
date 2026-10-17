@@ -163,6 +163,7 @@ English: Altbieratlas is a community-maintained map of Altbier, the top-fermente
 - [Ranglisten](${base}/ranglisten): Wo Altbier am günstigsten und am teuersten ist, Preisvergleich je Glasgröße
 - [Wissen](${base}/wissen): Geschichte des Altbiers, Sorten mit Alkoholgehalt und Bittere, Köbes-Kultur, Glossar
 - [Alt vs. Kölsch](${base}/rivalen): Das Rheinderby zwischen Düsseldorf und Köln, Fakten und Abstimmung
+- [Städte](${base}/staedte): Übersicht aller Städte mit Altbier-Orten im Atlas
 - [Beitragen](${base}/beitragen): Preise melden, Orte eintragen, Korrekturen und Termine einreichen
 
 ## Altbier nach Stadt
