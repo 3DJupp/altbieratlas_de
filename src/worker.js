@@ -241,7 +241,10 @@ async function handle(request, env, ctx) {
   if (url.pathname.startsWith("/logos/") && request.method === "GET") {
     const key = url.pathname.slice(7); // strip "/logos/"
     if (key && !key.includes("..") && env.LOGOS) {
-      const obj = await env.LOGOS.get(key);
+      // Orts-Logos liegen in R2 unter orte/logos/{file}, die öffentliche URL
+      // ist aber /logos/orte/{file} — ohne diese Abbildung gäbe es immer 404.
+      const r2Key = /^orte\/[^/]+$/.test(key) ? `orte/logos/${key.slice(5)}` : key;
+      const obj = await env.LOGOS.get(r2Key);
       if (obj) {
         const headers = new Headers();
         headers.set("Content-Type", obj.httpMetadata?.contentType || "image/png");
