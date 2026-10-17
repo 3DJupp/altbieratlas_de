@@ -114,10 +114,6 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
   ('schlueffken-alt', 'Schlüffken Altbier', NULL, NULL, '#7f3f17',
     'Hausalt der Krefelder Brauerei Schlüffken, malzig-rustikal mit markanter Hopfennote.',
     'House Alt of Krefeld''s Schlüffken brewery, malty and rustic with a distinct hop note.',
-    NULL),
-  ('long-trail-ale', 'Long Trail Ale', 4.6, 25, '#a56030',
-    'Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.',
-    'Vermont take: malty, mildly sweet, with American hop character.',
     NULL);
 
 -- ============================================================

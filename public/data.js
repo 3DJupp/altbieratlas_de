@@ -1164,17 +1164,6 @@ window.ATLAS_DATA = {
         en: "House Alt of Krefeld's Schlüffken brewery, malty and rustic with a distinct hop note.",
       },
     },
-    {
-      id: "long-trail-ale",
-      name: "Long Trail Ale",
-      abv: 4.6,
-      ibu: 25,
-      color: "#a56030",
-      tasting: {
-        de: "Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.",
-        en: "Vermont take: malty, mildly sweet, with American hop character.",
-      },
-    },
   ],
 
   // Preismeldungen — Stand Live-DB Oktober 2026
