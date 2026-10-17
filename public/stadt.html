@@ -142,7 +142,8 @@ const CITY = document.body.dataset.city
 const ledeKey = slug === "duesseldorf" ? "city.lede.duesseldorf" : null;
 
 let breweriesCache = null;
-let pricesByBrewery = new Map();
+let pricesByBrewery = new Map();   // kleinste Größe je Ort: { price, size }
+let quarterByBrewery = new Map();  // 0,25 l je Ort, nur für den Durchschnitt
 
 const fillTpl = (key, vars) => {
   let s = window.t(key);
@@ -170,7 +171,8 @@ function paint() {
   if (ledeKey) ledeEl.textContent = window.t(ledeKey);
 
   if (!breweriesCache) return;
-  const inCity = breweriesCache.filter((b) => (b.city || "").toLowerCase() === CITY.toLowerCase());
+  // Ungeprüfte Orte („In Prüfung“) erscheinen nicht auf den Stadtseiten.
+  const inCity = breweriesCache.filter((b) => b.verified && (b.city || "").toLowerCase() === CITY.toLowerCase());
   const current = inCity.filter((b) => !b.isHistorical);
   const historical = inCity.filter((b) => b.isHistorical);
 
@@ -179,7 +181,7 @@ function paint() {
   statsEl.hidden = false;
   document.getElementById("stat-count").textContent = inCity.length;
   document.getElementById("stat-count-lbl").textContent = window.t("city.stat.places");
-  const prices = current.map((b) => pricesByBrewery.get(b.id)).filter((x) => x != null);
+  const prices = current.map((b) => quarterByBrewery.get(b.id)).filter((x) => x != null);
   const priceWrap = document.getElementById("stat-price-wrap");
   if (prices.length) {
     const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
@@ -197,7 +199,7 @@ function paint() {
     return `<a class="city-card${b.isHistorical ? " historical" : ""}" href="/ort/${encodeURIComponent(b.id)}">
       <span class="cc-name">${b.name}</span>
       <span class="cc-type">${typeLabel(b.type)}</span>
-      ${p ? `<span class="cc-price">€ ${window.formatPrice(p)} <span style="opacity:.55;font-size:11px">/ 0,25 l</span></span>` : ""}
+      ${p ? `<span class="cc-price">€ ${window.formatPrice(p.price)} <span style="opacity:.55;font-size:11px">/ ${String(p.size).replace(".", ",")} l</span></span>` : ""}
     </a>`;
   };
 
@@ -236,18 +238,27 @@ function paint() {
       window.AtlasAPI.listPrices(),
     ]);
     breweriesCache = brews.breweries || [];
-    // neuesten 0,25 l-Preis je Brauerei bestimmen
-    const want = 0.25;
+    // Je Ort: jüngster Preis der kleinsten gemeldeten Größe für die Karte,
+    // jüngster 0,25-l-Preis für den Durchschnitt.
     // Größen stehen uneinheitlich als "0.25", "0,25" oder "0.25l" in der DB.
     const normSize = (v) => parseFloat(String(v ?? "").replace(",", ".").replace(/\s*l$/i, ""));
-    const latest = new Map();
+    const smallest = new Map();
+    const quarter = new Map();
     (prices.prices || []).forEach((p) => {
       const size = normSize(p.size);
-      if (!(Math.abs(size - want) <= 0.001)) return;
-      const prev = latest.get(p.breweryId);
-      if (!prev || new Date(p.date) > new Date(prev.date)) latest.set(p.breweryId, p);
+      if (isNaN(size)) return;
+      const prev = smallest.get(p.breweryId);
+      if (!prev || size < prev.size - 0.001 ||
+          (Math.abs(size - prev.size) <= 0.001 && new Date(p.date) > new Date(prev.date))) {
+        smallest.set(p.breweryId, { size, price: Number(p.price), date: p.date });
+      }
+      if (Math.abs(size - 0.25) <= 0.001) {
+        const q = quarter.get(p.breweryId);
+        if (!q || new Date(p.date) > new Date(q.date)) quarter.set(p.breweryId, p);
+      }
     });
-    latest.forEach((p, id) => pricesByBrewery.set(id, Number(p.price)));
+    smallest.forEach((p, id) => pricesByBrewery.set(id, p));
+    quarter.forEach((p, id) => quarterByBrewery.set(id, Number(p.price)));
     paint();
   } catch (e) { /* SSR-/Mock-Inhalt bleibt stehen */ }
 })();

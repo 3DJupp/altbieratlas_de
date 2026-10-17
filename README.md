@@ -356,11 +356,13 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 
 ### Stadt-Landingpages (SEO)
 - Serverseitig gerenderte Seiten unter `/stadt/<slug>`
-- **Slugs entstehen automatisch** aus den Städten der freigegebenen Orte
+- **Slugs entstehen automatisch** aus den Städten der freigegebenen und geprüften Orte
   (`citySlug()` in `src/routes.js`, umlautfest: Düsseldorf → `duesseldorf`,
   Mönchengladbach → `moenchengladbach`). Keine Whitelist mehr zu pflegen —
   ein neuer Ort in einer neuen Stadt erzeugt Seite und Sitemap-Eintrag von selbst
-- Listet aktive **und historische** Orte einer Stadt inkl. Ø-Preis und Preis je Ort,
+- Listet aktive **und historische** Orte einer Stadt inkl. Ø-Preis (nur 0,25 l, damit
+  vergleichbar) und Preis je Ort (jüngster Preis der kleinsten gemeldeten Größe, mit
+  Größenangabe). Ungeprüfte Orte („In Prüfung“, `verified = 0`) erscheinen hier nicht,
   mit `CollectionPage`-, `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang
 - Querverlinkung „Weitere Städte" auf jeder Stadtseite; zusätzlich verlinkt der
   Footer site-weit alle Städte (Daten via `/api/config`)

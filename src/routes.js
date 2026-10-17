@@ -2547,7 +2547,7 @@ export async function cityIndex(env) {
     const res = await env.DB.prepare(
       `SELECT city, COUNT(*) AS total,
               SUM(CASE WHEN is_historical = 0 THEN 1 ELSE 0 END) AS current
-       FROM breweries WHERE status = 'approved'
+       FROM breweries WHERE status = 'approved' AND verified = 1
        GROUP BY city ORDER BY current DESC, total DESC, city ASC`
     ).all();
     for (const r of res.results || []) {
@@ -2580,14 +2580,13 @@ export async function serveCity(req, env) {
   try {
     const [bRes, pRes] = await Promise.all([
       env.DB.prepare(
-        "SELECT id, name, type, is_historical FROM breweries WHERE status = 'approved' AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
+        "SELECT id, name, type, is_historical FROM breweries WHERE status = 'approved' AND verified = 1 AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
       ).bind(city).all(),
-      // Jüngste 0,25-l-Meldung je Ort dieser Stadt
+      // Alle Meldungen der Orte dieser Stadt, neueste zuerst
       env.DB.prepare(
-        `SELECT p.brewery_id, p.price, p.date
+        `SELECT p.brewery_id, p.price, p.date, p.size
          FROM prices p JOIN breweries b ON b.id = p.brewery_id
-         WHERE p.status = 'approved' AND b.status = 'approved' AND LOWER(b.city) = LOWER(?)
-           AND ABS(${sizeNumSql('p.size')} - 0.25) < 0.001
+         WHERE p.status = 'approved' AND b.status = 'approved' AND b.verified = 1 AND LOWER(b.city) = LOWER(?)
          ORDER BY p.date DESC`
       ).bind(city).all(),
     ]);
@@ -2595,11 +2594,18 @@ export async function serveCity(req, env) {
     priceRows = pRes.results || [];
   } catch { /* D1 nicht verfügbar — statische Datei mit Client-Rendering ausliefern */ }
 
+  // Karte: jüngster Preis der kleinsten gemeldeten Größe (nicht jeder Ort hat 0,25 l).
+  // Durchschnitt: nur 0,25 l, damit er vergleichbar bleibt.
   const priceByBrewery = new Map();
+  const quarterByBrewery = new Map();
   for (const p of priceRows) {
-    if (!priceByBrewery.has(p.brewery_id)) priceByBrewery.set(p.brewery_id, p);
+    const n = sizeNum(p.size);
+    if (n == null) continue;
+    const prev = priceByBrewery.get(p.brewery_id);
+    if (!prev || n < sizeNum(prev.size) - 0.001) priceByBrewery.set(p.brewery_id, p);
+    if (Math.abs(n - 0.25) < 0.001 && !quarterByBrewery.has(p.brewery_id)) quarterByBrewery.set(p.brewery_id, p);
   }
-  const priceVals = [...priceByBrewery.values()].map((p) => Number(p.price));
+  const priceVals = [...quarterByBrewery.values()].map((p) => Number(p.price));
   const avgPrice = priceVals.length
     ? priceVals.reduce((a, b) => a + b, 0) / priceVals.length
     : null;
@@ -2627,7 +2633,7 @@ export async function serveCity(req, env) {
     return `<a class="city-card${r.is_historical ? " historical" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
       `<span class="cc-name">${escHtml(r.name)}</span>` +
       `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
-      (p ? `<span class="cc-price">€ ${escHtml(fmtPriceDe(p.price))} <span style="opacity:.55;font-size:11px">/ 0,25 l</span></span>` : "") +
+      (p ? `<span class="cc-price">€ ${escHtml(fmtPriceDe(p.price))} <span style="opacity:.55;font-size:11px">/ ${escHtml(fmtSizeDe(p.size))}</span></span>` : "") +
       `</a>`;
   };
   const venuesHtml = current.length
