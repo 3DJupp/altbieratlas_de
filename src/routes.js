@@ -665,8 +665,10 @@ export async function postContribution(req, env, _params, ctx) {
 }
 
 // ---- IP-Hash für Vote-Deduplication (SHA-256, keine rohen IPs gespeichert) ----
-async function hashIp(ip) {
-  const data = new TextEncoder().encode(ip + ":rival-vote-2026");
+// Der Tag (UTC) fließt in den Hash ein: pro IP und Tag genau ein Hash, also eine Stimme.
+// Stimmen verschiedener Tage lassen sich so auch nicht derselben IP zuordnen.
+async function hashIp(ip, day) {
+  const data = new TextEncoder().encode(ip + ":" + day + ":rival-vote-2026");
   const hash = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
@@ -691,18 +693,20 @@ export async function getRivalVotes(req, env) {
 }
 
 // POST /api/rivals/vote  { choice: "alt" | "kolsch" | "neutral" }
+// Eine Stimme pro IP und Tag; ein zweiter Versuch am selben Tag liefert 429 "already-voted".
 export async function postRivalVote(req, env) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
   if (!RIVAL_CHOICES.includes(body.choice)) return error(400, "invalid-choice");
-  const ip = clientIp(req);
-  const ipHash = await hashIp(ip);
-  await env.DB.prepare(
-    "INSERT INTO rival_votes (choice, ip_hash) VALUES (?, ?) ON CONFLICT(ip_hash) DO UPDATE SET choice = excluded.choice, created_at = datetime('now')"
+  const day = new Date().toISOString().slice(0, 10);
+  const ipHash = await hashIp(clientIp(req), day);
+  const ins = await env.DB.prepare(
+    "INSERT INTO rival_votes (choice, ip_hash) VALUES (?, ?) ON CONFLICT(ip_hash) DO NOTHING"
   ).bind(body.choice, ipHash).run();
   const res = await env.DB.prepare(
     "SELECT choice, COUNT(*) AS n FROM rival_votes GROUP BY choice"
   ).all();
+  if (!ins.meta?.changes) return error(429, "already-voted", countRivalVotes(res.results));
   return json({ ok: true, ...countRivalVotes(res.results) });
 }
 

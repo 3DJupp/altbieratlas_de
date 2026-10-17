@@ -413,7 +413,7 @@ Fünf Einreichungstypen mit Moderation:
 - Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz
 - Hebt überraschende Gemeinsamkeiten hervor (beide obergärig, beide Köbes, beide 0,2 l)
 - Prosa-Abschnitt zur Rivalität (Kölschkonvention 1986, g.g.A. für Kölsch, Altbier ohne Herkunftsschutz)
-- Abstimmung „Team Alt vs. Team Kölsch" plus kleine Enthaltung für Pils-Trinker; eine Stimme pro gehashter IP (`rival_votes`), Enthaltungen zählen nicht in die Alt/Kölsch-Prozente
+- Abstimmung „Team Alt vs. Team Kölsch" plus kleine Enthaltung für Pils-Trinker; eine Stimme pro IP und Tag, gespeichert nur als SHA-256-Hash über IP + Tag (`rival_votes`, zweiter Versuch am selben Tag → 429), Enthaltungen zählen nicht in die Alt/Kölsch-Prozente
 - Vollständig DE/EN übersetzt
 
 ### Mehrsprachigkeit & UX
@@ -537,7 +537,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/geocode?q=…` | Nominatim-Proxy |
 | POST | `/api/contributions` | Beitrag einreichen |
 | GET | `/api/rivals/votes` | Stimmen Alt / Kölsch / Enthaltung |
-| POST | `/api/rivals/vote` | Stimme abgeben (`alt`, `kolsch`, `neutral`) |
+| POST | `/api/rivals/vote` | Stimme abgeben (`alt`, `kolsch`, `neutral`), einmal pro IP und Tag |
 | GET | `/api/untappd/brewery/:id` | Untappd-Bewertung (24h Cache) |
 | GET | `/api/og/ort?id=…` | Dynamisches 1200×630-OG-Bild je Ort (in `robots.txt` freigegeben) |
 | GET | `/sitemap.xml` | Dynamische Sitemap (statische Seiten, Städte, Orte, Events) |

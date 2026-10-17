@@ -949,6 +949,12 @@ html { scroll-behavior: smooth; }
   }
 }
 
+/* Mittlere Breite: sechs Nav-Links müssen neben Brand und Controls passen */
+@media (min-width: 641px) and (max-width: 900px) {
+  .nav { gap: 2px; }
+  .nav a { padding: 8px 9px; font-size: 13px; }
+}
+
 /* Auf Desktop niemals Hamburger / Mobile-Nav anzeigen */
 @media (min-width: 641px) {
   .hamburger { display: none !important; }

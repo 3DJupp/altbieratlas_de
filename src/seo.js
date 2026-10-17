@@ -532,6 +532,8 @@ export async function serveSorten(req, env) {
   const pageUrl = `${SITE}/sorten`;
   // Farbe landet in einem style-Attribut → nur Hex-Werte zulassen
   const color = (c) => (/^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "#8b4513");
+  // Gleicher Kartenaufbau wie im Client: fehlende Werte als „—“ statt fehlender Zeile
+  const specRow = (k, v) => `<div class="spec-row"><span class="k">${k}</span>${v != null && v !== "" ? `<span class="v">${escHtml(v)}</span>` : `<span class="v na">—</span>`}</div>`;
 
   let html = await assetRes.text();
   if (styles.length) {
@@ -542,10 +544,10 @@ export async function serveSorten(req, env) {
         ${s.logo_key ? `<img src="/logos/${escHtml(s.logo_key)}" alt="" class="spec-logo">` : ""}
       </div>
       <div class="spec-body">
-        ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${escHtml(Number(s.abv).toFixed(1).replace(".", ","))} %</span></div>` : ""}
-        ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${escHtml(s.ibu)}</span></div>` : ""}
+        ${specRow("ABV", s.abv != null ? `${Number(s.abv).toFixed(1).replace(".", ",")} %` : null)}
+        ${specRow("IBU", s.ibu)}
         <p class="spec-tasting">${escHtml(s.tasting_de || "")}</p>
-        ${s.bid ? `<a href="/ort/${escHtml(encodeURIComponent(s.bid))}" style="display:inline-block;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--copper);text-decoration:none;border:none;letter-spacing:0.04em">→ ${escHtml(s.bname)}</a>` : ""}
+        ${s.bid ? `<a class="spec-link" href="/ort/${escHtml(encodeURIComponent(s.bid))}">→ ${escHtml(s.bname)}</a>` : ""}
       </div>
     </article>`).join("");
     html = html.replace(
