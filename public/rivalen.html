@@ -246,8 +246,7 @@
 .vote-result .vr-verdict.vr-kolsch { color: #c89800; }
 .vote-result .vr-verdict.vr-neutral { color: var(--ink); }
 .vote-result .vr-body { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
-.vote-reset { margin-top: 12px; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--font-mono); color: var(--ink-muted); text-decoration: underline; padding: 0; }
-.vote-reset:hover { color: var(--ink); }
+.vote-again { margin: 12px 0 0; font-size: 12px; font-family: var(--font-mono); color: var(--ink-muted); }
 
 /* ---- Vote Bar ---- */
 .vote-bar-wrap { margin-top: 24px; }
@@ -518,7 +517,7 @@
       <div class="eyebrow" data-i18n="rivals.voteEyebrow">Abstimmung</div>
       <h2 data-i18n="rivals.voteTitle">Zeit, Farbe zu bekennen</h2>
       <div class="vote-wrap">
-        <p class="vote-intro" data-i18n="rivals.voteIntro">Kein Druck. Aber du weißt, was richtig ist. Deine Stimme fließt anonym in die Gemeinschaftsauswertung ein.</p>
+        <p class="vote-intro" data-i18n="rivals.voteIntro">Kein Druck. Aber du weißt, was richtig ist. Eine Stimme pro Tag, anonym in der Gemeinschaftsauswertung.</p>
 
         <div class="vote-buttons" id="vote-buttons">
           <button class="vote-btn vote-alt" id="vote-btn-alt" type="button">
@@ -536,7 +535,7 @@
           <div class="vr-eyebrow" data-i18n="rivals.voteResultEyebrow">Dein Urteil</div>
           <div class="vr-verdict" id="vr-verdict"></div>
           <div class="vr-body" id="vr-body"></div>
-          <button class="vote-reset" id="vote-reset" type="button" data-i18n="rivals.voteReset">Stimme zurücksetzen</button>
+          <p class="vote-again" id="vote-again" data-i18n="rivals.voteAgain">Morgen darfst du wieder abstimmen.</p>
         </div>
 
         <div class="vote-bar-wrap" id="vote-bar" hidden>
@@ -729,22 +728,49 @@ async function loadVotes() {
   }
 }
 
+// Eine Stimme pro Tag (Server prüft per IP-Hash); lokal merken wir Wahl und Tag (UTC wie der Server)
+function voteDay() { return new Date().toISOString().slice(0, 10); }
+
+function readStoredVote() {
+  try {
+    const v = JSON.parse(localStorage.getItem(VOTE_KEY));
+    if (v && VOTE_CHOICES.includes(v.choice) && v.day === voteDay()) return v;
+  } catch {}
+  return null;
+}
+
+function setVoteHint(key) {
+  const el = document.getElementById("vote-again");
+  el.setAttribute("data-i18n", key);
+  el.textContent = window.t ? window.t(key) : el.textContent;
+}
+
 async function castVote(choice) {
-  localStorage.setItem(VOTE_KEY, choice);
+  ["vote-btn-alt", "vote-btn-kolsch", "vote-btn-neutral"].forEach(id => { document.getElementById(id).disabled = true; });
+  try { localStorage.setItem(VOTE_KEY, JSON.stringify({ choice, day: voteDay() })); } catch {}
+  setVoteHint("rivals.voteAgain");
   showVoteResult(choice);
   try {
     const res = await window.AtlasAPI.postRivalVote(choice);
     setRivalVotes(res);
     renderVoteBar();
   } catch (e) {
-    console.warn("[rivals] vote cast failed", e);
+    if (e.status === 429 && e.detail?.error === "already-voted") {
+      setVoteHint("rivals.voteAlready");
+      setRivalVotes(e.detail);
+      renderVoteBar();
+    } else {
+      console.warn("[rivals] vote cast failed", e);
+    }
+  } finally {
+    ["vote-btn-alt", "vote-btn-kolsch", "vote-btn-neutral"].forEach(id => { document.getElementById(id).disabled = false; });
   }
 }
 
 function initVote() {
-  const stored = localStorage.getItem(VOTE_KEY);
-  if (VOTE_CHOICES.includes(stored)) {
-    showVoteResult(stored);
+  const stored = readStoredVote();
+  if (stored) {
+    showVoteResult(stored.choice);
   } else {
     document.getElementById("vote-buttons").hidden = false;
     document.getElementById("vote-result").hidden = true;
@@ -755,18 +781,13 @@ function initVote() {
 document.getElementById("vote-btn-alt").addEventListener("click", () => castVote("alt"));
 document.getElementById("vote-btn-kolsch").addEventListener("click", () => castVote("kolsch"));
 document.getElementById("vote-btn-neutral").addEventListener("click", () => castVote("neutral"));
-document.getElementById("vote-reset").addEventListener("click", () => {
-  localStorage.removeItem(VOTE_KEY);
-  document.getElementById("vote-buttons").hidden = false;
-  document.getElementById("vote-result").hidden = true;
-});
 
 initVote();
 
 // Nach Sprachwechsel: Vote-Ergebnis und Bar in neuer Sprache zeigen
 document.addEventListener("atlas:lang-changed", () => {
-  const stored = localStorage.getItem(VOTE_KEY);
-  if (VOTE_CHOICES.includes(stored)) showVoteResult(stored);
+  const stored = readStoredVote();
+  if (stored) showVoteResult(stored.choice);
   renderVoteBar();
 });
 </script>
