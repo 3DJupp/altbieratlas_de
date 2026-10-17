@@ -230,7 +230,7 @@ VALUES
     'Brauerei Schumacher''s old-town tap house on Bolkerstraße. Schumacher Alt fresh from the barrel, with classic brewhouse fare such as pork knuckle and bratwurst. Alongside the main house on Oststraße, Schumacher''s second address and one of the old town''s most traditional Altbier spots.',
     0, 'pending', 0, NULL, NULL),
 
-  ('kneipe-kneipe', 'Kneipe Kneipe', 'Kneipe Kneipe', 'pub', 'Düsseldorf', 'DE',
+  ('kneipe-kneipe', 'Kneipe Kneipe', 'Kneipe Kneipe', 'taproom', 'Düsseldorf', 'DE',
     'Liefergasse 1, 40213 Düsseldorf',
     'https://maps.google.com/maps?q=Liefergasse+1,+40213+D%C3%BCsseldorf',
     51.2285, 6.7731, 2026, NULL,
@@ -331,16 +331,16 @@ VALUES
     'Paulsmühlenstraße 99, 40597 Düsseldorf',
     'https://maps.app.goo.gl/TwFkC6DR7mkmqhvb9',
     51.165322, 6.886514, NULL, 'https://muehlentreff.eatbu.com',
-    '',
-    '',
+    'Kleines Restaurant an der Paulsmühlenstraße in Benrath, früher eine Nachbarschaftskneipe. Gutbürgerliche, hausgemachte Küche mit wöchentlich wechselnder Karte, man kann aber auch einfach nur auf ein Alt vorbeikommen. Schumacher Alt vom Fass, laut Gästebewertungen zeitweise auch Frankenheim Alt. Plätze drinnen und draußen, montags Ruhetag (bitte vorab prüfen).',
+    'Small restaurant on Paulsmühlenstraße in Benrath, formerly a neighbourhood pub. Traditional home-made German food with a weekly changing menu, though you are just as welcome to drop in for an Alt. Schumacher Alt on tap, and according to guest reviews sometimes Frankenheim Alt too. Indoor and outdoor seating, closed on Mondays (please check before visiting).',
     1, 'approved', 0, 'muehlentreff.jpg', NULL),
 
   ('extratour', 'Extratour Zum Alten Rhein', 'Extratour', 'gastronomie', 'Düsseldorf', 'DE',
     'Drängenburger Str. 4, 40593 Düsseldorf',
     'https://maps.app.goo.gl/bfTBadSuJ6QJM1tYA?g_st=ac',
     51.14504, 6.864357, NULL, 'https://extratour-urdenbach.de',
-    '',
-    '',
+    'Gaststätte am Ortseingang von Urdenbach, seit 2008 im umgebauten Vereinshaus des Bürgerschützenvereins, das 1983 als „Zum Alten Rhein“ eröffnet wurde. Ausgeschenkt wird Schumacher Alt, an den Latzenbier-Tagen (jeweils dritter Donnerstag im März, September und November) auch das stärkere Schumacher Latzenbier. Gutbürgerliche und saisonale Küche, Wintergarten und großer Biergarten mit Blick in die Urdenbacher Kämpe, beliebt als Einkehr nach Rad- und Wandertouren.',
+    'Restaurant at the entrance to Urdenbach, since 2008 in the converted clubhouse of the local marksmen''s association, which opened in 1983 as "Zum Alten Rhein". Schumacher Alt is on tap, and on Latzenbier days (the third Thursday of March, September and November) also the stronger Schumacher Latzenbier. Traditional and seasonal German food, a conservatory and a large beer garden looking out over the Urdenbacher Kämpe nature reserve, a popular stop after a bike ride or hike.',
     1, 'approved', 0, NULL, NULL),
 
   -- ========== Düsseldorf — Historisch ==========
