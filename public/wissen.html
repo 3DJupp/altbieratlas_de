@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#b57a3a" />
-<title>Was ist Altbier? Geschichte, Sorten &amp; Glossar · Altbieratlas</title>
-<meta name="description" content="Alles über Altbier: Geschichte, Braustile, Glossar und die vier Düsseldorfer Hausbrauereien." />
+<title>Was ist Altbier? Geschichte, Köbes &amp; Glossar · Altbieratlas</title>
+<meta name="description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst." />
 <link rel="canonical" href="https://altbieratlas.de/wissen" />
 <link rel="alternate" hreflang="de" href="https://altbieratlas.de/wissen" />
 <link rel="alternate" hreflang="en" href="https://altbieratlas.de/wissen?lang=en" />
@@ -17,7 +17,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Altbieratlas" />
 <meta property="og:title" content="Altbier-Wissen · Altbieratlas" />
-<meta property="og:description" content="Alles über Altbier: Geschichte, Braustile, Glossar und die vier Düsseldorfer Hausbrauereien." />
+<meta property="og:description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst." />
 <meta property="og:url" content="https://altbieratlas.de/wissen" />
 <meta property="og:image" content="https://altbieratlas.de/og-image.png" />
 <meta property="og:image:width" content="1200" />
@@ -28,7 +28,7 @@
 <meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Altbier-Wissen · Altbieratlas" />
-<meta name="twitter:description" content="Alles über Altbier: Geschichte, Braustile, Glossar und die vier Düsseldorfer Hausbrauereien." />
+<meta name="twitter:description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst." />
 <meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
 <meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
 
@@ -121,38 +121,6 @@
 }
 .gloss-item p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
 
-.style-spec-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px; margin-top: 20px;
-}
-.spec-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); overflow: hidden; }
-.spec-head {
-  height: 80px; position: relative;
-  padding: 18px 20px;
-  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
-}
-.spec-head h3 { color: #f3ead8; font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; }
-.spec-logo {
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  object-fit: contain;
-  border-radius: 4px;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35));
-}
-.spec-body { padding: 16px 20px 20px; }
-.spec-row {
-  display: flex; justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--rule);
-  font-family: var(--font-mono); font-size: 12px;
-}
-.spec-row:last-child { border: none; }
-.spec-row .k { color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; }
-.spec-row .v { color: var(--copper); font-weight: 500; }
-.spec-tasting { font-size: 13px; color: var(--ink-soft); padding-top: 12px; line-height: 1.55; }
-
 .koebes-cards {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 18px; margin-top: 28px;
@@ -178,14 +146,13 @@
     <div class="container">
       <div class="eyebrow" data-i18n="know.heroEyebrow">Altbier-Wissen</div>
       <h1 data-i18n-html="know.heroTitleHtml">Ein obergäriges Bier, eine Stadt, eine <em>Kultur</em>.</h1>
-      <p class="lede" data-i18n="know.heroLede">Altbier ist nicht nur eine Biersorte. Es ist ein Getränk, eine Bedienart und eine Selbstverständlichkeit. Wer es zum ersten Mal trinkt, versteht die Runde erst beim dritten Glas.</p>
+      <p class="lede" data-i18n="know.heroLede">Altbier ist mehr als ein Bier. Dazu gehören der Köbes, die Striche auf dem Deckel und ein paar Regeln, die keiner aufschreibt. Hier stehen sie.</p>
     </div>
   </section>
 
   <nav class="know-nav">
     <div class="container">
       <a href="#geschichte" class="active" data-i18n="know.nav.history">Geschichte</a>
-      <a href="#sorten" data-i18n="know.nav.styles">Sorten</a>
       <a href="#koebes" data-i18n="know.nav.koebes">Köbes</a>
       <a href="#glossar" data-i18n="know.nav.glossary">Glossar</a>
       <button class="know-nav-top" id="know-nav-top" aria-label="Zum Seitenanfang">↑ Top</button>
@@ -197,47 +164,36 @@
       <div class="eyebrow" data-i18n="know.historyEyebrow">Geschichte</div>
       <h2 data-i18n="know.historyTitle">Warum „Alt"?</h2>
       <div class="prose">
-        <p data-i18n-html="know.historyP1Html">Die Bezeichnung <em>Altbier</em> meint nicht das Alter des Bieres, sondern die Art, es zu brauen: obergärig, mit Hefe, die bei wärmeren Temperaturen oben auf dem Sud arbeitet. Das ist die <em>alte</em> Brauart — im Gegensatz zu den später aufgekommenen, untergärigen Lagerbieren.</p>
-        <p data-i18n-html="know.historyP2Html">Im Rheinland, besonders in Düsseldorf und am Niederrhein, hat sich diese Tradition gehalten. Während der Rest Deutschlands im 19. Jahrhundert auf Pils und Export umstellte, hielten die Düsseldorfer an ihrem dunkel-bernsteinfarbenen, würzig-herben Alt fest. Vier klassische Hausbrauereien bestehen bis heute in Düsseldorf: <em>Uerige</em>, <em>Füchschen</em> und <em>Schlüssel</em> in der Altstadt, sowie <em>Schumacher</em> an der Oststraße, unweit des Hauptbahnhofs. Dazu kam 2010 die jüngere <em>Kürzer</em>, ebenfalls in der Altstadt.</p>
-        <p data-i18n-html="know.historyP3Html">Außerhalb des Rheinlands ist Altbier eine Rarität. In den USA haben Craft-Brauer wie Alaskan Brewing die Sorte nach alter Düsseldorfer Vorlage wieder aufleben lassen. Auch in den Niederlanden, Japan und einzelnen europäischen Ländern gibt es heute Altbier-Interpretationen — oft mit Respekt für das Original, manchmal mit eigener Handschrift.</p>
-        <p style="margin-top:10px" data-i18n-html="know.cityCtaHtml">→ Alle Altbier-Orte in <a href="/stadt/duesseldorf">Düsseldorf</a> ansehen</p>
+        <p data-i18n-html="know.historyP1Html">Mit dem Alter hat der Name nichts zu tun. „Alt“ steht für die <em>alte</em> Brauart: obergärig, mit einer Hefe, die es warm mag und oben auf dem Sud arbeitet. Die untergärigen Lagerbiere kamen erst später.</p>
+        <p data-i18n-html="know.historyP2Html">In Düsseldorf und am Niederrhein ist das so geblieben. Als im 19. Jahrhundert fast überall auf Pils und Export umgestellt wurde, blieben die Düsseldorfer bei ihrem dunklen, würzig-herben Alt. Vier klassische Hausbrauereien gibt es bis heute: <em>Uerige</em>, <em>Füchschen</em> und <em>Schlüssel</em> in der Altstadt und <em>Schumacher</em> an der Oststraße. 2010 kam <em>Kürzer</em> dazu, auch in der Altstadt.</p>
+        <p data-i18n-html="know.historyP3Html">Außerhalb des Rheinlands ist Altbier selten. Ein paar Craft-Brauer in den USA, in Japan oder den Niederlanden machen eins, mal nah am Original, mal ganz eigen.</p>
+        <p style="margin-top:10px" data-i18n-html="know.stylesCtaHtml">→ Was die Hausbrauereien und viele andere ausschenken, findest du unter <a href="/sorten">Sorten</a></p>
+        <p data-i18n-html="know.cityCtaHtml">→ Alle Altbier-Orte in <a href="/stadt/duesseldorf">Düsseldorf</a> ansehen</p>
       </div>
-    </div>
-  </section>
-
-  <section class="know-section" id="sorten">
-    <div class="container">
-      <div class="eyebrow" data-i18n="know.stylesEyebrow">Sorten</div>
-      <h2 data-i18n="know.stylesTitle">Was im Glas sein kann</h2>
-      <p style="color:var(--ink-soft);max-width:60ch;margin-bottom:10px" data-i18n="know.stylesLede">Nicht jedes Alt schmeckt gleich. Von der milden Schumacher-Runde bis zur fast portweinartigen Uerige Doppelsticke ist viel Spielraum.</p>
-      <div class="style-spec-grid" id="style-grid">
-        <p style="color:var(--ink-muted);grid-column:1/-1" data-i18n="common.loading">Lade…</p>
-      </div>
-      <p id="style-legal-notice" style="font-size:11px;color:var(--ink-muted);margin-top:14px;font-family:var(--font-mono);letter-spacing:0.02em"></p>
     </div>
   </section>
 
   <section class="know-section" id="koebes">
     <div class="container">
       <div class="eyebrow" data-i18n="know.koebesEyebrow">Köbes-Kultur</div>
-      <h2 data-i18n="know.koebesTitle">Drei Dinge, die du beim ersten Besuch wissen solltest</h2>
-      <p style="color:var(--ink-soft);max-width:60ch" data-i18n="know.koebesLede">Der Köbes ist keine Bedienung im modernen Sinn. Er ist Teil des Rituals — wortkarg, direkt, oft mit trockenem Humor. Wer das kennt, freut sich drauf.</p>
+      <h2 data-i18n="know.koebesTitle">Drei Dinge für deinen ersten Besuch</h2>
+      <p style="color:var(--ink-soft);max-width:60ch" data-i18n="know.koebesLede">Der Köbes ist kein Kellner. Er bringt Alt, macht Striche und hat immer einen Spruch parat. Nimm's nicht persönlich.</p>
 
       <div class="koebes-cards">
         <div class="koebes-card">
           <div class="num">01</div>
-          <h3 data-i18n="know.koebes1Title">Das Glas wird nachgestellt</h3>
-          <p data-i18n="know.koebes1Body">Solange ein Bierdeckel auf dem leeren Glas liegt, bleibt es leer. Wer weiter trinken will, stellt den Deckel zur Seite. Wer fertig ist, legt ihn oben drauf.</p>
+          <h3 data-i18n="know.koebes1Title">Deckel drauf, dann ist Schluss</h3>
+          <p data-i18n="know.koebes1Body">Ist dein Glas leer, steht schon das nächste da. Ungefragt. Wenn du nichts mehr willst, leg den Bierdeckel aufs Glas. Dann kommt kein neues mehr auf den Tisch.</p>
         </div>
         <div class="koebes-card">
           <div class="num">02</div>
-          <h3 data-i18n="know.koebes2Title">Die Strichliste zählt</h3>
-          <p data-i18n="know.koebes2Body">Jedes neue Alt wird als Strich auf deinem Bierdeckel notiert. Am Ende wird addiert. Kontrolliert wird nicht — hier herrscht Vertrauen. Rheinisches Ehrenwort.</p>
+          <h3 data-i18n="know.koebes2Title">Striche auf dem Deckel</h3>
+          <p data-i18n="know.koebes2Body">Für jedes Alt macht der Köbes einen Strich auf deinen Deckel. Am Ende wird gezählt, und du zahlst.</p>
         </div>
         <div class="koebes-card">
           <div class="num">03</div>
-          <h3 data-i18n="know.koebes3Title">Gesprächigkeit ist optional</h3>
-          <p data-i18n="know.koebes3Body">Der Köbes sagt selten „Hallo". Er zählt, er stellt hin, er nimmt ab. Ein trockener Kommentar kommt gelegentlich — aber Smalltalk erwartet dich nicht. Das ist keine Unhöflichkeit, das ist Tradition.</p>
+          <h3 data-i18n="know.koebes3Title">Smalltalk? Eher nicht.</h3>
+          <p data-i18n="know.koebes3Body">Ein „Hallo“ hörst du selten, einen trockenen Spruch schon eher. Das ist nicht unhöflich, das gehört dazu.</p>
         </div>
       </div>
     </div>
@@ -246,7 +202,7 @@
   <section class="know-section" id="glossar">
     <div class="container">
       <div class="eyebrow" data-i18n="know.glossaryEyebrow">Glossar</div>
-      <h2 data-i18n="know.glossaryTitle">Worte, die du im Uerige hörst</h2>
+      <h2 data-i18n="know.glossaryTitle">Worte, die du im Brauhaus hörst</h2>
       <div class="glossary-grid" id="gloss-grid" style="margin-top:28px">
         <p style="color:var(--ink-muted);grid-column:1/-1" data-i18n="common.loading">Lade…</p>
       </div>
@@ -266,36 +222,7 @@
 renderShell({ activeNav: "knowledge" });
 
 // Daten einmal laden, bei Sprachwechsel nur neu rendern (kein Reload!)
-let stylesCache = null;
 let glossaryCache = null;
-
-function paintStyles() {
-  if (!stylesCache) return;
-  const lang = window.__atlasLang;
-  const grid = document.getElementById("style-grid");
-  grid.innerHTML = stylesCache.map((s) => `
-    <article class="spec-card">
-      <div class="spec-head" style="background: linear-gradient(135deg, ${s.color || "#8b4513"}, ${(s.color || "#8b4513")}cc)">
-        <h3>${s.name}</h3>
-        ${s.logoUrl ? `<img src="${s.logoUrl}" alt="" class="spec-logo" onerror="this.style.display='none'">` : ""}
-      </div>
-      <div class="spec-body">
-        ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${window.formatABV(s.abv)}</span></div>` : ""}
-        ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
-        <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
-        ${s.primaryBrewery ? `<a href="/ort/${encodeURIComponent(s.primaryBrewery.id)}" style="display:inline-block;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--copper);text-decoration:none;border:none;letter-spacing:0.04em">→ ${s.primaryBrewery.name}</a>` : ""}
-      </div>
-    </article>
-  `).join("") || '<p style="color:var(--ink-muted);grid-column:1/-1">Keine Einträge.</p>';
-
-  // Rechtlicher Hinweis unter dem Raster
-  const notice = document.getElementById("style-legal-notice");
-  if (notice) {
-    notice.textContent = lang === "en"
-      ? "All brand names and logos are the property of the respective breweries and are used for identification purposes only."
-      : "Alle genannten Markennamen und Logos sind Eigentum der jeweiligen Brauereien und dienen nur zur Identifikation.";
-  }
-}
 
 function paintGlossary() {
   if (!glossaryCache) return;
@@ -311,24 +238,19 @@ function paintGlossary() {
 
 (async () => {
   try {
-    const [styleRes, glossRes] = await Promise.all([
-      window.AtlasAPI.listStyles(),
-      window.AtlasAPI.listGlossary(),
-    ]);
-    stylesCache = styleRes.styles || [];
+    const glossRes = await window.AtlasAPI.listGlossary();
     glossaryCache = glossRes.glossary || [];
-    paintStyles();
     paintGlossary();
   } catch (e) {
     console.error("[wissen]", e);
-    document.getElementById("style-grid").innerHTML = `<p style="color:#9b1f1f;grid-column:1/-1">Fehler beim Laden.</p>`;
+    document.getElementById("gloss-grid").innerHTML = `<p style="color:#9b1f1f;grid-column:1/-1">Fehler beim Laden.</p>`;
   }
 })();
 
 // ---- Sticky Sub-Nav ----
 const knowNav  = document.querySelector(".know-nav");
 const knowHero = document.querySelector(".know-hero");
-const sections = ["geschichte", "sorten", "koebes", "glossar"];
+const sections = ["geschichte", "koebes", "glossar"];
 const navLinks = document.querySelectorAll(".know-nav a");
 
 // navPlaceholder hält den Layout-Platz wenn die Nav fixed wird
@@ -405,10 +327,7 @@ navLinks.forEach((link) => {
 });
 
 // Bei Sprachwechsel: nur neu rendern, kein Seiten-Reload!
-document.addEventListener("atlas:lang-changed", () => {
-  paintStyles();
-  paintGlossary();
-});
+document.addEventListener("atlas:lang-changed", paintGlossary);
 </script>
 </body>
 </html>

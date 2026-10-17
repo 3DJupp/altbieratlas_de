@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="de" data-theme="light" data-i18n-title="title.styles">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
+<title>Altbier-Sorten: Alkohol, Bittere &amp; Geschmack · Altbieratlas</title>
+<meta name="description" content="Alle Altbier-Sorten im Atlas mit Alkoholgehalt, Bittere und Geschmack: von den Düsseldorfer Hausbrauereien bis zu Sticke und Doppelsticke." />
+<link rel="canonical" href="https://altbieratlas.de/sorten" />
+<link rel="alternate" hreflang="de" href="https://altbieratlas.de/sorten" />
+<link rel="alternate" hreflang="en" href="https://altbieratlas.de/sorten?lang=en" />
+<link rel="alternate" hreflang="x-default" href="https://altbieratlas.de/sorten" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Altbier-Sorten · Altbieratlas" />
+<meta property="og:description" content="Alle Altbier-Sorten im Atlas mit Alkoholgehalt, Bittere und Geschmack." />
+<meta property="og:url" content="https://altbieratlas.de/sorten" />
+<meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+<meta property="og:locale" content="de_DE" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Altbier-Sorten · Altbieratlas" />
+<meta name="twitter:description" content="Alle Altbier-Sorten im Atlas mit Alkoholgehalt, Bittere und Geschmack." />
+<meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css" />
+<style>
+.styles-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); }
+.styles-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; }
+.styles-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
+.styles-hero .lede em { font-style: italic; color: var(--copper); }
+.styles-hero .legend { color: var(--ink-muted); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; margin-top: 14px; }
+
+.styles-section { padding: 48px 0 60px; border-bottom: 1px solid var(--rule); }
+.styles-section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 500; max-width: 20ch; margin-bottom: 26px; }
+.styles-section .eyebrow { margin-bottom: 8px; }
+
+.style-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.spec-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); overflow: hidden; }
+.spec-head {
+  height: 80px; position: relative;
+  padding: 18px 20px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+}
+.spec-head h3 { color: #f3ead8; font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; }
+.spec-logo {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 4px;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35));
+}
+.spec-body { padding: 16px 20px 20px; }
+.spec-row {
+  display: flex; justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 12px;
+}
+.spec-row:last-child { border: none; }
+.spec-row .k { color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.spec-row .v { color: var(--copper); font-weight: 500; }
+.spec-tasting { font-size: 13px; color: var(--ink-soft); padding-top: 12px; line-height: 1.55; }
+
+.facts-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.fact-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 24px; }
+.fact-card h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; margin: 0 0 8px; color: var(--copper); }
+.fact-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
+
+.styles-cta { color: var(--ink-soft); margin-top: 28px; }
+
+@media (max-width: 800px) {
+  .facts-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-banner" hidden></div>
+  <div id="shell-header"></div>
+
+  <section class="styles-hero">
+    <div class="container">
+      <div class="eyebrow" data-i18n="styles.heroEyebrow">Altbier-Sorten</div>
+      <h1 data-i18n-html="styles.heroTitleHtml">Was im Glas sein kann.</h1>
+      <p class="lede" data-i18n="styles.heroLede">Alt ist nicht gleich Alt. Mal mild und rund, mal knackig herb, mal fast wie Portwein. Hier stehen alle Sorten aus dem Atlas.</p>
+      <p class="legend" data-i18n="styles.legend">ABV = Alkohol · IBU = Bittere, je höher, desto herber</p>
+    </div>
+  </section>
+
+  <section class="styles-section" id="sorten">
+    <div class="container">
+      <div class="style-spec-grid" id="style-grid">
+        <p style="color:var(--ink-muted);grid-column:1/-1" data-i18n="common.loading">Lade…</p>
+      </div>
+      <p id="style-legal-notice" style="font-size:11px;color:var(--ink-muted);margin-top:14px;font-family:var(--font-mono);letter-spacing:0.02em"></p>
+    </div>
+  </section>
+
+  <section class="styles-section" id="gut-zu-wissen">
+    <div class="container">
+      <div class="eyebrow" data-i18n="styles.factsEyebrow">Gut zu wissen</div>
+      <h2 data-i18n="styles.factsTitle">Drei Sachen zum Einordnen</h2>
+      <div class="facts-cards">
+        <div class="fact-card">
+          <h3 data-i18n="styles.fact1Title">Obergärig</h3>
+          <p data-i18n="styles.fact1Body">Alt wird mit einer Hefe gebraut, die es warm mag und oben auf dem Sud arbeitet. Das bringt mehr Frucht und Würze als bei Pils oder Lager.</p>
+        </div>
+        <div class="fact-card">
+          <h3 data-i18n="styles.fact2Title">Hausbrauerei</h3>
+          <p data-i18n="styles.fact2Body">Gebraut und gezapft wird unter einem Dach. In Düsseldorf sind das die Klassiker Uerige, Füchschen, Schlüssel und Schumacher, dazu Kürzer und ein paar jüngere.</p>
+        </div>
+        <div class="fact-card">
+          <h3 data-i18n="styles.fact3Title">Alt aus dem Supermarkt</h3>
+          <p data-i18n="styles.fact3Body">Handelsmarken wie Schultenbräu kommen meist aus Auftragsbrauereien, teils nicht mal aus dem Rheinland. Gezapft werden sie nirgends, deshalb fehlen sie auf der Karte.</p>
+        </div>
+      </div>
+      <p class="styles-cta" data-i18n-html="styles.ctaHtml">Wie man Alt im Brauhaus trinkt, steht unter <a href="/wissen">Wissen</a>. Eine Sorte fehlt? <a href="/beitragen?typ=sorte">Hier ergänzen</a>.</p>
+    </div>
+  </section>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="api-client.js"></script>
+<script src="shell.js"></script>
+<script>
+renderShell({ activeNav: "knowledge" });
+
+// Daten einmal laden, bei Sprachwechsel nur neu rendern (kein Reload!)
+let stylesCache = null;
+
+function paintStyles() {
+  if (!stylesCache) return;
+  const lang = window.__atlasLang;
+  const grid = document.getElementById("style-grid");
+  grid.innerHTML = stylesCache.map((s) => `
+    <article class="spec-card">
+      <div class="spec-head" style="background: linear-gradient(135deg, ${s.color || "#8b4513"}, ${(s.color || "#8b4513")}cc)">
+        <h3>${s.name}</h3>
+        ${s.logoUrl ? `<img src="${s.logoUrl}" alt="" class="spec-logo" onerror="this.style.display='none'">` : ""}
+      </div>
+      <div class="spec-body">
+        ${s.abv != null ? `<div class="spec-row"><span class="k">ABV</span><span class="v">${window.formatABV(s.abv)}</span></div>` : ""}
+        ${s.ibu != null ? `<div class="spec-row"><span class="k">IBU</span><span class="v">${s.ibu}</span></div>` : ""}
+        <p class="spec-tasting">${(s.tasting && (s.tasting[lang] || s.tasting.de)) || ""}</p>
+        ${s.primaryBrewery ? `<a href="/ort/${encodeURIComponent(s.primaryBrewery.id)}" style="display:inline-block;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--copper);text-decoration:none;border:none;letter-spacing:0.04em">→ ${s.primaryBrewery.name}</a>` : ""}
+      </div>
+    </article>
+  `).join("") || `<p style="color:var(--ink-muted);grid-column:1/-1">${window.t("know.empty")}</p>`;
+
+  // Rechtlicher Hinweis unter dem Raster
+  const notice = document.getElementById("style-legal-notice");
+  if (notice) {
+    notice.textContent = lang === "en"
+      ? "All brand names and logos are the property of the respective breweries and are used for identification purposes only."
+      : "Alle genannten Markennamen und Logos sind Eigentum der jeweiligen Brauereien und dienen nur zur Identifikation.";
+  }
+}
+
+(async () => {
+  try {
+    const styleRes = await window.AtlasAPI.listStyles();
+    stylesCache = styleRes.styles || [];
+    paintStyles();
+  } catch (e) {
+    console.error("[sorten]", e);
+    document.getElementById("style-grid").innerHTML = `<p style="color:#9b1f1f;grid-column:1/-1">${window.t("know.loadError")}</p>`;
+  }
+})();
+
+// Bei Sprachwechsel: nur neu rendern, kein Seiten-Reload!
+document.addEventListener("atlas:lang-changed", paintStyles);
+</script>
+</body>
+</html>

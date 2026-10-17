@@ -44,7 +44,7 @@ Browser
       │    └─ utilities       (src/utils.js): auth, hashing, rate-limiting, email
       ├─ /sitemap.xml        → R.sitemap()
       ├─ /llms.txt, /llms-full.txt → SEO.llmsTxt() / SEO.llmsFullTxt() (src/seo.js, aus D1)
-      ├─ /, /ranglisten, /wissen → SEO.serveIndex/serveRanglisten/serveWissen (SSR, Fallback: statisch)
+      ├─ /, /ranglisten, /wissen, /sorten → SEO.serveIndex/serveRanglisten/serveWissen/serveSorten (SSR, Fallback: statisch)
       ├─ /impressum.html     → R.serveImpressum() (SSI: site_settings injected into HTML)
       ├─ /<page> (no .html) → 301 redirect to /<page>.html (known pages only, not /)
       └─ everything else     → ASSETS binding (static files from public/)
@@ -141,7 +141,7 @@ All transactional mail (contribution confirmations, an instant admin notificatio
 - Neue Seite in `public/` → URL zur `staticPaths`-Liste hinzufügen
 - Prioritäten: `/` = 1.0, Inhaltsseiten = 0.7
 - Nicht in die Sitemap: `/admin`, `noindex`-Seiten (`/impressum`, 404), dynamische Detail-URLs (werden separat über DB-Queries generiert)
-- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/rivalen`, `/beitragen`, `/staedte`
+- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/sorten`, `/rivalen`, `/beitragen`, `/staedte`
 - Neue öffentliche Seite → auch in `llmsTxt()` (`src/seo.js`, Abschnitt „Seiten") aufnehmen
 
 **Sitemap-Datum (`PAGE_DATES`, exportiert direkt über `sitemap()` in `src/routes.js`, auch für JSON-LD `dateModified` genutzt)**: Jede statische Seite hat ein eigenes `lastmod`-Datum in der `PAGE_DATES`-Map. Dieses Datum **muss** aktualisiert werden, wenn:

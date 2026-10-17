@@ -1311,78 +1311,57 @@ window.ATLAS_DATA = {
     {
       term: "Altbier",
       definition: {
-        de: "Obergäriges, dunkel-bernsteinfarbenes Bier aus dem Rheinland. \"Alt\" verweist auf die alte, obergärige Brauart (im Gegensatz zum später aufgekommenen, untergärigen Lager).",
-        en: "A top-fermented, amber-to-copper beer from the Rhineland. \"Alt\" refers to the old, top-fermenting brewing method (as opposed to later bottom-fermented lagers).",
-      },
-    },
-    {
-      term: "Köbes",
-      definition: {
-        de: "Die traditionelle Bedienung in Düsseldorfer Hausbrauereien. Typischerweise in blauer Schürze, wortkarg, direkt, oft mit trockenem Humor. Ein Köbes ist keine Servicekraft im modernen Sinn — er ist Teil des Rituals.",
-        en: "The traditional server in Düsseldorf brewpubs. Typically in a blue apron, taciturn, direct, often with a dry wit. A Köbes is not a service worker in the modern sense — he is part of the ritual.",
-      },
-    },
-    {
-      term: "Sticke",
-      definition: {
-        de: "Ein stärker eingebrautes, hopfenbetonteres Alt. Im Uerige wird es nur zweimal jährlich ausgeschenkt — im Januar und Oktober, jeweils am dritten Dienstag.",
-        en: "A stronger, more hop-forward Alt. At Uerige it is served only twice a year — on the third Tuesday of January and October.",
+        de: "Obergäriges, dunkles Bier aus dem Rheinland. Das „Alt“ steht für die alte Brauart, nicht fürs Alter.",
+        en: "Top-fermented dark beer from the Rhineland. The \"Alt\" refers to the old way of brewing, not the beer's age.",
       },
     },
     {
       term: "Doppelsticke",
       definition: {
-        de: "Die noch stärkere Variante der Sticke, rund 8,5 % Alkohol. Ursprünglich für den Export in die USA gebraut.",
-        en: "An even stronger variant of Sticke, around 8.5% ABV. Originally brewed for export to the USA.",
+        de: "Eine Stufe stärker als die Sticke, um die 8,5 % Alkohol. Lieber langsam trinken.",
+        en: "One step up from Sticke, around 8.5% ABV. Best taken slowly.",
+      },
+    },
+    {
+      term: "Halve Hahn",
+      definition: {
+        de: "Kein halbes Hähnchen, sondern ein Roggenbrötchen mit einer dicken Scheibe mittelaltem Gouda, dazu Senf und Zwiebeln. Der Klassiker zum Alt.",
+        en: "Not half a chicken but a rye roll with a thick slice of medium-aged Gouda, mustard and onions. The classic snack with Alt.",
+      },
+    },
+    {
+      term: "Köbes",
+      definition: {
+        de: "Der Kellner im Brauhaus, meist in blauer Schürze. Bringt das Alt, bevor du fragst, und hat immer einen Spruch parat.",
+        en: "The waiter in a brewpub, usually in a blue apron. Brings your Alt before you ask and always has a quip ready.",
       },
     },
     {
       term: "Kranz",
       definition: {
-        de: "Das runde Holztablett, auf dem der Köbes die 0,25-l-Gläser stapelt. Fasst typisch 12 bis 15 Gläser.",
-        en: "The round wooden tray the Köbes uses to stack 0.25 l glasses. Typically holds 12 to 15 glasses.",
-      },
-    },
-    {
-      term: "Strichliste",
-      definition: {
-        de: "Der Bierdeckel, auf dem der Köbes für jedes neue Alt einen Strich macht. Abgerechnet wird am Ende — keiner prüft nach.",
-        en: "The coaster on which the Köbes tallies a stroke for each new Alt. Settled at the end — nobody double-checks.",
+        de: "Das runde Tablett, auf dem der Köbes die Gläser durch den Laden trägt. Voll beladen passen locker ein Dutzend drauf.",
+        en: "The round tray the Köbes uses to carry glasses through the room. Fully loaded it easily holds a dozen.",
       },
     },
     {
       term: "Latzenbier",
       definition: {
-        de: "Ein stärker eingebrautes Saison-Alt bei Schumacher, das vom hochgelegten Latzen-Fass gezapft wird. Traditionell im Herbst.",
-        en: "A stronger seasonal Alt at Schumacher, tapped from an elevated Latzen barrel. Traditionally in autumn.",
+        de: "Ein stärker eingebrautes Spezial-Alt, das es nur an wenigen Tagen im Jahr gibt. Der Name kommt von „op de Latt“: Besonders gelungene Sude kamen im Keller aufs oberste Regalbrett.",
+        en: "A stronger special Alt that's only poured on a few days a year. The name comes from \"op de Latt\": particularly good brews went on the top shelf in the cellar.",
       },
     },
     {
-      term: "Obergärig",
+      term: "Sticke",
       definition: {
-        de: "Bezeichnet die Gärweise: Hefe, die bei wärmeren Temperaturen (15-20 °C) oben auf dem Sud arbeitet. Führt zu fruchtigeren Aromen als untergärige Hefen.",
-        en: "Describes the fermentation: yeast that works at warmer temperatures (15-20 °C) on top of the wort. Produces fruitier aromas than bottom-fermenting yeasts.",
+        de: "Das „heimliche“ Alt: stärker eingebraut, kräftiger gehopft und nur an wenigen Tagen im Jahr im Ausschank. Der Name kommt vom niederdeutschen „stickum“ für heimlich.",
+        en: "The \"secret\" Alt: brewed stronger, hopped harder and only poured on a few days a year. The name comes from the Low German \"stickum\", meaning secretly.",
       },
     },
     {
-      term: "Hausbrauerei",
+      term: "Strichliste",
       definition: {
-        de: "Eine Brauerei, die direkt im angeschlossenen Gastraum ausschenkt. Die vier klassischen Düsseldorfer Hausbrauereien sind Uerige, Füchschen, Schumacher und Schlüssel.",
-        en: "A brewery that pours directly in its attached taproom. The four classic Düsseldorf brewpubs are Uerige, Füchschen, Schumacher and Schlüssel.",
-      },
-    },
-    {
-      term: "Rheinisches Reinheitsgebot",
-      definition: {
-        de: "Kein offizielles Gesetz, sondern ein augenzwinkerndes Selbstverständnis: ein richtiges Alt braucht nichts außer Wasser, Gerste, Hopfen und obergäriger Hefe — und einen Köbes, der es hinstellt.",
-        en: "Not an actual law, but a tongue-in-cheek self-understanding: a proper Alt needs nothing but water, barley, hops and top-fermenting yeast — and a Köbes to set it down.",
-      },
-    },
-    {
-      term: "Discounter-Altbier",
-      definition: {
-        de: "Altbier aus dem Supermarkt-Regal, z. B. die Aldi-Eigenmarke Schultenbräu. Solche Handelsmarken werden meist bei Auftragsbrauereien gebraut, teils im Ausland (z. B. in Belgien), und nicht im Rheinland. Sie werden nirgends ausgeschenkt und tauchen deshalb nicht auf der Karte auf.",
-        en: "Altbier from the supermarket shelf, e.g. the Aldi private label Schultenbräu. Such store brands are usually contract-brewed, sometimes abroad (e.g. in Belgium) rather than in the Rhineland. They are not served on tap anywhere, so they do not appear on the map.",
+        de: "Die Striche auf deinem Bierdeckel. Einer pro Alt, am Ende wird gezählt.",
+        en: "The marks on your coaster. One per Alt, counted up at the end.",
       },
     },
   ],
