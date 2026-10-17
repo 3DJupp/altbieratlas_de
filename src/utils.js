@@ -451,26 +451,55 @@ export async function sendPasswordResetEmail(env, { to, resetUrl }) {
   } catch {}
 }
 
-// ---- Täglicher Admin-Digest via Resend API ----
-// Wird vom scheduled()-Handler aufgerufen (Cron: einmal täglich).
+// ---- Admin-Digest via Resend API ----
+// Wird vom scheduled()-Handler um 10 und 22 Uhr (Europe/Berlin) aufgerufen.
 // Benötigt env.RESEND_API_KEY (Secret) + env.ADMIN_EMAIL (Secret).
-// Sendet nur, wenn in den letzten 24 h neue Beiträge eingegangen sind.
+//
+// Kein Overlap, keine Lücke: Der Digest merkt sich in site_settings
+// (DIGEST_KEY) das Ende des zuletzt verschickten Fensters und listet nur
+// Einreichungen danach. Das neue Fensterende liegt eine Minute in der
+// Vergangenheit, damit kein Beitrag aus derselben Sekunde verloren geht.
+// Schlägt der Versand fehl, bleibt der Stand stehen → nächster Digest holt nach.
+// Zeitvergleiche laufen in SQLite, weil created_at im datetime()-Format
+// ("YYYY-MM-DD HH:MM:SS") liegt und nicht mit ISO-Strings vergleichbar ist.
+const DIGEST_KEY = "digest_last_until";
+
+// Stunde (0–23) in Europe/Berlin — für die Cron-Prüfung im Worker (Cron läuft in UTC)
+export function berlinHour(date = new Date()) {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "numeric", hourCycle: "h23" }).format(date));
+}
+
 export async function sendAdminDigest(env) {
   if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
 
   const sc = siteConfig(env);
   const siteUrl = sc.siteUrl || "https://altbieratlas.de";
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  let rows;
+  let rows, from, until;
   try {
+    const win = await env.DB.prepare(
+      `SELECT COALESCE((SELECT value FROM site_settings WHERE key = ?), datetime('now', '-12 hours')) AS since,
+              datetime('now', '-1 minute') AS until`
+    ).bind(DIGEST_KEY).first();
+    from = win.since; until = win.until;
     ({ results: rows } = await env.DB.prepare(
-      "SELECT id, type, payload, submitter_email, submitter_ip, created_at FROM contributions WHERE created_at >= ? AND status = 'pending' ORDER BY created_at DESC"
-    ).bind(since).all());
+      "SELECT id, type, payload, submitter_email, submitter_ip, status, created_at FROM contributions WHERE created_at > ? AND created_at <= ? ORDER BY created_at DESC"
+    ).bind(from, until).all());
   } catch (e) {
     console.error("[digest] DB-Fehler:", e);
     return;
   }
-  if (!rows || !rows.length) return;
+  const markSent = () => env.DB.prepare(
+    `INSERT INTO site_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+  ).bind(DIGEST_KEY, until).run().catch((e) => console.error("[digest] Stand nicht gespeichert:", e));
+  if (!rows || !rows.length) { await markSent(); return; }
+
+  const fmtBerlin = (sqlTs) => {
+    try { return new Date(sqlTs.replace(" ", "T") + "Z").toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" }); }
+    catch { return sqlTs; }
+  };
+  const windowLabel = `${fmtBerlin(from)} – ${fmtBerlin(until)}`;
+  const statusLabels = { pending: "offen", approved: "freigegeben", rejected: "abgelehnt" };
 
   const typeLabels = {
     price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
@@ -481,15 +510,13 @@ export async function sendAdminDigest(env) {
     let data = {};
     try { data = JSON.parse(r.payload); } catch {}
     const label = typeLabels[r.type] || r.type;
-    const ts = (() => {
-      try { return new Date(r.created_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" }); }
-      catch { return r.created_at; }
-    })();
+    const ts = fmtBerlin(r.created_at);
     const summary = data.name || data.breweryId || data.eventName || "?";
     const email = r.submitter_email ? _esc(r.submitter_email) : "anonym";
+    const status = r.status !== "pending" ? ` <span style="color:#888;font-size:12px">(${_esc(statusLabels[r.status] || r.status)})</span>` : "";
     return `<tr style="border-bottom:1px solid #efe8e0">
       <td style="padding:9px 14px 9px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b57a3a;white-space:nowrap;font-family:'Courier New',monospace;vertical-align:top">${_esc(label)}</td>
-      <td style="padding:9px 14px 9px 0;font-size:14px;color:#222;vertical-align:top">${_esc(summary)}</td>
+      <td style="padding:9px 14px 9px 0;font-size:14px;color:#222;vertical-align:top">${_esc(summary)}${status}</td>
       <td style="padding:9px 14px 9px 0;font-size:12px;color:#888;vertical-align:top">${email}</td>
       <td style="padding:9px 0;font-size:12px;color:#888;white-space:nowrap;vertical-align:top">${ts}</td>
     </tr>`;
@@ -500,7 +527,8 @@ export async function sendAdminDigest(env) {
     try { data = JSON.parse(r.payload); } catch {}
     const label = typeLabels[r.type] || r.type;
     const summary = data.name || data.breweryId || data.eventName || "?";
-    return `  [${label}] ${summary} (${r.submitter_email || "anonym"})`;
+    const status = r.status !== "pending" ? `, ${statusLabels[r.status] || r.status}` : "";
+    return `  [${label}] ${summary} (${r.submitter_email || "anonym"}${status})`;
   }).join("\n");
 
   const n = rows.length;
@@ -508,7 +536,7 @@ export async function sendAdminDigest(env) {
   const adminUrl = siteUrl + "/admin.html";
 
   const text = [
-    `${n} neue Einreichung${n > 1 ? "en" : ""} in den letzten 24 Stunden:`,
+    `${n} neue Einreichung${n > 1 ? "en" : ""} seit dem letzten Digest (${windowLabel}):`,
     "", rowsText, "",
     `Admin: ${adminUrl}`,
   ].join("\n");
@@ -533,7 +561,7 @@ export async function sendAdminDigest(env) {
 
   <tr><td style="background:#fff;border:1px solid #e4d8cc;border-top:none;border-radius:0 0 8px 8px;padding:28px 28px 24px">
     <h2 style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410">${n} neue Einreichung${n > 1 ? "en" : ""}</h2>
-    <p style="margin:0 0 22px;font-size:13px;color:#888">Letzte 24 Stunden</p>
+    <p style="margin:0 0 22px;font-size:13px;color:#888">Seit dem letzten Digest: ${_esc(windowLabel)}</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc;margin-bottom:24px">
       <thead><tr style="border-bottom:1px solid #e4d8cc">
         <th style="padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">Typ</th>
@@ -551,7 +579,7 @@ export async function sendAdminDigest(env) {
 </body></html>`;
 
   try {
-    await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -560,8 +588,62 @@ export async function sendAdminDigest(env) {
         subject, text, html,
       }),
     });
+    if (!res.ok) { console.error("[digest] Resend-Status:", res.status, await res.text().catch(() => "")); return; }
+    await markSent();
   } catch (e) {
     console.error("[digest] Resend-Fehler:", e);
+  }
+}
+
+// ---- Sofort-Benachrichtigung an den Admin bei jeder Einreichung ----
+// Benötigt env.RESEND_API_KEY + env.ADMIN_EMAIL. Fire & forget, wirft nie.
+export async function sendAdminNotification(env, { type, id, data = {}, email }) {
+  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
+  const sc = siteConfig(env);
+  const siteUrl = sc.siteUrl || "https://altbieratlas.de";
+  const adminUrl = siteUrl + "/admin.html";
+  const typeLabels = {
+    price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
+    correction: "Korrektur", event: "Event",
+  };
+  const label = typeLabels[type] || type;
+  const summary = data.name || data._breweryName || data.breweryId || data.eventName || "";
+  const rows = [..._emailDataRows(type, data, true), ["E-Mail", email || "anonym"], ["ID", id]];
+
+  const subject = `Altbieratlas: neue ${label}${summary ? ` (${summary})` : ""}`;
+  const text = [
+    `Neue Einreichung: ${label}`, "",
+    ...rows.map(([k, v]) => `  ${k}: ${v}`), "",
+    `Prüfen: ${adminUrl}`,
+  ].join("\n");
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:24px 16px;background:#f9f5f0;font-family:system-ui,-apple-system,sans-serif;color:#222">
+<table width="600" cellpadding="0" cellspacing="0" align="center" style="max-width:600px;width:100%;background:#fff;border:1px solid #e4d8cc;border-top:3px solid #b57a3a;border-radius:8px">
+  <tr><td style="padding:24px 28px">
+    <div style="font-size:11px;color:#b57a3a;font-family:'Courier New',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Neue Einreichung</div>
+    <h2 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410">${_esc(label)}${summary ? `: ${_esc(summary)}` : ""}</h2>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc;margin-bottom:22px">${rows.map(([k, v]) =>
+      `<tr style="border-bottom:1px solid #efe8e0">` +
+      `<td style="padding:8px 20px 8px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b57a3a;white-space:nowrap;font-family:'Courier New',monospace;vertical-align:top">${_esc(k)}</td>` +
+      `<td style="padding:8px 0;font-size:14px;color:#333;vertical-align:top">${_esc(String(v))}</td></tr>`).join("")}</table>
+    <a href="${adminUrl}" style="display:inline-block;background:#b57a3a;color:#fff;padding:11px 22px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">Im Admin prüfen</a>
+  </td></tr>
+</table>
+</body></html>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: sc.resendFrom || "Altbieratlas <noreply@altbieratlas.de>",
+        to: env.ADMIN_EMAIL,
+        subject, text, html,
+      }),
+    });
+    if (!res.ok) console.error("[notify] Resend-Status:", res.status);
+  } catch (e) {
+    console.error("[notify] Resend-Fehler:", e);
   }
 }
 

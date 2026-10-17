@@ -127,7 +127,7 @@ Die Versionsnummer wird automatisch über `/api/config` an das Frontend gereicht
 
 ### Email
 
-All transactional mail (contribution confirmations, password-reset, daily admin digest) goes through [Resend](https://resend.com) via the `RESEND_API_KEY` secret. The daily digest is triggered by a Cloudflare Cron at `0 7 * * *` (07:00 UTC).
+All transactional mail (contribution confirmations, an instant admin notification per contribution, password-reset, admin digest) goes through [Resend](https://resend.com) via the `RESEND_API_KEY` secret. The digest runs at 10:00 and 22:00 Europe/Berlin: the Cron `0 8,9,20,21 * * *` fires at both possible UTC hours and `scheduled()` only lets the matching one through. It lists contributions since the last sent digest (watermark `digest_last_until` in `site_settings`), so windows never overlap.
 
 ### README- und Sitemap-Pflege
 

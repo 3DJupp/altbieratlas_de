@@ -7,7 +7,7 @@
 
 import * as R from "./routes.js";
 import * as SEO from "./seo.js";
-import { error, hashPassword, sendAdminDigest } from "./utils.js";
+import { error, hashPassword, sendAdminDigest, berlinHour } from "./utils.js";
 import { meterEnv } from "./d1meter.js";
 import { isCacheable, withEdgeCache, bumpGeneration, purge } from "./cache.js";
 
@@ -150,7 +150,10 @@ const ROUTES = [
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(sendAdminDigest(env));
+    // Cron läuft in UTC und feuert je zweimal (Sommer-/Winterzeit);
+    // nur der Lauf, der in Berlin auf 10 bzw. 22 Uhr fällt, verschickt.
+    const h = berlinHour(new Date(event.scheduledTime));
+    if (h === 10 || h === 22) ctx.waitUntil(sendAdminDigest(env));
   },
 
   async fetch(request, rawEnv, ctx) {
