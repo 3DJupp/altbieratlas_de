@@ -32,6 +32,7 @@ const C = {
 const TYPE_LABELS = {
   brewery:        "Brauerei",
   brewpub:        "Hausbrauerei",
+  taproom:        "Brauereiausschank",
   gastronomie:    "Gastronomie",
   pub:            "Kneipe",
   restaurant:     "Restaurant",

@@ -473,6 +473,7 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
 /* type-specific colours */
 .atlas-pin.brewpub    { background: var(--copper-glow); }
 .atlas-pin.brewery    { background: #b57a3a; }
+.atlas-pin.taproom    { background: #cf8f4a; }
 .atlas-pin.pub        { background: #c47a3a; }
 .atlas-pin.restaurant { background: #a0623a; }
 .atlas-pin.kiosk,
@@ -496,16 +497,18 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   box-shadow: 0 0 0 4px rgba(217, 163, 91, 0.5), 0 0 12px rgba(217, 163, 91, 0.4), 0 2px 6px rgba(0,0,0,0.4);
   border-color: #ffd700;
 }
-/* Pin mit Orts-Logo (größer, heller Grund, Logo eingepasst) */
+/* Pin mit Orts-Logo (nur Ortsseite): groß, heller Grund, Logo eingepasst.
+   Transparente Logos bekommen per atlasLogoBackdrop() einen Kontrastgrund. */
 .atlas-pin.has-logo {
-  width: 30px; height: 30px;
+  width: 48px; height: 48px;
   background: #fff7e8;
   overflow: hidden;
 }
 .atlas-pin.has-logo img {
-  width: 100%; height: 100%; object-fit: contain; padding: 2px; display: block;
+  width: 100%; height: 100%; object-fit: contain; padding: 5px; display: block;
 }
-.atlas-pin.historical.has-logo { width: 16px; height: 16px; }
+.atlas-pin.has-logo.logo-on-light { background: #fff7e8; }
+.atlas-pin.has-logo.logo-on-dark  { background: #2a211a; }
 .atlas-pin.pending {
   background: transparent;
   border: 2px dashed var(--copper);

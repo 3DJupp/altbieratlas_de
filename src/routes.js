@@ -599,7 +599,7 @@ export async function postContribution(req, env, _params, ctx) {
     } else if (type === "brewery") {
       str(data.name, { required: true, max: 200, name: "name" });
       str(data.city, { required: true, max: 200, name: "city" });
-      oneOf(data.type, ["brewery", "brewpub", "pub", "restaurant", "kiosk", "supermarket", "beverage_store"], { required: true, name: "type" });
+      oneOf(data.type, ["brewery", "brewpub", "taproom", "pub", "restaurant", "kiosk", "supermarket", "beverage_store"], { required: true, name: "type" });
       if (data.lat != null) num(data.lat, { min: -90, max: 90, name: "lat" });
       if (data.lng != null) num(data.lng, { min: -180, max: 180, name: "lng" });
     } else if (type === "event") {
@@ -1954,11 +1954,11 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-09-24",
+  "/":           "2026-10-17",
   "/ranglisten": "2026-10-05",
   "/wissen":     "2026-10-12",
   "/rivalen":    "2026-10-17",
-  "/beitragen":  "2026-09-24",
+  "/beitragen":  "2026-10-17",
   "/staedte":    "2026-10-17",
 };
 
@@ -2106,7 +2106,7 @@ export function fmtDateDe(d) {
 // KI-Assistenten, einen Ort richtig einzuordnen („Brauerei“ statt „Kneipe“).
 const SCHEMA_TYPE = {
   brewery: "Brewery", brewpub: "Brewery",
-  pub: "BarOrPub", restaurant: "Restaurant",
+  taproom: "BarOrPub", pub: "BarOrPub", restaurant: "Restaurant",
   beverage_store: "LiquorStore", supermarket: "GroceryStore", kiosk: "ConvenienceStore",
 };
 
@@ -2635,9 +2635,9 @@ export async function serveCity(req, env) {
     : `Altbier in ${city}: ${rows.length} Brauereien, Ausschankorte und Händler mit aktuellen Preisen im Altbieratlas.`;
 
   const TYPE_DE = {
-    brewpub: "Brauerei / Brewpub", brewery: "Brauerei / Brewpub",
-    pub: "Gastronomie", restaurant: "Gastronomie",
-    kiosk: "Handel", supermarket: "Handel", beverage_store: "Handel",
+    brewpub: "Brauereien & Ausschank", brewery: "Brauereien & Ausschank", taproom: "Brauereien & Ausschank",
+    pub: "Gastronomie", restaurant: "Gastronomie", gastronomie: "Gastronomie",
+    kiosk: "Handel", supermarket: "Handel", beverage_store: "Handel", handel: "Handel",
   };
   const cardHtml = (r) => {
     const p = priceByBrewery.get(r.id);
