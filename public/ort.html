@@ -88,6 +88,8 @@
 .ort-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ort-avatar.has-logo { background: var(--bg-card); }
 .ort-avatar.has-logo img { object-fit: contain; padding: 6px; }
+.ort-avatar.logo-on-light { background: #fff7e8; }
+.ort-avatar.logo-on-dark  { background: #2a211a; }
 .ort-avatar .initials {
   font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
   color: #fff; letter-spacing: -0.02em; line-height: 1;
@@ -341,7 +343,7 @@ const isSsr = root.dataset.ssr === "1";
     return (words.length >= 2 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
   }
   const avatarHtml = b.logoUrl
-    ? `<img src="${b.logoUrl}" alt="" onerror="this.parentNode.classList.remove('has-logo');this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    ? `<img src="${b.logoUrl}" alt="" data-logo-backdrop onerror="this.parentNode.classList.remove('has-logo','logo-on-dark','logo-on-light');this.style.display='none';this.nextElementSibling.style.display='flex'">`
         + `<span class="initials" style="display:none">${initials(b.short || b.name)}</span>`
     : `<span class="initials">${initials(b.short || b.name)}</span>`;
 
@@ -461,11 +463,13 @@ const isSsr = root.dataset.ssr === "1";
     icon: L.divIcon({
       className: '',
       html: b.logoUrl
-        ? `<div class="atlas-pin ${b.type} has-logo"><img src="${b.logoUrl}" alt="" onerror="const p=this.parentNode;p.classList.remove('has-logo');p.style.margin='4px';this.remove()"></div>`
+        ? `<div class="atlas-pin ${b.type} has-logo"><img src="${b.logoUrl}" alt="" onerror="const p=this.parentNode;p.classList.remove('has-logo','logo-on-dark','logo-on-light');p.style.margin='13px';this.remove()"></div>`
         : `<div class="atlas-pin ${b.type}"></div>`,
-      iconSize: b.logoUrl ? [30, 30] : [22, 22], iconAnchor: b.logoUrl ? [15, 15] : [11, 11],
+      iconSize: b.logoUrl ? [48, 48] : [22, 22], iconAnchor: b.logoUrl ? [24, 24] : [11, 11],
     }),
   }).addTo(dm);
+  dm.getPane("markerPane").querySelectorAll(".has-logo img").forEach(window.atlasLogoBackdrop);
+  root.querySelectorAll("img[data-logo-backdrop]").forEach(window.atlasLogoBackdrop);
 
   // "Open in Maps" — Leaflet control + click handler
   const mapsUrl = b.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}`;

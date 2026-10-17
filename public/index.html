@@ -354,14 +354,10 @@ function pinIcon(type, opts = {}) {
   if (opts.pending)     classes.push("pending");
   if (opts.historical)  classes.push("historical");
   if (opts.highlighted) classes.push("highlighted");
-  // Mit Logo: runder Pin mit dem Logo; lädt es nicht, bleibt der Typ-Farbpunkt
-  if (opts.logoUrl && !opts.pending) classes.push("has-logo");
-  const size = opts.historical ? 16 : classes.includes("has-logo") ? 30 : 22;
-  const logo = classes.includes("has-logo")
-    ? `<img src="${opts.logoUrl}" alt="" loading="lazy" onerror="const p=this.parentNode;p.classList.remove('has-logo');p.style.margin='4px';this.remove()">` : "";
+  const size = opts.historical ? 16 : 22;
   return L.divIcon({
     className: "",
-    html: `<div class="${classes.join(" ")}">${logo}</div>`,
+    html: `<div class="${classes.join(" ")}"></div>`,
     iconSize: [size, size], iconAnchor: [size / 2, size / 2],
   });
 }
@@ -408,7 +404,7 @@ function renderMarkers(filter = "all", search = "") {
     if (q && !((b.name + " " + b.city).toLowerCase().includes(q))) return;
 
     const marker = L.marker(b.coords, {
-      icon: pinIcon(b.type, { pending: b.pending, historical: b.isHistorical, highlighted: b.highlighted, logoUrl: b.logoUrl }),
+      icon: pinIcon(b.type, { pending: b.pending, historical: b.isHistorical, highlighted: b.highlighted }),
     }).addTo(map);
     const latest = priceByBrewery.get(b.id);
     const priceText = latest

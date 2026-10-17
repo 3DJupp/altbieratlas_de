@@ -316,6 +316,35 @@ function loadAnalytics() {
   gtag("config", id, { anonymize_ip: true });
 }
 
+// ---- Logo-Hintergrund ---------------------------------------------
+// Transparente Logos brauchen einen Grund mit Kontrast: helles Logo
+// (z. B. weiße Schrift) auf dunklen Grund, dunkles Logo auf hellen Grund.
+// Opake Logos bringen ihren Hintergrund selbst mit und bleiben unverändert.
+window.atlasLogoBackdrop = function (img) {
+  const run = () => {
+    try {
+      const n = 24;
+      const c = document.createElement("canvas");
+      c.width = c.height = n;
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, n, n);
+      const d = ctx.getImageData(0, 0, n, n).data;
+      let clear = 0, lum = 0, opaque = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] < 128) { clear++; continue; }
+        lum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+        opaque++;
+      }
+      if (!opaque || clear < n * n * 0.05) return;
+      const host = img.parentNode;
+      host.classList.remove("logo-on-dark", "logo-on-light");
+      host.classList.add(lum / opaque > 170 ? "logo-on-dark" : "logo-on-light");
+    } catch { /* z. B. Canvas gesperrt: Standard-Hintergrund behalten */ }
+  };
+  if (img.complete && img.naturalWidth) run();
+  else img.addEventListener("load", run, { once: true });
+};
+
 // ---- Kartenkacheln ------------------------------------------------
 // Einzige Stelle, an der ein Tile-Layer entsteht (Startseite + Ortsdetail).
 // Mit API-Key: konfigurierte tileUrl, "{apiKey}" wird ersetzt.

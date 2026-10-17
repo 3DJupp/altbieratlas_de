@@ -66,7 +66,7 @@ window.ATLAS_I18N = {
     "cities.historicalOnly": "nur historisch",
     "city.contribute": "Ort eintragen →",
     "know.cityCtaHtml": "→ Alle Altbier-Orte in <a href=\"/stadt/duesseldorf\">Düsseldorf</a> ansehen",
-    "city.lede.duesseldorf": "Düsseldorf ist die Hauptstadt des Altbiers. In der Altstadt — dem „längsten Tresen der Welt“ — schenken die Hausbrauereien Uerige, Füchschen, Schlüssel und Kürzer ihr Alt frisch vom Fass, an der Oststraße braut Schumacher seit 1838. Hier findest du alle Brauereien, Ausschankorte und Händler in Düsseldorf samt aktuellen Altbierpreisen.",
+    "city.lede.duesseldorf": "Düsseldorf ist die Hauptstadt des Altbiers. In der Altstadt — der „längsten Theke der Welt“ — schenken die Hausbrauereien Uerige, Füchschen, Schlüssel und Kürzer ihr Alt frisch vom Fass, an der Oststraße braut Schumacher seit 1838. Hier findest du alle Brauereien, Ausschankorte und Händler in Düsseldorf samt aktuellen Altbierpreisen.",
     // Brauerei
     "brewery.founded": "Gegründet",
     "brewery.style": "Stil",
