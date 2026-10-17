@@ -1114,10 +1114,10 @@ window.ATLAS_DATA = {
       name: "Dom Alt",
       abv: 4.8,
       ibu: 32,
-      color: null,
+      color: "#84431a",
       tasting: {
-        de: null,
-        en: null,
+        de: "Unfiltriertes Hausalt der Brauerei Im Dom in Neuss, vollmundig, mit Malz aus der Region und Hallertauer Hopfen.",
+        en: "Unfiltered house Alt of the Brauerei Im Dom in Neuss, full-bodied, with regional malt and Hallertau hops.",
       },
     },
     {
@@ -1125,7 +1125,7 @@ window.ATLAS_DATA = {
       name: "ALTfred",
       abv: null,
       ibu: null,
-      color: null,
+      color: "#874419",
       tasting: {
         de: "Hausalt der Hausbrauerei Hitchcoq in Pempelfort, nach Reinheitsgebot gebraut. Malzig mit leicht hopfigem Abgang.",
         en: "House Alt of the Hitchcoq brewpub in Pempelfort, brewed to the Reinheitsgebot. Malty with a gently hoppy finish.",
@@ -1136,7 +1136,7 @@ window.ATLAS_DATA = {
       name: "Belsen Alt",
       abv: null,
       ibu: null,
-      color: null,
+      color: "#8c4a1e",
       tasting: {
         de: "Hausalt des Brauhauses Alter Bahnhof in Oberkassel, früher als Gulasch Alt ausgeschenkt. Malzig und würzig.",
         en: "House Alt of the Brauhaus Alter Bahnhof in Oberkassel, formerly served as Gulasch Alt. Malty and flavourful.",
@@ -1147,10 +1147,10 @@ window.ATLAS_DATA = {
       name: "Joh. Albrecht Alt",
       abv: null,
       ibu: null,
-      color: null,
+      color: "#8b4a20",
       tasting: {
-        de: "Hausalt des Brauhauses Joh. Albrecht in Niederkassel, typisch im Düsseldorfer Stil gebraut.",
-        en: "House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the typical Düsseldorf style.",
+        de: "Hausalt des Brauhauses Joh. Albrecht in Niederkassel, im Düsseldorfer Stil gebraut, hopfig und fruchtig.",
+        en: "House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the Düsseldorf style, hoppy and fruity.",
       },
     },
     {
@@ -1158,7 +1158,7 @@ window.ATLAS_DATA = {
       name: "Schlüffken Altbier",
       abv: null,
       ibu: null,
-      color: null,
+      color: "#7f3f17",
       tasting: {
         de: "Hausalt der Krefelder Brauerei Schlüffken, malzig-rustikal mit markanter Hopfennote.",
         en: "House Alt of Krefeld's Schlüffken brewery, malty and rustic with a distinct hop note.",

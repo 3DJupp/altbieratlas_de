@@ -95,23 +95,23 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Erstes Bio-Altbier aus Düsseldorf. Mild-malzig, ausgewogen, mit ökologisch angebautem Hopfen und Malz.',
     'The first certified organic Altbier from Düsseldorf. Mildly malty, balanced, brewed with organically grown hops and malt.',
     'stile/altus-alt.png'),
-  ('dom-alt', 'Dom Alt', 4.8, 32, NULL,
-    NULL,
-    NULL,
+  ('dom-alt', 'Dom Alt', 4.8, 32, '#84431a',
+    'Unfiltriertes Hausalt der Brauerei Im Dom in Neuss, vollmundig, mit Malz aus der Region und Hallertauer Hopfen.',
+    'Unfiltered house Alt of the Brauerei Im Dom in Neuss, full-bodied, with regional malt and Hallertau hops.',
     NULL),
-  ('altfred', 'ALTfred', NULL, NULL, NULL,
+  ('altfred', 'ALTfred', NULL, NULL, '#874419',
     'Hausalt der Hausbrauerei Hitchcoq in Pempelfort, nach Reinheitsgebot gebraut. Malzig mit leicht hopfigem Abgang.',
     'House Alt of the Hitchcoq brewpub in Pempelfort, brewed to the Reinheitsgebot. Malty with a gently hoppy finish.',
     NULL),
-  ('belsen-alt', 'Belsen Alt', NULL, NULL, NULL,
+  ('belsen-alt', 'Belsen Alt', NULL, NULL, '#8c4a1e',
     'Hausalt des Brauhauses Alter Bahnhof in Oberkassel, früher als Gulasch Alt ausgeschenkt. Malzig und würzig.',
     'House Alt of the Brauhaus Alter Bahnhof in Oberkassel, formerly served as Gulasch Alt. Malty and flavourful.',
     NULL),
-  ('albrecht-alt', 'Joh. Albrecht Alt', NULL, NULL, NULL,
-    'Hausalt des Brauhauses Joh. Albrecht in Niederkassel, typisch im Düsseldorfer Stil gebraut.',
-    'House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the typical Düsseldorf style.',
+  ('albrecht-alt', 'Joh. Albrecht Alt', NULL, NULL, '#8b4a20',
+    'Hausalt des Brauhauses Joh. Albrecht in Niederkassel, im Düsseldorfer Stil gebraut, hopfig und fruchtig.',
+    'House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the Düsseldorf style, hoppy and fruity.',
     NULL),
-  ('schlueffken-alt', 'Schlüffken Altbier', NULL, NULL, NULL,
+  ('schlueffken-alt', 'Schlüffken Altbier', NULL, NULL, '#7f3f17',
     'Hausalt der Krefelder Brauerei Schlüffken, malzig-rustikal mit markanter Hopfennote.',
     'House Alt of Krefeld''s Schlüffken brewery, malty and rustic with a distinct hop note.',
     NULL),
@@ -495,6 +495,10 @@ UPDATE styles SET primary_brewery_id = 'hitchcoq' WHERE id = 'altfred' AND prima
 UPDATE styles SET primary_brewery_id = 'alter-bahnhof-oberkassel' WHERE id = 'belsen-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'joh-albrecht-duesseldorf' WHERE id = 'albrecht-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'schlueffken' WHERE id = 'schlueffken-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'schluessel' WHERE id = 'schluessel-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'koenigshof' WHERE id = 'koenigshof-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'hannen' WHERE id = 'hannen-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'brauerei-im-dom' WHERE id = 'dom-alt' AND primary_brewery_id IS NULL;
 
 -- ============================================================
 -- Style assignments
