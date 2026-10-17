@@ -668,24 +668,30 @@ async function hashIp(ip) {
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+const RIVAL_CHOICES = ["alt", "kolsch", "neutral"];
+
+// Enthaltungen ("neutral") zählen nicht in total, das bleibt die Basis der Alt/Kölsch-Prozente
+function countRivalVotes(rows) {
+  const counts = { alt: 0, kolsch: 0, neutral: 0 };
+  for (const row of rows) {
+    if (RIVAL_CHOICES.includes(row.choice)) counts[row.choice] = row.n;
+  }
+  return { ...counts, total: counts.alt + counts.kolsch };
+}
+
 // GET /api/rivals/votes
 export async function getRivalVotes(req, env) {
   const res = await env.DB.prepare(
     "SELECT choice, COUNT(*) AS n FROM rival_votes GROUP BY choice"
   ).all();
-  const counts = { alt: 0, kolsch: 0 };
-  for (const row of res.results) {
-    if (row.choice === "alt") counts.alt = row.n;
-    else if (row.choice === "kolsch") counts.kolsch = row.n;
-  }
-  return json({ alt: counts.alt, kolsch: counts.kolsch, total: counts.alt + counts.kolsch });
+  return json(countRivalVotes(res.results));
 }
 
-// POST /api/rivals/vote  { choice: "alt" | "kolsch" }
+// POST /api/rivals/vote  { choice: "alt" | "kolsch" | "neutral" }
 export async function postRivalVote(req, env) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
-  if (body.choice !== "alt" && body.choice !== "kolsch") return error(400, "invalid-choice");
+  if (!RIVAL_CHOICES.includes(body.choice)) return error(400, "invalid-choice");
   const ip = clientIp(req);
   const ipHash = await hashIp(ip);
   await env.DB.prepare(
@@ -694,12 +700,7 @@ export async function postRivalVote(req, env) {
   const res = await env.DB.prepare(
     "SELECT choice, COUNT(*) AS n FROM rival_votes GROUP BY choice"
   ).all();
-  const counts = { alt: 0, kolsch: 0 };
-  for (const row of res.results) {
-    if (row.choice === "alt") counts.alt = row.n;
-    else if (row.choice === "kolsch") counts.kolsch = row.n;
-  }
-  return json({ ok: true, alt: counts.alt, kolsch: counts.kolsch, total: counts.alt + counts.kolsch });
+  return json({ ok: true, ...countRivalVotes(res.results) });
 }
 
 // POST /api/prices (Convenience — wrapt als Contribution vom Typ "price")

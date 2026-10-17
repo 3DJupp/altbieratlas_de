@@ -207,12 +207,15 @@
 .funfact-card p { color: var(--ink-soft); font-size: 13px; line-height: 1.6; margin: 0; }
 
 /* ---- Abstimmung ---- */
-.vote-wrap { max-width: 560px; margin-top: 28px; }
-.vote-intro { color: var(--ink-soft); font-size: 16px; line-height: 1.6; margin-bottom: 28px; max-width: 52ch; }
+#abstimmung .container { text-align: center; }
+#abstimmung h2 { margin-left: auto; margin-right: auto; }
+.vote-wrap { max-width: 560px; margin: 28px auto 0; }
+.vote-intro { color: var(--ink-soft); font-size: 16px; line-height: 1.6; margin: 0 auto 28px; max-width: 52ch; }
 .vote-buttons {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 14px; margin-bottom: 24px;
 }
+.vote-buttons[hidden] { display: none; }
 .vote-btn {
   padding: 20px 16px;
   border-radius: var(--radius-lg);
@@ -229,11 +232,19 @@
 .vote-btn.vote-kolsch { color: #c89800; }
 .vote-btn.vote-kolsch:hover { border-color: #c89800; background: color-mix(in srgb, #c89800 6%, var(--bg-card)); }
 .vote-btn .vote-btn-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-muted); }
+.vote-abstain {
+  grid-column: 1 / -1; justify-self: center;
+  background: none; border: none; cursor: pointer; padding: 4px 8px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted);
+  text-decoration: underline dotted; text-underline-offset: 3px;
+}
+.vote-abstain:hover { color: var(--ink); }
 .vote-result { padding: 24px; background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); }
 .vote-result .vr-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
 .vote-result .vr-verdict { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin-bottom: 8px; }
 .vote-result .vr-verdict.vr-alt { color: var(--copper); }
 .vote-result .vr-verdict.vr-kolsch { color: #c89800; }
+.vote-result .vr-verdict.vr-neutral { color: var(--ink); }
 .vote-result .vr-body { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
 .vote-reset { margin-top: 12px; background: none; border: none; cursor: pointer; font-size: 12px; font-family: var(--font-mono); color: var(--ink-muted); text-decoration: underline; padding: 0; }
 .vote-reset:hover { color: var(--ink); }
@@ -267,7 +278,7 @@
   color: var(--ink-muted); margin-top: 6px;
 }
 .vote-bar-total {
-  text-align: center; font-family: var(--font-mono); font-size: 11px;
+  font-family: var(--font-mono); font-size: 11px;
   color: var(--ink-muted); margin-top: 8px;
   padding-top: 8px; border-top: 1px solid var(--rule);
 }
@@ -518,6 +529,7 @@
             <span data-i18n="rivals.voteKolsch">Team Kölsch</span>
             <span class="vote-btn-sub" data-i18n="rivals.voteKolschSub">Köln</span>
           </button>
+          <button class="vote-abstain" id="vote-btn-neutral" type="button" data-i18n="rivals.voteNeutral">Ich enthalte mich (und bestelle ein Pils)</button>
         </div>
 
         <div class="vote-result" id="vote-result" hidden>
@@ -651,25 +663,42 @@ const voteMessages = {
       body: "The Stange, the lightness, Cologne Cathedral in the background. A respectable choice — even if one shouldn't say that too loudly in Düsseldorf.",
     },
   },
+  neutral: {
+    de: {
+      verdict: "Enthaltung zu Protokoll genommen.",
+      body: "Pils, Wein oder Wasser: auch das ist eine Haltung. Am Rhein nennt man so jemanden diplomatisch. Der Köbes bringt trotzdem ein Alt, wenn du den Deckel nicht drauflegst.",
+    },
+    en: {
+      verdict: "Abstention noted.",
+      body: "Pils, wine or water: that's a position too. Along the Rhine they call that diplomatic. The Köbes will still bring you an Alt unless you put the coaster on your glass.",
+    },
+  },
 };
+
+const VOTE_CHOICES = ["alt", "kolsch", "neutral"];
 
 function showVoteResult(choice) {
   const lang = window.__atlasLang || "de";
   const msgs = voteMessages[choice][lang] || voteMessages[choice].de;
   const verdict = document.getElementById("vr-verdict");
   verdict.textContent = msgs.verdict;
-  verdict.className = "vr-verdict " + (choice === "alt" ? "vr-alt" : "vr-kolsch");
+  verdict.className = "vr-verdict vr-" + choice;
   document.getElementById("vr-body").textContent = msgs.body;
   document.getElementById("vote-buttons").hidden = true;
   document.getElementById("vote-result").hidden = false;
 }
 
 // ---- Community Vote Bar ----
-let rivalVotes = { alt: 0, kolsch: 0 };
+let rivalVotes = { alt: 0, kolsch: 0, neutral: 0 };
+
+function setRivalVotes(data) {
+  rivalVotes = { alt: data.alt || 0, kolsch: data.kolsch || 0, neutral: data.neutral || 0 };
+}
 
 function renderVoteBar() {
   const bar = document.getElementById("vote-bar");
   if (!bar) return;
+  // Enthaltungen fließen nicht in die Alt/Kölsch-Prozente ein, nur in die Fußzeile
   const total = rivalVotes.alt + rivalVotes.kolsch;
   if (total === 0) { bar.hidden = true; return; }
   bar.hidden = false;
@@ -682,15 +711,18 @@ function renderVoteBar() {
   document.getElementById("vbc-kolsch").textContent = rivalVotes.kolsch.toLocaleString("de-DE") + " × Kölsch";
   const lang = window.__atlasLang || "de";
   const vbt = document.getElementById("vbt");
-  if (vbt) vbt.textContent = lang === "en"
-    ? total.toLocaleString("de-DE") + " votes total"
-    : total.toLocaleString("de-DE") + " Stimmen insgesamt";
+  if (vbt) {
+    const n = rivalVotes.neutral;
+    vbt.textContent = lang === "en"
+      ? total.toLocaleString("de-DE") + " votes total" + (n ? " · " + n.toLocaleString("de-DE") + (n === 1 ? " abstention" : " abstentions") : "")
+      : total.toLocaleString("de-DE") + " Stimmen insgesamt" + (n ? " · " + n.toLocaleString("de-DE") + (n === 1 ? " Enthaltung" : " Enthaltungen") : "");
+  }
 }
 
 async function loadVotes() {
   try {
     const data = await window.AtlasAPI.getRivalVotes();
-    rivalVotes = { alt: data.alt || 0, kolsch: data.kolsch || 0 };
+    setRivalVotes(data);
     renderVoteBar();
   } catch (e) {
     console.warn("[rivals] vote load failed", e);
@@ -702,7 +734,7 @@ async function castVote(choice) {
   showVoteResult(choice);
   try {
     const res = await window.AtlasAPI.postRivalVote(choice);
-    rivalVotes = { alt: res.alt || 0, kolsch: res.kolsch || 0 };
+    setRivalVotes(res);
     renderVoteBar();
   } catch (e) {
     console.warn("[rivals] vote cast failed", e);
@@ -711,7 +743,7 @@ async function castVote(choice) {
 
 function initVote() {
   const stored = localStorage.getItem(VOTE_KEY);
-  if (stored === "alt" || stored === "kolsch") {
+  if (VOTE_CHOICES.includes(stored)) {
     showVoteResult(stored);
   } else {
     document.getElementById("vote-buttons").hidden = false;
@@ -722,6 +754,7 @@ function initVote() {
 
 document.getElementById("vote-btn-alt").addEventListener("click", () => castVote("alt"));
 document.getElementById("vote-btn-kolsch").addEventListener("click", () => castVote("kolsch"));
+document.getElementById("vote-btn-neutral").addEventListener("click", () => castVote("neutral"));
 document.getElementById("vote-reset").addEventListener("click", () => {
   localStorage.removeItem(VOTE_KEY);
   document.getElementById("vote-buttons").hidden = false;
@@ -733,7 +766,7 @@ initVote();
 // Nach Sprachwechsel: Vote-Ergebnis und Bar in neuer Sprache zeigen
 document.addEventListener("atlas:lang-changed", () => {
   const stored = localStorage.getItem(VOTE_KEY);
-  if (stored === "alt" || stored === "kolsch") showVoteResult(stored);
+  if (VOTE_CHOICES.includes(stored)) showVoteResult(stored);
   renderVoteBar();
 });
 </script>

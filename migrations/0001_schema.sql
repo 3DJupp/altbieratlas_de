@@ -191,10 +191,10 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Community votes for the Rivalen page (one vote per IP, upsertable)
+-- Community votes for the Rivalen page (one vote per IP, upsertable; 'neutral' = Enthaltung)
 CREATE TABLE IF NOT EXISTS rival_votes (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  choice     TEXT NOT NULL CHECK (choice IN ('alt', 'kolsch')),
+  choice     TEXT NOT NULL CHECK (choice IN ('alt', 'kolsch', 'neutral')),
   ip_hash    TEXT NOT NULL UNIQUE,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

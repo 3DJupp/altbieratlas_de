@@ -110,6 +110,10 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Hausalt des Brauhauses Joh. Albrecht in Niederkassel, typisch im Düsseldorfer Stil gebraut.',
     'House Alt of the Brauhaus Joh. Albrecht in Niederkassel, brewed in the typical Düsseldorf style.',
     NULL),
+  ('schlueffken-alt', 'Schlüffken Altbier', NULL, NULL, NULL,
+    'Hausalt der Krefelder Brauerei Schlüffken, malzig-rustikal mit markanter Hopfennote.',
+    'House Alt of Krefeld''s Schlüffken brewery, malty and rustic with a distinct hop note.',
+    NULL),
   ('long-trail-ale', 'Long Trail Ale', 4.6, 25, '#a56030',
     'Vermonter Interpretation: malzig, süßlich, mit amerikanischem Hopfencharakter.',
     'Vermont take: malty, mildly sweet, with American hop character.',
@@ -357,11 +361,19 @@ VALUES
 
   -- ========== Krefeld ==========
   ('schlueffken', 'Brauerei Schlüffken', 'Schlüffken', 'brewery', 'Krefeld', 'DE',
-    'Preußenring (am Nordbahnhof), Krefeld',
-    NULL,
-    51.3487, 6.5662, 2018, NULL,
-    'Neue Krefelder Brauerei am Nordbahnhof, gegründet 2018 von Anne und Johannes Furth als Teil des Restaurants Nordbahnhof. Das malzig-rustikale Schlüffken Alt mit markanter Hopfennote ist Krefelds jüngstes Altbier; der Name ehrt die Dampflok „Schluff“ („Mit Volldampf gebraut“). Adresse und Koordinaten noch zu prüfen.',
-    'New Krefeld brewery at the Nordbahnhof, founded in 2018 by Anne and Johannes Furth as part of the Nordbahnhof restaurant. The malty, rustic Schlüffken Alt with a distinct hop note is Krefeld''s newest Altbier; the name honours the steam locomotive "Schluff" ("brewed at full steam"). Address and coordinates still to be verified.',
+    'Preußenring 130, 47798 Krefeld',
+    'https://maps.app.goo.gl/nTbgfsEuuveGFDRQ6',
+    51.3396, 6.5533, 2018, 'https://www.schlueffken.de',
+    'Kleine Krefelder Brauerei am Preußenring, direkt neben dem Restaurant Nordbahnhof. Gegründet 2018 von Anne und Johannes Furth; der Name ehrt die Dampflok „Schluff“ („Mit Volldampf gebraut“). Das malzig-rustikale Schlüffken Alt mit markanter Hopfennote ist Krefelds jüngstes Altbier, daneben entstehen Pils, Weizen, alkoholfreie Sorten und Saisonbiere wie Summer Ale, Märzen und Festbier. Ausgeschenkt wird im Nordbahnhof nebenan. Koordinaten noch zu prüfen.',
+    'Small Krefeld brewery on Preußenring, right next to the Nordbahnhof restaurant. Founded in 2018 by Anne and Johannes Furth; the name honours the steam locomotive "Schluff" ("brewed at full steam"). The malty, rustic Schlüffken Alt with a distinct hop note is Krefeld''s newest Altbier, alongside a Pils, a wheat beer, alcohol-free versions and seasonal beers such as a Summer Ale, Märzen and Festbier. It is served at the Nordbahnhof next door. Coordinates still to be verified.',
+    0, 'pending', 0, NULL, NULL),
+
+  ('nordbahnhof-krefeld', 'Schlüffken im Nordbahnhof', 'Nordbahnhof', 'restaurant', 'Krefeld', 'DE',
+    'Oranierring 91, 47798 Krefeld',
+    'https://maps.app.goo.gl/sAZRiDKBztcLveL58',
+    51.33924, 6.55253, NULL, 'http://www.nordbahnhof.de',
+    'Restaurant im denkmalgeschützten Krefelder Nordbahnhof am Oranierring und Ausschank der Schlüffken-Biere aus der Brauerei nebenan. Das Alt kommt frisch gezapft im 0,25-l- und 0,5-l-Glas; an der Theke gibt es außerdem Kisten, einzelne Stubbi-Flaschen und 10-l-Fässer für zu Hause. Koordinaten noch zu prüfen.',
+    'Restaurant in Krefeld''s listed Nordbahnhof station building on Oranierring and the tap for the Schlüffken beers from the brewery next door. The Alt is served fresh on draught in 0.25 l and 0.5 l glasses; the bar also sells crates, single Stubbi bottles and 10-litre kegs to take home. Coordinates still to be verified.',
     0, 'pending', 0, NULL, NULL),
 
   ('koenigshof', 'Brauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
@@ -490,6 +502,7 @@ UPDATE styles SET primary_brewery_id = 'altus' WHERE id = 'altus-alt' AND primar
 UPDATE styles SET primary_brewery_id = 'hitchcoq' WHERE id = 'altfred' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'alter-bahnhof-oberkassel' WHERE id = 'belsen-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'joh-albrecht-duesseldorf' WHERE id = 'albrecht-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'schlueffken' WHERE id = 'schlueffken-alt' AND primary_brewery_id IS NULL;
 
 -- ============================================================
 -- Style assignments
@@ -529,7 +542,9 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('hitchcoq', 'altfred'),
   ('alter-bahnhof-oberkassel', 'belsen-alt'),
   ('schaukelstuehlchen', 'kuerzer-alt'),
-  ('joh-albrecht-duesseldorf', 'albrecht-alt');
+  ('joh-albrecht-duesseldorf', 'albrecht-alt'),
+  ('schlueffken', 'schlueffken-alt'),
+  ('nordbahnhof-krefeld', 'schlueffken-alt');
 
 -- ============================================================
 -- Prices (approved, Stand Live-DB Oktober 2026)
@@ -570,7 +585,9 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('schaukelstuehlchen', '2026-10-17', '0.2', 2.8, 'Beitrag', NULL, 'pending'),
   ('joh-albrecht-duesseldorf', '2024-09-09', '0.2', 2.5, 'Speisekarte', NULL, 'pending'),
   ('joh-albrecht-duesseldorf', '2024-09-09', '0.4', 4.7, 'Speisekarte', NULL, 'pending'),
-  ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending');
+  ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending'),
+  ('nordbahnhof-krefeld', '2026-10-06', '0.25l', 2.8, 'Speisekarte', NULL, 'pending'),
+  ('nordbahnhof-krefeld', '2026-10-06', '0.5l', 5.3, 'Speisekarte', NULL, 'pending');
 
 -- ============================================================
 -- Events — bestätigte Veranstaltungen
