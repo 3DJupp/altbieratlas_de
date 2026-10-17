@@ -1619,7 +1619,7 @@ async function openEditDialog(id, rowEl) {
 
   function initOrtLogoPrev(logoKey) {
     if (logoKey) {
-      ortLogoPrev.innerHTML = `<img src="/logos/ort-logos/${logoKey}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">`;
+      ortLogoPrev.innerHTML = `<img src="/logos/orte/${logoKey}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">`;
       ortLogoDel.style.display = "block";
     } else {
       ortLogoPrev.innerHTML = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
@@ -1634,7 +1634,10 @@ async function openEditDialog(id, rowEl) {
   (async () => {
     try {
       const { logos } = await window.AtlasAPI.admin.listBreweryLogos();
+      // Dialog wird wiederverwendet → alte Optionen entfernen, nur den Platzhalter behalten
+      ortLogoSelect.length = 1;
       logos.forEach(({ key }) => {
+        if (!key) return; // Ordner-Marker „orte/logos/" aus R2 überspringen
         const opt = document.createElement("option");
         opt.value = key;
         opt.textContent = key;
@@ -1673,7 +1676,7 @@ async function openEditDialog(id, rowEl) {
     try {
       await window.AtlasAPI.admin.updateBrewery(pendingEdit.id, { logo_key: key });
       rowEl.dataset.logoKey = key;
-      const url = `/logos/ort-logos/${key}`;
+      const url = `/logos/orte/${key}`;
       ortLogoPrev.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
       ortLogoDel.style.display = "block";
       ortLogoMsg.textContent = "✓";

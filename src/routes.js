@@ -1156,8 +1156,10 @@ export async function adminUploadBreweryLogo(req, env, { id }) {
   const filename = `${id}.${ext}`;
   const r2Key = `orte/logos/${filename}`;
 
+  // Altes Logo nur löschen, wenn kein anderer Ort es (aus der Bibliothek) verwendet
   if (brewery.logo_key && brewery.logo_key !== filename) {
-    await env.LOGOS.delete(`orte/logos/${brewery.logo_key}`).catch(() => {});
+    const shared = await env.DB.prepare("SELECT 1 FROM breweries WHERE logo_key = ? AND id != ? LIMIT 1").bind(brewery.logo_key, id).first();
+    if (!shared) await env.LOGOS.delete(`orte/logos/${brewery.logo_key}`).catch(() => {});
   }
 
   await env.LOGOS.put(r2Key, bytes, { httpMetadata: { contentType: mimeType } });
@@ -1182,11 +1184,13 @@ export async function adminListBreweryLogos(req, env) {
   if (!auth.ok) return auth.res;
   if (!env.LOGOS) return json({ logos: [] });
   const listed = await env.LOGOS.list({ prefix: "orte/logos/" });
-  const logos = listed.objects.map((obj) => ({
-    key: obj.key.slice("orte/logos/".length),
-    url: `/logos/${obj.key}`,
-    size: obj.size,
-  }));
+  const logos = listed.objects
+    .map((obj) => ({
+      key: obj.key.slice("orte/logos/".length),
+      url: `/logos/${obj.key}`,
+      size: obj.size,
+    }))
+    .filter((l) => l.key && !l.key.endsWith("/"));
   return json({ logos });
 }
 
