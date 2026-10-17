@@ -460,8 +460,10 @@ const isSsr = root.dataset.ssr === "1";
   L.marker(b.coords, {
     icon: L.divIcon({
       className: '',
-      html: `<div class="atlas-pin ${b.type}"></div>`,
-      iconSize: [22, 22], iconAnchor: [11, 11],
+      html: b.logoUrl
+        ? `<div class="atlas-pin ${b.type} has-logo"><img src="${b.logoUrl}" alt="" onerror="const p=this.parentNode;p.classList.remove('has-logo');p.style.margin='4px';this.remove()"></div>`
+        : `<div class="atlas-pin ${b.type}"></div>`,
+      iconSize: b.logoUrl ? [30, 30] : [22, 22], iconAnchor: b.logoUrl ? [15, 15] : [11, 11],
     }),
   }).addTo(dm);
 
