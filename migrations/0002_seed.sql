@@ -364,6 +364,13 @@ VALUES
     'Restaurant in Krefeld''s listed Nordbahnhof station building on Oranierring and the tap for the Schlüffken beers from the brewery next door. The Alt is served fresh on draught in 0.25 l and 0.5 l glasses; the bar also sells crates, single Stubbi bottles and 10-litre kegs to take home. Coordinates still to be verified.',
     0, 'pending', 0, NULL, NULL),
 
+  ('birkeneck', 'Birkeneck', NULL, 'pub', 'Düsseldorf', 'DE',
+    'Ackerstraße 84',
+    'https://maps.app.goo.gl/uuXpuDjojVtvh4Vy5',
+    51.2275508, 6.8010764, NULL, 'https://birkeneck.metro.bar/',
+    '', '',
+    1, 'approved', 0, NULL, NULL),
+
   ('koenigshof', 'Brauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
     'Obergath 68-112, 47805 Krefeld',
     'https://maps.app.goo.gl/mqMMdLwZaMuUshtA6',
@@ -536,7 +543,8 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('schaukelstuehlchen', 'kuerzer-alt'),
   ('joh-albrecht-duesseldorf', 'albrecht-alt'),
   ('schlueffken', 'schlueffken-alt'),
-  ('nordbahnhof-krefeld', 'schlueffken-alt');
+  ('nordbahnhof-krefeld', 'schlueffken-alt'),
+  ('birkeneck', 'frankenheim-alt');
 
 -- ============================================================
 -- Prices (approved, Stand Live-DB Oktober 2026)
@@ -579,7 +587,8 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('joh-albrecht-duesseldorf', '2024-09-09', '0.4', 4.7, 'Speisekarte', NULL, 'pending'),
   ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending'),
   ('nordbahnhof-krefeld', '2026-10-06', '0.25l', 2.8, 'Speisekarte', NULL, 'pending'),
-  ('nordbahnhof-krefeld', '2026-10-06', '0.5l', 5.3, 'Speisekarte', NULL, 'pending');
+  ('nordbahnhof-krefeld', '2026-10-06', '0.5l', 5.3, 'Speisekarte', NULL, 'pending'),
+  ('birkeneck', '2026-10-18', '0.2', 1.9, 'Beitrag', 'lt. Google Maps', 'approved');
 
 -- ============================================================
 -- Events — bestätigte Veranstaltungen
