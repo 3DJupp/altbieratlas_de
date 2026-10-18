@@ -211,7 +211,7 @@ VALUES
 
   ('im-goldenen-kessel', 'Im Goldenen Kessel', 'Goldener Kessel', 'taproom', 'Düsseldorf', 'DE',
     'Bolkerstraße 44, 40213 Düsseldorf',
-    'https://maps.google.com/maps?q=Bolkerstra%C3%9Fe+44%2C+40213+D%C3%BCsseldorf',
+    'https://maps.app.goo.gl/5iFg99eMRcavJif67',
     51.226315, 6.775122, NULL, 'https://schumacher-alt.de/gaststaetten/im-goldenen-kessel',
     'Der Altstadt-Ausschank der Brauerei Schumacher an der Bolkerstraße. Schumacher Alt frisch vom Fass, dazu klassische Brauhausküche wie Haxe und Bratwurst. Neben dem Stammhaus an der Oststraße die zweite Schumacher-Adresse und einer der traditionsreichsten Altbier-Orte der Altstadt.',
     'Brauerei Schumacher''s old-town tap house on Bolkerstraße. Schumacher Alt fresh from the barrel, with classic brewhouse fare such as pork knuckle and bratwurst. Alongside the main house on Oststraße, Schumacher''s second address and one of the old town''s most traditional Altbier spots.',
@@ -219,7 +219,7 @@ VALUES
 
   ('kneipe-kneipe', 'Kneipe Kneipe', 'Kneipe Kneipe', 'taproom', 'Düsseldorf', 'DE',
     'Liefergasse 1, 40213 Düsseldorf',
-    'https://maps.google.com/maps?q=Liefergasse+1,+40213+D%C3%BCsseldorf',
+    'https://maps.app.goo.gl/tMiWkPMYHpC8PNX59',
     51.2285, 6.7731, 2026, NULL,
     'Die älteste Kellerkneipe der Düsseldorfer Altstadt, bis Ende 2024 rund 50 Jahre lang einfach „Kneipe“. Seit Juli 2026 unter neuem Namen von den Altus-Gründern Tim Kasparek und Anthony Boniteau betrieben: erste eigene Ausschankstätte für Altus, Düsseldorfs erstes Bio-Altbier, frisch vom Fass. Dazu gibt es wieder den Kultschnaps „Stress“.',
     'The oldest cellar bar in Düsseldorf''s old town, known simply as "Kneipe" for around 50 years until it closed at the end of 2024. Reopened in July 2026 under a new name by Altus founders Tim Kasparek and Anthony Boniteau as the first dedicated outlet for Altus, Düsseldorf''s first organic Altbier, on tap. The cult house schnapps "Stress" is back too.',
@@ -227,7 +227,7 @@ VALUES
 
   ('altus', 'Altus bräu', 'Altus', 'brewery', 'Düsseldorf', 'DE',
     'Roßstraße 19, 40476 Düsseldorf',
-    'https://maps.google.com/maps?q=Ro%C3%9Fstra%C3%9Fe+19%2C+40476+D%C3%BCsseldorf',
+    'https://maps.app.goo.gl/VyotCHdUoL7ZUNYW7',
     51.24569, 6.77934, 2021, 'https://altus-braeu.de',
     'Erstes Bio-Altbier aus Düsseldorf. Gebraut nach biologischen Standards mit Malz und Hopfen aus ökologischem Anbau — im Lohnbrauen-Verfahren bei einer Partnerbrauerei.',
     'The first certified organic Altbier from Düsseldorf, contract-brewed to organic standards using ecologically grown malt and hops.',
@@ -381,7 +381,7 @@ VALUES
 
   ('gleumes', 'Brauerei Gleumes', 'Gleumes', 'brewpub', 'Krefeld', 'DE',
     'Sternstraße 12, 47798 Krefeld',
-    'https://maps.google.com/maps?q=Sternstra%C3%9Fe+12%2C+47798+Krefeld',
+    'https://maps.app.goo.gl/onkmFHbbuEXeHNc78',
     51.338, 6.55962, 1807, 'https://ausschank-gleumes.de',
     'Krefelds älteste Brauerei: 1807 als „Zu den drei Kronen“ an der Sternstraße gegründet, seit 1896 unter dem Namen Gleumes. Gleumes Alt wird seit 1896 gebraut und im historischen Ausschank mit Holzvertäfelung und Stuckdecken frisch gezapft, dazu deftige Brauhausküche.',
     'Krefeld''s oldest brewery: founded in 1807 as "Zu den drei Kronen" on Sternstraße, run under the Gleumes name since 1896. Gleumes Alt has been brewed since 1896 and is served fresh in the historic tap room with wood panelling and stucco ceilings, alongside hearty brewhouse food.',
@@ -407,7 +407,7 @@ VALUES
   -- ========== Niederrhein ==========
   ('bolten', 'Privatbrauerei Bolten', 'Bolten', 'brewery', 'Korschenbroich', 'DE',
     'Rheydter Straße 138, 41352 Korschenbroich',
-    'https://maps.google.com/maps?q=Rheydter+Stra%C3%9Fe+138%2C+41352+Korschenbroich',
+    'https://maps.app.goo.gl/nL5GUayfaqfmrYVH7',
     51.183277, 6.4994, 1266, 'https://www.bolten-brauerei.de',
     'Gegründet 1266 und nach eigener Aussage die älteste Altbierbrauerei der Welt. Neben Bolten Alt und dem unfiltrierten Ur-Alt braut Bolten seit 2023 auch wieder Hannen Alt; seit 2022 gehört außerdem Gatz Altbier zum Haus. Ausgeschenkt wird im Gasthaus Hoff Marie und in der Landwirtschaft direkt gegenüber der Brauerei.',
     'Founded in 1266 and, by its own account, the oldest Altbier brewery in the world. Besides Bolten Alt and the unfiltered Ur-Alt, Bolten has brewed Hannen Alt again since 2023, and Gatz Altbier has also been part of the house since 2022. Its beer is served at Gasthaus Hoff Marie and at the Landwirtschaft directly opposite the brewery.',
@@ -423,7 +423,7 @@ VALUES
 
   ('bolten-landwirtschaft', 'Bolten Landwirtschaft', 'Landwirtschaft', 'taproom', 'Korschenbroich', 'DE',
     'Rheydter Straße 145, 41352 Korschenbroich',
-    'https://maps.google.com/maps?q=Rheydter+Stra%C3%9Fe+145%2C+41352+Korschenbroich',
+    'https://maps.app.goo.gl/FK42rDXa3NsjdRSJ6',
     51.18327, 6.499772, NULL, 'https://www.bolten-brauerei.de',
     'Gaststätte der Privatbrauerei Bolten direkt gegenüber der Brauerei, mit Picknick-Biergarten. Bolten Alt frisch aus der Nachbarschaft.',
     'Privatbrauerei Bolten''s restaurant directly opposite the brewery, with a picnic beer garden. Bolten Alt fresh from across the street.',
@@ -439,7 +439,7 @@ VALUES
 
   ('diebels', 'Brauerei Diebels', 'Diebels', 'brewery', 'Issum', 'DE',
     'Brauerei-Diebels-Straße 1, 47661 Issum',
-    'https://maps.google.com/maps?q=Brauerei-Diebels-Stra%C3%9Fe+1%2C+47661+Issum',
+    'https://maps.app.goo.gl/gjoGH6pm4rWFqbor6',
     51.534786, 6.419453, 1878, 'https://www.diebels.de',
     'Größte Altbierbrauerei der Welt, 1878 vom Krefelder Braumeister Josef Diebels in Issum gegründet und heute Teil von AB InBev. Seit 1979 braut Diebels ausschließlich obergärige Biere. Im Besucherzentrum gibt es Brauereiführungen mit Verkostung.',
     'The world''s largest Altbier brewery, founded in Issum in 1878 by Krefeld brewmaster Josef Diebels and now part of AB InBev. Since 1979 Diebels has brewed only top-fermented beers. The visitor centre offers brewery tours with tastings.',
@@ -456,7 +456,7 @@ VALUES
 
   ('pinkus-mueller', 'Brauerei Pinkus Müller', 'Pinkus', 'brewpub', 'Münster', 'DE',
     'Kreuzstraße 4-10, 48143 Münster',
-    'https://maps.google.com/maps?q=Kreuzstra%C3%9Fe+4-10%2C+48143+M%C3%BCnster',
+    'https://maps.app.goo.gl/YWCpqNSypn8YN6eG9',
     51.96556, 7.62167, 1816, 'https://www.pinkus.de',
     'Familienbrauerei in siebter Generation im Münsteraner Kuhviertel, gegründet 1816 und die letzte von einst rund 150 Altbierbrauereien der Stadt. Bio-Pionier: Gebraut wird ausschließlich mit Rohstoffen aus ökologischem Anbau. Das Original Pinkus Alt ist ein heller Münsteraner Alt und damit deutlich anders als das dunkle rheinische Alt. Gaststätte mit Altbierküche direkt an der Brauerei.',
     'Seventh-generation family brewery in Münster''s Kuhviertel, founded in 1816 and the last of the city''s once roughly 150 Altbier breweries. An organic pioneer that brews exclusively with organically grown ingredients. Original Pinkus Alt is a pale Münster-style Alt, quite different from the dark Rhineland Alt. Restaurant with Altbier kitchen right at the brewery.',
