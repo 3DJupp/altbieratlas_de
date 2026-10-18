@@ -79,6 +79,10 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Niederrheinisch mild, leicht malzig mit fruchtig-würzigem Charakter. Die unfiltrierte Variante aus der ältesten Altbierbrauerei der Welt.',
     'Mild Lower-Rhine style, lightly malty with a fruity-spicy character. The unfiltered variant from the world''s oldest Altbier brewery.',
     NULL),
+  ('bolten-alt', 'Bolten Alt', 4.9, NULL, '#8c4a1c',
+    'Süffig, leicht mild, mit einer subtilen Süße. Anfänglich schlanker Körper, der mit jedem Schluck voller wird und Röstaromen ins Spiel bringt. Das klassische, filtrierte Alt der Privatbrauerei Bolten.',
+    'Easy-drinking, gently mild, with a subtle sweetness. A slim body at first that grows fuller with every sip and brings roasted notes into play. The classic, filtered Alt from Privatbrauerei Bolten.',
+    NULL),
   ('bolten-oh', 'Boltens Oh! Alkoholfrei', NULL, NULL, '#8a4618',
     'Das alkoholfreie Alt von Bolten (unter 0,5 %). Im Antrunk malzig, voller, runder Geschmack mit dezenter Säure und ausgeprägter Spritzigkeit. Isotonisch und naturtrüb.',
     'Bolten''s alcohol-free Alt (below 0.5 %). Malty on the first sip, full and round with a subtle acidity and a lively sparkle. Isotonic and unfiltered.',
@@ -502,6 +506,7 @@ UPDATE styles SET primary_brewery_id = 'schumacher' WHERE id = 'schumacher-alt' 
 UPDATE styles SET primary_brewery_id = 'kuerzer-altstadt' WHERE id = 'kuerzer-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'frankenheim-brauereiausschank' WHERE id = 'frankenheim-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'bolten-uralt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'bolten-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'bolten-oh' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'hannen-alt-2023' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'gatz-alt' AND primary_brewery_id IS NULL;
@@ -548,13 +553,16 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('koenigshof', 'koenigshof-alt'),
   ('gleumes', 'gleumes-alt'),
   ('hannen', 'hannen-alt'),
+  ('bolten', 'bolten-alt'),
   ('bolten', 'bolten-uralt'),
   ('bolten', 'hannen-alt-2023'),
   ('bolten', 'gatz-alt'),
   ('bolten', 'bolten-oh'),
+  ('hoff-marie', 'bolten-alt'),
   ('hoff-marie', 'bolten-uralt'),
   ('hoff-marie', 'hannen-alt-2023'),
   ('hoff-marie', 'bolten-oh'),
+  ('bolten-landwirtschaft', 'bolten-alt'),
   ('bolten-landwirtschaft', 'bolten-uralt'),
   ('bolten-landwirtschaft', 'hannen-alt-2023'),
   ('bolten-landwirtschaft', 'bolten-oh'),
