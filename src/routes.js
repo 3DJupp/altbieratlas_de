@@ -1958,7 +1958,7 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-17",
+  "/":           "2026-10-18",
   "/ranglisten": "2026-10-17",
   "/wissen":     "2026-10-17",
   "/sorten":     "2026-10-17",
@@ -2176,8 +2176,8 @@ export async function serveOrt(req, env, params = {}) {
     latestBySize.push(p);
   }
   latestBySize.sort((a, b) => (sizeNum(a.size) ?? 0) - (sizeNum(b.size) ?? 0));
+  // 0,25 l, sonst die kleinste Größe — identisch zur Preisbox in public/ort.html.
   const hero = latestBySize.find((p) => sizeNum(p.size) === 0.25)
-            || latestBySize.find((p) => sizeNum(p.size) === 0.5)
             || latestBySize[0];
 
   const desc = (row.description_de || row.description_en || "")

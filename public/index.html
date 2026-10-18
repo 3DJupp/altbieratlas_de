@@ -127,6 +127,7 @@
         <ol id="rank-newest" class="rank-list"></ol>
       </div>
     </div>
+    <p class="rank-note" id="rank-note" hidden></p>
   </section>
 
   <!-- ============ NEXT EVENTS ============ -->
@@ -286,6 +287,8 @@
 
 .section-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 20px; }
 .rank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.rank-note { font-size: 13px; color: var(--ink-muted); margin: 14px 0 0; }
+.rank-note a { color: inherit; }
 .rank-card { padding: 24px; }
 .rank-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .rank-list { list-style: none; padding: 0; margin: 0; }
@@ -377,7 +380,7 @@ function getHighlightedSize() {
 
 // ============ State ============
 let allBreweries = [];
-let priceByBrewery = new Map();   // id → neuester Preis (bevorzugt erste highlightedSize)
+let priceByBrewery = new Map();   // id → Popup-Preis: erste highlightedSize, sonst kleinste Größe
 let cachedHlAvg = null;           // Durchschnittspreis für erste highlightedSize
 const markerMap = new Map();
 let geoMarker = null;             // Geocode-Treffer (temporärer Pin)
@@ -409,6 +412,8 @@ function renderMarkers(filter = "all", search = "") {
     const latest = priceByBrewery.get(b.id);
     const priceText = latest
       ? `<div class="pop-price">€ ${window.formatPrice(latest.price)} <span style="font-size:11px;opacity:.6">/ ${window.formatSize(latest.size)}</span></div>`
+        // Literpreis nur als Zusatzinfo, nie zum Sortieren: größere Gläser sind pro Liter günstiger
+        + (normSize(latest.size) > 0 ? `<div class="pop-liter">≈ € ${window.formatPrice(latest.price / normSize(latest.size))} / l</div>` : "")
       : `<div style="font-size:12px;opacity:.6;margin-top:6px">${window.t("brewery.noPrice")}</div>`;
     const historicalBadge = b.isHistorical
       ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>` : "";
@@ -729,16 +734,19 @@ let cachedPrices = [];
     allBreweries = brews.breweries || [];
     cachedPrices = prices.prices || [];
 
-    // Preis-Index aufbauen (neuester Preis pro Brauerei, bevorzugt erste highlightedSize)
+    // Preis-Index fürs Popup — gleiche Regel wie die Ortsseite: jüngste Meldung der
+    // ersten highlightedSize, sonst jüngste Meldung der kleinsten gemeldeten Größe.
+    // Keine Umrechnung: Preis und Größe stehen im Popup immer zusammen.
     const hlSize = getHighlightedSize();
     const byId = new Map();
-    cachedPrices.forEach((p) => {
+    cachedPrices.slice().sort((a, b) => b.date.localeCompare(a.date)).forEach((p) => {
       const cur = byId.get(p.breweryId);
-      const isHL = Math.abs(normSize(p.size) - hlSize) < 0.001;
-      const score = (isHL ? 1000 : 0) + new Date(p.date).getTime() / 1e10;
-      const curIsHL = cur ? Math.abs(normSize(cur.size) - hlSize) < 0.001 : false;
-      const curScore = cur ? (curIsHL ? 1000 : 0) + new Date(cur.date).getTime() / 1e10 : -1;
-      if (!cur || score > curScore) byId.set(p.breweryId, p);
+      const n = normSize(p.size);
+      if (isNaN(n)) return;
+      if (!cur) { byId.set(p.breweryId, p); return; }
+      const c = normSize(cur.size);
+      if (Math.abs(c - hlSize) < 0.001) return;
+      if (Math.abs(n - hlSize) < 0.001 || n < c - 0.001) byId.set(p.breweryId, p);
     });
     priceByBrewery = byId;
 
@@ -843,6 +851,20 @@ function renderRankings(prices) {
     });
   });
   fill("rank-newest", newest.slice(0, 5));
+
+  // Ranglisten vergleichen nur die hervorgehobene Größe — offen sagen, wer dadurch fehlt.
+  const withHl = new Set(uniq.map((b) => b.id));
+  const missing = new Set(prices
+    .map((p) => p.breweryId)
+    .filter((id) => !withHl.has(id) && allBreweries.some((b) => b.id === id && !b.isHistorical)));
+  const note = document.getElementById("rank-note");
+  if (note) {
+    note.hidden = missing.size === 0;
+    note.innerHTML = window.t(missing.size === 1 ? "index.rankNoteOne" : "index.rankNote")
+      .replace("{size}", window.formatSize(String(hlSize)))
+      .replace("{n}", missing.size)
+      + ` <a href="/ranglisten">${window.t("index.rankNoteLink")}</a>`;
+  }
 }
 
 // ============ Events ============

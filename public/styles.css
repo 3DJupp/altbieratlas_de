@@ -547,6 +547,11 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   font-size: 18px;
   margin-top: 8px;
 }
+.leaflet-popup-content .pop-liter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: .55;
+}
 .leaflet-popup-content a {
   color: var(--copper-glow);
   border-color: var(--copper-glow);
