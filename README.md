@@ -43,6 +43,7 @@ altbieratlas/
 │   ├── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen)
 │   └── indexnow.sh          # IndexNow-Submit (Sitemap oder Einzel-URLs)
 ├── wrangler.toml
+├── BACKLOG.md           # offene Punkte (Admin-Lücken u. a.)
 └── package.json
 ```
 
