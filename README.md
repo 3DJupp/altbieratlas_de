@@ -344,6 +344,10 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 - Historische Brauereien (`is_historical`) grau hervorgehoben; `highlighted`/`sponsored`-CSS für gesponserte Einträge
 - Geocoder-Suche via Nominatim (serverseitig proxiert)
 - **„In meiner Nähe"** — Browser-Geolocation schwenkt die Karte auf den Standort und zeigt den nächstgelegenen Ort (Haversine, ohne Backend)
+- Popup-Preis wie auf der Ortsseite: jüngste 0,25-l-Meldung, sonst die kleinste gemeldete Größe
+  (ohne Umrechnung, Größe steht dabei); darunter grau der Literpreis als reine Zusatzinfo
+- Schnellübersicht „Günstigstes/Teuerstes Alt" vergleicht nur 0,25 l; ein Hinweis nennt,
+  wie viele Orte bisher nur andere Größen gemeldet haben, und verlinkt `/ranglisten`
 
 ### Ort-Detail (`/ort/<slug>`)
 - **Sprechende URLs**: `/ort/uerige` statt `/ort?id=uerige`.
@@ -354,7 +358,9 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
   Crawler ohne JS-Rendering und Social-Previews sehen damit echten Inhalt statt „Lade…"
 - JSON-LD `BarOrPub` (historische Orte: `Place`) mit Adresse, Geo, Gründungsjahr
   und `Menu`/`Offer`-Preisen, dazu `BreadcrumbList` mit Stadt-Zwischenstufe
-- Preisverlauf als SVG-Chart, Stile, Geschmacksnotizen (DE/EN)
+- Preisbox: jüngste 0,25-l-Meldung, sonst die kleinste gemeldete Größe; der
+  Preisverlauf (SVG-Chart) zeigt genau diese Größe
+- Stile, Geschmacksnotizen (DE/EN)
 - **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
 
 ### Stadt-Landingpages (SEO)

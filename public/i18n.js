@@ -188,6 +188,9 @@ window.ATLAS_I18N = {
     // Index / Landing
     "index.quickOverview": "Schnellübersicht",
     "index.pricesAtAGlance": "Preise im Überblick",
+    "index.rankNote": "Verglichen wird nur {size}. {n} Orte haben bisher nur andere Größen gemeldet.",
+    "index.rankNoteOne": "Verglichen wird nur {size}. Ein Ort hat bisher nur andere Größen gemeldet.",
+    "index.rankNoteLink": "Alle Größen in den Ranglisten →",
     "index.calendar": "Kalender",
     "index.upcomingEvents": "Kommende Termine",
     "index.reportEventLink": "Event melden →",
@@ -847,6 +850,9 @@ window.ATLAS_I18N = {
     // Index / Landing
     "index.quickOverview": "Quick overview",
     "index.pricesAtAGlance": "Prices at a glance",
+    "index.rankNote": "Only {size} is compared. {n} places have only reported other sizes so far.",
+    "index.rankNoteOne": "Only {size} is compared. One place has only reported other sizes so far.",
+    "index.rankNoteLink": "All sizes in the rankings →",
     "index.calendar": "Calendar",
     "index.upcomingEvents": "Upcoming events",
     "index.reportEventLink": "Report an event →",
