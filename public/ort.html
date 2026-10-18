@@ -254,11 +254,12 @@ const isSsr = root.dataset.ssr === "1";
     .map((sid) => allStyles.find((s) => s.id === sid))
     .filter(Boolean);
 
-  const preferredSize = prices.find((p) => p.size === "0,25l")
-                     || prices.find((p) => p.size === "0,5l")
-                     || prices.find((p) => p.size === "0,33l")
-                     || prices[0];
-  const latest = preferredSize;
+  // Größen kommen als "0.25", "0.25l" oder Legacy "0,25l" — numerisch vergleichen.
+  // Preise sind nach Datum absteigend sortiert: erste Meldung je Größe ist die jüngste.
+  // Anzeige: 0,25 l, sonst die kleinste gemeldete Größe (wie auf der Stadtseite).
+  const sizeNum = (s) => parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
+  const latest = prices.find((p) => Math.abs(sizeNum(p.size) - 0.25) < 0.001)
+              || prices.reduce((best, p) => (!best || sizeNum(p.size) < sizeNum(best.size) - 0.001 ? p : best), null);
   const lang = window.__atlasLang;
 
   const SOURCE_KEYS = { "vor Ort": "source.vorOrt", "Beitrag": "source.beitrag" };
@@ -490,9 +491,9 @@ const isSsr = root.dataset.ssr === "1";
 
   // ============ Chart ============
   function drawChart() {
-    const targetSize = latest ? latest.size : "0,25l";
+    const targetSize = latest ? sizeNum(latest.size) : 0.25;
     const series = prices
-      .filter((p) => p.size === "0,25l" || p.size === targetSize)
+      .filter((p) => Math.abs(sizeNum(p.size) - targetSize) < 0.001)
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date));
     const container = document.getElementById('chart');

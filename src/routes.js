@@ -2176,8 +2176,8 @@ export async function serveOrt(req, env, params = {}) {
     latestBySize.push(p);
   }
   latestBySize.sort((a, b) => (sizeNum(a.size) ?? 0) - (sizeNum(b.size) ?? 0));
+  // 0,25 l, sonst die kleinste Größe — identisch zur Preisbox in public/ort.html.
   const hero = latestBySize.find((p) => sizeNum(p.size) === 0.25)
-            || latestBySize.find((p) => sizeNum(p.size) === 0.5)
             || latestBySize[0];
 
   const desc = (row.description_de || row.description_en || "")
