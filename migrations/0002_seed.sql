@@ -67,7 +67,11 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Mild-malzig, niederrheinisch weich. Klassisch für die Region.',
     'Mild-malty, soft in the Lower-Rhine style. Regional classic.',
     'stile/koenigshof-alt.png'),
-  ('hannen-alt', 'Hannen Alt', 4.9, 30, '#8c4820',
+  ('hannen-alt', 'Hannen Alt', 4.8, 30, '#8c4820',
+    'Das Hannen Alt der Großbrauerei-Jahre in Mönchengladbach, zuletzt unter Carlsberg. Industriell gebraut, aber klassisch profiliert und lange die bekannteste Alt-Marke außerhalb Düsseldorfs. Heute als Hannen Alt (2023+) von Bolten gebraut.',
+    'Hannen Alt from the big-brewery years in Mönchengladbach, last under Carlsberg. Industrially brewed but classically profiled, and for a long time the best-known Alt brand outside Düsseldorf. Now brewed by Bolten as Hannen Alt (2023+).',
+    'stile/hannen-alt.png'),
+  ('hannen-alt-2023', 'Hannen Alt (2023+)', 4.9, NULL, '#8c4820',
     'Röstmalze satt, tiefdunkel in der Farbe. Intensiv, rund und vollmundig mit malzig-herbem Geschmack, spritzig und frisch. Seit 2023 von der Privatbrauerei Bolten in Korschenbroich gebraut.',
     'Plenty of roasted malt, deep dark in colour. Intense, round and full-bodied with a malty, bitter taste, lively and fresh. Brewed by Privatbrauerei Bolten in Korschenbroich since 2023.',
     'stile/hannen-alt.png'),
@@ -78,6 +82,10 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
   ('bolten-oh', 'Boltens Oh! Alkoholfrei', NULL, NULL, '#8a4618',
     'Das alkoholfreie Alt von Bolten (unter 0,5 %). Im Antrunk malzig, voller, runder Geschmack mit dezenter Säure und ausgeprägter Spritzigkeit. Isotonisch und naturtrüb.',
     'Bolten''s alcohol-free Alt (below 0.5 %). Malty on the first sip, full and round with a subtle acidity and a lively sparkle. Isotonic and unfiltered.',
+    NULL),
+  ('gatz-alt', 'Gatz Altbier', NULL, NULL, '#8b4a1c',
+    'Die Düsseldorfer Traditionsmarke, früher Gatzweilers Alt aus Heerdt. Seit April 2022 gehört sie der Privatbrauerei Bolten und wird in Korschenbroich gebraut, zuvor zuletzt bei Königshof in Krefeld.',
+    'The Düsseldorf heritage brand, formerly Gatzweilers Alt from Heerdt. Owned by Privatbrauerei Bolten since April 2022 and brewed in Korschenbroich, before that last at Königshof in Krefeld.',
     NULL),
   ('diebels-alt', 'Diebels Alt', 4.9, 27, '#8b4417',
     'Mild, leicht herb, gut trinkbar. Der typische Niederrhein-Alt — weicher und runder als die Düsseldorfer Hausbrauerei-Versionen.',
@@ -494,6 +502,8 @@ UPDATE styles SET primary_brewery_id = 'kuerzer-altstadt' WHERE id = 'kuerzer-al
 UPDATE styles SET primary_brewery_id = 'frankenheim-brauereiausschank' WHERE id = 'frankenheim-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'bolten-uralt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'bolten-oh' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'hannen-alt-2023' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'gatz-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'diebels' WHERE id = 'diebels-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'gleumes' WHERE id = 'gleumes-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'pinkus-mueller' WHERE id = 'pinkus-alt' AND primary_brewery_id IS NULL;
@@ -506,6 +516,9 @@ UPDATE styles SET primary_brewery_id = 'schlueffken' WHERE id = 'schlueffken-alt
 UPDATE styles SET primary_brewery_id = 'schluessel' WHERE id = 'schluessel-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'koenigshof' WHERE id = 'koenigshof-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'hannen' WHERE id = 'hannen-alt' AND primary_brewery_id IS NULL;
+
+-- Übernahmen: Marke/Betrieb wird heute von einem anderen Ort geführt
+UPDATE breweries SET successor_id = 'bolten' WHERE id IN ('hannen', 'gatzweiler') AND successor_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'brauerei-im-dom' WHERE id = 'dom-alt' AND primary_brewery_id IS NULL;
 
 -- ============================================================
@@ -535,13 +548,14 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('gleumes', 'gleumes-alt'),
   ('hannen', 'hannen-alt'),
   ('bolten', 'bolten-uralt'),
-  ('bolten', 'hannen-alt'),
+  ('bolten', 'hannen-alt-2023'),
+  ('bolten', 'gatz-alt'),
   ('bolten', 'bolten-oh'),
   ('hoff-marie', 'bolten-uralt'),
-  ('hoff-marie', 'hannen-alt'),
+  ('hoff-marie', 'hannen-alt-2023'),
   ('hoff-marie', 'bolten-oh'),
   ('bolten-landwirtschaft', 'bolten-uralt'),
-  ('bolten-landwirtschaft', 'hannen-alt'),
+  ('bolten-landwirtschaft', 'hannen-alt-2023'),
   ('bolten-landwirtschaft', 'bolten-oh'),
   ('brauerei-im-dom', 'dom-alt'),
   ('diebels', 'diebels-alt'),

@@ -46,8 +46,9 @@ async function loadVenues(env) {
     env.DB.prepare(
       `SELECT b.id, b.name, b.short_name, b.type, b.city, b.country, b.address,
               b.founded, b.website, b.description_de, b.is_historical, b.updated_at,
-              COALESCE(v.name_de, b.type) AS type_label
+              COALESCE(v.name_de, b.type) AS type_label, sb.name AS successor_name
        FROM breweries b LEFT JOIN venue_types v ON v.id = b.type
+       LEFT JOIN breweries sb ON sb.id = b.successor_id AND sb.status = 'approved'
        WHERE b.status = 'approved' ORDER BY b.city, b.is_historical, b.name`
     ).all(),
     env.DB.prepare(
@@ -264,6 +265,7 @@ ${priced.length ? `- Teuerstes 0,25 l: ${priced.at(-1).v.name} (${priced.at(-1).
       lines.push(`- Seite: ${base}/ort/${encodeURIComponent(v.id)}`);
       if (v.address) lines.push(`- Adresse: ${oneLine(v.address)}${v.address.includes(v.city) ? "" : ", " + v.city}`);
       if (v.founded) lines.push(`- Gegründet: ${v.founded}`);
+      if (v.successor_name) lines.push(`- Heute bei: ${v.successor_name}`);
       if (v.website) lines.push(`- Website: ${v.website}`);
       if (v.styles.length) {
         lines.push(`- Sorten: ${v.styles.map((s) =>

@@ -325,6 +325,8 @@ window.ATLAS_I18N = {
     "brewery.insufficientChart": "Zu wenig Datenpunkte für einen Verlauf.",
     "brewery.noPrice": "Noch keine Preismeldung",
     "brewery.historical": "Historisch / nicht mehr in Betrieb",
+    "brewery.successor": "Heute bei",
+    "brewery.predecessors": "Übernommene Marken",
     // Map popups / geocode
     "popup.details": "Details →",
     // Rank sub
@@ -987,6 +989,8 @@ window.ATLAS_I18N = {
     "brewery.insufficientChart": "Not enough data points for a trend.",
     "brewery.noPrice": "No price report yet",
     "brewery.historical": "Historical / no longer operating",
+    "brewery.successor": "Now part of",
+    "brewery.predecessors": "Acquired brands",
     // Map popups
     "popup.details": "Details →",
     // Rank sub

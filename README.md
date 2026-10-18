@@ -361,6 +361,8 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 - Preisbox: jüngste 0,25-l-Meldung, sonst die kleinste gemeldete Größe; der
   Preisverlauf (SVG-Chart) zeigt genau diese Größe
 - Stile, Geschmacksnotizen (DE/EN)
+- **Übernahmen** (`breweries.successor_id`): historische Orte zeigen „Heute bei: …“ mit Link,
+  der übernehmende Ort listet seine übernommenen Marken (z. B. Hannen und Gatzweiler → Bolten)
 - **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
 
 ### Stadt-Landingpages (SEO)

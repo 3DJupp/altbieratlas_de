@@ -194,11 +194,23 @@ export async function getBrewery(req, env, { id }) {
   const styles = await env.DB.prepare(
     "SELECT style_id FROM brewery_styles WHERE brewery_id = ?"
   ).bind(id).all();
+  // Übernahmen in beide Richtungen: wer führt die Marke heute, wen hat dieser Ort übernommen
+  const successor = row.successor_id
+    ? await env.DB.prepare("SELECT id, name FROM breweries WHERE id = ? AND status = 'approved'")
+        .bind(row.successor_id).first()
+    : null;
+  const predecessors = await env.DB.prepare(
+    "SELECT id, name FROM breweries WHERE successor_id = ? AND status = 'approved' ORDER BY name"
+  ).bind(id).all();
   const prices = await env.DB.prepare(
     "SELECT date, size, price, source, notes FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC"
   ).bind(id).all();
   return json({
-    brewery: brewRow(row, styles.results.map((s) => s.style_id)),
+    brewery: {
+      ...brewRow(row, styles.results.map((s) => s.style_id)),
+      successor: successor || null,
+      predecessors: predecessors.results,
+    },
     prices: prices.results.map((p) => ({
       breweryId: id, date: p.date, size: p.size, price: p.price, source: p.source, notes: p.notes,
     })),
@@ -1026,6 +1038,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
     verified: "verified", status: "status", logo_key: "logo_key",
+    successor_id: "successor_id",
   };
   for (const [k, col] of Object.entries(allow)) {
     if (k in body) {
@@ -1052,6 +1065,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
       env.DB.prepare("UPDATE brewery_styles SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE prices SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE events SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
+      env.DB.prepare("UPDATE breweries SET successor_id = ? WHERE successor_id = ?").bind(newId, id),
     ];
     if (styleIds !== null) {
       stmts.push(env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(newId));

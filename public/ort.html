@@ -103,6 +103,7 @@
 .grid-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px; padding-top: 40px; padding-bottom: 40px; }
 .about { display: flex; flex-direction: column; gap: 12px; }
 .about p { font-size: 14px; line-height: 1.65; color: var(--ink-soft); }
+.about .ort-lineage { font-weight: 600; color: var(--ink); }
 .detail-map { height: 320px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--rule); cursor: pointer; }
 .maps-open-btn {
   display: inline-block;
@@ -386,6 +387,8 @@ const isSsr = root.dataset.ssr === "1";
         ${b.photoUrl ? `<img class="ort-photo" src="${b.photoUrl}" alt="${b.name}" loading="lazy" onerror="this.remove()">` : ''}
         <h3 data-i18n="brewery.about">Über</h3>
         <p id="b-description">${(b.description && (b.description[lang] || b.description.de)) || ''}</p>
+        ${b.successor ? `<p class="ort-lineage"><span data-i18n="brewery.successor">${window.t('brewery.successor')}</span>: <a href="/ort/${encodeURIComponent(b.successor.id)}">${b.successor.name} →</a></p>` : ''}
+        ${b.predecessors && b.predecessors.length ? `<p class="ort-lineage"><span data-i18n="brewery.predecessors">${window.t('brewery.predecessors')}</span>: ${b.predecessors.map((p) => `<a href="/ort/${encodeURIComponent(p.id)}">${p.name}</a>`).join(', ')}</p>` : ''}
         ${b.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${b.address}</p>` : ''}
       </div>
       <div>

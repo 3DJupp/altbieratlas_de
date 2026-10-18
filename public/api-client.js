@@ -131,7 +131,10 @@
       if (!b) return { error: "not-found" };
       const prices = d.prices.filter((p) => p.breweryId === id)
         .slice().sort((a, b) => b.date.localeCompare(a.date));
-      return { brewery: b, prices };
+      const s = b.successorId && d.breweries.find((x) => x.id === b.successorId);
+      const predecessors = d.breweries.filter((x) => x.successorId === id)
+        .map((x) => ({ id: x.id, name: x.name }));
+      return { brewery: { ...b, successor: s ? { id: s.id, name: s.name } : null, predecessors }, prices };
     },
     async listStyles() { return { styles: window.ATLAS_DATA.styles }; },
     async listPrices() { return { prices: window.ATLAS_DATA.prices }; },
