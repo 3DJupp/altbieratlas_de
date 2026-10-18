@@ -371,6 +371,22 @@ VALUES
     '', '',
     1, 'approved', 0, NULL, NULL),
 
+  ('brauhaus-am-dreieck', 'Brauhaus Am Dreieck', 'BAD', 'pub', 'Düsseldorf', 'DE',
+    'Blücherstraße 6, 40477 Düsseldorf',
+    'https://maps.app.goo.gl/oszH9eff9sjU84NCA',
+    51.2403935, 6.7826773, NULL, 'https://bad-dus.de',
+    'Kneipe am Dreieck in Pempelfort mit Uerige vom Fass.',
+    'Pub at the Dreieck in Pempelfort serving Uerige on draught.',
+    1, 'approved', 0, NULL, NULL),
+
+  ('himmel-und-aehd', 'Himmel & Aehd', 'H&A', 'pub', 'Düsseldorf', 'DE',
+    'Nordstraße 53, 40477 Düsseldorf',
+    'https://maps.app.goo.gl/XGQRaNbZXVokRzPi9',
+    51.2379355, 6.7797885, NULL, 'https://himmel-aehd.de',
+    'Kneipe an der Nordstraße in Pempelfort mit Füchschen Alt vom Fass, dazu Füchschen Alkoholfrei (0,33 l).',
+    'Pub on Nordstraße in Pempelfort serving Füchschen Alt on draught, plus the alcohol-free Füchschen (0.33 l).',
+    1, 'approved', 0, NULL, NULL),
+
   ('koenigshof', 'Brauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
     'Obergath 68-112, 47805 Krefeld',
     'https://maps.app.goo.gl/mqMMdLwZaMuUshtA6',
@@ -544,7 +560,10 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('joh-albrecht-duesseldorf', 'albrecht-alt'),
   ('schlueffken', 'schlueffken-alt'),
   ('nordbahnhof-krefeld', 'schlueffken-alt'),
-  ('birkeneck', 'frankenheim-alt');
+  ('birkeneck', 'frankenheim-alt'),
+  ('brauhaus-am-dreieck', 'uerige-alt'),
+  ('himmel-und-aehd', 'fuechschen-alt'),
+  ('himmel-und-aehd', 'fuechschen-alt-af');
 
 -- ============================================================
 -- Prices (approved, Stand Live-DB Oktober 2026)
@@ -588,7 +607,10 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending'),
   ('nordbahnhof-krefeld', '2026-10-06', '0.25l', 2.8, 'Speisekarte', NULL, 'pending'),
   ('nordbahnhof-krefeld', '2026-10-06', '0.5l', 5.3, 'Speisekarte', NULL, 'pending'),
-  ('birkeneck', '2026-10-18', '0.2', 1.9, 'Beitrag', 'lt. Google Maps', 'approved');
+  ('birkeneck', '2026-10-18', '0.2', 1.9, 'Beitrag', 'lt. Google Maps', 'approved'),
+  ('brauhaus-am-dreieck', '2026-10-18', '0.25', 2.8, 'Beitrag', 'Uerige', 'approved'),
+  ('himmel-und-aehd', '2026-10-18', '0.25', 2.8, 'Beitrag', 'Füchschen', 'approved'),
+  ('himmel-und-aehd', '2026-10-18', '0.33', 3.9, 'Beitrag', 'Füchschen Alkoholfrei', 'approved');
 
 -- ============================================================
 -- Events — bestätigte Veranstaltungen
