@@ -392,7 +392,7 @@ Fünf Einreichungstypen mit Moderation:
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken + neueste offene Beiträge
 - **Beiträge** — Approve / Reject mit optionaler Notiz
-- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL), offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen
+- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL), offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen
 - **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
 - **Preise** — Alle Preise einsehen, löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten, löschen
@@ -400,6 +400,7 @@ Fünf Einreichungstypen mit Moderation:
 - **Typen** — Venue-Typen (brewpub, brewery, taproom, gastronomie, pub, restaurant, kiosk, handel, supermarket, beverage_store) anlegen, bearbeiten, löschen
 - **Einstellungen** — Impressum, Ankündigungs-Banner (DE/EN, aktivierbar), Social-Links (GitHub, LinkedIn, Instagram, Mastodon, Ko-fi, Website)
 - **Passwort-Reset per E-Mail** (DE/EN)
+- **Zweisprachigkeit**: fehlt beim Speichern DE oder EN (Beschreibung, Geschmack, Titel, Definition, Typ-Name/-Überschrift), fragt das Panel nach
 - Mobile-optimierte Tab-Navigation
 
 ### Ranglisten

@@ -1047,6 +1047,11 @@ export async function adminUpdateBrewery(req, env, { id }) {
     }
   }
   if (!fields.length && !("styles" in body) && !newId) return error(400, "no-fields");
+  if ("successor_id" in body && body.successor_id != null) {
+    if (body.successor_id === id) return error(400, "successor-self");
+    const succ = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(body.successor_id).first();
+    if (!succ) return error(400, "successor-not-found");
+  }
 
   const effectiveId = newId || id;
 

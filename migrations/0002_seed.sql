@@ -44,8 +44,8 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Malt-forward, full-bodied, soft. One of the most approachable Düsseldorf Alts.',
     'stile/fuechschen-alt.png'),
   ('fuechschen-alt-af', 'Füchschen Alt Alkoholfrei', 0.2, 5, '#8a4a1f',
-    NULL,
-    NULL,
+    'Die alkoholfreie Variante des Füchschen Alt aus der Ratinger Straße, mit 0,2 % Alkohol.',
+    'The alcohol-free version of Füchschen Alt from Ratinger Straße, at 0.2 % ABV.',
     'stile/fuechschen-alt.png'),
   ('schumacher-alt', 'Schumacher Alt', 4.6, 32, '#9b5226',
     'Mild, rund, gut trinkbar. Der Klassiker für den langen Abend.',
@@ -380,7 +380,8 @@ VALUES
     'Ackerstraße 84',
     'https://maps.app.goo.gl/uuXpuDjojVtvh4Vy5',
     51.2275508, 6.8010764, NULL, 'https://birkeneck.metro.bar',
-    '', '',
+    'Kneipe an der Ackerstraße in Düsseldorf-Flingern. Im Ausschank: Frankenheim Alt.',
+    'Pub on Ackerstraße in Düsseldorf-Flingern. On tap: Frankenheim Alt.',
     1, 'approved', 0, NULL, NULL),
 
   ('koenigshof', 'Brauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
@@ -647,7 +648,9 @@ VALUES
     'Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.
 
 Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.',
-    'The Original Schlüssel Stike is tapped fresh from the wooden barrel twice a year (March and October). The October 2026 edition starts on 14 October.',
+    'On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.
+
+Original Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot''s ban.',
     'approved'),
   ('uerige-sticke-2026-10', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
     'uerige', '2026-10-20', NULL, NULL, NULL, 'Düsseldorf Altstadt',
@@ -667,7 +670,8 @@ Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschic
 -- ============================================================
 -- event_beers hat keinen natürlichen Schlüssel: nur einfügen, was am Event noch fehlt (idempotent)
 INSERT INTO event_beers (event_id, name_de, name_en, size, price)
-SELECT v.column1, v.column2, NULL, v.column3, v.column4 FROM (VALUES
+-- Biernamen sind Eigennamen: EN = DE
+SELECT v.column1, v.column2, v.column2, v.column3, v.column4 FROM (VALUES
   ('rheinkirmes-2026', 'Schlüssel', '0.25l', 3.3),
   ('rheinkirmes-2026', 'Uerige', '0.25l', 3.4),
   ('rheinkirmes-2026', 'Schumacher', '0.25l', 3.5),

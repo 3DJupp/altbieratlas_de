@@ -646,7 +646,10 @@ window.ATLAS_DATA = {
       coords: [51.2275508, 6.8010764],
       founded: null,
       website: "https://birkeneck.metro.bar",
-      description: { de: "", en: "" },
+      description: {
+        de: "Kneipe an der Ackerstraße in Düsseldorf-Flingern. Im Ausschank: Frankenheim Alt.",
+        en: "Pub on Ackerstraße in Düsseldorf-Flingern. On tap: Frankenheim Alt.",
+      },
       styles: ["frankenheim-alt"],
       verified: true,
       isHistorical: false,
@@ -995,8 +998,8 @@ window.ATLAS_DATA = {
       ibu: 5,
       color: "#8a4a1f",
       tasting: {
-        de: null,
-        en: null,
+        de: "Die alkoholfreie Variante des Füchschen Alt aus der Ratinger Straße, mit 0,2 % Alkohol.",
+        en: "The alcohol-free version of Füchschen Alt from Ratinger Straße, at 0.2 % ABV.",
       },
     },
     {
@@ -1304,11 +1307,11 @@ window.ATLAS_DATA = {
         en: "The Rheinkirmes (\"Größte Kirmes am Rhein\") is Düsseldorf's big summer funfair, held every July on the Rheinwiesen in Oberkassel across from the Altstadt. Organised by the St. Sebastianus Schützenverein, it draws about four million visitors over nine days. Free entry, around 300 rides and stalls, Altbier tents, a Schützen parade, and fireworks over the Rhine to close.",
       },
       beers: [
-        { name: { de: "Schlüssel", en: null }, size: "0.25l", price: 3.3, notes: null },
-        { name: { de: "Uerige", en: null }, size: "0.25l", price: 3.4, notes: null },
-        { name: { de: "Schumacher", en: null }, size: "0.25l", price: 3.5, notes: null },
-        { name: { de: "Kürzer", en: null }, size: "0.2l", price: 2.9, notes: null },
-        { name: { de: "Schlösser", en: null }, size: "0.2l", price: 3.0, notes: null },
+        { name: { de: "Schlüssel", en: "Schlüssel" }, size: "0.25l", price: 3.3, notes: null },
+        { name: { de: "Uerige", en: "Uerige" }, size: "0.25l", price: 3.4, notes: null },
+        { name: { de: "Schumacher", en: "Schumacher" }, size: "0.25l", price: 3.5, notes: null },
+        { name: { de: "Kürzer", en: "Kürzer" }, size: "0.2l", price: 2.9, notes: null },
+        { name: { de: "Schlösser", en: "Schlösser" }, size: "0.2l", price: 3.0, notes: null },
       ],
     },
     {
@@ -1323,7 +1326,7 @@ window.ATLAS_DATA = {
       url: "https://www.zumschluessel.de/events-termine-duesseldorf/stike-ausschank",
       description: {
         de: "Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.\n\nOriginal Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.",
-        en: "The Original Schlüssel Stike is tapped fresh from the wooden barrel twice a year (March and October). The October 2026 edition starts on 14 October.",
+        en: "On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.\n\nOriginal Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot's ban.",
       },
     },
     {
@@ -1356,7 +1359,7 @@ window.ATLAS_DATA = {
         en: "Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 19 November 2026.",
       },
       beers: [
-        { name: { de: "Latzenbier", en: null }, size: "1l", price: null, notes: null },
+        { name: { de: "Latzenbier", en: "Latzenbier" }, size: "1l", price: null, notes: null },
       ],
     },
   ],

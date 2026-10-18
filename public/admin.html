@@ -834,6 +834,12 @@
           <textarea id="edit-description-en" rows="3" maxlength="2000" style="resize:vertical"></textarea>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.fieldSuccessor">Heute bei (Nachfolger)</label>
+          <select id="edit-successor" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px">
+          </select>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldSuccessorHint">Wer Marke oder Betrieb heute führt, z. B. Hannen → Bolten</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldStyles">Stile</label>
           <select id="edit-styles-select" multiple size="6" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px">
           </select>
@@ -971,6 +977,10 @@
           <div class="field" style="margin:0">
             <label style="font-size:11px">Preis (€)</label>
             <input id="eb-price" type="number" min="0" max="100" step="0.01" placeholder="2.80" />
+          </div>
+          <div class="field" style="margin:0;grid-column:1/-1">
+            <label style="font-size:11px">Name (EN)</label>
+            <input id="eb-name-en" type="text" maxlength="200" placeholder="leer = wie DE (Eigenname)" />
           </div>
           <div class="field" style="margin:0;grid-column:1/-1">
             <label style="font-size:11px">Hinweis</label>
@@ -1435,6 +1445,15 @@ rejectDialog.addEventListener("click", (e) => {
 // ============ Breweries Table ============
 let cachedStyles = null; // { id, name }[]
 
+// Beide Sprachen sollen immer gepflegt sein: fehlt DE oder EN, vor dem Speichern nachfragen.
+// pairs: [[Feldname, deWert, enWert], …]
+function confirmBothLangs(pairs) {
+  const missing = pairs
+    .filter(([, de, en]) => !(de || "").trim() || !(en || "").trim())
+    .map(([label, de, en]) => `${label} (${!(de || "").trim() && !(en || "").trim() ? "DE + EN" : !(de || "").trim() ? "DE" : "EN"})`);
+  return !missing.length || confirm(window.t("admin.langMissing").replace("{fields}", missing.join(", ")));
+}
+
 async function ensureStyles() {
   if (cachedStyles) return cachedStyles;
   try {
@@ -1472,6 +1491,7 @@ async function loadBreweriesTable() {
           data-description-en="${(b.description?.en || "").replace(/"/g, "&quot;")}"
           data-short="${(b.short || "").replace(/"/g, "&quot;")}"
           data-styles="${(b.styles || []).join(",")}"
+          data-successor="${b.successorId || ""}"
           data-photo-key="${b.photoKey || ""}"
           data-logo-key="${b.logoKey || ""}">
         <td><a href="/ort/${encodeURIComponent(b.id)}" target="_blank">${b.name}</a></td>
@@ -1572,6 +1592,20 @@ async function openEditDialog(id, rowEl) {
     opt.selected = currentStyles.has(s.id);
     sel.appendChild(opt);
   });
+
+  // Nachfolger-Auswahl befüllen (alle Orte außer dem eigenen)
+  const succSel = document.getElementById("edit-successor");
+  succSel.innerHTML = `<option value="">${window.t("admin.noSuccessor")}</option>`;
+  const allBrews = await ensureBreweries();
+  allBrews.filter((b) => b.id !== id)
+    .sort((a, b) => a.name.localeCompare(b.name, "de"))
+    .forEach((b) => {
+      const opt = document.createElement("option");
+      opt.value = b.id;
+      opt.textContent = `${b.name} (${b.city})`;
+      succSel.appendChild(opt);
+    });
+  succSel.value = rowEl.dataset.successor || "";
 
   // Photo
   const photoPrev    = document.getElementById("edit-photo-preview");
@@ -1788,7 +1822,9 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const newIdRaw       = document.getElementById("edit-new-id").value.trim();
   const selEl          = document.getElementById("edit-styles-select");
   const styles         = Array.from(selEl.selectedOptions).map((o) => o.value);
+  const successorId    = document.getElementById("edit-successor").value || null;
   msg.style.display = "none";
+  if (!confirmBothLangs([[t("admin.langFieldDescription"), description, descriptionEn]])) return;
   try {
     const patch = {
       name, short, city, country, type, status, address, maps_url: mapsUrl,
@@ -1796,6 +1832,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
       lng: lngRaw !== "" ? parseFloat(lngRaw) : undefined,
       founded: foundedRaw !== "" ? parseInt(foundedRaw, 10) : null,
       website, description_de: description, description_en: descriptionEn, styles,
+      successor_id: successorId,
     };
     // Remove undefined values so they aren't sent as null
     Object.keys(patch).forEach((k) => patch[k] === undefined && delete patch[k]);
@@ -1819,6 +1856,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.description    = description;
     row.dataset.descriptionEn  = descriptionEn;
     row.dataset.styles         = styles.join(",");
+    row.dataset.successor      = successorId || "";
     row.querySelector("td:nth-child(1) a").textContent = name;
     row.querySelector("td:nth-child(1) a").href = `/ort/${encodeURIComponent(effectiveId)}`;
     row.querySelector("td:nth-child(2)").textContent = city;
@@ -2112,6 +2150,7 @@ function openStyleEditInline(id, rowEl) {
       primary_brewery_id: primaryBrewVal || null,
     };
     if (newId !== currentId) patch.id = newId;
+    if (!confirmBothLangs([[window.t("admin.langFieldTasting"), patch.tasting_de, patch.tasting_en]])) return;
     try {
       const res = await window.AtlasAPI.admin.updateStyle(currentId, patch);
       const finalId = res?.newId || newId;
@@ -2159,6 +2198,7 @@ document.getElementById("add-style-form").addEventListener("submit", async (e) =
   const msg = document.getElementById("add-style-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
+  if (!confirmBothLangs([[window.t("admin.langFieldTasting"), fd.get("tasting_de"), fd.get("tasting_en")]])) return;
   try {
     await window.AtlasAPI.admin.createStyle({
       id:         fd.get("id").trim(),
@@ -2313,6 +2353,10 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
     description_en: document.getElementById("ev-desc-en").value.trim() || null,
   };
   if (newEventIdRaw && newEventIdRaw !== pendingEventEdit.id) patch.new_id = newEventIdRaw;
+  if (!confirmBothLangs([
+    [window.t("admin.langFieldTitle"), patch.title_de, patch.title_en],
+    [window.t("admin.langFieldDescription"), patch.description_de, patch.description_en],
+  ])) return;
   try {
     const res = await window.AtlasAPI.admin.updateEvent(pendingEventEdit.id, patch);
     const effectiveEventId = res.new_id || pendingEventEdit.id;
@@ -2398,6 +2442,8 @@ document.getElementById("ev-beer-form").addEventListener("submit", async (e) => 
   e.preventDefault();
   if (!pendingEventEdit) return;
   const nameDe  = document.getElementById("eb-name-de").value.trim() || null;
+  // Biernamen sind meist Eigennamen: ohne eigene EN-Angabe gilt der DE-Name
+  const nameEn  = document.getElementById("eb-name-en").value.trim() || nameDe;
   const sizeRaw = document.getElementById("eb-size").value.trim().replace(",", ".");
   const n = parseFloat(sizeRaw.replace(/\s*l$/i, ""));
   const size = isNaN(n) ? sizeRaw : (n + "l");
@@ -2405,8 +2451,9 @@ document.getElementById("ev-beer-form").addEventListener("submit", async (e) => 
   const price = priceRaw ? parseFloat(priceRaw) : null;
   const notes = document.getElementById("eb-notes").value.trim() || null;
   try {
-    await window.AtlasAPI.admin.addEventBeer(pendingEventEdit.id, { name_de: nameDe, size, price, notes });
+    await window.AtlasAPI.admin.addEventBeer(pendingEventEdit.id, { name_de: nameDe, name_en: nameEn, size, price, notes });
     document.getElementById("eb-name-de").value = "";
+    document.getElementById("eb-name-en").value = "";
     document.getElementById("eb-size").value = "";
     document.getElementById("eb-price").value = "";
     document.getElementById("eb-notes").value = "";
@@ -2682,6 +2729,7 @@ function openGlossaryEditInline(term, rowEl) {
       definition_de: editRow.querySelector("#ge-def-de").value.trim(),
       definition_en: editRow.querySelector("#ge-def-en").value.trim() || null,
     };
+    if (!confirmBothLangs([[window.t("admin.langFieldDefinition"), patch.definition_de, patch.definition_en]])) return;
     try {
       await window.AtlasAPI.admin.updateGlossaryTerm(term, patch);
       rowEl.dataset.defDe = patch.definition_de;
@@ -2703,6 +2751,7 @@ document.getElementById("add-glossary-form").addEventListener("submit", async (e
   const msg = document.getElementById("add-glossary-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
+  if (!confirmBothLangs([[window.t("admin.langFieldDefinition"), fd.get("definition_de"), fd.get("definition_en")]])) return;
   try {
     await window.AtlasAPI.admin.createGlossaryTerm({
       term:          fd.get("term").trim(),
@@ -2872,6 +2921,10 @@ function openVtypeEditInline(id, rowEl) {
       header_de: editRow.querySelector("#vte-header-de").value.trim() || null,
       header_en: editRow.querySelector("#vte-header-en").value.trim() || null,
     };
+    if (!confirmBothLangs([
+      [window.t("admin.langFieldName"), patch.name_de, patch.name_en],
+      [window.t("admin.langFieldHeader"), patch.header_de, patch.header_en],
+    ])) return;
     try {
       await window.AtlasAPI.admin.updateVenueType(id, patch);
       rowEl.dataset.nameDe   = patch.name_de;
@@ -2897,6 +2950,10 @@ document.getElementById("add-vtype-form").addEventListener("submit", async (e) =
   const msg = document.getElementById("add-vtype-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
+  if (!confirmBothLangs([
+    [window.t("admin.langFieldName"), fd.get("name_de"), fd.get("name_en")],
+    [window.t("admin.langFieldHeader"), fd.get("header_de"), fd.get("header_en")],
+  ])) return;
   try {
     await window.AtlasAPI.admin.createVenueType({
       id:        fd.get("id").trim(),
@@ -2972,6 +3029,7 @@ document.getElementById("add-brewery-form").addEventListener("submit", async (e)
   const msg = document.getElementById("add-brewery-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
+  if (!confirmBothLangs([[window.t("admin.langFieldDescription"), fd.get("description_de"), fd.get("description_en")]])) return;
   try {
     await window.AtlasAPI.admin.createBrewery({
       id:             fd.get("id").trim(),
@@ -3009,6 +3067,10 @@ document.getElementById("add-event-form").addEventListener("submit", async (e) =
   const msg = document.getElementById("add-event-msg");
   msg.style.display = "none";
   const fd = new FormData(e.target);
+  if (!confirmBothLangs([
+    [window.t("admin.langFieldTitle"), fd.get("title_de"), fd.get("title_en")],
+    [window.t("admin.langFieldDescription"), fd.get("description_de"), fd.get("description_en")],
+  ])) return;
   try {
     await window.AtlasAPI.admin.createEvent({
       id:             fd.get("id").trim(),
