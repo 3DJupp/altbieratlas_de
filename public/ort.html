@@ -216,6 +216,15 @@ const citySlug = (name) => String(name || "").toLowerCase()
   .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+// Überschrift über den Sorten: kommt aus dem Ortstyp (venue_types.header_*); ohne Angabe
+// (z. B. Mock-Modus) „gebraut“ nur bei Produzenten, sonst „ausgeschenkt“ bzw. „erhältlich“.
+function stylesTitle(b, l) {
+  const h = b.typeHeader && (b.typeHeader[l] || b.typeHeader.de);
+  if (h) return h;
+  if (['brewery', 'brewpub'].includes(b.type)) return window.t('brewery.stylesTitle');
+  if (['kiosk', 'supermarket', 'beverage_store', 'handel'].includes(b.type)) return window.t('brewery.stylesTitleRetail');
+  return window.t('brewery.stylesTitleServed');
+}
 // Hat der Worker die Seite schon gerendert, sind Meta-Tags und JSON-LD gesetzt.
 const isSsr = root.dataset.ssr === "1";
 
@@ -399,7 +408,7 @@ const isSsr = root.dataset.ssr === "1";
     ${styles.length ? `
       <section class="container" style="padding-bottom:40px">
         <div class="eyebrow" data-i18n="brewery.style">Stil</div>
-        <h2 style="margin-top:8px" id="b-styles-title">${window.t(['pub','restaurant','gastronomie'].includes(b.type) ? 'brewery.stylesTitleServed' : ['kiosk','supermarket','beverage_store','handel'].includes(b.type) ? 'brewery.stylesTitleRetail' : 'brewery.stylesTitle')}</h2>
+        <h2 style="margin-top:8px" id="b-styles-title">${stylesTitle(b, lang)}</h2>
         <div class="style-grid">
           ${styles.map((s) => `
             <article class="card style-card">
@@ -564,7 +573,7 @@ const isSsr = root.dataset.ssr === "1";
     const elType = document.getElementById('b-type');
     if (elType) elType.textContent = window.t('type.' + b.type);
     const elStylesTitle = document.getElementById('b-styles-title');
-    if (elStylesTitle) elStylesTitle.textContent = window.t(['pub','restaurant','gastronomie'].includes(b.type) ? 'brewery.stylesTitleServed' : ['kiosk','supermarket','beverage_store','handel'].includes(b.type) ? 'brewery.stylesTitleRetail' : 'brewery.stylesTitle');
+    if (elStylesTitle) elStylesTitle.textContent = stylesTitle(b, l);
     const elSince = document.getElementById('b-since');
     if (elSince) elSince.textContent = window.t('rank.sinceYear') + b.founded;
     if (latest) {

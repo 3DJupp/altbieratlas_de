@@ -188,7 +188,9 @@ export async function listBreweries(req, env) {
 // GET /api/breweries/:id
 export async function getBrewery(req, env, { id }) {
   const row = await env.DB.prepare(
-    "SELECT * FROM breweries WHERE id = ? AND status = 'approved'"
+    `SELECT b.*, v.header_de AS type_header_de, v.header_en AS type_header_en
+     FROM breweries b LEFT JOIN venue_types v ON v.id = b.type
+     WHERE b.id = ? AND b.status = 'approved'`
   ).bind(id).first();
   if (!row) return error(404, "not-found");
   const styles = await env.DB.prepare(
@@ -210,6 +212,10 @@ export async function getBrewery(req, env, { id }) {
       ...brewRow(row, styles.results.map((s) => s.style_id)),
       successor: successor || null,
       predecessors: predecessors.results,
+      // Überschrift über den Sorten aus dem Ortstyp ("Was hier ausgeschenkt wird" …)
+      typeHeader: row.type_header_de || row.type_header_en
+        ? { de: row.type_header_de || null, en: row.type_header_en || null }
+        : null,
     },
     prices: prices.results.map((p) => ({
       breweryId: id, date: p.date, size: p.size, price: p.price, source: p.source, notes: p.notes,
