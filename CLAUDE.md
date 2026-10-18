@@ -80,7 +80,7 @@ The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_
 
 ### Database Schema
 
-Key tables: `breweries` (incl. `is_historical` flag), `venue_types`, `styles`, `brewery_styles` (n:m), `prices`, `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_reset_tokens`, `rate_limits`, `glossary`, `site_settings`, `untappd_cache`.
+Key tables: `breweries` (incl. `is_historical` flag and `successor_id` — who runs the brand today, shown as „Heute bei …“; editable in the admin edit dialog), `venue_types`, `styles`, `brewery_styles` (n:m), `prices`, `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_reset_tokens`, `rate_limits`, `glossary`, `site_settings`, `untappd_cache`.
 
 **FK cascades are aggressive**: deleting a brewery cascades to prices, `brewery_styles`, events, and event_beers. Always snapshot (`wrangler d1 export`) before destructive operations.
 
@@ -106,6 +106,10 @@ Das normale Deploy spielt den Seed **nicht** ein (nur `deploy.sh --seed` bei Neu
 - **Events** (insbesondere die neusten/aktuellen) → immer **beides**: in `0002_seed.sql` **und** `public/data.js` (Mock-Modus) **sowie** per `INSERT OR IGNORE` in die Live-D1 (`wrangler d1 execute <db> --remote --command "…"`, Cloudflare-MCP `d1_database_query` oder Admin-Panel). Am Ende stehen dort also i. d. R. mehrere Events.
 - **Status:** ungeprüfte Funde (z. B. aus der Daten-Recherche) → `status = 'pending'` (im Seed wie in der DB); der Admin prüft und schaltet frei. Nur verifizierte Einträge `approved`. Nie ungeprüft mit `approved` in die Produktion schreiben.
 - Geplante Daten-Recherche-Routinen: Funde im PR dokumentieren und zusätzlich mit `pending` in die Live-D1 schreiben; vorher prüfen, ob IDs/Brauereien existieren.
+
+### Zweisprachigkeit — immer DE und EN
+
+Jedes Objekt mit Sprachfeldern wird **immer in beiden Sprachen** gepflegt: `breweries.description_*`, `styles.tasting_*`, `events.title_*`/`description_*`, `event_beers.name_*`, `glossary.definition_*`, `venue_types.name_*`/`header_*` sowie die Texte in `public/data.js`. Gilt für Seed, Mock und Live-D1 gleichermaßen; nie ein Feld leer lassen oder nur eine Sprache schreiben. Eigennamen (z. B. Biernamen) dürfen in EN identisch sein. Das Admin-Panel fragt vor dem Speichern nach, wenn eine Sprache fehlt (`confirmBothLangs()` in `admin.html`).
 
 ### Auth & Security
 

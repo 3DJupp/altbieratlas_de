@@ -44,8 +44,8 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Malt-forward, full-bodied, soft. One of the most approachable Düsseldorf Alts.',
     'stile/fuechschen-alt.png'),
   ('fuechschen-alt-af', 'Füchschen Alt Alkoholfrei', 0.2, 5, '#8a4a1f',
-    NULL,
-    NULL,
+    'Die alkoholfreie Variante des Füchschen Alt aus der Ratinger Straße, mit 0,2 % Alkohol.',
+    'The alcohol-free version of Füchschen Alt from Ratinger Straße, at 0.2 % ABV.',
     'stile/fuechschen-alt.png'),
   ('schumacher-alt', 'Schumacher Alt', 4.6, 32, '#9b5226',
     'Mild, rund, gut trinkbar. Der Klassiker für den langen Abend.',
@@ -68,12 +68,24 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Mild-malty, soft in the Lower-Rhine style. Regional classic.',
     'stile/koenigshof-alt.png'),
   ('hannen-alt', 'Hannen Alt', 4.8, 30, '#8c4820',
-    'Industriell gebraut, aber klassisch profiliert. Die wohl bekannteste Alt-Marke außerhalb Düsseldorfs.',
-    'Industrially brewed but classically profiled. Likely the best-known Alt brand outside Düsseldorf.',
+    'Das Hannen Alt der Großbrauerei-Jahre in Mönchengladbach, zuletzt unter Carlsberg. Industriell gebraut, aber klassisch profiliert und lange die bekannteste Alt-Marke außerhalb Düsseldorfs. Heute als Hannen Alt (2023+) von Bolten gebraut.',
+    'Hannen Alt from the big-brewery years in Mönchengladbach, last under Carlsberg. Industrially brewed but classically profiled, and for a long time the best-known Alt brand outside Düsseldorf. Now brewed by Bolten as Hannen Alt (2023+).',
+    'stile/hannen-alt.png'),
+  ('hannen-alt-2023', 'Hannen Alt (2023+)', 4.9, NULL, '#8c4820',
+    'Röstmalze satt, tiefdunkel in der Farbe. Intensiv, rund und vollmundig mit malzig-herbem Geschmack, spritzig und frisch. Seit 2023 von der Privatbrauerei Bolten in Korschenbroich gebraut.',
+    'Plenty of roasted malt, deep dark in colour. Intense, round and full-bodied with a malty, bitter taste, lively and fresh. Brewed by Privatbrauerei Bolten in Korschenbroich since 2023.',
     'stile/hannen-alt.png'),
   ('bolten-uralt', 'Bolten Ur-Alt', 4.9, 28, '#8a4618',
     'Niederrheinisch mild, leicht malzig mit fruchtig-würzigem Charakter. Die unfiltrierte Variante aus der ältesten Altbierbrauerei der Welt.',
     'Mild Lower-Rhine style, lightly malty with a fruity-spicy character. The unfiltered variant from the world''s oldest Altbier brewery.',
+    NULL),
+  ('bolten-oh', 'Boltens Oh! Alkoholfrei', NULL, NULL, '#8a4618',
+    'Das alkoholfreie Alt von Bolten (unter 0,5 %). Im Antrunk malzig, voller, runder Geschmack mit dezenter Säure und ausgeprägter Spritzigkeit. Isotonisch und naturtrüb.',
+    'Bolten''s alcohol-free Alt (below 0.5 %). Malty on the first sip, full and round with a subtle acidity and a lively sparkle. Isotonic and unfiltered.',
+    NULL),
+  ('gatz-alt', 'Gatz Altbier', NULL, NULL, '#8b4a1c',
+    'Die Düsseldorfer Traditionsmarke, früher Gatzweilers Alt aus Heerdt. Seit April 2022 gehört sie der Privatbrauerei Bolten und wird in Korschenbroich gebraut, zuvor zuletzt bei Königshof in Krefeld.',
+    'The Düsseldorf heritage brand, formerly Gatzweilers Alt from Heerdt. Owned by Privatbrauerei Bolten since April 2022 and brewed in Korschenbroich, before that last at Königshof in Krefeld.',
     NULL),
   ('diebels-alt', 'Diebels Alt', 4.9, 27, '#8b4417',
     'Mild, leicht herb, gut trinkbar. Der typische Niederrhein-Alt — weicher und runder als die Düsseldorfer Hausbrauerei-Versionen.',
@@ -368,7 +380,8 @@ VALUES
     'Ackerstraße 84',
     'https://maps.app.goo.gl/uuXpuDjojVtvh4Vy5',
     51.2275508, 6.8010764, NULL, 'https://birkeneck.metro.bar',
-    '', '',
+    'Kneipe an der Ackerstraße in Düsseldorf-Flingern. Im Ausschank: Frankenheim Alt.',
+    'Pub on Ackerstraße in Düsseldorf-Flingern. On tap: Frankenheim Alt.',
     1, 'approved', 0, NULL, NULL),
 
   ('koenigshof', 'Brauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
@@ -417,16 +430,16 @@ VALUES
     'Sebastianusstraße 9, 41352 Korschenbroich',
     'https://maps.app.goo.gl/dANbF5RtnmecMCnc6',
     51.1900011, 6.512603, 2024, 'https://www.bolten-brauerei.de/de/Gasthaus-Hoff-Marie.htm',
-    'Brauereiausschank der Privatbrauerei Bolten im ältesten Haus Korschenbroichs, einem rund 500 Jahre alten, denkmalgeschützten Steinhaus. Früher die Gaststätte „Zum Anker“, nach Übernahme und Renovierung durch die Bolten Gastronomie im November 2024 als Gasthaus Hoff Marie neu eröffnet. Bolten Alt vom Fass.',
-    'Privatbrauerei Bolten''s tap house in Korschenbroich''s oldest building, a listed stone house around 500 years old. Formerly the "Zum Anker" inn, it reopened as Gasthaus Hoff Marie in November 2024 after Bolten''s gastronomy arm took it over and renovated it. Bolten Alt on tap.',
+    'Brauereiausschank der Privatbrauerei Bolten im ältesten Haus Korschenbroichs, einem rund 500 Jahre alten, denkmalgeschützten Steinhaus. Früher die Gaststätte „Zum Anker“, nach Übernahme und Renovierung durch die Bolten Gastronomie im November 2024 als Gasthaus Hoff Marie neu eröffnet. Vom Fass gibt es Bolten Alt, Ur-Alt, Landbier und Hannen Alt, das seit 2023 bei Bolten gebraut wird, dazu das alkoholfreie Oh! in der Flasche und Ur-Alt oder Landbier in der 1-Liter-Bügelflasche.',
+    'Privatbrauerei Bolten''s tap house in Korschenbroich''s oldest building, a listed stone house around 500 years old. Formerly the "Zum Anker" inn, it reopened as Gasthaus Hoff Marie in November 2024 after Bolten''s gastronomy arm took it over and renovated it. Bolten Alt, Ur-Alt, Landbier and Hannen Alt (brewed by Bolten since 2023) on tap, plus the alcohol-free Oh! in bottles and Ur-Alt or Landbier in the 1-litre swing-top bottle.',
     0, 'pending', 0, NULL, NULL),
 
   ('bolten-landwirtschaft', 'Bolten Landwirtschaft', 'Landwirtschaft', 'taproom', 'Korschenbroich', 'DE',
     'Rheydter Straße 145, 41352 Korschenbroich',
     'https://maps.app.goo.gl/FK42rDXa3NsjdRSJ6',
     51.18327, 6.499772, NULL, 'https://www.bolten-brauerei.de',
-    'Gaststätte der Privatbrauerei Bolten direkt gegenüber der Brauerei, mit Picknick-Biergarten. Bolten Alt frisch aus der Nachbarschaft.',
-    'Privatbrauerei Bolten''s restaurant directly opposite the brewery, with a picnic beer garden. Bolten Alt fresh from across the street.',
+    'Gaststätte der Privatbrauerei Bolten direkt gegenüber der Brauerei, mit Picknick-Biergarten. Bolten Alt und Ur-Alt frisch vom Fass, Hannen Alt und das alkoholfreie Oh! in der 0,33-l-Flasche, Ur-Alt auch in der 1-Liter-Bügelflasche und im Landwirtschaft-Tonkrug. Im Picknick-Biergarten nebenan gelten dieselben Preise, dort gibt es nur die größeren Größen.',
+    'Privatbrauerei Bolten''s restaurant directly opposite the brewery, with a picnic beer garden. Bolten Alt and Ur-Alt fresh on tap, Hannen Alt and the alcohol-free Oh! in 0.33 l bottles, and Ur-Alt also in the 1-litre swing-top bottle and the Landwirtschaft stoneware mug. The picnic beer garden next door charges the same prices but only serves the larger sizes.',
     0, 'pending', 0, NULL, NULL),
 
   ('brauerei-im-dom', 'Brauerei Im Dom', 'Im Dom', 'brewpub', 'Neuss', 'DE',
@@ -489,6 +502,9 @@ UPDATE styles SET primary_brewery_id = 'schumacher' WHERE id = 'schumacher-alt' 
 UPDATE styles SET primary_brewery_id = 'kuerzer-altstadt' WHERE id = 'kuerzer-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'frankenheim-brauereiausschank' WHERE id = 'frankenheim-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'bolten-uralt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'bolten-oh' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'hannen-alt-2023' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'gatz-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'diebels' WHERE id = 'diebels-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'gleumes' WHERE id = 'gleumes-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'pinkus-mueller' WHERE id = 'pinkus-alt' AND primary_brewery_id IS NULL;
@@ -501,6 +517,9 @@ UPDATE styles SET primary_brewery_id = 'schlueffken' WHERE id = 'schlueffken-alt
 UPDATE styles SET primary_brewery_id = 'schluessel' WHERE id = 'schluessel-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'koenigshof' WHERE id = 'koenigshof-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'hannen' WHERE id = 'hannen-alt' AND primary_brewery_id IS NULL;
+
+-- Übernahmen: Marke/Betrieb wird heute von einem anderen Ort geführt
+UPDATE breweries SET successor_id = 'bolten' WHERE id IN ('hannen', 'gatzweiler') AND successor_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'brauerei-im-dom' WHERE id = 'dom-alt' AND primary_brewery_id IS NULL;
 
 -- ============================================================
@@ -530,9 +549,15 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('gleumes', 'gleumes-alt'),
   ('hannen', 'hannen-alt'),
   ('bolten', 'bolten-uralt'),
-  ('bolten', 'hannen-alt'),
+  ('bolten', 'hannen-alt-2023'),
+  ('bolten', 'gatz-alt'),
+  ('bolten', 'bolten-oh'),
   ('hoff-marie', 'bolten-uralt'),
+  ('hoff-marie', 'hannen-alt-2023'),
+  ('hoff-marie', 'bolten-oh'),
   ('bolten-landwirtschaft', 'bolten-uralt'),
+  ('bolten-landwirtschaft', 'hannen-alt-2023'),
+  ('bolten-landwirtschaft', 'bolten-oh'),
   ('brauerei-im-dom', 'dom-alt'),
   ('diebels', 'diebels-alt'),
   ('pinkus-mueller', 'pinkus-alt'),
@@ -567,6 +592,15 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('fuchs-benrath', '2024-11-01', '0.25', 2.8, 'Speisekarte', NULL, 'approved'),
   ('koenigshof', '2026-04-02', '0.5l', 3.4, 'retail', NULL, 'approved'),
   ('hannen', '2026-03-15', '0.5l', 2.9, 'retail', NULL, 'approved'),
+  ('hoff-marie', '2026-10-17', '0.2', 2.3, 'Beitrag', NULL, 'approved'),
+  ('hoff-marie', '2026-10-17', '0.4', 4.0, 'Beitrag', NULL, 'approved'),
+  ('hoff-marie', '2026-10-18', '0.33', 3.3, 'Speisekarte', 'Boltens Oh! alkoholfrei, Flasche', 'approved'),
+  ('hoff-marie', '2026-10-18', '1.0', 8.8, 'Speisekarte', 'Ur-Alt oder Landbier, 1-Liter-Bügelflasche', 'approved'),
+  ('bolten-landwirtschaft', '2026-10-17', '0.2', 2.3, 'Beitrag', NULL, 'approved'),
+  ('bolten-landwirtschaft', '2026-10-17', '0.4', 4.0, 'Beitrag', NULL, 'approved'),
+  ('bolten-landwirtschaft', '2026-09-29', '0.33', 3.3, 'Speisekarte', 'Hannen Alt bzw. Boltens Oh! alkoholfrei, Flasche', 'approved'),
+  ('bolten-landwirtschaft', '2026-09-29', '0.5', 4.8, 'Speisekarte', 'Füllung Landwirtschaft-Tonkrug (Krug inkl. Erstfüllung 18,50 €)', 'approved'),
+  ('bolten-landwirtschaft', '2026-09-29', '1.0', 8.8, 'Speisekarte', 'Ur-Alt oder Landbier, 1-Liter-Bügelflasche', 'approved'),
   ('mississippi-d-alt', '2026-05-17', '0.5', 5.9, 'Speisekarte', NULL, 'approved'),
   ('kasematten-schluessel', '2026-05-17', '0.25', 3.5, 'Speisekarte', NULL, 'approved'),
   ('kasematten-schluessel', '2026-05-17', '0.5', 6.8, 'Speisekarte', NULL, 'approved'),
@@ -614,7 +648,9 @@ VALUES
     'Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.
 
 Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.',
-    'The Original Schlüssel Stike is tapped fresh from the wooden barrel twice a year (March and October). The October 2026 edition starts on 14 October.',
+    'On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.
+
+Original Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot''s ban.',
     'approved'),
   ('uerige-sticke-2026-10', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
     'uerige', '2026-10-20', NULL, NULL, NULL, 'Düsseldorf Altstadt',
@@ -634,7 +670,8 @@ Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschic
 -- ============================================================
 -- event_beers hat keinen natürlichen Schlüssel: nur einfügen, was am Event noch fehlt (idempotent)
 INSERT INTO event_beers (event_id, name_de, name_en, size, price)
-SELECT v.column1, v.column2, NULL, v.column3, v.column4 FROM (VALUES
+-- Biernamen sind Eigennamen: EN = DE
+SELECT v.column1, v.column2, v.column2, v.column3, v.column4 FROM (VALUES
   ('rheinkirmes-2026', 'Schlüssel', '0.25l', 3.3),
   ('rheinkirmes-2026', 'Uerige', '0.25l', 3.4),
   ('rheinkirmes-2026', 'Schumacher', '0.25l', 3.5),
