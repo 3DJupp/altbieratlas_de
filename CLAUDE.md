@@ -101,6 +101,7 @@ Für Live-Upgrades bestehender Instanzen: Upgrade-SQL direkt in der D1-Dashboard
 
 Das normale Deploy spielt den Seed **nicht** ein (nur `deploy.sh --seed` bei Neuinstallation). Änderungen an `0002_seed.sql`/`public/data.js` erreichen die Produktion also nicht.
 
+- **Orte:** In `0002_seed.sql` und `public/data.js` kommen **nur Hausbrauereien/Brauereien** (die Produzenten, Venue-Typen mit `is_producer = 1`) samt ihren Stilen und Preisen. Kneipen, Gastronomie, Restaurants, Kioske, Handel usw. (z. B. neue Orte aus Community-Hinweisen) werden **nur in die Live-D1** geschrieben, nicht in Seed oder Mock.
 - **Events** (insbesondere die neusten/aktuellen) → immer **beides**: in `0002_seed.sql` **und** `public/data.js` (Mock-Modus) **sowie** per `INSERT OR IGNORE` in die Live-D1 (`wrangler d1 execute <db> --remote --command "…"`, Cloudflare-MCP `d1_database_query` oder Admin-Panel). Am Ende stehen dort also i. d. R. mehrere Events.
 - **Status:** ungeprüfte Funde (z. B. aus der Daten-Recherche) → `status = 'pending'` (im Seed wie in der DB); der Admin prüft und schaltet frei. Nur verifizierte Einträge `approved`. Nie ungeprüft mit `approved` in die Produktion schreiben.
 - Geplante Daten-Recherche-Routinen: Funde im PR dokumentieren und zusätzlich mit `pending` in die Live-D1 schreiben; vorher prüfen, ob IDs/Brauereien existieren.
