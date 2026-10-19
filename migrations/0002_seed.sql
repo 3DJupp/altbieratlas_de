@@ -75,6 +75,10 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Röstmalze satt, tiefdunkel in der Farbe. Intensiv, rund und vollmundig mit malzig-herbem Geschmack, spritzig und frisch. Seit 2023 von der Privatbrauerei Bolten in Korschenbroich gebraut.',
     'Plenty of roasted malt, deep dark in colour. Intense, round and full-bodied with a malty, bitter taste, lively and fresh. Brewed by Privatbrauerei Bolten in Korschenbroich since 2023.',
     'stile/hannen-alt.png'),
+  ('schloesser-alt', 'Schlösser Alt', 4.8, NULL, '#7a3b16',
+    'Düsseldorfer Traditionsmarke der 1873 gegründeten Brauerei Schlösser. Seit der Schließung der Derendorfer Brauerei 2002 wird es in Dortmund gebraut (Radeberger Gruppe) und ist vor allem in der Gastronomie und im Handel rund um Düsseldorf zu finden.',
+    'Traditional Düsseldorf brand of the Schlösser brewery, founded in 1873. Since the Derendorf brewery closed in 2002 it has been brewed in Dortmund (Radeberger Group) and is found mostly in bars, restaurants and shops around Düsseldorf.',
+    NULL),
   ('bolten-uralt', 'Bolten Ur-Alt', 4.9, 28, '#8a4618',
     'Niederrheinisch mild, leicht malzig mit fruchtig-würzigem Charakter. Die unfiltrierte Variante aus der ältesten Altbierbrauerei der Welt.',
     'Mild Lower-Rhine style, lightly malty with a fruity-spicy character. The unfiltered variant from the world''s oldest Altbier brewery.',
@@ -522,6 +526,7 @@ UPDATE styles SET primary_brewery_id = 'schlueffken' WHERE id = 'schlueffken-alt
 UPDATE styles SET primary_brewery_id = 'schluessel' WHERE id = 'schluessel-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'koenigshof' WHERE id = 'koenigshof-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'hannen' WHERE id = 'hannen-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'schloesser' WHERE id = 'schloesser-alt' AND primary_brewery_id IS NULL;
 
 -- Übernahmen: Marke/Betrieb wird heute von einem anderen Ort geführt
 UPDATE breweries SET successor_id = 'bolten' WHERE id IN ('hannen', 'gatzweiler') AND successor_id IS NULL;
@@ -553,6 +558,7 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('koenigshof', 'koenigshof-alt'),
   ('gleumes', 'gleumes-alt'),
   ('hannen', 'hannen-alt'),
+  ('schloesser', 'schloesser-alt'),
   ('bolten', 'bolten-alt'),
   ('bolten', 'bolten-uralt'),
   ('bolten', 'hannen-alt-2023'),

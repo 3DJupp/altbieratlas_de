@@ -531,7 +531,7 @@ window.ATLAS_DATA = {
         de: "Gegründet 1873 von der Bäckerfamilie Schlösser, ab 1932 Teil der Schwabenbrauerei. Schlösser Alt wurde bis in die 1970er Jahre in der Altstadt gebraut, ab 1972 in einem Neubau in Derendorf zwischen Münster- und Rather Straße. 2002 wurde die Brauerei geschlossen und abgerissen, heute steht dort der Campus Derendorf der Hochschule Düsseldorf. Schlösser Alt wird seitdem in Dortmund gebraut (Radeberger Gruppe).",
         en: "Founded in 1873 by the Schlösser baking family, part of Schwabenbrauerei from 1932. Schlösser Alt was brewed in the old town until the 1970s, then from 1972 in a new plant in Derendorf between Münsterstraße and Rather Straße. The brewery closed in 2002 and was demolished; the Hochschule Düsseldorf's Derendorf campus now stands on the site. Schlösser Alt has since been brewed in Dortmund (Radeberger Group).",
       },
-      styles: [],
+      styles: ["schloesser-alt"],
       verified: false,
       isHistorical: true,
       status: "pending",
@@ -1077,6 +1077,17 @@ window.ATLAS_DATA = {
       tasting: {
         de: "Röstmalze satt, tiefdunkel in der Farbe. Intensiv, rund und vollmundig mit malzig-herbem Geschmack, spritzig und frisch. Seit 2023 von der Privatbrauerei Bolten in Korschenbroich gebraut.",
         en: "Plenty of roasted malt, deep dark in colour. Intense, round and full-bodied with a malty, bitter taste, lively and fresh. Brewed by Privatbrauerei Bolten in Korschenbroich since 2023.",
+      },
+    },
+    {
+      id: "schloesser-alt",
+      name: "Schlösser Alt",
+      abv: 4.8,
+      ibu: null,
+      color: "#7a3b16",
+      tasting: {
+        de: "Düsseldorfer Traditionsmarke der 1873 gegründeten Brauerei Schlösser. Seit der Schließung der Derendorfer Brauerei 2002 wird es in Dortmund gebraut (Radeberger Gruppe) und ist vor allem in der Gastronomie und im Handel rund um Düsseldorf zu finden.",
+        en: "Traditional Düsseldorf brand of the Schlösser brewery, founded in 1873. Since the Derendorf brewery closed in 2002 it has been brewed in Dortmund (Radeberger Group) and is found mostly in bars, restaurants and shops around Düsseldorf.",
       },
     },
     {
