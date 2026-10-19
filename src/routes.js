@@ -2240,7 +2240,9 @@ export async function serveOrt(req, env, params = {}) {
   latestBySize.sort((a, b) => (sizeNum(a.size) ?? 0) - (sizeNum(b.size) ?? 0)
     || String(a.style_name || "").localeCompare(String(b.style_name || "")));
   // 0,25 l, sonst die kleinste Größe — identisch zur Preisbox in public/ort.html.
-  const hero = latestBySize.find((p) => sizeNum(p.size) === 0.25)
+  // Mehrere Sorten in 0,25 l: die jüngste Meldung, bei gleichem Datum die günstigste
+  // (dieselbe Reihenfolge wie die Preisabfrage der Ortsseite: date DESC, price ASC).
+  const hero = prices.find((p) => sizeNum(p.size) === 0.25)
             || latestBySize[0];
 
   // Preis in den Titel: Bei Namenssuchen ("kürzer flingern") steht die offizielle
