@@ -1376,6 +1376,38 @@ window.ATLAS_DATA = {
         { name: { de: "Latzenbier", en: "Latzenbier" }, size: "1l", price: null, notes: null },
       ],
     },
+    {
+      id: "uerige-sticke-2027-01",
+      title: { de: "Sticke-Ausschank im Uerige", en: "Sticke tapping at Uerige" },
+      breweryId: "uerige",
+      date: "2027-01-19",
+      endDate: null,
+      time: null,
+      endTime: null,
+      location: "Düsseldorf Altstadt",
+      url: "https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige",
+      description: {
+        de: "Am dritten Dienstag im Januar wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird. Termin aus der Regel „dritter Dienstag\" abgeleitet, bitte vor Besuch beim Uerige bestätigen.",
+        en: "On the third Tuesday of January, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October). Date derived from the \"third Tuesday\" rule; please confirm with Uerige before visiting.",
+      },
+      beers: [],
+    },
+    {
+      id: "schumacher-latzen-2027-03",
+      title: { de: "Latzenbier-Ausschank bei Schumacher", en: "Latzenbier tapping at Schumacher" },
+      breweryId: "schumacher",
+      date: "2027-03-18",
+      endDate: null,
+      time: null,
+      endTime: null,
+      location: "Düsseldorf",
+      url: "https://schumacher-alt.de",
+      description: {
+        de: "Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 18. März 2027 (aus der Regel „dritter Donnerstag\" abgeleitet, bitte bei Schumacher bestätigen).",
+        en: "Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 18 March 2027 (derived from the \"third Thursday\" rule; please confirm with Schumacher).",
+      },
+      beers: [],
+    },
   ],
 
   glossary: [
