@@ -45,6 +45,13 @@ Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
 
 ## Features
 
+- **Preise je Sorte.** `prices` kennt nur Ort, Größe und Preis, nicht die Sorte. Schenkt ein Ort
+  mehrere Alts aus (z. B. Beerpongbar: Frankenheim und Füchschen je 0,33 l, Im Goldenen Kessel:
+  Schumacher Alt und 1838er je 0,25 l), steht die Zuordnung nur in `notes`, und Ranglisten zeigen
+  zwei Preise derselben Größe ohne Unterscheidung. Idee: optionale Spalte `prices.style_id`
+  (FK auf `styles`, `ON DELETE SET NULL`), in Admin-Panel, Beitragsformular und Ranglisten
+  auswerten (Filter nach Sorte), bestehende Notizen per Hand nachziehen. Schema-Änderung in
+  `0001_schema.sql`, Live-Upgrade per D1-Konsole.
 - **Bewertungen der Orte über Google Maps.** Untappd ist aktuell unzuverlässig; Google hat für fast
   jeden Ort Sterne und Anzahl der Bewertungen. Idee: Places API (New), Place Details mit den
   Feldern `rating`, `userRatingCount` und `googleMapsUri`, abgefragt über die gespeicherte
