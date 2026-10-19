@@ -567,6 +567,12 @@
                 <input id="price-size-custom" type="text" maxlength="20" placeholder="z. B. 1l" style="display:none;margin-top:6px" />
               </div>
               <div class="field" style="margin:0">
+                <label data-i18n="field.style">Sorte</label>
+                <select name="styleId" id="price-style-select">
+                  <option value="" data-i18n="field.styleNone">— keine Angabe —</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
                 <label data-i18n="field.price">Preis (€)</label>
                 <input name="price" type="number" min="0" max="100" step="0.01" required placeholder="2.50" />
               </div>
@@ -589,6 +595,7 @@
                   <th data-i18n="admin.colName">Name</th>
                   <th data-i18n="admin.colDate">Datum</th>
                   <th data-i18n="admin.colSize">Größe</th>
+                  <th data-i18n="admin.colStyle">Sorte</th>
                   <th data-i18n="rank.colPrice">Preis</th>
                   <th data-i18n="admin.colSource">Quelle</th>
                   <th data-i18n="admin.colStatus">Status</th>
@@ -1019,6 +1026,10 @@
           <label>Größe</label>
           <select id="pe-size" onchange="handleAdminSizeChange(this, 'pe-size-custom')"></select>
           <input id="pe-size-custom" type="text" maxlength="20" placeholder="z. B. 0,3" style="display:none;margin-top:6px" />
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="field.style">Sorte</label>
+          <select id="pe-style"></select>
         </div>
         <div class="field" style="margin:0">
           <label>Preis (€)</label>
@@ -2462,16 +2473,39 @@ document.getElementById("ev-beer-form").addEventListener("submit", async (e) => 
 });
 
 // ============ Prices Table ============
+// Sorten-Auswahl für einen Preis: die Sorten des Orts (plus die bisher gesetzte),
+// bei Orten ohne Sorten alle. Führt der Ort genau eine Sorte, ist sie vorausgewählt.
+async function fillPriceStyleSelect(sel, breweryId, current) {
+  const [brs, sty] = await Promise.all([ensureBreweries(), ensureStyles()]);
+  const own = new Set((brs.find((b) => b.id === breweryId)?.styles) || []);
+  let list = sty.filter((s) => own.has(s.id) || s.id === current);
+  if (!list.length) list = sty.slice();
+  list.sort((a, b) => a.name.localeCompare(b.name, "de"));
+  sel.innerHTML = "";
+  const none = document.createElement("option");
+  none.value = "";
+  none.textContent = window.t("field.styleNone");
+  sel.appendChild(none);
+  for (const s of list) {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name;
+    sel.appendChild(opt);
+  }
+  sel.value = current || (own.size === 1 ? [...own][0] : "");
+}
+
 async function loadPricesTab() {
   const t = window.t;
   const tbody = document.getElementById("prices-tbody");
-  tbody.innerHTML = `<tr><td colspan="7" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
 
   // Größen neu aufbauen: Server-Config (priceSizes) ist erst nach ready() gemerged
   if (document.getElementById("price-size-select").value !== "custom") buildAdminSizeSelect();
 
   // Brauerei-Dropdown befüllen (Add-Form, nur einmal)
   const sel = document.getElementById("price-brewery-select");
+  sel.onchange = () => fillPriceStyleSelect(document.getElementById("price-style-select"), sel.value, "");
   if (sel.options.length <= 1) {
     try {
       const br = await window.AtlasAPI.admin.listBreweries();
@@ -2488,7 +2522,7 @@ async function loadPricesTab() {
     const r = await window.AtlasAPI.admin.listPrices();
     const rows = r.prices || [];
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noPrices")}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noPrices")}</td></tr>`;
       return;
     }
     tbody.innerHTML = rows.map((p) => `
@@ -2498,10 +2532,12 @@ async function loadPricesTab() {
           data-size="${p.size || ""}"
           data-price="${p.price}"
           data-source="${(p.source || "").replace(/"/g, "&quot;")}"
+          data-style-id="${p.styleId || ""}"
           data-status="${p.status || ""}">
         <td>${p.breweryName || p.breweryId}</td>
         <td>${window.formatDate ? window.formatDate(p.date) : p.date}</td>
         <td>${window.formatSize ? window.formatSize(String(p.size)) : p.size}</td>
+        <td>${p.styleName || "—"}</td>
         <td style="font-family:var(--font-mono);color:var(--copper)">€ ${window.formatPrice ? window.formatPrice(p.price) : p.price.toFixed(2)}</td>
         <td>${p.source || "—"}</td>
         <td><span class="status-${p.status}">${p.status}</span></td>
@@ -2525,7 +2561,7 @@ async function loadPricesTab() {
       });
     });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
   }
 }
 
@@ -2568,6 +2604,8 @@ async function openPriceEditDialog(id, rowEl) {
     });
   }
   brewSel.value = rowEl.dataset.breweryId || "";
+  await fillPriceStyleSelect(document.getElementById("pe-style"), brewSel.value, rowEl.dataset.styleId || "");
+  brewSel.onchange = () => fillPriceStyleSelect(document.getElementById("pe-style"), brewSel.value, "");
   priceEditDialog.classList.add("visible");
 }
 
@@ -2595,6 +2633,7 @@ document.getElementById("price-edit-save").addEventListener("click", async () =>
     size,
     price:      parseFloat(document.getElementById("pe-price").value),
     source:     document.getElementById("pe-source").value.trim() || null,
+    style_id:   document.getElementById("pe-style").value || null,
     status:     document.getElementById("pe-status").value,
   };
   try {
@@ -2605,12 +2644,15 @@ document.getElementById("price-edit-save").addEventListener("click", async () =>
     row.dataset.size      = patch.size;
     row.dataset.price     = patch.price;
     row.dataset.source    = patch.source || "";
+    row.dataset.styleId   = patch.style_id || "";
     row.dataset.status    = patch.status;
+    const styleSel = document.getElementById("pe-style");
     row.cells[1].textContent = window.formatDate ? window.formatDate(patch.date) : patch.date;
     row.cells[2].textContent = window.formatSize ? window.formatSize(String(patch.size)) : patch.size;
-    row.cells[3].textContent = "€ " + (window.formatPrice ? window.formatPrice(patch.price) : patch.price.toFixed(2));
-    row.cells[4].textContent = patch.source || "—";
-    const sp = row.cells[5].querySelector("span");
+    row.cells[3].textContent = patch.style_id ? styleSel.options[styleSel.selectedIndex].textContent : "—";
+    row.cells[4].textContent = "€ " + (window.formatPrice ? window.formatPrice(patch.price) : patch.price.toFixed(2));
+    row.cells[5].textContent = patch.source || "—";
+    const sp = row.cells[6].querySelector("span");
     sp.className = "status-" + patch.status;
     sp.textContent = patch.status;
     msg.textContent = window.t("admin.editSaved");
@@ -2639,11 +2681,13 @@ document.getElementById("add-price-form").addEventListener("submit", async (e) =
       size,
       price:     parseFloat(fd.get("price")),
       source:    fd.get("source") || null,
+      styleId:   fd.get("styleId") || null,
     });
     msg.textContent = t("admin.priceAdded");
     msg.style.color = "#2d7a2d";
     msg.style.display = "block";
     e.target.reset();
+    fillPriceStyleSelect(document.getElementById("price-style-select"), "", "");
     buildAdminSizeSelect();
     document.getElementById("price-size-custom").style.display = "none";
     loadPricesTab();

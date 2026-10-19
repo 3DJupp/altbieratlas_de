@@ -297,6 +297,7 @@ const TYP_TO_API = {
 
 // ============ Laden: Brauereien + Config ============
 let breweries = [];
+let allStyles = [];
 let sizeOptions = "";
 let breweryOptions = "";
 let venueTypes = [];
@@ -327,12 +328,14 @@ function buildVenueTypeOptions() {
 
 (async () => {
   try {
-    const [brewResp, apiCfg, vtResp] = await Promise.all([
+    const [brewResp, apiCfg, vtResp, stylesResp] = await Promise.all([
       window.AtlasAPI.listBreweries(),
       window.AtlasAPI.getConfig().catch(() => null),
       fetch("/api/venue-types").then((r) => r.ok ? r.json() : null).catch(() => null),
+      window.AtlasAPI.listStyles().catch(() => ({ styles: [] })),
     ]);
     breweries = brewResp.breweries || [];
+    allStyles = stylesResp.styles || [];
     remoteCfg = apiCfg || {};
     venueTypes = vtResp?.venueTypes || [];
   } catch (e) {
@@ -362,6 +365,23 @@ function buildSizeOptions() {
     const isDefault = Math.abs(num - 0.25) < 0.001;
     return `<option value="${val}"${isDefault ? " selected" : ""}>${label}</option>`;
   }).join("") + `<option value="custom">${otherLabel}</option>`;
+}
+
+// Sorten-Auswahl beim Preis: nur die Sorten des gewählten Orts. Bei genau einer
+// Sorte ist sie vorausgewählt, ohne hinterlegte Sorten bleibt das Feld verborgen.
+function updatePriceStyles() {
+  const brSel = document.getElementById("price-brewery");
+  const field = document.getElementById("price-style-field");
+  const sel = document.getElementById("price-style");
+  if (!brSel || !field || !sel) return;
+  const br = breweries.find((b) => b.id === brSel.value);
+  const own = (br?.styles || [])
+    .map((id) => allStyles.find((s) => s.id === id))
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
+  field.style.display = own.length ? "" : "none";
+  sel.innerHTML = (own.length > 1 ? `<option value="">${window.t("field.styleNone")}</option>` : "") +
+    own.map((s) => `<option value="${s.id}">${s.name.replace(/</g, "&lt;")}</option>`).join("");
 }
 
 function handleSizeChange(sel) {
@@ -439,7 +459,11 @@ function forms(typ) {
     <p class="hint">${t("contrib.form.priceSub")}</p>
     <div class="field">
       <label>${t("field.brewery")}</label>
-      <select name="breweryId" required>${breweryOptions}</select>
+      <select name="breweryId" id="price-brewery" required>${breweryOptions}</select>
+    </div>
+    <div class="field" id="price-style-field" style="display:none">
+      <label>${t("field.style")}</label>
+      <select name="styleId" id="price-style"></select>
     </div>
     <div class="grid-2">
       <div class="field">
@@ -602,6 +626,13 @@ function renderForm(typ) {
   url.searchParams.set("typ", typ);
   history.replaceState(null, "", url.toString());
 
+  // Sorten-Auswahl im Preis-Formular an den gewählten Ort koppeln
+  const priceBrewery = document.getElementById("price-brewery");
+  if (priceBrewery) {
+    priceBrewery.addEventListener("change", updatePriceStyles);
+    updatePriceStyles();
+  }
+
   // Ganztägig-Checkbox für Event-Formular
   const allDayChk = document.getElementById("eventAllDay");
   if (allDayChk) {
@@ -710,6 +741,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     data.size = isNaN(n) ? raw : (n + "l");
   }
   delete data.sizeCustom;
+  if (!data.styleId) delete data.styleId;
 
   // Normalisiere preis → float, type
   if (currentTyp === "preis") data.price = parseFloat(String(data.price).replace(",", "."));

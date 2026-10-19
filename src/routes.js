@@ -205,7 +205,7 @@ export async function getBrewery(req, env, { id }) {
     "SELECT id, name FROM breweries WHERE successor_id = ? AND status = 'approved' ORDER BY name"
   ).bind(id).all();
   const prices = await env.DB.prepare(
-    "SELECT date, size, price, source, notes FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC"
+    "SELECT date, size, price, source, notes, style_id FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC, price ASC"
   ).bind(id).all();
   return json({
     brewery: {
@@ -219,6 +219,7 @@ export async function getBrewery(req, env, { id }) {
     },
     prices: prices.results.map((p) => ({
       breweryId: id, date: p.date, size: p.size, price: p.price, source: p.source, notes: p.notes,
+      styleId: p.style_id || null,
     })),
   });
 }
@@ -246,11 +247,12 @@ export async function listStyles(req, env) {
 // GET /api/prices
 export async function listPrices(req, env) {
   const res = await env.DB.prepare(
-    "SELECT brewery_id, date, size, price, source FROM prices WHERE status = 'approved' ORDER BY date DESC LIMIT 2000"
+    "SELECT brewery_id, date, size, price, source, style_id FROM prices WHERE status = 'approved' ORDER BY date DESC LIMIT 2000"
   ).all();
   return json({
     prices: res.results.map((r) => ({
       breweryId: r.brewery_id, date: r.date, size: r.size, price: r.price, source: r.source,
+      styleId: r.style_id || null,
     })),
   });
 }
@@ -614,6 +616,7 @@ export async function postContribution(req, env, _params, ctx) {
       num(data.price, { min: 0, max: 100, required: true, name: "price" });
       str(data.size, { required: true, max: 20, name: "size" });
       str(data.date, { required: true, max: 20, name: "date" });
+      str(data.styleId, { max: 80, name: "styleId" });
     } else if (type === "brewery") {
       str(data.name, { required: true, max: 200, name: "name" });
       str(data.city, { required: true, max: 200, name: "city" });
@@ -643,6 +646,12 @@ export async function postContribution(req, env, _params, ctx) {
       const bRow = await env.DB.prepare("SELECT name, city FROM breweries WHERE id = ? LIMIT 1")
         .bind(data.breweryId).first();
       if (bRow) data._breweryName = `${bRow.name} · ${bRow.city}`;
+    } catch {}
+  }
+  if (type === "price" && data.styleId) {
+    try {
+      const sRow = await env.DB.prepare("SELECT name FROM styles WHERE id = ? LIMIT 1").bind(data.styleId).first();
+      if (sRow) data._styleName = sRow.name;
     } catch {}
   }
 
@@ -918,7 +927,7 @@ export async function adminApprove(req, env, { id }) {
   try {
     if (c.type === "price") {
       await env.DB.prepare(
-        "INSERT INTO prices (brewery_id, date, size, price, source, notes, status) VALUES (?, ?, ?, ?, ?, ?, 'approved')"
+        "INSERT INTO prices (brewery_id, date, size, price, source, notes, style_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'approved')"
       ).bind(
         payload.breweryId,
         payload.date,
@@ -926,6 +935,7 @@ export async function adminApprove(req, env, { id }) {
         parseFloat(payload.price),
         payload.source || "Beitrag",
         payload.notes || null,
+        await existingStyleId(env, payload.styleId),
       ).run();
     } else if (c.type === "brewery") {
       const newId = payload.id || (payload.name || "brew").toLowerCase()
@@ -1077,6 +1087,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
       env.DB.prepare("UPDATE prices SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE events SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE breweries SET successor_id = ? WHERE successor_id = ?").bind(newId, id),
+      env.DB.prepare("UPDATE styles SET primary_brewery_id = ? WHERE primary_brewery_id = ?").bind(newId, id),
     ];
     if (styleIds !== null) {
       stmts.push(env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(newId));
@@ -1305,13 +1316,30 @@ export async function adminUpdateEvent(req, env, { id }) {
   return json({ ok: true, new_id: newId || undefined });
 }
 
+// Belegen zwei Preismeldungen denselben Platz in „jüngster Preis je Größe und Sorte“?
+// Gleiche Größe und gleiche Sorte, oder eine der beiden ohne Sorte: Dann verdrängt die
+// neuere Meldung die ältere, statt dass eine alte Meldung ohne Sorte daneben stehen bleibt.
+export function sameSlot(sizeA, styleA, sizeB, styleB) {
+  if (sizeA == null || sizeB == null || Math.abs(sizeA - sizeB) >= 0.001) return false;
+  return !styleA || !styleB || styleA === styleB;
+}
+
+// Sorten-ID nur übernehmen, wenn es die Sorte gibt (FK auf styles); sonst NULL.
+async function existingStyleId(env, styleId) {
+  if (!styleId || typeof styleId !== "string") return null;
+  const row = await env.DB.prepare("SELECT id FROM styles WHERE id = ?").bind(styleId).first();
+  return row ? row.id : null;
+}
+
 // GET /api/admin/prices
 export async function adminListPrices(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare(
-    `SELECT p.id, p.brewery_id, b.name AS brewery_name, p.date, p.size, p.price, p.source, p.notes, p.status, p.created_at
+    `SELECT p.id, p.brewery_id, b.name AS brewery_name, p.date, p.size, p.price, p.source, p.notes, p.status, p.created_at,
+            p.style_id, s.name AS style_name
      FROM prices p LEFT JOIN breweries b ON b.id = p.brewery_id
+     LEFT JOIN styles s ON s.id = p.style_id
      ORDER BY p.date DESC, p.created_at DESC LIMIT 500`
   ).all();
   return json({
@@ -1319,18 +1347,19 @@ export async function adminListPrices(req, env) {
       id: r.id, breweryId: r.brewery_id, breweryName: r.brewery_name,
       date: r.date, size: r.size, price: r.price,
       source: r.source, notes: r.notes, status: r.status, createdAt: r.created_at,
+      styleId: r.style_id || null, styleName: r.style_name || null,
     })),
   });
 }
 
-// POST /api/admin/prices  { breweryId, date, size, price, source?, notes? }
+// POST /api/admin/prices  { breweryId, date, size, price, source?, notes?, styleId? }
 export async function adminAddPrice(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
 
-  let breweryId, date, size, priceVal, source, notes;
+  let breweryId, date, size, priceVal, source, notes, styleId;
   try {
     breweryId = str(body.breweryId, { required: true, max: 80, name: "breweryId" });
     date      = str(body.date,      { required: true, max: 20, name: "date" });
@@ -1338,16 +1367,18 @@ export async function adminAddPrice(req, env) {
     priceVal  = num(body.price,     { min: 0, max: 100, required: true, name: "price" });
     source    = str(body.source,    { max: 100, name: "source" });
     notes     = str(body.notes,     { max: 1000, name: "notes" });
+    styleId   = str(body.styleId,   { max: 80, name: "styleId" });
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }
 
   const brewery = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(breweryId).first();
   if (!brewery) return error(404, "brewery-not-found");
+  if (styleId && !(await existingStyleId(env, styleId))) return error(404, "style-not-found");
 
   await env.DB.prepare(
-    "INSERT INTO prices (brewery_id, date, size, price, source, notes, status) VALUES (?, ?, ?, ?, ?, ?, 'approved')"
-  ).bind(breweryId, date, size, priceVal, source, notes).run();
+    "INSERT INTO prices (brewery_id, date, size, price, source, notes, style_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'approved')"
+  ).bind(breweryId, date, size, priceVal, source, notes, styleId || null).run();
 
   return json({ ok: true }, { status: 201 });
 }
@@ -1373,6 +1404,12 @@ export async function adminUpdatePrice(req, env, { id }) {
   const strAllow = { brewery_id: "brewery_id", date: "date", size: "size", source: "source", notes: "notes", status: "status" };
   for (const [k, col] of Object.entries(strAllow)) {
     if (k in body) { fields.push(`${col} = ?`); values.push(body[k]); }
+  }
+  if ("style_id" in body) {
+    const sid = body.style_id || null;
+    if (sid && !(await existingStyleId(env, sid))) return error(404, "style-not-found");
+    fields.push("style_id = ?");
+    values.push(sid);
   }
   if ("price" in body) {
     try {
@@ -1984,11 +2021,11 @@ export async function getUntappdBrewery(req, env, { id }) {
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
   "/":           "2026-10-18",
-  "/ranglisten": "2026-10-17",
+  "/ranglisten": "2026-10-19",
   "/wissen":     "2026-10-17",
   "/sorten":     "2026-10-17",
   "/rivalen":    "2026-10-17",
-  "/beitragen":  "2026-10-17",
+  "/beitragen":  "2026-10-19",
   "/staedte":    "2026-10-17",
 };
 
@@ -2166,7 +2203,9 @@ export async function serveOrt(req, env, params = {}) {
          WHERE b.id = ? AND b.status = 'approved'`
       ).bind(id).first(),
       env.DB.prepare(
-        "SELECT date, size, price, source FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC LIMIT 20"
+        `SELECT p.date, p.size, p.price, p.source, s.name AS style_name
+         FROM prices p LEFT JOIN styles s ON s.id = p.style_id
+         WHERE p.brewery_id = ? AND p.status = 'approved' ORDER BY p.date DESC, p.price ASC LIMIT 20`
       ).bind(id).all(),
       env.DB.prepare(
         `SELECT s.id, s.name, s.abv, s.ibu, s.tasting_de
@@ -2190,16 +2229,16 @@ export async function serveOrt(req, env, params = {}) {
   const slug = citySlug(row.city);
   const cityUrl = slug ? `https://altbieratlas.de/stadt/${slug}` : null;
 
-  // Jüngste Meldung je Größe — das ist der Preis, der für Besucher zählt.
+  // Jüngste Meldung je Größe und Sorte — das ist der Preis, der für Besucher zählt.
+  // Eine Meldung ohne Sorte zählt für jede Sorte derselben Größe (siehe sameSlot).
   const latestBySize = [];
-  const seenSize = new Set();
   for (const p of prices) {
-    const key = String(sizeNum(p.size) ?? p.size);
-    if (seenSize.has(key)) continue;
-    seenSize.add(key);
+    const n = sizeNum(p.size);
+    if (latestBySize.some((x) => sameSlot(sizeNum(x.size), x.style_name, n, p.style_name))) continue;
     latestBySize.push(p);
   }
-  latestBySize.sort((a, b) => (sizeNum(a.size) ?? 0) - (sizeNum(b.size) ?? 0));
+  latestBySize.sort((a, b) => (sizeNum(a.size) ?? 0) - (sizeNum(b.size) ?? 0)
+    || String(a.style_name || "").localeCompare(String(b.style_name || "")));
   // 0,25 l, sonst die kleinste Größe — identisch zur Preisbox in public/ort.html.
   const hero = latestBySize.find((p) => sizeNum(p.size) === 0.25)
             || latestBySize[0];
@@ -2249,7 +2288,7 @@ export async function serveOrt(req, env, params = {}) {
               "name": "Altbier",
               "hasMenuItem": latestBySize.map((p) => ({
                 "@type": "MenuItem",
-                "name": `Altbier ${fmtSizeDe(p.size)}`,
+                "name": `${p.style_name || "Altbier"} ${fmtSizeDe(p.size)}`,
                 "offers": {
                   "@type": "Offer",
                   "price": Number(p.price).toFixed(2),
@@ -2346,7 +2385,7 @@ export async function serveOrt(req, env, params = {}) {
       <table class="ssr-price-table">
         <thead><tr><th>Größe</th><th>Preis</th><th>gemeldet am</th></tr></thead>
         <tbody>
-          ${latestBySize.map((p) => `<tr><td>${escHtml(fmtSizeDe(p.size))}</td><td>€ ${escHtml(fmtPriceDe(p.price))}</td><td>${escHtml(fmtDateDe(p.date))}</td></tr>`).join("")}
+          ${latestBySize.map((p) => `<tr><td>${escHtml(fmtSizeDe(p.size))}${p.style_name ? ` · ${escHtml(p.style_name)}` : ""}</td><td>€ ${escHtml(fmtPriceDe(p.price))}</td><td>${escHtml(fmtDateDe(p.date))}</td></tr>`).join("")}
         </tbody>
       </table>` : `<p>Für ${escHtml(row.name)} liegt noch keine Preismeldung vor.</p>`}
       <p><a class="btn btn-primary" href="/beitragen?typ=preis&brauerei=${escHtml(encodeURIComponent(row.id))}">Preis melden</a></p>

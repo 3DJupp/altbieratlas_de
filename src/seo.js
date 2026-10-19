@@ -9,7 +9,7 @@
 // ============================================================
 
 import {
-  escHtml, fmtPriceDe, fmtSizeDe, fmtDateDe, sizeNum,
+  escHtml, fmtPriceDe, fmtSizeDe, fmtDateDe, sizeNum, sameSlot,
   citySlug, cityIndex, PAGE_DATES,
 } from "./routes.js";
 
@@ -52,7 +52,9 @@ async function loadVenues(env) {
        WHERE b.status = 'approved' ORDER BY b.city, b.is_historical, b.name`
     ).all(),
     env.DB.prepare(
-      "SELECT brewery_id, date, size, price FROM prices WHERE status = 'approved' ORDER BY date DESC LIMIT 5000"
+      `SELECT p.brewery_id, p.date, p.size, p.price, s.name AS style_name
+       FROM prices p LEFT JOIN styles s ON s.id = p.style_id
+       WHERE p.status = 'approved' ORDER BY p.date DESC LIMIT 5000`
     ).all(),
     env.DB.prepare(
       `SELECT bs.brewery_id, s.name, s.abv
@@ -62,12 +64,13 @@ async function loadVenues(env) {
   const venues = bRes.results || [];
   const byId = new Map(venues.map((v) => [v.id, { ...v, latest: [], styles: [] }]));
   const priceCount = (pRes.results || []).filter((p) => byId.has(p.brewery_id)).length;
-  // Preise kommen absteigend nach Datum → erste Meldung je Größe ist die jüngste
+  // Preise kommen absteigend nach Datum → erste Meldung je Größe und Sorte ist die jüngste
   for (const p of pRes.results || []) {
     const v = byId.get(p.brewery_id);
     const n = sizeNum(p.size);
-    if (!v || n == null || v.latest.some((x) => Math.abs(x.size - n) < 0.001)) continue;
-    v.latest.push({ size: n, price: Number(p.price), date: p.date });
+    const style = p.style_name || null;
+    if (!v || n == null || v.latest.some((x) => sameSlot(x.size, x.style, n, style))) continue;
+    v.latest.push({ size: n, price: Number(p.price), date: p.date, style });
   }
   for (const v of byId.values()) v.latest.sort((a, b) => a.size - b.size);
   for (const s of bsRes.results || []) byId.get(s.brewery_id)?.styles.push(s);
@@ -273,7 +276,7 @@ ${priced.length ? `- Teuerstes 0,25 l: ${priced.at(-1).v.name} (${priced.at(-1).
       }
       if (v.latest.length) {
         lines.push(`- Jüngste Preise: ${v.latest.map((p) =>
-          `${fmtSizeDe(p.size)} ${fmtPriceDe(p.price)} € (${fmtDateDe(p.date)})`).join("; ")}`);
+          `${fmtSizeDe(p.size)}${p.style ? ` ${p.style}` : ""} ${fmtPriceDe(p.price)} € (${fmtDateDe(p.date)})`).join("; ")}`);
       }
       if (v.description_de) lines.push("", oneLine(v.description_de));
       out.push(lines.join("\n"));

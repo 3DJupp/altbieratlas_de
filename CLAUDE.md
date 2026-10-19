@@ -80,7 +80,7 @@ The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_
 
 ### Database Schema
 
-Key tables: `breweries` (incl. `is_historical` flag and `successor_id` — who runs the brand today, shown as „Heute bei …“; editable in the admin edit dialog), `venue_types`, `styles`, `brewery_styles` (n:m), `prices`, `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_reset_tokens`, `rate_limits`, `glossary`, `site_settings`, `untappd_cache`.
+Key tables: `breweries` (incl. `is_historical` flag and `successor_id` — who runs the brand today, shown as „Heute bei …“; editable in the admin edit dialog), `venue_types`, `styles`, `brewery_styles` (n:m), `prices` (optional `style_id`: which beer the price is for — set it whenever a venue pours more than one Alt), `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_reset_tokens`, `rate_limits`, `glossary`, `site_settings`, `untappd_cache`.
 
 **FK cascades are aggressive**: deleting a brewery cascades to prices, `brewery_styles`, events, and event_beers. Always snapshot (`wrangler d1 export`) before destructive operations.
 

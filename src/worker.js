@@ -48,6 +48,12 @@ async function bootstrapInitialAdmin(env) {
   console.log(`[bootstrap] Initialer Admin '${cfg.username}' angelegt.`);
 }
 
+// Per D1 umbenannte Orts-IDs (alt → neu). Die alten URLs stehen evtl. noch in
+// Suchmaschinen und Links; das Admin-Panel legt hier nichts automatisch an.
+const RENAMED_ORT_IDS = {
+  "kasematten-frannkenheim": "kasematten-frankenheim",
+};
+
 // Kanonische Ziel-URL einer Ortsseite: /ort/<slug> bzw. /ort ohne ID.
 // Wird von allen Legacy-Weiterleitungen genutzt, damit keine Redirect-Ketten
 // entstehen (/brauerei.html?id=x → /ort?id=x → /ort/x kostet zwei Hops).
@@ -335,6 +341,16 @@ async function handle(request, env, ctx) {
       && (url.pathname === "/brauerei"
           || (url.pathname === "/ort" && url.searchParams.get("id")))) {
     return Response.redirect(ortUrl(request), 301);
+  }
+
+  // Umbenannte Orts-IDs: alte URLs dauerhaft auf die neue ID umleiten
+  if (request.method === "GET" && url.pathname.startsWith("/ort/")) {
+    const oldId = decodeURIComponent(url.pathname.slice(5)).replace(/\/+$/, "");
+    if (Object.hasOwn(RENAMED_ORT_IDS, oldId)) {
+      const dest = new URL(request.url);
+      dest.pathname = `/ort/${encodeURIComponent(RENAMED_ORT_IDS[oldId])}`;
+      return Response.redirect(dest.toString(), 301);
+    }
   }
 
   // Trailing Slash auf Ortsseiten vereinheitlichen: /ort/<slug>/ → /ort/<slug>
