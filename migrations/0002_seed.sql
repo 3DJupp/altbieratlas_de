@@ -638,7 +638,7 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
 INSERT OR IGNORE INTO events
   (id, title_de, title_en, brewery_id, date, end_date, time, end_time, location, url, description_de, description_en, status)
 VALUES
-  ('bierboerse-benrath', 'Bierbörse', 'Bierbörse',
+  ('bierboerse-benrath', 'Benrather Bierbörse', 'Benrather Bierbörse',
     NULL, '2027-08-20', '2027-08-22', '15:00', '20:00', 'Benrath',
     'https://www.bierboerse.com/city/duesseldorf-benrath.htm',
     'Vom 20.–22. August 2027 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit über 30 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.',

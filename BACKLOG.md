@@ -63,6 +63,20 @@ Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
   - **Anzeige:** Auf der Ortsseite neben bzw. statt Untappd, mit Link zu Google Maps; ohne Key
     oder Place-ID wird nichts angezeigt (wie heute bei Untappd).
 
+- **Öffnungszeiten der Orte.** Laut Search Console wird zu den Altstadt-Brauhäusern oft nach
+  „öffnungszeiten“ und „speisekarte“ gesucht (Füchschen, Uerige, Schumacher, Schlüssel), die
+  Ortsseiten ranken dafür aber nur auf Position 20 bis 60, weil die Angaben fehlen. Idee:
+  - **Schema:** Neue Spalte, z. B. `breweries.opening_hours` als JSON (je Wochentag Von/Bis,
+    mehrere Zeitfenster möglich, Ruhetage), plus optionaler Freitext für Ausnahmen (DE und EN).
+  - **Pflege:** Eingabe im Admin-Dialog „Bearbeiten“, außerdem als Korrektur-Beitrag über
+    `beitragen.html`. Datum der letzten Prüfung mitspeichern, damit veraltete Zeiten auffallen.
+  - **Anzeige:** Block auf der Ortsseite mit „Jetzt geöffnet“-Hinweis (Europe/Berlin), im SSR
+    mit ausgegeben, damit Crawler die Zeiten sehen.
+  - **Strukturierte Daten:** `openingHoursSpecification` im JSON-LD der Ortsseite, damit
+    Google und Bing die Zeiten direkt verstehen.
+  - **Quelle:** Die Google-Places-Anbindung (Punkt oben) liefert auch `regularOpeningHours`;
+    beides zusammen planen, damit die Place-ID nur einmal ermittelt werden muss.
+
 ## Doku
 
 - README, Abschnitt Moderations-Dashboard: „Preise — einsehen, löschen“ ist veraltet, Preise
