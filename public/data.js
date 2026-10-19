@@ -400,7 +400,7 @@ window.ATLAS_DATA = {
       logoUrl: null,
     },
     {
-      id: "kasematten-frannkenheim",
+      id: "kasematten-frankenheim",
       name: "Kasematten Frankenheim",
       short: "Kasematten (Frankenheim)",
       type: "gastronomie",
@@ -1266,8 +1266,8 @@ window.ATLAS_DATA = {
     { breweryId: "mississippi-d-alt", date: "2026-05-17", size: "0,5l", price: 5.90, source: "Speisekarte" },
     { breweryId: "kasematten-schluessel", date: "2026-05-17", size: "0,25l", price: 3.50, source: "Speisekarte" },
     { breweryId: "kasematten-schluessel", date: "2026-05-17", size: "0,5l", price: 6.80, source: "Speisekarte" },
-    { breweryId: "kasematten-frannkenheim", date: "2026-05-17", size: "0,3l", price: 3.90, source: "Speisekarte" },
-    { breweryId: "kasematten-frannkenheim", date: "2026-05-17", size: "0,5l", price: 6.50, source: "Speisekarte" },
+    { breweryId: "kasematten-frankenheim", date: "2026-05-17", size: "0,3l", price: 3.90, source: "Speisekarte" },
+    { breweryId: "kasematten-frankenheim", date: "2026-05-17", size: "0,5l", price: 6.50, source: "Speisekarte" },
     { breweryId: "hemingway-hilden", date: "2026-05-17", size: "0,25l", price: 3.30, source: "Speisekarte" },
     { breweryId: "hemingway-hilden", date: "2026-05-17", size: "0,5l", price: 5.90, source: "Speisekarte" },
     { breweryId: "factory-bottrop", date: "2026-05-16", size: "0,4l", price: 4.95, source: "Speisekarte" },
@@ -1336,9 +1336,12 @@ window.ATLAS_DATA = {
       location: "Düsseldorf Altstadt",
       url: "https://www.zumschluessel.de/events-termine-duesseldorf/stike-ausschank",
       description: {
-        de: "Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.\n\nOriginal Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.",
-        en: "On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.\n\nOriginal Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot's ban.",
+        de: "Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.\n\nOriginal Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.\n\nAm 19. Oktober 2026 stand die Stike laut Aufsteller vor der Tür noch im Ausschank: 0,25 l für 3,10 € (Starkbier, 6,0 % vol.).",
+        en: "On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.\n\nOriginal Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot's ban.\n\nOn 19 October 2026 the Stike was still on tap according to the sign outside: 0.25 l for €3.10 (strong beer, 6.0% ABV).",
       },
+      beers: [
+        { name: { de: "Original Schlüssel Stike", en: "Original Schlüssel Stike" }, size: "0.25l", price: 3.1, notes: "6,0 % vol." },
+      ],
     },
     {
       id: "uerige-sticke-2026-10",

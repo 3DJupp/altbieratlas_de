@@ -78,13 +78,17 @@ CREATE TABLE IF NOT EXISTS prices (
   notes      TEXT,
   status     TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  -- Welche Sorte gemeint ist (optional). Nötig, sobald ein Ort mehrere Alts in
+  -- derselben Größe führt; NULL = keine Angabe.
+  style_id   TEXT REFERENCES styles(id) ON DELETE SET NULL,
   FOREIGN KEY (brewery_id) REFERENCES breweries(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_prices_brewery ON prices(brewery_id);
 CREATE INDEX IF NOT EXISTS idx_prices_date    ON prices(date DESC);
 CREATE INDEX IF NOT EXISTS idx_prices_status  ON prices(status);
+CREATE INDEX IF NOT EXISTS idx_prices_style   ON prices(style_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_prices_seed
-  ON prices(brewery_id, date, size, price, COALESCE(source, ''));
+  ON prices(brewery_id, date, size, price, COALESCE(source, ''), COALESCE(style_id, ''));
 
 -- Events
 CREATE TABLE IF NOT EXISTS events (

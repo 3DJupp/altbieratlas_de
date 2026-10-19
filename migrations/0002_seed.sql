@@ -306,7 +306,7 @@ VALUES
     'Zum Schlüssel at the Kasematten is a popular riverside beer garden on Düsseldorf’s Rhine promenade. It is known for fresh Altbier, a relaxed atmosphere, and scenic river views, especially during summer.',
     1, 'approved', 0, 'kasematten-schluessel.png', NULL),
 
-  ('kasematten-frannkenheim', 'Kasematten Frankenheim', 'Kasematten (Frankenheim)', 'gastronomie', 'Düsseldorf', 'DE',
+  ('kasematten-frankenheim', 'Kasematten Frankenheim', 'Kasematten (Frankenheim)', 'gastronomie', 'Düsseldorf', 'DE',
     'Untere Rheinwerft / Rheinuferpromenade, 40213 Düsseldorf',
     'https://maps.app.goo.gl/19HShAVx4QiYRVn98',
     51.22586674755738, 6.770199184672781, NULL, 'http://www.kasematten-duesseldorf.de',
@@ -544,7 +544,7 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('kneipe-kneipe', 'altus-alt'),
   ('altus', 'altus-alt'),
   ('kasematten-schluessel', 'schluessel-alt'),
-  ('kasematten-frannkenheim', 'frankenheim-alt'),
+  ('kasematten-frankenheim', 'frankenheim-alt'),
   ('zum-schiffchen', 'frankenheim-alt'),
   ('fuchs-benrath', 'fuechschen-alt'),
   ('fuchs-benrath', 'fuechschen-alt-af'),
@@ -612,8 +612,8 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('mississippi-d-alt', '2026-05-17', '0.5', 5.9, 'Speisekarte', NULL, 'approved'),
   ('kasematten-schluessel', '2026-05-17', '0.25', 3.5, 'Speisekarte', NULL, 'approved'),
   ('kasematten-schluessel', '2026-05-17', '0.5', 6.8, 'Speisekarte', NULL, 'approved'),
-  ('kasematten-frannkenheim', '2026-05-17', '0.3l', 3.9, 'Speisekarte', NULL, 'approved'),
-  ('kasematten-frannkenheim', '2026-05-17', '0.5', 6.5, 'Speisekarte', NULL, 'approved'),
+  ('kasematten-frankenheim', '2026-05-17', '0.3l', 3.9, 'Speisekarte', NULL, 'approved'),
+  ('kasematten-frankenheim', '2026-05-17', '0.5', 6.5, 'Speisekarte', NULL, 'approved'),
   ('hemingway-hilden', '2026-05-17', '0.25', 3.3, 'Speisekarte', NULL, 'approved'),
   ('hemingway-hilden', '2026-05-17', '0.5', 5.9, 'Speisekarte', NULL, 'approved'),
   ('factory-bottrop', '2026-05-16', '0.4', 4.95, 'Speisekarte', NULL, 'approved'),
@@ -655,10 +655,14 @@ VALUES
     'https://www.zumschluessel.de/events-termine-duesseldorf/stike-ausschank',
     'Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.
 
-Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.',
+Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.
+
+Am 19. Oktober 2026 stand die Stike laut Aufsteller vor der Tür noch im Ausschank: 0,25 l für 3,10 € (Starkbier, 6,0 % vol.).',
     'On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.
 
-Original Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot''s ban.',
+Original Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot''s ban.
+
+On 19 October 2026 the Stike was still on tap according to the sign outside: 0.25 l for €3.10 (strong beer, 6.0% ABV).',
     'approved'),
   ('uerige-sticke-2026-10', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
     'uerige', '2026-10-20', NULL, NULL, NULL, 'Düsseldorf Altstadt',
@@ -685,6 +689,7 @@ SELECT v.column1, v.column2, v.column2, v.column3, v.column4 FROM (VALUES
   ('rheinkirmes-2026', 'Schumacher', '0.25l', 3.5),
   ('rheinkirmes-2026', 'Kürzer', '0.2l', 2.9),
   ('rheinkirmes-2026', 'Schlösser', '0.2l', 3.0),
-  ('schumacher-latzen-2026-11', 'Latzenbier', '1l', NULL)
+  ('schumacher-latzen-2026-11', 'Latzenbier', '1l', NULL),
+  ('schluessel-stike-2026-10', 'Original Schlüssel Stike', '0.25l', 3.1)
 ) AS v
 WHERE NOT EXISTS (SELECT 1 FROM event_beers e WHERE e.event_id = v.column1 AND e.name_de = v.column2 AND e.size = v.column3);

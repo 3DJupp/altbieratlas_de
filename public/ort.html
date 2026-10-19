@@ -269,6 +269,7 @@ const isSsr = root.dataset.ssr === "1";
   const latest = prices.find((p) => Math.abs(sizeNum(p.size) - 0.25) < 0.001)
               || prices.reduce((best, p) => (!best || sizeNum(p.size) < sizeNum(best.size) - 0.001 ? p : best), null);
   const lang = window.__atlasLang;
+  const styleName = (id) => (id && allStyles.find((s) => s.id === id)?.name) || "";
 
   const SOURCE_KEYS = { "vor Ort": "source.vorOrt", "Beitrag": "source.beitrag" };
   function translateSource(src) {
@@ -383,7 +384,7 @@ const isSsr = root.dataset.ssr === "1";
           </div>
           ${latest ? `
             <div class="price-hero">
-              <div class="label" id="b-price-label">${window.t("brewery.current")}${window.formatSize(latest.size)}</div>
+              <div class="label" id="b-price-label">${window.t("brewery.current")}${window.formatSize(latest.size)}${styleName(latest.styleId) ? ` · ${styleName(latest.styleId)}` : ""}</div>
               <div class="big" id="b-price-val">€ ${window.formatPrice(latest.price)}</div>
               <div class="small" id="b-price-date">${window.t("brewery.reported")}${window.formatDate(latest.date)}</div>
             </div>
@@ -449,7 +450,7 @@ const isSsr = root.dataset.ssr === "1";
           <div class="price-log-row">
             <span class="date">${window.formatDate(p.date)}</span>
             <span class="src">${translateSource(p.source)}</span>
-            <span class="sz">${window.formatSize(p.size)}</span>
+            <span class="sz">${window.formatSize(p.size)}${styleName(p.styleId) ? ` · ${styleName(p.styleId)}` : ""}</span>
             <span class="p">€ ${window.formatPrice(p.price)}</span>
           </div>
         `).join('') || `<p style="color:var(--ink-muted);padding:20px">${window.t("brewery.noPriceReports")}</p>`}
@@ -503,8 +504,11 @@ const isSsr = root.dataset.ssr === "1";
   // ============ Chart ============
   function drawChart() {
     const targetSize = latest ? sizeNum(latest.size) : 0.25;
+    // Nur eine Sorte pro Kurve, sonst springt sie zwischen z. B. Alt und Alkoholfrei
+    const targetStyle = latest ? latest.styleId || null : null;
     const series = prices
       .filter((p) => Math.abs(sizeNum(p.size) - targetSize) < 0.001)
+      .filter((p) => !targetStyle || !p.styleId || p.styleId === targetStyle)
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date));
     const container = document.getElementById('chart');
@@ -579,7 +583,8 @@ const isSsr = root.dataset.ssr === "1";
     if (elSince) elSince.textContent = window.t('rank.sinceYear') + b.founded;
     if (latest) {
       const elLabel = document.getElementById('b-price-label');
-      if (elLabel) elLabel.textContent = window.t('brewery.current') + window.formatSize(latest.size);
+      if (elLabel) elLabel.textContent = window.t('brewery.current') + window.formatSize(latest.size)
+        + (styleName(latest.styleId) ? ' · ' + styleName(latest.styleId) : '');
       const elVal = document.getElementById('b-price-val');
       if (elVal) elVal.textContent = '€ ' + window.formatPrice(latest.price);
       const elDate = document.getElementById('b-price-date');

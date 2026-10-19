@@ -98,9 +98,9 @@ bash scripts/db-setup.sh [--remote]
 >
 > Das Schema setzt überall auf `ON DELETE CASCADE` / `ON DELETE SET NULL`. Das bedeutet:
 > - **Brauerei löschen** → alle Preise, Stil-Zuordnungen (`brewery_styles`) und Events dieser Brauerei werden ebenfalls gelöscht.
-> - **Stil löschen** → alle Zuordnungen in `brewery_styles` für diesen Stil werden gelöscht.
+> - **Stil löschen** → alle Zuordnungen in `brewery_styles` für diesen Stil werden gelöscht; Preise mit dieser Sorte bleiben, verlieren aber die Sorte (`prices.style_id` → `NULL`).
 > - **Event löschen** → alle Event-Biere (`event_beers`) dieses Events werden gelöscht.
-> - **Brauerei-ID umbenennen** → der Worker-Code aktualisiert per Batch alle FK-Referenzen (Preise, Stile, Events). Bei unbeabsichtigter Umbenennung (z. B. Tippfehler in der ID) können Daten verloren gehen, wenn das Rollback nicht rechtzeitig erfolgt. **Vor ID-Änderungen immer ein DB-Snapshot erstellen** (D1-Dashboard → *Export* oder `wrangler d1 export`).
+> - **Brauerei-ID umbenennen** → der Worker-Code aktualisiert per Batch alle FK-Referenzen (Preise, Stile, Events, Nachfolger, Hauptbrauerei einer Sorte). Die alte URL `/ort/<alte-id>` wird danach zur 404. Bei unbeabsichtigter Umbenennung (z. B. Tippfehler in der ID) können Daten verloren gehen, wenn das Rollback nicht rechtzeitig erfolgt. **Vor ID-Änderungen immer ein DB-Snapshot erstellen** (D1-Dashboard → *Export* oder `wrangler d1 export`).
 
 **Alternative (D1-Dashboard-Console):** *Workers & Pages → D1 → altbieratlas → Console* — die SQL-Dateien nacheinander einfügen und ausführen.
 
@@ -355,12 +355,15 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
   `/ort?id=…`, `/ort.html?id=…`, `/brauerei?id=…` und Trailing-Slash-Varianten
   leiten mit einem einzigen 301 auf die kanonische Form
 - **Serverseitig gerendert**: H1, Beschreibung, Adresse, Sorten und eine
-  Preistabelle (jüngste Meldung je Größe) stehen im HTML, bevor JavaScript läuft.
+  Preistabelle (jüngste Meldung je Größe und Sorte) stehen im HTML, bevor JavaScript läuft.
   Crawler ohne JS-Rendering und Social-Previews sehen damit echten Inhalt statt „Lade…"
 - JSON-LD `BarOrPub` (historische Orte: `Place`) mit Adresse, Geo, Gründungsjahr
   und `Menu`/`Offer`-Preisen, dazu `BreadcrumbList` mit Stadt-Zwischenstufe
 - Preisbox: jüngste 0,25-l-Meldung, sonst die kleinste gemeldete Größe; der
-  Preisverlauf (SVG-Chart) zeigt genau diese Größe
+  Preisverlauf (SVG-Chart) zeigt genau diese Größe und Sorte
+- **Preise je Sorte** (`prices.style_id`, optional): Führt ein Ort mehrere Alts
+  (z. B. Alt und Alkoholfrei), steht die Sorte an jeder Preismeldung. Eine Meldung
+  ohne Sorte zählt für alle Sorten derselben Größe, eine neuere verdrängt sie
 - Stile, Geschmacksnotizen (DE/EN)
 - **Übernahmen** (`breweries.successor_id`): historische Orte zeigen „Heute bei: …“ mit Link,
   der übernehmende Ort listet seine übernommenen Marken (z. B. Hannen und Gatzweiler → Bolten)
@@ -384,7 +387,7 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 
 ### Beitragen
 Fünf Einreichungstypen mit Moderation:
-- **Preismeldung** — Brauerei, Preis, Größe, Datum
+- **Preismeldung** — Brauerei, Sorte (Auswahl aus den Sorten des Orts; bei genau einer vorbelegt, ohne hinterlegte Sorten ausgeblendet), Preis, Größe, Datum
 - **Brauerei / Kneipe** — inkl. automatischem Geocoding via Nominatim
 - **Sorte & Geschmacksnotizen** — Stil, ABV, IBU, Tasting
 - **Korrektur** — Freitext-Hinweis
@@ -395,7 +398,7 @@ Fünf Einreichungstypen mit Moderation:
 - **Beiträge** — Approve / Reject mit optionaler Notiz
 - **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL), offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen
 - **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
-- **Preise** — Alle Preise einsehen, löschen; neue Preise direkt eintragen
+- **Preise** — Alle Preise einsehen, bearbeiten (inkl. Sorte), löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten, löschen
 - **Glossar** — Einträge anlegen, bearbeiten, löschen
 - **Typen** — Venue-Typen (brewpub, brewery, taproom, gastronomie, pub, restaurant, kiosk, handel, supermarket, beverage_store) anlegen, bearbeiten, löschen
@@ -406,6 +409,7 @@ Fünf Einreichungstypen mit Moderation:
 
 ### Ranglisten
 - Günstigste Brauereien, neueste Preismeldungen, Meistgemeldet
+- Jüngste Meldung je Ort **und Sorte**; Filter nach Sorte (nur Sorten mit Preismeldungen)
 - Top 10 (0,25 l), Kennzahlen und Meta-Description werden serverseitig gerendert;
   JSON-LD mit `ItemList` und `Dataset` (Altbier-Preise, Lizenz CC BY-SA 4.0)
 
@@ -536,7 +540,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/stats` | Kennzahlen |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |
-| GET | `/api/prices` | Preismeldungen (max. 2000) |
+| GET | `/api/prices` | Preismeldungen (max. 2000), je mit `styleId` |
 | POST | `/api/prices` | Preismeldung einreichen (Wrapper) |
 | GET | `/api/events` | Events (inkl. `endDate`, `endTime`) |
 | GET | `/api/events/:id` | Event-Detail + Biere |
@@ -580,8 +584,8 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | PUT | `/api/admin/events/:id/beers/:beerId` | Event-Bier bearbeiten |
 | DELETE | `/api/admin/events/:id/beers/:beerId` | Event-Bier löschen |
 | GET | `/api/admin/prices` | Alle Preise |
-| POST | `/api/admin/prices` | Preis direkt anlegen |
-| PUT | `/api/admin/prices/:id` | Preis bearbeiten |
+| POST | `/api/admin/prices` | Preis direkt anlegen (optional `styleId`) |
+| PUT | `/api/admin/prices/:id` | Preis bearbeiten (inkl. `style_id`) |
 | DELETE | `/api/admin/prices/:id` | Preis löschen |
 | GET | `/api/admin/styles` | Alle Bierstile |
 | POST | `/api/admin/styles` | Stil anlegen |

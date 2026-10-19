@@ -327,6 +327,7 @@ function _emailDataRows(type, data, de) {
     ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
     ...f(de ? "Preis" : "Price", data.price != null ? `${Number(data.price).toFixed(2)} €` : null),
     ...f(de ? "Größe" : "Size", data.size),
+    ...f(de ? "Sorte" : "Beer", data._styleName || data.styleId),
     ...f(de ? "Datum" : "Date", data.date),
     ...f(de ? "Hinweis" : "Notes", data.notes),
   ];
