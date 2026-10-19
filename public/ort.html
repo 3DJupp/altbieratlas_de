@@ -277,8 +277,9 @@ const isSsr = root.dataset.ssr === "1";
     return key ? window.t(key) : src;
   }
 
-  // Gleiches Schema wie das SSR-Title — Google wertet den gerenderten Titel
-  document.title = `${b.name} · Altbier in ${b.city} · Altbieratlas`;
+  // Den SSR-Titel (mit Preis) nicht überschreiben — Google wertet den
+  // gerenderten Titel. Nur ohne SSR oder für die englische Fassung neu setzen.
+  if (!isSsr || lang === "en") document.title = `${b.name} · Altbier in ${b.city} · Altbieratlas`;
 
   // SEO: Meta-Tags dynamisch befüllen — nur ohne SSR, sonst doppeltes JSON-LD
   if (!isSsr) (function() {

@@ -209,6 +209,9 @@ function formatPrice(p, lang) {
 const params = new URLSearchParams(location.search);
 const eventId = params.get("id");
 let _evData = null;
+// Hat der Worker die Seite gerendert, stehen Titel (mit Termin), Meta-Tags und
+// JSON-LD schon im HTML — dann nicht überschreiben bzw. doppelt einfügen.
+const isSsr = !!document.querySelector('script[type="application/ld+json"]');
 
 function renderEvent() {
   const lang = currentLang();
@@ -218,10 +221,10 @@ function renderEvent() {
   const beers = _evData.beers || [];
 
   const title = pick(ev.title, lang);
-  document.title = (title || "Event") + " · Altbieratlas";
+  if (!isSsr || isEn) document.title = (title || "Event") + " · Altbieratlas";
 
-  // SEO: Meta-Tags dynamisch befüllen
-  (function() {
+  // SEO: Meta-Tags dynamisch befüllen (nur ohne SSR bzw. für die englische Fassung)
+  if (!isSsr || isEn) (function() {
     const pageUrl = `https://altbieratlas.de/event?id=${ev.id}`;
     const rawDesc = pick(ev.description, lang) || (isEn ? "Altbier event at the Altbieratlas." : "Altbier-Event im Altbieratlas.");
     const desc = rawDesc.length > 155 ? rawDesc.slice(0, 155).replace(/\s+\S*$/, "") + "…" : rawDesc;
@@ -243,7 +246,9 @@ function renderEvent() {
     const ld = {"@context":"https://schema.org","@type":"Event","name":title||"Event","url":pageUrl,"startDate":ev.date+(ev.time?("T"+ev.time):""),"eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode"};
     if (ev.endDate) ld.endDate = ev.endDate+(ev.endTime?("T"+ev.endTime):"");
     if (ev.location) ld.location = {"@type":"Place","name":ev.location};
+    if (isSsr || document.getElementById("ev-ld")) return;
     const s = document.createElement("script");
+    s.id = "ev-ld";
     s.type = "application/ld+json";
     s.textContent = JSON.stringify(ld);
     document.head.appendChild(s);

@@ -1290,7 +1290,7 @@ window.ATLAS_DATA = {
   events: [
     {
       id: "bierboerse-benrath",
-      title: { de: "Bierbörse", en: "Bierbörse" },
+      title: { de: "Benrather Bierbörse", en: "Benrather Bierbörse" },
       breweryId: null,
       date: "2027-08-20",
       endDate: "2027-08-22",

@@ -2189,7 +2189,6 @@ export async function serveOrt(req, env, params = {}) {
   const ogImageUrl = `https://altbieratlas.de/api/og/ort?id=${encodeURIComponent(row.id)}`;
   const slug = citySlug(row.city);
   const cityUrl = slug ? `https://altbieratlas.de/stadt/${slug}` : null;
-  const title = `${row.name} · Altbier in ${row.city} · Altbieratlas`;
 
   // Jüngste Meldung je Größe — das ist der Preis, der für Besucher zählt.
   const latestBySize = [];
@@ -2205,15 +2204,28 @@ export async function serveOrt(req, env, params = {}) {
   const hero = latestBySize.find((p) => sizeNum(p.size) === 0.25)
             || latestBySize[0];
 
-  const desc = (row.description_de || row.description_en || "")
-    .slice(0, 155).replace(/\s+\S*$/, "").trim();
-  // Preis in die Meta-Description ziehen: das ist die Frage, mit der Leute suchen.
+  // Preis in den Titel: Bei Namenssuchen ("kürzer flingern") steht die offizielle
+  // Website darüber, der Preis ist das, was nur der Atlas im Snippet bietet.
+  // Laut Search Console lag die CTR mit dem reinen Namens-Titel bei Position 9 unter 0,2 %.
+  const title = hero && !row.is_historical
+    ? `${row.name}: Altbier ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} € · ${row.city}`
+    : `${row.name} · Altbier in ${row.city} · Altbieratlas`;
+
+  // Preis und Adresse vorne in die Meta-Description: Preis ist die Frage, mit der
+  // Leute suchen, und Straßensuchen ("kürzer fichtenstraße") werden fett markiert.
+  // Gesamtlänge ~160 Zeichen, sonst schneidet Google die Beschreibung ab.
   const priceBit = hero
     ? `${fmtSizeDe(hero.size)} Alt für ${fmtPriceDe(hero.price)} € (Stand ${fmtDateDe(hero.date)}). `
     : "";
-  const metaDesc = (priceBit + (desc
-    ? desc + "…"
-    : `${row.name} in ${row.city}: Adresse, Altbier-Sorten und aktuelle Preise im Altbieratlas.`)).slice(0, 300);
+  const addrBit = row.address && !row.is_historical ? `${row.address}. ` : "";
+  const head = priceBit + addrBit;
+  const room = Math.max(60, 160 - head.length);
+  const rawDesc = (row.description_de || row.description_en || "").trim();
+  const desc = rawDesc.length > room
+    ? rawDesc.slice(0, room).replace(/\s+\S*$/, "").replace(/[\s,;:.–-]+$/, "") + "…"
+    : rawDesc;
+  const metaDesc = head + (desc
+    || `${row.name} in ${row.city}: Adresse, Altbier-Sorten und aktuelle Preise im Altbieratlas.`);
 
   const ld = JSON.stringify({
     "@context": "https://schema.org",
@@ -2443,6 +2455,18 @@ export async function serveOgBrewery(req, env) {
   });
 }
 
+// "2026-10-20" → "20.10.2026"; mit Enddatum "20.–22.08.2027" bzw. "30.07.–02.08.2027".
+export function fmtEventRangeDe(start, end) {
+  const a = fmtDateDe(start);
+  if (!end || String(end).slice(0, 10) === String(start).slice(0, 10)) return a;
+  const b = fmtDateDe(end);
+  const [ad, am, ay] = a.split(".");
+  const [, bm, by] = b.split(".");
+  if (ay !== by) return `${a}–${b}`;
+  if (am !== bm) return `${ad}.${am}.–${b}`;
+  return `${ad}.–${b}`;
+}
+
 export async function serveEvent(req, env) {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
@@ -2478,7 +2502,13 @@ export async function serveEvent(req, env) {
 
   const pageUrl = `https://altbieratlas.de/event?id=${row.id}`;
   const titleDe = row.title_de || row.title_en || "Event";
-  const title = `${titleDe} · Altbieratlas`;
+  // Termin (mit Jahr) und Ort in den Titel: gesucht wird "bierbörse benrath 2026"
+  // oder "latzenbier termine 2026", nicht nur der Eventname.
+  const where = !row.brewery_id && row.location
+      && !titleDe.toLowerCase().includes(row.location.toLowerCase())
+    ? ` ${row.location}` : "";
+  const when = fmtEventRangeDe(row.date, row.end_date);
+  const title = `${titleDe}${where}${when ? ` – Termin ${when}` : ""} · Altbieratlas`;
   const rawDesc = row.description_de || row.description_en || "";
   const metaDesc = rawDesc
     ? (rawDesc.length > 155 ? rawDesc.slice(0, 155).replace(/\s+\S*$/, "") + "…" : rawDesc)
@@ -2660,8 +2690,10 @@ export async function serveCity(req, env) {
   const current = rows.filter((r) => !r.is_historical);
   const historical = rows.filter((r) => r.is_historical);
   const title = `Altbier in ${city} — Brauereien, Ausschank & Preise · Altbieratlas`;
+  // Als Frage formuliert: "was kostet ein altbier in düsseldorf" ist laut
+  // Bing/Search Console eine der häufigsten Suchen ohne passende Seite.
   const metaDesc = avgPrice
-    ? `Altbier in ${city}: ${current.length} Orte im Atlas, 0,25 l kosten im Schnitt ${fmtPriceDe(avgPrice)} €. Brauereien, Ausschank und Händler mit aktuellen Preisen.`
+    ? `Was kostet ein Altbier in ${city}? 0,25 l im Schnitt ${fmtPriceDe(avgPrice)} € (${priceVals.length} Orte). Alle ${current.length} Brauereien, Kneipen und Händler mit aktuellen Preisen.`
     : `Altbier in ${city}: ${rows.length} Brauereien, Ausschankorte und Händler mit aktuellen Preisen im Altbieratlas.`;
 
   const TYPE_DE = {
