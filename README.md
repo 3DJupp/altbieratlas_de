@@ -100,7 +100,7 @@ bash scripts/db-setup.sh [--remote]
 > - **Brauerei löschen** → alle Preise, Stil-Zuordnungen (`brewery_styles`) und Events dieser Brauerei werden ebenfalls gelöscht.
 > - **Stil löschen** → alle Zuordnungen in `brewery_styles` für diesen Stil werden gelöscht; Preise mit dieser Sorte bleiben, verlieren aber die Sorte (`prices.style_id` → `NULL`).
 > - **Event löschen** → alle Event-Biere (`event_beers`) dieses Events werden gelöscht.
-> - **Brauerei-ID umbenennen** → der Worker-Code aktualisiert per Batch alle FK-Referenzen (Preise, Stile, Events, Nachfolger, Hauptbrauerei einer Sorte). Die alte URL `/ort/<alte-id>` leitet nur weiter, wenn sie in `RENAMED_ORT_IDS` (`src/worker.js`) eingetragen ist. Bei unbeabsichtigter Umbenennung (z. B. Tippfehler in der ID) können Daten verloren gehen, wenn das Rollback nicht rechtzeitig erfolgt. **Vor ID-Änderungen immer ein DB-Snapshot erstellen** (D1-Dashboard → *Export* oder `wrangler d1 export`).
+> - **Brauerei-ID umbenennen** → der Worker-Code aktualisiert per Batch alle FK-Referenzen (Preise, Stile, Events, Nachfolger, Hauptbrauerei einer Sorte). Die alte URL `/ort/<alte-id>` wird danach zur 404. Bei unbeabsichtigter Umbenennung (z. B. Tippfehler in der ID) können Daten verloren gehen, wenn das Rollback nicht rechtzeitig erfolgt. **Vor ID-Änderungen immer ein DB-Snapshot erstellen** (D1-Dashboard → *Export* oder `wrangler d1 export`).
 
 **Alternative (D1-Dashboard-Console):** *Workers & Pages → D1 → altbieratlas → Console* — die SQL-Dateien nacheinander einfügen und ausführen.
 
