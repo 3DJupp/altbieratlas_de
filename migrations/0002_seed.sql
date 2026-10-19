@@ -671,7 +671,19 @@ Original Schlüssel Stike is a seasonal speciality with a special history. Its r
     'https://schumacher-alt.de',
     'Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 19. November 2026.',
     'Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 19 November 2026.',
-    'approved');
+    'approved'),
+  ('uerige-sticke-2027-01', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
+    'uerige', '2027-01-19', NULL, NULL, NULL, 'Düsseldorf Altstadt',
+    'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige',
+    'Am dritten Dienstag im Januar wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird. Termin aus der Regel „dritter Dienstag" abgeleitet, bitte vor Besuch beim Uerige bestätigen.',
+    'On the third Tuesday of January, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October). Date derived from the "third Tuesday" rule; please confirm with Uerige before visiting.',
+    'pending'),
+  ('schumacher-latzen-2027-03', 'Latzenbier-Ausschank bei Schumacher', 'Latzenbier tapping at Schumacher',
+    'schumacher', '2027-03-18', NULL, NULL, NULL, 'Düsseldorf',
+    'https://schumacher-alt.de',
+    'Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 18. März 2027 (aus der Regel „dritter Donnerstag" abgeleitet, bitte bei Schumacher bestätigen).',
+    'Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 18 March 2027 (derived from the "third Thursday" rule; please confirm with Schumacher).',
+    'pending');
 
 -- ============================================================
 -- Event beers
