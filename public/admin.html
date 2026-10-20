@@ -352,6 +352,7 @@
             <p style="color:var(--ink-muted);font-size:14px;margin:0" data-i18n="admin.breweriesSub">Alle Brauereien-Einträge (inkl. offener).</p>
             <div style="display:flex;gap:10px;align-items:center">
               <span id="google-ratings-msg" style="font-size:12px;color:var(--ink-muted)"></span>
+              <button class="btn" id="places-backfill-open" type="button" style="font-size:12px" data-i18n="admin.placesBackfill">Place IDs nachtragen</button>
               <button class="btn" id="google-ratings-refresh" type="button" style="font-size:12px" data-i18n="admin.googleRatingsRefresh">Google-Bewertungen abrufen</button>
             </div>
           </div>
@@ -926,6 +927,24 @@
   </div>
 
   <!-- Edit-Dialog Event -->
+  <div class="edit-dialog" id="places-backfill-dialog">
+    <div class="box" style="max-width:1100px;width:96vw;max-height:90vh;overflow-y:auto">
+      <h3 data-i18n="admin.placesBackfillTitle">Google Place IDs nachtragen</h3>
+      <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px" data-i18n="admin.placesBackfillIntro">Probelauf für alle aktuellen Orte ohne Place ID. Gespeichert werden nur die angehakten sicheren Treffer, und erst nach Bestätigung.</p>
+      <div id="places-backfill-progress" style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted);margin-bottom:10px"></div>
+      <div style="overflow:auto"><table class="brewery-table" id="places-backfill-table" style="display:none;font-size:12px">
+        <thead><tr><th></th><th>id</th><th data-i18n="admin.pbDbName">Name (DB)</th><th data-i18n="admin.pbGoogleName">Name (Google)</th><th data-i18n="admin.pbGoogleAddress">Adresse (Google)</th><th data-i18n="admin.pbDistance">Entfernung</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="edit-msg" id="places-backfill-msg"></div>
+      <div class="edit-actions">
+        <button class="btn btn-ghost" id="places-backfill-close" data-i18n="admin.placeDismiss">Schließen</button>
+        <button class="btn" id="places-backfill-copy" type="button" disabled data-i18n="admin.pbCopy">Bericht kopieren</button>
+        <button class="btn btn-approve" id="places-backfill-apply" type="button" disabled data-i18n="admin.pbApply">Ausgewählte speichern</button>
+      </div>
+    </div>
+  </div>
+
   <div class="edit-dialog" id="place-suggest-dialog">
     <div class="box" style="max-width:620px;max-height:90vh;overflow-y:auto">
       <h3 data-i18n="admin.placeSuggestTitle">Google Place ID vorschlagen</h3>
@@ -1534,18 +1553,108 @@ async function suggestPlaceId(breweryId) {
   }
 }
 
+// Bewertungsabruf: der Endpunkt schafft max. 40 Orte pro Aufruf
+// (Subrequest-Limit), also so lange wiederholen, bis nichts mehr offen ist
 document.getElementById("google-ratings-refresh").addEventListener("click", async (ev) => {
   const btn = ev.currentTarget;
   const msg = document.getElementById("google-ratings-msg");
   btn.disabled = true;
   msg.textContent = t("admin.placeSearching");
+  let updated = 0, failed = 0;
   try {
-    const r = await window.AtlasAPI.admin.refreshGoogleRatings();
-    msg.textContent = `${r.updated}/${r.total} ${t("admin.googleRatingsDone")}${r.failed ? ` · ${r.failed} ${t("admin.googleRatingsFailed")}` : ""}`;
+    for (let round = 0; round < 10; round++) {
+      const r = await window.AtlasAPI.admin.refreshGoogleRatings();
+      updated += r.updated; failed += r.failed;
+      msg.textContent = `${updated} ${t("admin.googleRatingsDone")}${failed ? ` · ${failed} ${t("admin.googleRatingsFailed")}` : ""}${r.remaining ? " …" : ""}`;
+      if (!r.remaining || !r.updated) break;
+    }
   } catch (e) {
     msg.textContent = placeErrorText(e);
   } finally {
     btn.disabled = false;
+  }
+});
+
+// Place-ID-Backfill: Probelauf portionsweise, Anzeige als Tabelle,
+// Speichern nur der angehakten sicheren Treffer nach Bestätigung
+const pbDialog = document.getElementById("places-backfill-dialog");
+let pbResults = [];
+function pbEsc(v) {
+  return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function pbRender() {
+  const table = document.getElementById("places-backfill-table");
+  table.style.display = pbResults.length ? "" : "none";
+  table.querySelector("tbody").innerHTML = pbResults.map((r, i) => `
+    <tr>
+      <td>${r.status === "sicher" ? `<input type="checkbox" data-pb="${i}" checked>` : ""}</td>
+      <td style="font-family:var(--font-mono)"><a href="/ort/${encodeURIComponent(r.id)}" target="_blank">${pbEsc(r.id)}</a></td>
+      <td>${pbEsc(r.dbName)}</td>
+      <td>${pbEsc(r.googleName)}</td>
+      <td>${pbEsc(r.googleAddress)}</td>
+      <td style="font-family:var(--font-mono);white-space:nowrap">${r.distance != null ? `${r.distance} m` : ""}</td>
+      <td class="${r.status === "sicher" ? "status-approved" : r.status === "prüfen" ? "status-pending" : "status-rejected"}">${pbEsc(r.status)}${r.status === "prüfen" && !r.houseNumberMatch ? ` (${t("admin.placeNoHouseNo")})` : ""}${r.error ? ` (${pbEsc(r.error)})` : ""}</td>
+    </tr>`).join("");
+  const n = (st) => pbResults.filter((r) => r.status === st).length;
+  return `sicher: ${n("sicher")} · prüfen: ${n("prüfen")} · kein Treffer: ${n("kein Treffer")}${n("Fehler") ? ` · Fehler: ${n("Fehler")}` : ""}`;
+}
+document.getElementById("places-backfill-close").addEventListener("click", () => pbDialog.classList.remove("visible"));
+document.getElementById("places-backfill-open").addEventListener("click", async () => {
+  const progress = document.getElementById("places-backfill-progress");
+  const msg = document.getElementById("places-backfill-msg");
+  const applyBtn = document.getElementById("places-backfill-apply");
+  const copyBtn = document.getElementById("places-backfill-copy");
+  pbDialog.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.getAttribute("data-i18n")); });
+  pbResults = [];
+  pbRender();
+  msg.textContent = "";
+  applyBtn.disabled = copyBtn.disabled = true;
+  pbDialog.classList.add("visible");
+  let after = "";
+  try {
+    for (let round = 0; round < 50; round++) {
+      progress.textContent = `${t("admin.placeSearching")} ${pbResults.length}`;
+      const r = await window.AtlasAPI.admin.placesBackfill(after);
+      pbResults.push(...r.results);
+      progress.textContent = pbRender();
+      if (r.done || !r.next) break;
+      after = r.next;
+    }
+    progress.textContent = `${pbResults.length} ${t("admin.pbChecked")} · ${pbRender()}`;
+  } catch (e) {
+    progress.textContent = placeErrorText(e);
+  }
+  copyBtn.disabled = !pbResults.length;
+  applyBtn.disabled = !pbResults.some((r) => r.status === "sicher");
+});
+document.getElementById("places-backfill-copy").addEventListener("click", async () => {
+  const lines = ["id\tName (DB)\tName (Google)\tAdresse (Google)\tEntfernung\tStatus\tPlace ID",
+    ...pbResults.map((r) => [r.id, r.dbName, r.googleName || "", r.googleAddress || "", r.distance != null ? `${r.distance} m` : "", r.status + (r.error ? ` (${r.error})` : ""), r.placeId || ""].join("\t"))];
+  try {
+    await navigator.clipboard.writeText(lines.join("\n"));
+    document.getElementById("places-backfill-msg").textContent = t("admin.pbCopied");
+  } catch {
+    document.getElementById("places-backfill-msg").textContent = lines.join("\n");
+  }
+});
+document.getElementById("places-backfill-apply").addEventListener("click", async (ev) => {
+  const items = [...document.querySelectorAll("#places-backfill-table input[data-pb]:checked")]
+    .map((cb) => pbResults[Number(cb.dataset.pb)])
+    .filter((r) => r && r.status === "sicher" && r.placeId)
+    .map((r) => ({ id: r.id, placeId: r.placeId }));
+  const msg = document.getElementById("places-backfill-msg");
+  if (!items.length) return;
+  if (!confirm(`${items.length} ${t("admin.pbConfirm")}`)) return;
+  ev.currentTarget.disabled = true;
+  try {
+    const r = await window.AtlasAPI.admin.placesApply(items);
+    msg.style.color = "#2d7a2d";
+    msg.textContent = `${r.updated} ${t("admin.pbSaved")}${r.skipped ? ` · ${r.skipped} ${t("admin.pbSkipped")}` : ""}`;
+    loadBreweriesTable();
+  } catch (e) {
+    msg.style.color = "#9b1f1f";
+    msg.textContent = placeErrorText(e);
+    ev.currentTarget.disabled = false;
   }
 });
 

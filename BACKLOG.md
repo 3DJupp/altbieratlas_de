@@ -2,6 +2,25 @@
 
 Offene Punkte, grob nach Wichtigkeit sortiert. Erledigtes wird gelöscht, nicht abgehakt.
 
+## Daten
+
+Stand 2026-10-20.
+
+### Wichtig
+
+- **Pins in der Altstadt nachjustieren.** Mehrere Koordinaten liegen sichtbar daneben:
+  Kürzer (`kuerzer-altstadt`) mitten auf der Kurze Straße, Schlüssel (`schluessel`) zu weit
+  in der Häuserzeile, Mississippi (`mississippi-d-alt`) und Smiley Club (`smiley-club`) schief,
+  Fuchs Benrath (`fuchs-benrath`): Eingang liegt an der Straßen-/Gebäudeecke. Pin jeweils
+  auf den Eingang setzen. Hilfe: Der Backfill-Bericht (`place-ids-backfill.json`) bzw. die
+  Place-ID-Suche liefern Googles Koordinaten und die Entfernung zur DB, große Abstände
+  zeigen weitere Kandidaten.
+- **Top 20 Ausgehlokale und Restaurants in Düsseldorf ergänzen**, in denen es Altbier gibt
+  (Kneipen, Gastronomie, Restaurants). Nur in die Live-D1, nicht in Seed/Mock, mit
+  `status = 'pending'`, DE+EN-Beschreibung; vorher auf Dubletten prüfen.
+- **Top 5 je Nachbarstadt ergänzen** (Neuss, Ratingen, Hilden, Krefeld, Mönchengladbach,
+  Meerbusch, Erkrath …), gleiche Regeln wie oben.
+
 ## Admin-Panel
 
 Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.

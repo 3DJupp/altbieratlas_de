@@ -1,4 +1,4 @@
-# Altbieratlas · v0.12.0
+# Altbieratlas · v0.12.1
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -36,8 +36,7 @@ altbieratlas/
 │   └── favicon.svg …
 ├── migrations/
 │   ├── 0001_schema.sql      # Vollständiges Schema (idempotent, Neuinstallation)
-│   ├── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
-│   └── 0003_google_places.sql # TEMPORÄR: Upgrade google_places_cache (wird nach dem Rollout gelöscht)
+│   └── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
 ├── scripts/
 │   ├── backfill-place-ids.mjs # Google Place IDs nachtragen (Dry-Run / --apply)
 │   ├── create-admin.mjs     # Admin-User anlegen
@@ -361,7 +360,15 @@ erhalten. Genutzt in der API (`mapsUrl`), auf der Ortsseite und im JSON-LD (`has
 Ein Treffer ist **sicher**, wenn er näher als 75 m liegt **und** die Hausnummer der
 DB-Adresse in Googles Adresse vorkommt, sonst **prüfen**; ohne Treffer **kein Treffer**.
 
-**Backfill** für alle Orte mit `is_historical = 0 AND google_place_id IS NULL`:
+**Backfill** für alle Orte mit `is_historical = 0 AND google_place_id IS NULL`.
+Am einfachsten im Admin-Panel: *Brauereien* → **„Place IDs nachtragen"**. Das läuft
+im Worker mit dessen Secret, ein lokaler Key ist nicht nötig. Der Probelauf zeigt
+id, Name (DB), Name (Google), Adresse (Google), Entfernung und Status; vorausgewählt
+sind nur die sicheren Treffer, gespeichert wird erst nach Bestätigung. „Bericht
+kopieren" legt die Tabelle tab-getrennt in die Zwischenablage. Das Panel arbeitet
+in Portionen zu 20 Orten (Subrequest-Limit des Free-Plans: 50 je Aufruf).
+
+Alternativ lokal mit dem Skript:
 
 ```bash
 export GOOGLE_PLACES_KEY=…
@@ -378,12 +385,14 @@ brechen den Lauf nicht ab. Die UPDATEs greifen nur, solange `google_place_id`
 noch leer ist. Fälle mit „prüfen" / „kein Treffer" im Admin-Panel per
 „Bei Google suchen" nacharbeiten.
 
-**Bewertungen:** Ein zweiter Cron (`0 4 * * 1`, montags 4:00 UTC) ruft für alle
-Orte mit Place ID `rating` und `userRatingCount` ab und upsertet sie in
-`google_places_cache`; Einträge älter als 30 Tage werden gelöscht. Laut
+**Bewertungen:** Ein zweiter Cron (`0 4-6 * * 1`, montags 4, 5 und 6 Uhr UTC) ruft
+für die Orte mit Place ID `rating` und `userRatingCount` ab und upsertet sie in
+`google_places_cache`, je Lauf höchstens 40 Orte, deren Eintrag fehlt oder älter
+als 6 Tage ist (drei Läufe reichen für 120 Orte). Einträge älter als 30 Tage werden gelöscht. Laut
 Google-Bedingungen darf nur die Place ID dauerhaft gespeichert werden, alles
 andere höchstens 30 Tage. Manuell auslösen: Admin-Panel → *Brauereien* →
-„Google-Bewertungen abrufen" bzw. `POST /api/admin/google-ratings/refresh`.
+„Google-Bewertungen abrufen" (wiederholt den Endpunkt, bis alle Orte durch sind)
+bzw. `POST /api/admin/google-ratings/refresh` (eine Portion je Aufruf, Antwort mit `remaining`).
 Die Ortsseite zeigt z. B. „4,5 ★ (312 Bewertungen) bei Google" mit Link auf den
 Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 30 Tage, erscheint nichts.
@@ -462,7 +471,7 @@ Fünf Einreichungstypen mit Moderation:
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken + neueste offene Beiträge
 - **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick)
-- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Google-Bewertungen manuell abrufen, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen
+- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen
 - **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
 - **Preise** — Alle Preise einsehen, bearbeiten (inkl. Sorte), löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten, löschen
@@ -642,7 +651,9 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | POST | `/api/admin/breweries` | Neue Brauerei anlegen |
 | PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten (inkl. `google_place_id`) |
 | GET | `/api/admin/breweries/:id/place-search` | Google-Places-Suche für den Ort (Treffer, Adresse, Entfernung, Status), speichert nichts |
-| POST | `/api/admin/google-ratings/refresh` | Google-Bewertungen sofort abrufen (wie der Wochen-Cron) |
+| POST | `/api/admin/google-ratings/refresh` | Google-Bewertungen abrufen, max. 40 Orte je Aufruf (`remaining` = noch offen) |
+| POST | `/api/admin/google-places/backfill` | Place-ID-Probelauf für Orte ohne ID, portionsweise (`{ after }` → `{ results, next, done }`), speichert nichts |
+| POST | `/api/admin/google-places/apply` | Bestätigte Place IDs speichern (`{ items: [{ id, placeId }] }`), überschreibt keine bestehenden |
 | DELETE | `/api/admin/breweries/:id` | Brauerei löschen |
 | GET | `/api/admin/events` | Alle Events |
 | POST | `/api/admin/events` | Neues Event anlegen (inkl. `end_date`, `end_time`) |

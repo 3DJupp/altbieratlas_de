@@ -2,7 +2,7 @@
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
 import { generateOgImage } from "./og.js";
-import { searchPlace, mapsLink, refreshRatings, CACHE_MAX_AGE_DAYS } from "./googlePlaces.js";
+import { searchPlace, mapsLink, refreshRatings, backfillBatch, CACHE_MAX_AGE_DAYS } from "./googlePlaces.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
@@ -1169,14 +1169,54 @@ export async function adminPlaceSearch(req, env, { id }) {
   }
 }
 
-// POST /api/admin/google-ratings/refresh
-// Löst den wöchentlichen Bewertungsabruf (Cron) sofort aus.
+// POST /api/admin/google-ratings/refresh  { limit? }
+// Manueller Bewertungsabruf, eine Portion (max. 40 Orte) pro Aufruf: alles,
+// was in der letzten Stunde nicht abgerufen wurde. Das Admin-Panel ruft so
+// lange erneut auf, bis `remaining` 0 ist oder eine Portion nichts mehr schafft.
 export async function adminRefreshGoogleRatings(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   if (!env.GOOGLE_PLACES_KEY) return error(503, "places-not-configured");
-  const summary = await refreshRatings(env, { delayMs: 50 });
+  const body = await req.json().catch(() => ({}));
+  const summary = await refreshRatings(env, { limit: body?.limit, minAgeHours: 1, delayMs: 50 });
   return json({ ok: true, ...summary });
+}
+
+// POST /api/admin/google-places/backfill  { after?, limit? }
+// Probelauf für alle Orte ohne Place ID, portionsweise (max. 40 pro Aufruf,
+// wegen des Subrequest-Limits). Speichert nichts.
+export async function adminPlacesBackfill(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.GOOGLE_PLACES_KEY) return error(503, "places-not-configured");
+  const body = await req.json().catch(() => ({}));
+  const res = await backfillBatch(env, { after: body?.after || "", limit: body?.limit || 20 });
+  return json({ ok: true, ...res });
+}
+
+// POST /api/admin/google-places/apply  { items: [{ id, placeId }] }
+// Schreibt die im Panel bestätigten Place IDs. Nur für Orte, die noch keine
+// haben und nicht historisch sind; bestehende IDs werden nie überschrieben.
+export async function adminPlacesApply(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  const items = Array.isArray(body?.items) ? body.items : null;
+  if (!items || !items.length) return error(400, "no-items");
+  if (items.length > 500) return error(400, "too-many-items");
+  const stmts = [];
+  for (const it of items) {
+    const id = typeof it?.id === "string" ? it.id : "";
+    const pid = typeof it?.placeId === "string" ? it.placeId.trim() : "";
+    if (!id || !/^[A-Za-z0-9_-]{10,300}$/.test(pid)) return error(400, "invalid-item", { id });
+    stmts.push(env.DB.prepare(
+      `UPDATE breweries SET google_place_id = ?, updated_at = datetime('now')
+       WHERE id = ? AND google_place_id IS NULL AND is_historical = 0`
+    ).bind(pid, id));
+  }
+  const res = await env.DB.batch(stmts);
+  const updated = res.reduce((n, r) => n + (r?.meta?.changes || 0), 0);
+  return json({ ok: true, updated, skipped: items.length - updated });
 }
 
 // DELETE /api/admin/breweries/:id

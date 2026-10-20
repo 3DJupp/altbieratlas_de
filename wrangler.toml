@@ -73,12 +73,14 @@ bucket_name = "altbieratlas-logos"
 # ADMIN_EMAIL) geht nur in den Läufen raus, die in Berlin auf 10 bzw. 22 Uhr
 # fallen; Zeitzone des Crons ist UTC, scheduled() prüft die Berliner Stunde.
 #
-# Zweiter Cron: montags 4:00 UTC Google-Bewertungen (Places API New) für alle
-# Orte mit google_place_id abrufen und google_places_cache upserten; Einträge
-# älter als 30 Tage werden gelöscht (Google-Bedingungen). Der Ausdruck muss
-# mit GOOGLE_RATINGS_CRON in src/worker.js übereinstimmen.
+# Zweiter Cron: montags 4, 5 und 6 Uhr UTC Google-Bewertungen (Places API New)
+# für die Orte mit google_place_id abrufen und google_places_cache upserten,
+# je Lauf höchstens 40 Orte (Subrequest-Limit des Free-Plans: 50 je Aufruf);
+# drei Läufe decken bis zu 120 Orte ab. Einträge älter als 30 Tage werden
+# gelöscht (Google-Bedingungen). Der Ausdruck muss mit GOOGLE_RATINGS_CRON in
+# src/worker.js übereinstimmen.
 [triggers]
-crons = ["0 * * * *", "0 4 * * 1"]
+crons = ["0 * * * *", "0 4-6 * * 1"]
 
 # --- Observability --------------------------------------------
 # Spiegelt die Dashboard-Einstellungen wider, damit Wrangler sie
