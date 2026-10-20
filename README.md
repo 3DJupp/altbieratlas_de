@@ -36,8 +36,7 @@ altbieratlas/
 │   └── favicon.svg …
 ├── migrations/
 │   ├── 0001_schema.sql      # Vollständiges Schema (idempotent, Neuinstallation)
-│   ├── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
-│   └── 0003_google_places.sql # TEMPORÄR: Upgrade google_places_cache (wird nach dem Rollout gelöscht)
+│   └── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
 ├── scripts/
 │   ├── backfill-place-ids.mjs # Google Place IDs nachtragen (Dry-Run / --apply)
 │   ├── create-admin.mjs     # Admin-User anlegen
