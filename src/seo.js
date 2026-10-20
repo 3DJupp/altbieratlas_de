@@ -12,6 +12,7 @@ import {
   escHtml, fmtPriceDe, fmtSizeDe, fmtDateDe, sizeNum, sameSlot,
   citySlug, cityIndex, PAGE_DATES,
 } from "./routes.js";
+import { siteConfig } from "./utils.js";
 
 const SITE = "https://altbieratlas.de";
 // Datenlizenz der Preismeldungen — als URL, wie Google sie im Dataset-Feld
@@ -647,38 +648,76 @@ export async function pingIndexNow(env, request) {
   if (!key) return;
   const host = new URL(request.url).host;
   if (host !== "altbieratlas.de" && host !== "www.altbieratlas.de") return; // keine Vorschau-Hosts melden
-  const base = `https://${host}`;
   try {
-    const since = "datetime('now', '-10 minutes')";
-    const [bRes, eRes] = await Promise.all([
-      env.DB.prepare(
-        `SELECT DISTINCT b.id, b.city FROM breweries b
-         LEFT JOIN prices p ON p.brewery_id = b.id AND p.status = 'approved' AND p.created_at >= ${since}
-         WHERE b.status = 'approved' AND (b.updated_at >= ${since} OR p.id IS NOT NULL)
-         LIMIT 200`
-      ).all(),
-      env.DB.prepare(
-        `SELECT id FROM events WHERE status = 'approved' AND created_at >= ${since} LIMIT 50`
-      ).all(),
-    ]);
-    const urls = new Set();
-    for (const b of bRes.results || []) {
-      urls.add(`${base}/ort/${encodeURIComponent(b.id)}`);
-      const slug = citySlug(b.city);
-      if (slug) urls.add(`${base}/stadt/${slug}`);
-    }
-    for (const e of eRes.results || []) urls.add(`${base}/event?id=${encodeURIComponent(e.id)}`);
-    if (!urls.size) return;
-    urls.add(`${base}/`);
-    urls.add(`${base}/ranglisten`);
-    await fetch("https://api.indexnow.org/indexnow", {
-      method: "POST",
-      headers: { "content-type": "application/json; charset=utf-8" },
-      body: JSON.stringify({
-        host, key, keyLocation: `${base}/${key}.txt`, urlList: [...urls],
-      }),
-    });
+    await submitChanged(env, key, host, null);
   } catch (e) {
     console.error("[indexnow]", e?.message || e);
   }
+}
+
+// Stündlicher Lauf aus dem Cron: meldet alles seit dem letzten Lauf
+// (Stand INDEXNOW_KEY_SETTING in site_settings), also auch Orte, Preise und
+// Termine, die direkt in der D1-Konsole bzw. per MCP eingetragen wurden und
+// deshalb keinen Admin-Ping ausgelöst haben. Schlägt die Meldung fehl, bleibt
+// der Stand stehen → der nächste Lauf holt nach.
+const INDEXNOW_KEY_SETTING = "indexnow_last_until";
+
+export async function sweepIndexNow(env) {
+  const key = indexNowKey(env);
+  if (!key) return;
+  let host;
+  try { host = new URL(siteConfig(env).siteUrl || SITE).host; } catch { host = new URL(SITE).host; }
+  if (host !== "altbieratlas.de" && host !== "www.altbieratlas.de") return;
+  try {
+    const win = await env.DB.prepare(
+      `SELECT COALESCE((SELECT value FROM site_settings WHERE key = ?), datetime('now', '-1 hour')) AS since,
+              datetime('now', '-1 minute') AS until`
+    ).bind(INDEXNOW_KEY_SETTING).first();
+    await submitChanged(env, key, host, win.since, win.until);
+    await env.DB.prepare(
+      `INSERT INTO site_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+    ).bind(INDEXNOW_KEY_SETTING, win.until).run();
+  } catch (e) {
+    console.error("[indexnow] Cron:", e?.message || e);
+  }
+}
+
+// since/until im datetime()-Format; since = null → die letzten 10 Minuten.
+async function submitChanged(env, key, host, since, until = null) {
+  const base = `https://${host}`;
+  const from = "COALESCE(?1, datetime('now', '-10 minutes'))";
+  const to = "COALESCE(?2, datetime('now'))";
+  const [bRes, eRes] = await Promise.all([
+    env.DB.prepare(
+      `SELECT DISTINCT b.id, b.city FROM breweries b
+       LEFT JOIN prices p ON p.brewery_id = b.id AND p.status = 'approved'
+         AND p.created_at > ${from} AND p.created_at <= ${to}
+       WHERE b.status = 'approved'
+         AND ((b.updated_at > ${from} AND b.updated_at <= ${to}) OR p.id IS NOT NULL)
+       LIMIT 200`
+    ).bind(since, until).all(),
+    env.DB.prepare(
+      `SELECT id FROM events WHERE status = 'approved'
+         AND created_at > ${from} AND created_at <= ${to} LIMIT 50`
+    ).bind(since, until).all(),
+  ]);
+  const urls = new Set();
+  for (const b of bRes.results || []) {
+    urls.add(`${base}/ort/${encodeURIComponent(b.id)}`);
+    const slug = citySlug(b.city);
+    if (slug) urls.add(`${base}/stadt/${slug}`);
+  }
+  for (const e of eRes.results || []) urls.add(`${base}/event?id=${encodeURIComponent(e.id)}`);
+  if (!urls.size) return;
+  urls.add(`${base}/`);
+  urls.add(`${base}/ranglisten`);
+  const res = await fetch("https://api.indexnow.org/indexnow", {
+    method: "POST",
+    headers: { "content-type": "application/json; charset=utf-8" },
+    body: JSON.stringify({
+      host, key, keyLocation: `${base}/${key}.txt`, urlList: [...urls],
+    }),
+  });
+  if (!res.ok && res.status !== 202) throw new Error(`IndexNow HTTP ${res.status}`);
 }

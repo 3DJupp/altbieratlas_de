@@ -25,7 +25,7 @@ bash scripts/deploy.sh --seed   # First-time: schema + seed + deploy
 npm run admin:create -- admin <password> --email=x@example.com --remote
 
 # IndexNow (needs the INDEXNOW_KEY secret; the worker pings automatically after
-# admin mutations — this is for the initial submission and for changes made
+# admin mutations and hourly for direct D1 changes — this is for the initial submission and for changes made
 # straight in the D1 console)
 INDEXNOW_KEY=<key> npm run seo:indexnow              # all sitemap URLs
 INDEXNOW_KEY=<key> npm run seo:indexnow -- --dry-run # list only
@@ -50,7 +50,7 @@ Browser
       └─ everything else     → ASSETS binding (static files from public/)
 ```
 
-Every GET HTML response passes through `SEO.applyLangVariant()`: with `?lang=en` it sets `lang="en"`, a self-referencing canonical and `og:locale` (the hreflang alternates point to `?lang=en`; `i18n.js` reads the same parameter). Successful admin mutations trigger `SEO.pingIndexNow()` (no-op without the `INDEXNOW_KEY` secret).
+Every GET HTML response passes through `SEO.applyLangVariant()`: with `?lang=en` it sets `lang="en"`, a self-referencing canonical and `og:locale` (the hreflang alternates point to `?lang=en`; `i18n.js` reads the same parameter). Successful admin mutations trigger `SEO.pingIndexNow()` (no-op without the `INDEXNOW_KEY` secret). In addition the hourly cron runs `SEO.sweepIndexNow()`, which reports everything changed since its last run (watermark `indexnow_last_until` in `site_settings`), so venues, prices and events written straight into D1 get submitted too.
 
 `worker.js` contains a minimal hand-rolled router (`match()`) — there is no routing framework. Routes are registered as `[METHOD, pattern, handler]` tuples in the `ROUTES` array.
 
@@ -133,7 +133,7 @@ Die Versionsnummer wird automatisch über `/api/config` an das Frontend gereicht
 
 ### Email
 
-All transactional mail (contribution confirmations, an instant admin notification per contribution, password-reset, admin digest) goes through [Resend](https://resend.com) via the `RESEND_API_KEY` secret. The digest runs at 10:00 and 22:00 Europe/Berlin: the Cron `0 8,9,20,21 * * *` fires at both possible UTC hours and `scheduled()` only lets the matching one through. It lists contributions since the last sent digest (watermark `digest_last_until` in `site_settings`), so windows never overlap.
+All transactional mail (contribution confirmations, an instant admin notification per contribution, password-reset, admin digest) goes through [Resend](https://resend.com) via the `RESEND_API_KEY` secret. The digest runs at 10:00 and 22:00 Europe/Berlin: the Cron `0 * * * *` fires hourly (UTC) and `scheduled()` only sends in the run whose Berlin hour is 10 or 22. It lists contributions since the last sent digest (watermark `digest_last_until` in `site_settings`), so windows never overlap.
 
 ### README- und Sitemap-Pflege
 
