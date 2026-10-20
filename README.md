@@ -1,4 +1,4 @@
-# Altbieratlas · v0.11.2
+# Altbieratlas · v0.12.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -13,7 +13,7 @@ altbieratlas/
 │   └── utils.js             # PBKDF2, Turnstile, Rate-Limit, E-Mail
 ├── public/
 │   ├── index.html           # Landing + Karte (Leaflet)
-│   ├── ort.html             # Ort-Detail + Preisverlauf + Untappd
+│   ├── ort.html             # Ort-Detail + Preisverlauf + Untappd + Google-Bewertung
 │   ├── event.html           # Event-Detail
 │   ├── ranglisten.html      # Preis-Ranglisten
 │   ├── wissen.html          # Geschichte, Köbes-Kultur, Glossar
@@ -36,8 +36,10 @@ altbieratlas/
 │   └── favicon.svg …
 ├── migrations/
 │   ├── 0001_schema.sql      # Vollständiges Schema (idempotent, Neuinstallation)
-│   └── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
+│   ├── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
+│   └── 0003_google_places.sql # TEMPORÄR: Upgrade google_places_cache (wird nach dem Rollout gelöscht)
 ├── scripts/
+│   ├── backfill-place-ids.mjs # Google Place IDs nachtragen (Dry-Run / --apply)
 │   ├── create-admin.mjs     # Admin-User anlegen
 │   ├── db-setup.sh          # DB-Setup (Schema + Seed + Upgrade)
 │   ├── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen)
@@ -217,6 +219,7 @@ Im Dashboard unter *Variables and Secrets* je als **Secret** anlegen. Turnstile-
 | `ADMIN_EMAIL` | Empfänger der Sofort-Benachrichtigung pro Einreichung und des Digests |
 | `MAP_TILE_API_KEY` | API-Key der CARTO Basemaps ([dashboard.basemaps.carto.com](https://dashboard.basemaps.carto.com/)). Ohne Key nutzt die Karte schlüssellose OSM-Kacheln |
 | `INDEXNOW_KEY` | Optional. [IndexNow](https://www.indexnow.org)-Schlüssel (8–128 Zeichen `a–z A–Z 0–9 -`). Der Worker liefert ihn unter `/<key>.txt` aus und meldet nach Admin-Änderungen die betroffenen Seiten an Bing, Yandex & Co. (Bing speist u. a. die ChatGPT-Suche). Ohne Key keine Meldung. Einrichtung: [1.5](#15-indexnow-aktivieren-optional-empfohlen) |
+| `GOOGLE_PLACES_KEY` | Optional. API-Key der Google **Places API (New)**. Place-ID-Suche im Admin-Panel, wöchentlicher Bewertungsabruf und Backfill-Skript. In der Google Cloud Console unter *APIs & Services → Credentials → API restrictions* auf **„Places API (New)"** beschränken. Ohne Key keine Suche und keine Bewertungen. Einrichtung: [1.6](#16-google-place-ids-und-bewertungen-optional) |
 | `INITIAL_ADMIN` | Ersteinrichtung — nach erstem Login löschen |
 
 ---
@@ -330,6 +333,63 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 
 ---
 
+### 1.6 Google Place IDs und Bewertungen (optional)
+
+Jeder aktuelle Ort kann eine Google Place ID haben (`breweries.google_place_id`).
+Sie vereinheitlicht den Maps-Link und schaltet die Google-Bewertung auf der
+Ortsseite frei. Historische Orte (`is_historical = 1`) bekommen keine.
+
+**Key anlegen:** In der Google Cloud Console die *Places API (New)* aktivieren,
+einen API-Key erzeugen und ihn unter *API restrictions* **nur** für
+„Places API (New)" freigeben. Dann als Worker-Secret hinterlegen:
+
+```bash
+npx wrangler secret put GOOGLE_PLACES_KEY
+```
+
+Für das Backfill-Skript zusätzlich lokal als Umgebungsvariable setzen
+(`export GOOGLE_PLACES_KEY=…`). Der Key wird nie geloggt oder ausgegeben.
+
+**Maps-Link** (`mapsLink()` in `src/googlePlaces.js`, im Frontend
+`window.atlasMapsLink()`): mit Place ID das offizielle Maps-URLs-Format
+`https://www.google.com/maps/search/?api=1&query=<Name, Adresse>&query_place_id=<id>`,
+sonst die gepflegte `maps_url`, sonst die Koordinaten. `maps_url` bleibt als Fallback
+erhalten. Genutzt in der API (`mapsUrl`), auf der Ortsseite und im JSON-LD (`hasMap`).
+
+**Suche und Status** (gemeinsam für Admin-Panel und Skript): Textsuche
+`"<Name>, <Adresse>"` mit `locationBias` (Kreis 100 m um die DB-Koordinaten).
+Ein Treffer ist **sicher**, wenn er näher als 75 m liegt **und** die Hausnummer der
+DB-Adresse in Googles Adresse vorkommt, sonst **prüfen**; ohne Treffer **kein Treffer**.
+
+**Backfill** für alle Orte mit `is_historical = 0 AND google_place_id IS NULL`:
+
+```bash
+export GOOGLE_PLACES_KEY=…
+# 1) Dry-Run (Standard): liest die Remote-D1 nur, zeigt die Tabelle
+#    (id, Name DB, Name Google, Adresse Google, Entfernung, Status) und schreibt
+#    place-ids-backfill.sql (UPDATEs nur für "sicher") + place-ids-backfill.json
+npm run places:backfill -- --db=<d1-name>
+# 2) SQL prüfen, dann anwenden
+npm run places:backfill -- --db=<d1-name> --apply
+```
+
+Zwischen den Requests wartet das Skript 250 ms (`--delay=`), Fehler bei einem Ort
+brechen den Lauf nicht ab. Die UPDATEs greifen nur, solange `google_place_id`
+noch leer ist. Fälle mit „prüfen" / „kein Treffer" im Admin-Panel per
+„Bei Google suchen" nacharbeiten.
+
+**Bewertungen:** Ein zweiter Cron (`0 4 * * 1`, montags 4:00 UTC) ruft für alle
+Orte mit Place ID `rating` und `userRatingCount` ab und upsertet sie in
+`google_places_cache`; Einträge älter als 30 Tage werden gelöscht. Laut
+Google-Bedingungen darf nur die Place ID dauerhaft gespeichert werden, alles
+andere höchstens 30 Tage. Manuell auslösen: Admin-Panel → *Brauereien* →
+„Google-Bewertungen abrufen" bzw. `POST /api/admin/google-ratings/refresh`.
+Die Ortsseite zeigt z. B. „4,5 ★ (312 Bewertungen) bei Google" mit Link auf den
+Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
+30 Tage, erscheint nichts.
+
+---
+
 ## 2 · Features
 
 ### Karte & Suche
@@ -371,6 +431,9 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 - **Übernahmen** (`breweries.successor_id`): historische Orte zeigen „Heute bei: …“ mit Link,
   der übernehmende Ort listet seine übernommenen Marken (z. B. Hannen und Gatzweiler → Bolten)
 - **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
+- **Google-Bewertung** (optional, `GOOGLE_PLACES_KEY`): „4,5 ★ (312 Bewertungen) bei Google"
+  mit Link auf den Ort in Google Maps, aus dem höchstens 30 Tage alten Cache
+- **Maps-Link** über die Google Place ID (sonst `maps_url`, sonst Koordinaten), siehe [1.6](#16-google-place-ids-und-bewertungen-optional)
 
 ### Stadt-Landingpages (SEO)
 - Serverseitig gerenderte Seiten unter `/stadt/<slug>`
@@ -398,8 +461,8 @@ Fünf Einreichungstypen mit Moderation:
 
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken + neueste offene Beiträge
-- **Beiträge** — Approve / Reject mit optionaler Notiz
-- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL), offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen
+- **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick)
+- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Google-Bewertungen manuell abrufen, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen
 - **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
 - **Preise** — Alle Preise einsehen, bearbeiten (inkl. Sorte), löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten, löschen
@@ -577,7 +640,9 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | POST | `/api/admin/contributions/:id/reject` | Ablehnen |
 | GET | `/api/admin/breweries` | Alle Brauereien |
 | POST | `/api/admin/breweries` | Neue Brauerei anlegen |
-| PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten |
+| PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten (inkl. `google_place_id`) |
+| GET | `/api/admin/breweries/:id/place-search` | Google-Places-Suche für den Ort (Treffer, Adresse, Entfernung, Status), speichert nichts |
+| POST | `/api/admin/google-ratings/refresh` | Google-Bewertungen sofort abrufen (wie der Wochen-Cron) |
 | DELETE | `/api/admin/breweries/:id` | Brauerei löschen |
 | GET | `/api/admin/events` | Alle Events |
 | POST | `/api/admin/events` | Neues Event anlegen (inkl. `end_date`, `end_time`) |

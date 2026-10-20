@@ -1,6 +1,6 @@
 {
   "name": "altbieratlas",
-  "version": "0.11.2",
+  "version": "0.12.0",
   "description": "Die interaktive Karte des Altbiers — Cloudflare Workers + D1",
   "private": true,
   "type": "module",
@@ -13,7 +13,8 @@
     "db:setup:demo": "bash scripts/db-setup.sh --demo",
     "db:setup:demo:remote": "bash scripts/db-setup.sh --remote --demo",
     "admin:create": "node scripts/create-admin.mjs",
-    "seo:indexnow": "bash scripts/indexnow.sh"
+    "seo:indexnow": "bash scripts/indexnow.sh",
+    "places:backfill": "node scripts/backfill-place-ids.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

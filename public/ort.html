@@ -166,6 +166,14 @@
   font-family: var(--font-mono); font-size: 13px; margin-top: 20px;
 }
 .untappd-bar .ut-logo { font-weight: 700; color: #f5a21c; }
+.google-rating-bar {
+  display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: 13px; color: var(--ink-muted);
+  margin-top: 20px; border-bottom: none;
+}
+.google-rating-bar:hover .gr-attr { color: var(--copper); }
+.google-rating-bar .gr-stars { color: var(--copper); font-weight: 500; }
+.google-rating-bar .gr-attr { font-size: 12px; }
 .untappd-bar .ut-stars { color: var(--copper); }
 .untappd-bar a { font-size: 12px; color: var(--ink-muted); border-bottom: none; }
 
@@ -429,6 +437,7 @@ const isSsr = root.dataset.ssr === "1";
       </section>
     ` : ''}
 
+    <div class="container" id="google-rating-section"></div>
     <div class="container" id="untappd-section" style="padding-bottom:20px"></div>
 
     <section class="container price-history">
@@ -485,7 +494,7 @@ const isSsr = root.dataset.ssr === "1";
   root.querySelectorAll("img[data-logo-backdrop]").forEach(window.atlasLogoBackdrop);
 
   // "Open in Maps" — Leaflet control + click handler
-  const mapsUrl = b.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}`;
+  const mapsUrl = window.atlasMapsLink(b);
   const MapsBtn = L.Control.extend({
     onAdd() {
       const a = L.DomUtil.create('a', 'maps-open-btn');
@@ -613,6 +622,25 @@ const isSsr = root.dataset.ssr === "1";
     }
   }
   document.addEventListener('atlas:lang-changed', () => { updateBreweryTexts(); drawChart(); });
+
+  // Google-Bewertung (aus dem höchstens 30 Tage alten Cache, kommt mit /api/breweries/:id).
+  // Nur Sterne-Schnitt und Anzahl, keine Review-Texte; „Google" bleibt sichtbar.
+  function renderGoogleRating() {
+    const sec = document.getElementById("google-rating-section");
+    const g = b.googleRating;
+    if (!sec || !g || g.rating == null || b.isHistorical) return;
+    const loc = window.atlasLocale ? window.atlasLocale() : "de-DE";
+    const rating = Number(g.rating).toLocaleString(loc, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const count = g.userRatingCount != null ? Number(g.userRatingCount).toLocaleString(loc) : null;
+    sec.innerHTML = `
+      <a class="google-rating-bar" href="${mapsUrl}" target="_blank" rel="noopener">
+        <span class="gr-stars">${rating} ★</span>
+        ${count ? `<span class="gr-count">(${count} ${window.t("brewery.googleRatingCount")})</span>` : ""}
+        <span class="gr-attr">${window.t("brewery.googleRatingOn")}</span>
+      </a>`;
+  }
+  renderGoogleRating();
+  document.addEventListener('atlas:lang-changed', renderGoogleRating);
 
   // Untappd-Daten nachladen (fire & forget — zeigt nur wenn verfügbar)
   fetch(`/api/untappd/brewery/${encodeURIComponent(b.id)}`)

@@ -349,6 +349,19 @@ window.atlasLogoBackdrop = function (img) {
 };
 
 // ---- Kartenkacheln ------------------------------------------------
+// Maps-Link eines Orts. Live liefert die API ihn fertig (mapsLink() in
+// src/googlePlaces.js); im Mock-Modus wird er hier nach denselben Regeln
+// gebaut: Place ID → gepflegter Link → Koordinaten.
+window.atlasMapsLink = function (b) {
+  if (!b) return null;
+  if (b.googlePlaceId) {
+    const q = [b.name, b.address].filter(Boolean).join(", ");
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}&query_place_id=${encodeURIComponent(b.googlePlaceId)}`;
+  }
+  if (b.mapsUrl) return b.mapsUrl;
+  return b.coords ? `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}` : null;
+};
+
 // Einzige Stelle, an der ein Tile-Layer entsteht (Startseite + Ortsdetail).
 // Mit API-Key: konfigurierte tileUrl, "{apiKey}" wird ersetzt.
 // Ohne Key: schlüsselloser Fallback, optional per CSS-Filter abgedunkelt.

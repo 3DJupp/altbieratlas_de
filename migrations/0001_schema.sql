@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS breweries (
   country        TEXT NOT NULL DEFAULT 'DE',
   address        TEXT,
   maps_url       TEXT,
+  -- Google Place ID (Places API New). Einzige Google-Angabe, die dauerhaft
+  -- gespeichert werden darf; historische Orte bekommen keine.
+  google_place_id TEXT,
   lat            REAL NOT NULL,
   lng            REAL NOT NULL,
   founded        INTEGER,
@@ -188,6 +191,15 @@ CREATE TABLE IF NOT EXISTS untappd_cache (
   atlas_id  TEXT PRIMARY KEY,
   data      TEXT NOT NULL,
   cached_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Google-Bewertungen je Place ID. Laut Google-Bedingungen höchstens 30 Tage
+-- vorhalten: der wöchentliche Cron frischt auf und löscht ältere Einträge.
+CREATE TABLE IF NOT EXISTS google_places_cache (
+  place_id          TEXT PRIMARY KEY,
+  rating            REAL,
+  user_rating_count INTEGER,
+  fetched_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Site settings (key-value config, editable via admin)

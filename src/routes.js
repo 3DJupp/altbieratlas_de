@@ -2,6 +2,7 @@
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
 import { generateOgImage } from "./og.js";
+import { searchPlace, mapsLink, refreshRatings, CACHE_MAX_AGE_DAYS } from "./googlePlaces.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
@@ -207,9 +208,11 @@ export async function getBrewery(req, env, { id }) {
   const prices = await env.DB.prepare(
     "SELECT date, size, price, source, notes, style_id FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC, price ASC"
   ).bind(id).all();
+  const googleRating = await googleRatingFor(env, row);
   return json({
     brewery: {
       ...brewRow(row, styles.results.map((s) => s.style_id)),
+      googleRating,
       successor: successor || null,
       predecessors: predecessors.results,
       // Überschrift über den Sorten aus dem Ortstyp ("Was hier ausgeschenkt wird" …)
@@ -222,6 +225,22 @@ export async function getBrewery(req, env, { id }) {
       styleId: p.style_id || null,
     })),
   });
+}
+
+// Google-Bewertung aus dem Cache, nur wenn höchstens 30 Tage alt (Google-
+// Bedingungen). Kein Eintrag, zu alt oder Tabelle fehlt → null, nichts anzeigen.
+async function googleRatingFor(env, row) {
+  if (!row?.google_place_id || row.is_historical) return null;
+  try {
+    const c = await env.DB.prepare(
+      `SELECT rating, user_rating_count, fetched_at FROM google_places_cache
+       WHERE place_id = ? AND fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
+    ).bind(row.google_place_id).first();
+    if (!c || c.rating == null) return null;
+    return { rating: c.rating, userRatingCount: c.user_rating_count ?? null, fetchedAt: c.fetched_at };
+  } catch {
+    return null;
+  }
 }
 
 // GET /api/styles
@@ -922,6 +941,8 @@ export async function adminApprove(req, env, { id }) {
   catch { return error(500, "invalid-payload"); }
 
   const nowIso = new Date().toISOString();
+  // Neu angelegter Ort → das Admin-Panel stößt damit die Place-ID-Suche an
+  let createdBreweryId = null;
 
   // Apply-Logik je Typ
   try {
@@ -952,6 +973,7 @@ export async function adminApprove(req, env, { id }) {
         lat, lng, payload.founded ? parseInt(payload.founded, 10) : null,
         payload.website || null, payload.description || null, payload.description_en || null,
       ).run();
+      createdBreweryId = newId;
     } else if (c.type === "event") {
       await env.DB.prepare(
         `INSERT INTO events (id, title_de, title_en, brewery_id, date, time, location, url, description_de, description_en, status)
@@ -989,7 +1011,7 @@ export async function adminApprove(req, env, { id }) {
       "UPDATE contributions SET status = 'approved', reviewed_at = ?, reviewed_by = ? WHERE id = ?"
     ).bind(nowIso, auth.username, id).run();
 
-    return json({ ok: true });
+    return json({ ok: true, ...(createdBreweryId ? { breweryId: createdBreweryId } : {}) });
   } catch (e) {
     return error(500, "apply-failed", { detail: e.message });
   }
@@ -1047,6 +1069,12 @@ export async function adminUpdateBrewery(req, env, { id }) {
     }
   }
 
+  if ("google_place_id" in body) {
+    const pid = body.google_place_id == null ? "" : String(body.google_place_id).trim();
+    if (pid && !/^[A-Za-z0-9_-]{10,300}$/.test(pid)) return error(400, "invalid-place-id");
+    body.google_place_id = pid || null;
+  }
+
   const fields = [];
   const values = [];
   const allow = {
@@ -1054,7 +1082,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
     verified: "verified", status: "status", logo_key: "logo_key",
-    successor_id: "successor_id",
+    successor_id: "successor_id", google_place_id: "google_place_id",
   };
   for (const [k, col] of Object.entries(allow)) {
     if (k in body) {
@@ -1116,6 +1144,39 @@ export async function adminUpdateBrewery(req, env, { id }) {
     }
   }
   return json({ ok: true });
+}
+
+// GET /api/admin/breweries/:id/place-search
+// Sucht den Ort bei Google (Places API New) und liefert die Treffer mit
+// Entfernung und Status. Speichert nichts — übernommen wird erst per PUT
+// nach Bestätigung im Admin-Panel.
+export async function adminPlaceSearch(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.GOOGLE_PLACES_KEY) return error(503, "places-not-configured");
+  const row = await env.DB.prepare(
+    "SELECT id, name, address, city, lat, lng, is_historical, google_place_id FROM breweries WHERE id = ?"
+  ).bind(id).first();
+  if (!row) return error(404, "not-found");
+  if (row.is_historical) return error(400, "historical-no-place-id");
+  // Ohne Adresse wenigstens die Stadt mitschicken, sonst sucht Google bundesweit
+  const address = row.address || row.city;
+  try {
+    const result = await searchPlace(env.GOOGLE_PLACES_KEY, { name: row.name, address, lat: row.lat, lng: row.lng });
+    return json({ ok: true, current: row.google_place_id || null, ...result });
+  } catch (e) {
+    return error(502, "places-search-failed", { detail: String(e?.message || e) });
+  }
+}
+
+// POST /api/admin/google-ratings/refresh
+// Löst den wöchentlichen Bewertungsabruf (Cron) sofort aus.
+export async function adminRefreshGoogleRatings(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (!env.GOOGLE_PLACES_KEY) return error(503, "places-not-configured");
+  const summary = await refreshRatings(env, { delayMs: 50 });
+  return json({ ok: true, ...summary });
 }
 
 // DELETE /api/admin/breweries/:id
@@ -2281,6 +2342,7 @@ export async function serveOrt(req, env, params = {}) {
         ...(row.address ? { "address": { "@type": "PostalAddress", "streetAddress": row.address, "addressLocality": row.city, "addressCountry": row.country || "DE" } } : {}),
         ...(row.lat && row.lng ? { "geo": { "@type": "GeoCoordinates", "latitude": row.lat, "longitude": row.lng } } : {}),
         ...(row.website ? { "sameAs": [row.website] } : {}),
+        ...(!row.is_historical && mapsLink(row) ? { "hasMap": mapsLink(row) } : {}),
         ...(row.founded ? { "foundingDate": String(row.founded) } : {}),
         ...(latestBySize.length ? {
           "hasMenu": {

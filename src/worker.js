@@ -9,6 +9,10 @@ import * as R from "./routes.js";
 import * as SEO from "./seo.js";
 import { error, hashPassword, sendAdminDigest, berlinHour } from "./utils.js";
 import { meterEnv } from "./d1meter.js";
+import { refreshRatings } from "./googlePlaces.js";
+
+// Muss exakt dem zweiten Eintrag unter [triggers] crons in wrangler.toml entsprechen
+const GOOGLE_RATINGS_CRON = "0 4 * * 1";
 import { isCacheable, withEdgeCache, bumpGeneration, purge } from "./cache.js";
 
 // Minimaler Router mit Pfad-Parameter-Matching (/x/:id)
@@ -110,6 +114,8 @@ const ROUTES = [
   ["POST",   "/api/admin/breweries",                       R.adminCreateBrewery],
   ["PUT",    "/api/admin/breweries/:id",                   R.adminUpdateBrewery],
   ["DELETE", "/api/admin/breweries/:id",                   R.adminDeleteBrewery],
+  ["GET",    "/api/admin/breweries/:id/place-search",      R.adminPlaceSearch],
+  ["POST",   "/api/admin/google-ratings/refresh",          R.adminRefreshGoogleRatings],
   ["POST",   "/api/admin/breweries/:id/photo",             R.adminUploadBreweryPhoto],
   ["DELETE", "/api/admin/breweries/:id/photo",             R.adminDeleteBreweryPhoto],
   ["GET",    "/api/admin/events",                          R.adminListEvents],
@@ -150,6 +156,14 @@ const ROUTES = [
 
 export default {
   async scheduled(event, env, ctx) {
+    // Wöchentlich (Mo 4:00 UTC): Google-Bewertungen auffrischen, Cache > 30 Tage löschen
+    if (event.cron === GOOGLE_RATINGS_CRON) {
+      ctx.waitUntil(refreshRatings(env).then(
+        (s) => console.log(`[google] Bewertungen: ${s.updated}/${s.total} aktualisiert, ${s.failed} Fehler, ${s.purged} gelöscht${s.skipped ? ` (${s.skipped})` : ""}`),
+        (e) => console.error("[google] Cron:", e?.message || e),
+      ));
+      return;
+    }
     // Cron läuft stündlich (UTC): jede Stunde IndexNow-Nachmeldung, der
     // Digest nur in den Läufen, die in Berlin auf 10 bzw. 22 Uhr fallen.
     ctx.waitUntil(SEO.sweepIndexNow(env));
