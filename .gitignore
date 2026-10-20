@@ -18,3 +18,5 @@ Thumbs.db
 # Backups
 *.bak
 *.bak.*
+place-ids-backfill.sql
+place-ids-backfill.json

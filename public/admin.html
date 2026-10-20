@@ -128,6 +128,16 @@
   margin-top: 16px;
 }
 .edit-dialog .edit-msg { font-size: 13px; margin-top: 8px; }
+.place-results { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.place-cand {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--rule); border-radius: var(--radius); font-size: 13px;
+}
+.place-cand .pc-addr { color: var(--ink-muted); font-size: 12px; }
+.place-cand .pc-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); }
+.place-cand .pc-status-sicher { color: #2d7a2d; }
+.place-cand .pc-status-prüfen { color: #a07a20; }
+.place-cand .btn { grid-row: 1 / span 3; grid-column: 2; font-size: 12px; padding: 6px 12px; }
 </style>
 </head>
 <body>
@@ -338,7 +348,13 @@
             <div id="add-brewery-msg" style="display:none;margin-top:10px;font-size:13px"></div>
           </div>
 
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.breweriesSub">Alle Brauereien-Einträge (inkl. offener).</p>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+            <p style="color:var(--ink-muted);font-size:14px;margin:0" data-i18n="admin.breweriesSub">Alle Brauereien-Einträge (inkl. offener).</p>
+            <div style="display:flex;gap:10px;align-items:center">
+              <span id="google-ratings-msg" style="font-size:12px;color:var(--ink-muted)"></span>
+              <button class="btn" id="google-ratings-refresh" type="button" style="font-size:12px" data-i18n="admin.googleRatingsRefresh">Google-Bewertungen abrufen</button>
+            </div>
+          </div>
           <div style="overflow:auto">
             <table class="brewery-table">
               <thead>
@@ -816,6 +832,15 @@
           <input id="edit-maps-url" type="url" maxlength="1000" placeholder="https://maps.google.com/?q=..." />
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldMapsUrlEditHint">Eigene Maps-URL (Pflicht für Karten-Button); Koordinaten als Fallback.</span>
         </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.fieldPlaceId">Google Place ID</label>
+          <div style="display:flex;gap:8px">
+            <input id="edit-place-id" type="text" maxlength="300" placeholder="ChIJ…" style="flex:1;font-family:var(--font-mono);font-size:13px" />
+            <button class="btn" id="edit-place-search" type="button" style="white-space:nowrap" data-i18n="admin.placeSearch">Bei Google suchen</button>
+          </div>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldPlaceIdHint">Hat Vorrang vor der Maps-URL. Die Suche nutzt Name, Adresse und Koordinaten wie gespeichert.</span>
+          <div id="edit-place-results"></div>
+        </div>
         <div class="field" style="margin:0">
           <label data-i18n="admin.fieldLat">Breitengrad (Lat)</label>
           <input id="edit-lat" type="number" min="-90" max="90" step="any" />
@@ -901,6 +926,17 @@
   </div>
 
   <!-- Edit-Dialog Event -->
+  <div class="edit-dialog" id="place-suggest-dialog">
+    <div class="box" style="max-width:620px;max-height:90vh;overflow-y:auto">
+      <h3 data-i18n="admin.placeSuggestTitle">Google Place ID vorschlagen</h3>
+      <p id="place-suggest-intro" style="font-size:13px;color:var(--ink-muted);margin-bottom:12px"></p>
+      <div id="place-suggest-results"></div>
+      <div class="edit-actions">
+        <button class="btn btn-ghost" id="place-suggest-close" data-i18n="admin.placeDismiss">Ohne Place ID weiter</button>
+      </div>
+    </div>
+  </div>
+
   <div class="edit-dialog" id="event-edit-dialog">
     <div class="box" style="max-width:600px;max-height:90vh;overflow-y:auto">
       <h3>Event bearbeiten</h3>
@@ -1414,9 +1450,11 @@ function renderContribCards(items, host, status) {
 async function handleAction(id, action, cardEl) {
   if (action === "approve") {
     try {
-      await window.AtlasAPI.admin.approve(id);
+      const res = await window.AtlasAPI.admin.approve(id);
       cardEl.remove();
       loadDashboard();
+      // Neuer Ort → Place-ID-Suche anstoßen, Ergebnis nur als Vorschlag
+      if (res && res.breweryId) suggestPlaceId(res.breweryId);
     } catch (e) {
       alert(window.t("admin.approveError") + (e.detail?.detail || e.message));
     }
@@ -1424,6 +1462,92 @@ async function handleAction(id, action, cardEl) {
     openReject(id, cardEl);
   }
 }
+
+// ============ Google Place ID ============
+// Gemeinsame Trefferliste für Bearbeiten-Dialog und Freigabe-Vorschlag.
+// Übernommen wird nur nach Klick + Bestätigung, nie automatisch.
+function placeErrorText(e) {
+  const code = e?.detail?.error || e?.message || "";
+  if (code === "places-not-configured") return t("admin.placeNoKey");
+  if (code === "historical-no-place-id") return t("admin.placeHistorical");
+  return t("admin.placeError") + (e?.detail?.detail || code);
+}
+function renderPlaceResults(host, result, onPick) {
+  const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const cands = result?.candidates || [];
+  if (!cands.length) {
+    host.innerHTML = `<p style="font-size:13px;color:var(--ink-muted);margin-top:8px">${t("admin.placeNone")}</p>`;
+    return;
+  }
+  host.innerHTML = `<div class="place-results">${cands.slice(0, 5).map((c, i) => `
+    <div class="place-cand">
+      <strong>${esc(c.name)}</strong>
+      <span class="pc-addr">${esc(c.address)}</span>
+      <span class="pc-meta">${c.distance != null ? `${c.distance} m` : "?"} · <span class="pc-status-${esc(c.status)}">${esc(c.status)}</span>${c.houseNumberMatch ? "" : ` · ${t("admin.placeNoHouseNo")}`} · ${esc(c.placeId)}</span>
+      <button class="btn${c.status === "sicher" ? " btn-approve" : ""}" type="button" data-pick="${i}">${t("admin.placeTake")}</button>
+    </div>`).join("")}</div>`;
+  host.querySelectorAll("button[data-pick]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const c = cands[Number(btn.dataset.pick)];
+      if (!confirm(`${t("admin.placeConfirm")}\n\n${c.name}\n${c.address}\n${c.distance ?? "?"} m · ${c.status}\n${c.placeId}`)) return;
+      onPick(c);
+    });
+  });
+}
+
+document.getElementById("edit-place-search").addEventListener("click", async () => {
+  if (!pendingEdit) return;
+  const host = document.getElementById("edit-place-results");
+  host.innerHTML = `<p style="font-size:13px;color:var(--ink-muted);margin-top:8px">${t("admin.placeSearching")}</p>`;
+  try {
+    const res = await window.AtlasAPI.admin.placeSearch(pendingEdit.id);
+    renderPlaceResults(host, res, (c) => {
+      // Nur ins Feld — gespeichert wird mit „Speichern"
+      document.getElementById("edit-place-id").value = c.placeId;
+      host.innerHTML = `<p style="font-size:13px;color:#2d7a2d;margin-top:8px">${t("admin.placeTakenHint")}</p>`;
+    });
+  } catch (e) {
+    host.innerHTML = `<p style="font-size:13px;color:#9b1f1f;margin-top:8px">${placeErrorText(e)}</p>`;
+  }
+});
+
+const placeSuggestDialog = document.getElementById("place-suggest-dialog");
+document.getElementById("place-suggest-close").addEventListener("click", () => placeSuggestDialog.classList.remove("visible"));
+async function suggestPlaceId(breweryId) {
+  const host = document.getElementById("place-suggest-results");
+  document.getElementById("place-suggest-intro").textContent = `${t("admin.placeSuggestIntro")} ${breweryId}`;
+  host.innerHTML = `<p style="font-size:13px;color:var(--ink-muted)">${t("admin.placeSearching")}</p>`;
+  placeSuggestDialog.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.getAttribute("data-i18n")); });
+  placeSuggestDialog.classList.add("visible");
+  try {
+    const res = await window.AtlasAPI.admin.placeSearch(breweryId);
+    renderPlaceResults(host, res, async (c) => {
+      try {
+        await window.AtlasAPI.admin.updateBrewery(breweryId, { google_place_id: c.placeId });
+        host.innerHTML = `<p style="font-size:13px;color:#2d7a2d">${t("admin.placeSaved")}</p>`;
+      } catch (e) {
+        host.innerHTML = `<p style="font-size:13px;color:#9b1f1f">${placeErrorText(e)}</p>`;
+      }
+    });
+  } catch (e) {
+    host.innerHTML = `<p style="font-size:13px;color:#9b1f1f">${placeErrorText(e)}</p>`;
+  }
+}
+
+document.getElementById("google-ratings-refresh").addEventListener("click", async (ev) => {
+  const btn = ev.currentTarget;
+  const msg = document.getElementById("google-ratings-msg");
+  btn.disabled = true;
+  msg.textContent = t("admin.placeSearching");
+  try {
+    const r = await window.AtlasAPI.admin.refreshGoogleRatings();
+    msg.textContent = `${r.updated}/${r.total} ${t("admin.googleRatingsDone")}${r.failed ? ` · ${r.failed} ${t("admin.googleRatingsFailed")}` : ""}`;
+  } catch (e) {
+    msg.textContent = placeErrorText(e);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 // Reject-Dialog
 const rejectDialog = document.getElementById("reject-dialog");
@@ -1493,7 +1617,9 @@ async function loadBreweriesTable() {
           data-type="${b.type || ""}"
           data-status="${b.status || ""}"
           data-address="${(b.address || "").replace(/"/g, "&quot;")}"
-          data-maps-url="${(b.mapsUrl || "").replace(/"/g, "&quot;")}"
+          data-maps-url="${(("rawMapsUrl" in b ? b.rawMapsUrl : b.mapsUrl) || "").replace(/"/g, "&quot;")}"
+          data-place-id="${(b.googlePlaceId || "").replace(/"/g, "&quot;")}"
+          data-historical="${b.isHistorical ? "1" : ""}"
           data-lat="${b.coords?.[0] ?? ""}"
           data-lng="${b.coords?.[1] ?? ""}"
           data-founded="${b.founded ?? ""}"
@@ -1577,6 +1703,9 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-status").value        = rowEl.dataset.status || "pending";
   document.getElementById("edit-address").value       = rowEl.dataset.address || "";
   document.getElementById("edit-maps-url").value      = rowEl.dataset.mapsUrl || "";
+  document.getElementById("edit-place-id").value      = rowEl.dataset.placeId || "";
+  document.getElementById("edit-place-results").innerHTML = "";
+  document.getElementById("edit-place-search").disabled = rowEl.dataset.historical === "1";
   document.getElementById("edit-lat").value           = rowEl.dataset.lat || "";
   document.getElementById("edit-lng").value           = rowEl.dataset.lng || "";
   document.getElementById("edit-founded").value       = rowEl.dataset.founded || "";
@@ -1824,6 +1953,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const status         = document.getElementById("edit-status").value;
   const address        = document.getElementById("edit-address").value.trim() || null;
   const mapsUrl        = document.getElementById("edit-maps-url").value.trim() || null;
+  const placeId        = document.getElementById("edit-place-id").value.trim() || null;
   const latRaw         = document.getElementById("edit-lat").value;
   const lngRaw         = document.getElementById("edit-lng").value;
   const foundedRaw     = document.getElementById("edit-founded").value;
@@ -1839,6 +1969,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   try {
     const patch = {
       name, short, city, country, type, status, address, maps_url: mapsUrl,
+      google_place_id: placeId,
       lat: latRaw !== "" ? parseFloat(latRaw) : undefined,
       lng: lngRaw !== "" ? parseFloat(lngRaw) : undefined,
       founded: foundedRaw !== "" ? parseInt(foundedRaw, 10) : null,
@@ -1860,6 +1991,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.status         = status;
     row.dataset.address        = address || "";
     row.dataset.mapsUrl        = mapsUrl || "";
+    row.dataset.placeId        = placeId || "";
     if (latRaw !== "") row.dataset.lat = latRaw;
     if (lngRaw !== "") row.dataset.lng = lngRaw;
     row.dataset.founded        = foundedRaw || "";

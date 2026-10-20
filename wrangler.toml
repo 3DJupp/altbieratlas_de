@@ -72,8 +72,13 @@ bucket_name = "altbieratlas-logos"
 # Der Digest (Zusammenfassung aller Beiträge seit dem letzten Digest an
 # ADMIN_EMAIL) geht nur in den Läufen raus, die in Berlin auf 10 bzw. 22 Uhr
 # fallen; Zeitzone des Crons ist UTC, scheduled() prüft die Berliner Stunde.
+#
+# Zweiter Cron: montags 4:00 UTC Google-Bewertungen (Places API New) für alle
+# Orte mit google_place_id abrufen und google_places_cache upserten; Einträge
+# älter als 30 Tage werden gelöscht (Google-Bedingungen). Der Ausdruck muss
+# mit GOOGLE_RATINGS_CRON in src/worker.js übereinstimmen.
 [triggers]
-crons = ["0 * * * *"]
+crons = ["0 * * * *", "0 4 * * 1"]
 
 # --- Observability --------------------------------------------
 # Spiegelt die Dashboard-Einstellungen wider, damit Wrangler sie
@@ -120,6 +125,12 @@ persist = true
 #                           A–Z, 0–9, -). Wird unter /<key>.txt ausgeliefert;
 #                           nach Admin-Änderungen meldet der Worker geänderte
 #                           Seiten an api.indexnow.org (Bing, Yandex …).
+#
+#   GOOGLE_PLACES_KEY     — optional: API-Key für die Google „Places API (New)"
+#                           (in der Google Cloud Console auf genau diese API
+#                           beschränken). Nutzen: Place-ID-Suche im Admin-Panel,
+#                           wöchentlicher Bewertungsabruf, Backfill-Skript.
+#                           Fehlt er, bleiben Suche und Bewertungen aus.
 #
 #   INITIAL_ADMIN  (nur für die Ersteinrichtung, danach entfernen!)
 #     Legt beim ersten Request automatisch einen Admin-User an,
