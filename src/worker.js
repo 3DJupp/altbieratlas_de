@@ -12,7 +12,7 @@ import { meterEnv } from "./d1meter.js";
 import { refreshRatings } from "./googlePlaces.js";
 
 // Muss exakt dem zweiten Eintrag unter [triggers] crons in wrangler.toml entsprechen
-const GOOGLE_RATINGS_CRON = "0 4 * * 1";
+const GOOGLE_RATINGS_CRON = "0 4-6 * * 1";
 import { isCacheable, withEdgeCache, bumpGeneration, purge } from "./cache.js";
 
 // Minimaler Router mit Pfad-Parameter-Matching (/x/:id)
@@ -116,6 +116,8 @@ const ROUTES = [
   ["DELETE", "/api/admin/breweries/:id",                   R.adminDeleteBrewery],
   ["GET",    "/api/admin/breweries/:id/place-search",      R.adminPlaceSearch],
   ["POST",   "/api/admin/google-ratings/refresh",          R.adminRefreshGoogleRatings],
+  ["POST",   "/api/admin/google-places/backfill",          R.adminPlacesBackfill],
+  ["POST",   "/api/admin/google-places/apply",             R.adminPlacesApply],
   ["POST",   "/api/admin/breweries/:id/photo",             R.adminUploadBreweryPhoto],
   ["DELETE", "/api/admin/breweries/:id/photo",             R.adminDeleteBreweryPhoto],
   ["GET",    "/api/admin/events",                          R.adminListEvents],
@@ -156,10 +158,11 @@ const ROUTES = [
 
 export default {
   async scheduled(event, env, ctx) {
-    // Wöchentlich (Mo 4:00 UTC): Google-Bewertungen auffrischen, Cache > 30 Tage löschen
+    // Wöchentlich (Mo 4, 5 und 6 Uhr UTC, je max. 40 Orte wegen des Subrequest-Limits):
+    // Google-Bewertungen auffrischen, die älter als 6 Tage sind; Cache > 30 Tage löschen
     if (event.cron === GOOGLE_RATINGS_CRON) {
       ctx.waitUntil(refreshRatings(env).then(
-        (s) => console.log(`[google] Bewertungen: ${s.updated}/${s.total} aktualisiert, ${s.failed} Fehler, ${s.purged} gelöscht${s.skipped ? ` (${s.skipped})` : ""}`),
+        (s) => console.log(`[google] Bewertungen: ${s.updated}/${s.total} aktualisiert, ${s.failed} Fehler, ${s.purged} gelöscht, ${s.remaining} offen${s.skipped ? ` (${s.skipped})` : ""}`),
         (e) => console.error("[google] Cron:", e?.message || e),
       ));
       return;

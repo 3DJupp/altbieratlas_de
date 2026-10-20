@@ -126,40 +126,92 @@ export function mapsLink(b) {
   return null;
 }
 
-// Wöchentlicher (oder manueller) Abruf: Cache für alle Orte mit Place ID
-// auffrischen und Einträge > 30 Tage löschen. Fehler je Ort werden gezählt,
-// nicht geworfen. Liefert eine Zusammenfassung ohne Schlüsseldaten.
-export async function refreshRatings(env, { delayMs = 100 } = {}) {
-  const apiKey = env.GOOGLE_PLACES_KEY;
-  const summary = { total: 0, updated: 0, failed: 0, purged: 0, errors: [] };
-  if (!apiKey) return { ...summary, skipped: "GOOGLE_PLACES_KEY fehlt" };
+// Obergrenze je Worker-Aufruf: Der Free-Plan erlaubt 50 Subrequests pro
+// Aufruf, jeder Google-Request zählt. Die D1-Schreibzugriffe laufen
+// gesammelt in einem batch().
+export const MAX_PER_RUN = 40;
 
+// Bewertungsabruf für bis zu `limit` Orte mit Place ID, deren Cache-Eintrag
+// fehlt oder älter als `minAgeHours` ist (älteste zuerst). So arbeiten
+// mehrere Läufe nacheinander alle Orte ab: der Cron montags 4, 5 und 6 Uhr
+// UTC bzw. das Admin-Panel in einer Schleife. Danach werden Einträge > 30 Tage
+// gelöscht. Fehler je Ort werden gezählt, nicht geworfen; die Zusammenfassung
+// enthält keine Schlüsseldaten.
+export async function refreshRatings(env, { limit = MAX_PER_RUN, minAgeHours = 144, delayMs = 100 } = {}) {
+  const apiKey = env.GOOGLE_PLACES_KEY;
+  const summary = { total: 0, updated: 0, failed: 0, purged: 0, remaining: 0, errors: [] };
+  if (!apiKey) return { ...summary, skipped: "GOOGLE_PLACES_KEY fehlt" };
+  limit = Math.max(1, Math.min(Number(limit) || MAX_PER_RUN, MAX_PER_RUN));
+  const hours = Math.max(0, Number(minAgeHours) || 0);
+
+  const due = `FROM (SELECT DISTINCT google_place_id AS place_id FROM breweries
+      WHERE google_place_id IS NOT NULL AND google_place_id != '' AND status = 'approved' AND is_historical = 0) b
+    LEFT JOIN google_places_cache c ON c.place_id = b.place_id
+    WHERE c.fetched_at IS NULL OR c.fetched_at < datetime('now', '-${hours} hours')`;
   const { results } = await env.DB.prepare(
-    `SELECT DISTINCT google_place_id AS place_id FROM breweries
-     WHERE google_place_id IS NOT NULL AND google_place_id != '' AND status = 'approved' AND is_historical = 0`
-  ).all();
+    `SELECT b.place_id ${due} ORDER BY c.fetched_at IS NOT NULL, c.fetched_at LIMIT ?`
+  ).bind(limit).all();
   summary.total = results.length;
 
-  for (const { place_id } of results) {
+  const writes = [];
+  for (const [i, { place_id }] of results.entries()) {
     try {
       const r = await fetchRating(apiKey, place_id);
-      await env.DB.prepare(
+      writes.push(env.DB.prepare(
         `INSERT INTO google_places_cache (place_id, rating, user_rating_count, fetched_at)
          VALUES (?, ?, ?, datetime('now'))
          ON CONFLICT(place_id) DO UPDATE SET rating = excluded.rating,
            user_rating_count = excluded.user_rating_count, fetched_at = excluded.fetched_at`
-      ).bind(place_id, r.rating, r.userRatingCount).run();
-      summary.updated++;
+      ).bind(place_id, r.rating, r.userRatingCount));
     } catch (e) {
       summary.failed++;
       if (summary.errors.length < 10) summary.errors.push({ placeId: place_id, error: String(e?.message || e) });
     }
-    if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
+    if (delayMs && i < results.length - 1) await new Promise((r) => setTimeout(r, delayMs));
   }
+  if (writes.length) await env.DB.batch(writes);
+  summary.updated = writes.length;
 
   const del = await env.DB.prepare(
     `DELETE FROM google_places_cache WHERE fetched_at < datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
   ).run();
   summary.purged = del?.meta?.changes ?? 0;
+  // Noch fällige Orte (fehlgeschlagene zählen mit, der nächste Lauf versucht sie erneut)
+  const rest = await env.DB.prepare(`SELECT COUNT(*) AS n ${due}`).first();
+  summary.remaining = rest?.n ?? 0;
   return summary;
+}
+
+// Eine Portion Backfill: sucht für bis zu `limit` Orte ohne Place ID (nicht
+// historisch, id > after, nach id sortiert) den Treffer. Speichert nichts.
+// Liefert die Ergebnisse und den Cursor für die nächste Portion.
+export async function backfillBatch(env, { after = "", limit = 20, delayMs = 150 } = {}) {
+  const apiKey = env.GOOGLE_PLACES_KEY;
+  limit = Math.max(1, Math.min(Number(limit) || 20, MAX_PER_RUN));
+  const { results: rows } = await env.DB.prepare(
+    `SELECT id, name, address, city, lat, lng FROM breweries
+     WHERE is_historical = 0 AND google_place_id IS NULL AND id > ?
+     ORDER BY id LIMIT ?`
+  ).bind(String(after || ""), limit + 1).all();
+  const batch = rows.slice(0, limit);
+  const results = [];
+  for (const [i, r] of batch.entries()) {
+    const entry = { id: r.id, dbName: r.name, dbAddress: r.address, status: STATUS.NONE };
+    try {
+      const res = await searchPlace(apiKey, { name: r.name, address: r.address || r.city, lat: r.lat, lng: r.lng });
+      entry.status = res.status;
+      if (res.best) {
+        Object.assign(entry, {
+          placeId: res.best.placeId, googleName: res.best.name, googleAddress: res.best.address,
+          distance: res.best.distance, houseNumberMatch: res.best.houseNumberMatch,
+        });
+      }
+    } catch (e) {
+      entry.status = "Fehler";
+      entry.error = String(e?.message || e);
+    }
+    results.push(entry);
+    if (delayMs && i < batch.length - 1) await new Promise((res) => setTimeout(res, delayMs));
+  }
+  return { results, next: batch.length ? batch[batch.length - 1].id : null, done: rows.length <= limit };
 }
