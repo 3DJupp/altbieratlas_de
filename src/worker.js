@@ -150,8 +150,9 @@ const ROUTES = [
 
 export default {
   async scheduled(event, env, ctx) {
-    // Cron läuft in UTC und feuert je zweimal (Sommer-/Winterzeit);
-    // nur der Lauf, der in Berlin auf 10 bzw. 22 Uhr fällt, verschickt.
+    // Cron läuft stündlich (UTC): jede Stunde IndexNow-Nachmeldung, der
+    // Digest nur in den Läufen, die in Berlin auf 10 bzw. 22 Uhr fallen.
+    ctx.waitUntil(SEO.sweepIndexNow(env));
     const h = berlinHour(new Date(event.scheduledTime));
     if (h === 10 || h === 22) ctx.waitUntil(sendAdminDigest(env));
   },

@@ -66,14 +66,14 @@ database_id   = "REPLACE_WITH_YOUR_D1_ID"
 binding     = "LOGOS"
 bucket_name = "altbieratlas-logos"
 
-# --- Cron: Admin-Digest (10 und 22 Uhr Berlin) ----------------
-# Sendet eine Zusammenfassung aller Beiträge seit dem letzten Digest
-# an ADMIN_EMAIL (siehe Secrets unten).
-# Zeitzone: UTC. Gewollt ist 10 und 22 Uhr Berlin; deshalb feuert der Cron
-# zu beiden möglichen UTC-Stunden (Sommer-/Winterzeit) und scheduled() lässt
-# nur den passenden Lauf durch.
+# --- Cron: IndexNow-Nachmeldung (stündlich) + Admin-Digest ----
+# Jede Stunde meldet der Worker per IndexNow alle seit dem letzten Lauf
+# geänderten Orte/Preise/Termine (auch direkte D1-Einträge).
+# Der Digest (Zusammenfassung aller Beiträge seit dem letzten Digest an
+# ADMIN_EMAIL) geht nur in den Läufen raus, die in Berlin auf 10 bzw. 22 Uhr
+# fallen; Zeitzone des Crons ist UTC, scheduled() prüft die Berliner Stunde.
 [triggers]
-crons = ["0 8,9,20,21 * * *"]
+crons = ["0 * * * *"]
 
 # --- Observability --------------------------------------------
 # Spiegelt die Dashboard-Einstellungen wider, damit Wrangler sie

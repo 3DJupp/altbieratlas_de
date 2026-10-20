@@ -248,6 +248,9 @@ Danach einmal deployen bzw. das automatische Deploy abwarten. Mehr ist nicht
 nötig: der Worker liefert die Schlüsseldatei unter `/<key>.txt` aus
 (`SEO.serveIndexNowKey()`) und meldet nach jeder erfolgreichen Admin-Änderung
 die betroffenen Orte, Stadtseiten und Termine selbst (`SEO.pingIndexNow()`).
+Zusätzlich meldet ein stündlicher Cron-Lauf (`SEO.sweepIndexNow()`) alles,
+was seit dem letzten Lauf neu ist — also auch Orte, Preise und Termine, die
+direkt in der D1-Konsole eingetragen wurden.
 Ohne das Secret passiert nichts — kein Fehler, nur keine Meldung.
 
 **Schritt 3 — Schlüsseldatei prüfen.** Muss den Schlüssel im Klartext liefern,
@@ -467,7 +470,8 @@ Fünf Einreichungstypen mit Moderation:
   [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — genannt im
   `license`-Feld des `Dataset` und im Kopf von `llms.txt`/`llms-full.txt`
 - **IndexNow** (optional, Secret `INDEXNOW_KEY`): geänderte Orte, Stadtseiten
-  und Termine werden nach jeder Admin-Änderung sofort an Bing, Yandex, Seznam,
+  und Termine werden nach jeder Admin-Änderung sofort (direkte D1-Einträge
+  spätestens nach einer Stunde per Cron) an Bing, Yandex, Seznam,
   Naver und Yep gemeldet (Bing speist u. a. die ChatGPT-Suche; Google nimmt an
   IndexNow nicht teil). Die Schlüsseldatei liefert der Worker unter
   `/<key>.txt`. Für die Erst-Anmeldung und für Änderungen, die direkt in der
