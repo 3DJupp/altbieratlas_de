@@ -99,6 +99,10 @@ INSERT OR IGNORE INTO styles (id, name, abv, ibu, color, tasting_de, tasting_en,
     'Hausgebrautes Alt der ältesten Krefelder Brauerei, seit 1896 an der Sternstraße gebraut und im historischen Ausschank frisch gezapft.',
     'House-brewed Alt from Krefeld''s oldest brewery, brewed on Sternstraße since 1896 and served fresh in the historic tap room.',
     NULL),
+  ('hensen-alt', 'Hensen Alt', NULL, NULL, '#8b4513',
+    'Niederrheinisches Altbier der wiederbelebten Brauerei Hensen aus Mönchengladbach-Waldhausen.',
+    'Lower Rhine Altbier from the revived Hensen brewery in Mönchengladbach-Waldhausen.',
+    NULL),
   ('pinkus-alt', 'Original Pinkus Alt', 5.1, NULL, '#c9a04a',
     'Heller Münsteraner Alt aus Bioland-Malz, obergärig und lang gelagert, mit frischem, leicht weinigem Charakter.',
     'Pale Münster-style Alt from Bioland malt, top-fermented and long-aged, with a fresh, slightly wine-like character.',
@@ -404,6 +408,14 @@ VALUES
     'Krefeld''s oldest brewery: founded in 1807 as "Zu den drei Kronen" on Sternstraße, run under the Gleumes name since 1896. Gleumes Alt has been brewed since 1896 and is served fresh in the historic tap room with wood panelling and stucco ceilings, alongside hearty brewhouse food.',
     0, 'pending', 0, NULL, NULL),
 
+  ('hensen', 'Brauerei Hensen', 'Hensen', 'brewery', 'Mönchengladbach', 'DE',
+    'Untere Straße 133, 41068 Mönchengladbach',
+    NULL,
+    51.197481, 6.4099019, 1793, NULL,
+    '1793 gegründete Brauerei in Mönchengladbach-Waldhausen, nach der Schließung in den 1970ern 2017 wiederbelebt. Braut ein niederrheinisches Altbier, dazu Pils, IPA und weitere Sorten.',
+    'Brewery in Mönchengladbach-Waldhausen founded in 1793, revived in 2017 after closing in the 1970s. Brews a Lower Rhine Altbier as well as Pils, IPA and other beers.',
+    0, 'pending', 0, NULL, NULL),
+
   ('rhenania', 'Brauerei Rhenania', 'Rhenania', 'brewery', 'Krefeld', 'DE',
     'Marktstraße 41, 47798 Krefeld',
     NULL,
@@ -512,6 +524,7 @@ UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'hannen-alt-2023' AND
 UPDATE styles SET primary_brewery_id = 'bolten' WHERE id = 'gatz-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'diebels' WHERE id = 'diebels-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'gleumes' WHERE id = 'gleumes-alt' AND primary_brewery_id IS NULL;
+UPDATE styles SET primary_brewery_id = 'hensen' WHERE id = 'hensen-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'pinkus-mueller' WHERE id = 'pinkus-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'hellers' WHERE id = 'hellers-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'altus' WHERE id = 'altus-alt' AND primary_brewery_id IS NULL;
@@ -552,6 +565,7 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('extratour', 'schumacher-alt'),
   ('koenigshof', 'koenigshof-alt'),
   ('gleumes', 'gleumes-alt'),
+  ('hensen', 'hensen-alt'),
   ('hannen', 'hannen-alt'),
   ('bolten', 'bolten-alt'),
   ('bolten', 'bolten-uralt'),
