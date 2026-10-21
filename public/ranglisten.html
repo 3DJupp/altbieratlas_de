@@ -411,12 +411,16 @@ function render() {
     }));
     title = t("rank.titleMost");
   } else if (currentTab === "newest") {
+    // Nach Eintragung (created_at) sortieren und dieses Datum zeigen; Mock-Daten
+    // haben kein createdAt → Preisdatum als Ersatz.
     const seen = new Set();
-    prices.slice().sort((a, b) => b.date.localeCompare(a.date)).forEach((p) => {
+    prices.slice().sort((a, b) =>
+      (b.createdAt || b.date).localeCompare(a.createdAt || a.date) || b.date.localeCompare(a.date)
+    ).forEach((p) => {
       if (seen.has(p.breweryId)) return;
       seen.add(p.breweryId);
       const br = breweryById.get(p.breweryId);
-      if (br) list.push({ ...p, brewery: br });
+      if (br) list.push({ ...p, date: (p.createdAt || p.date).slice(0, 10), brewery: br });
     });
     title = t("rank.titleNewest");
   }

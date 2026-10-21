@@ -838,16 +838,21 @@ function renderRankings(prices) {
       priceText: "€ " + window.formatPrice(b.price),
     })));
 
+  // "Neu auf dem Atlas" = zuletzt eingetragen (created_at), nicht jüngstes Preisdatum.
+  // Mock-Daten haben kein createdAt → Preisdatum als Ersatz.
+  const entered = (p) => (p.createdAt || p.date || "").slice(0, 10);
   const seen = new Set();
   const newest = [];
-  prices.slice().sort((a, b) => b.date.localeCompare(a.date)).forEach((p) => {
+  prices.slice().sort((a, b) =>
+    (b.createdAt || b.date).localeCompare(a.createdAt || a.date) || b.date.localeCompare(a.date)
+  ).forEach((p) => {
     if (seen.has(p.breweryId)) return;
     seen.add(p.breweryId);
     const b = allBreweries.find((x) => x.id === p.breweryId);
     if (!b) return;
     newest.push({
       id: b.id, name: b.name, short: b.short, city: b.city,
-      priceText: window.formatDate(p.date, { day: "2-digit", month: "short" }),
+      priceText: window.formatDate(entered(p), { day: "2-digit", month: "short" }),
     });
   });
   fill("rank-newest", newest.slice(0, 5));

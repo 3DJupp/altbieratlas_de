@@ -266,12 +266,12 @@ export async function listStyles(req, env) {
 // GET /api/prices
 export async function listPrices(req, env) {
   const res = await env.DB.prepare(
-    "SELECT brewery_id, date, size, price, source, style_id FROM prices WHERE status = 'approved' ORDER BY date DESC LIMIT 2000"
+    "SELECT brewery_id, date, size, price, source, style_id, created_at FROM prices WHERE status = 'approved' ORDER BY date DESC LIMIT 2000"
   ).all();
   return json({
     prices: res.results.map((r) => ({
       breweryId: r.brewery_id, date: r.date, size: r.size, price: r.price, source: r.source,
-      styleId: r.style_id || null,
+      styleId: r.style_id || null, createdAt: r.created_at,
     })),
   });
 }
