@@ -140,6 +140,8 @@ CREATE TABLE IF NOT EXISTS contributions (
   type            TEXT NOT NULL CHECK (type IN ('price','brewery','style','correction','event')),
   payload         TEXT NOT NULL,
   submitter_email TEXT,
+  -- Freiwilliger Name/Spitzname, damit der Admin weiß, von wem ein Hinweis kommt
+  submitter_name  TEXT,
   submitter_ip    TEXT,
   status          TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
   admin_notes     TEXT,

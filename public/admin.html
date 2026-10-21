@@ -1438,12 +1438,14 @@ function renderContribCards(items, host, status) {
   host.innerHTML = items.map((c) => {
     const d = window.formatDateTime(c.createdAt);
     const payload = JSON.stringify(c.payload, null, 2);
+    const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
     return `
       <div class="contrib-card" data-id="${c.id}">
         <div>
           <div class="meta">
             <span class="type-tag">${c.type}</span>
             <span>${d}</span>
+            ${c.submitterName ? `<span>${esc(c.submitterName)}</span>` : ""}
             ${c.submitterEmail ? `<span>${c.submitterEmail}</span>` : ""}
             ${c.adminNotes ? `<span>· ${window.t("admin.note")}: ${c.adminNotes}</span>` : ""}
           </div>

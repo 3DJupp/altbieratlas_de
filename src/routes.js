@@ -181,9 +181,29 @@ export async function listBreweries(req, env) {
   for (const s of stylesRes.results) {
     (stylesByBrewery[s.brewery_id] ||= []).push(s.style_id);
   }
+  const ratings = await googleRatingsByPlace(env);
   return json({
-    breweries: breweriesRes.results.map((r) => brewRow(r, stylesByBrewery[r.id] || [])),
+    breweries: breweriesRes.results.map((r) => ({
+      ...brewRow(r, stylesByBrewery[r.id] || []),
+      googleRating: r.is_historical ? null : ratings.get(r.google_place_id) || null,
+    })),
   });
+}
+
+// Alle Google-Bewertungen aus dem Cache (höchstens 30 Tage alt) als Map
+// place_id → { rating, userRatingCount, fetchedAt }. Fehlt die Tabelle → leer.
+async function googleRatingsByPlace(env) {
+  const map = new Map();
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT place_id, rating, user_rating_count, fetched_at FROM google_places_cache
+       WHERE rating IS NOT NULL AND fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
+    ).all();
+    for (const c of results) {
+      map.set(c.place_id, { rating: c.rating, userRatingCount: c.user_rating_count ?? null, fetchedAt: c.fetched_at });
+    }
+  } catch {}
+  return map;
 }
 
 // GET /api/breweries/:id
@@ -598,8 +618,11 @@ export async function geocode(req, env) {
   }
 }
 
+// Formularfelder von Turnstile/reCAPTCHA/hCaptcha (Token, einmalig und wertlos)
+const CAPTCHA_FIELD = /^(cf-turnstile-response|g-recaptcha-response|h-captcha-response)$/i;
+
 // POST /api/contributions
-// Body: { type, data, email?, turnstileToken? }
+// Body: { type, data, email?, submitterName?, turnstileToken? }
 export async function postContribution(req, env, _params, ctx) {
   let body;
   try { body = await req.json(); }
@@ -622,12 +645,14 @@ export async function postContribution(req, env, _params, ctx) {
   // Validierung
   const lang = body.lang === "en" ? "en" : "de";
 
-  let type, data, email;
+  let type, data, email, submitterName;
   try {
     type = oneOf(body.type, ["price", "brewery", "style", "correction", "event"], { required: true, name: "type" });
     email = str(body.email, { max: 200, name: "email" });
+    submitterName = str(body.submitterName, { max: 100, name: "submitterName" });
     if (!body.data || typeof body.data !== "object") throw new Error("data: required");
-    data = body.data;
+    // Turnstile-/Captcha-Felder, die das Formular mitschickt, nie in den Payload
+    data = Object.fromEntries(Object.entries(body.data).filter(([k]) => !CAPTCHA_FIELD.test(k)));
 
     // Typ-spezifische Mindestvalidierung
     if (type === "price") {
@@ -695,8 +720,8 @@ export async function postContribution(req, env, _params, ctx) {
 
   const id = uuid();
   await env.DB.prepare(
-    "INSERT INTO contributions (id, type, payload, submitter_email, submitter_ip, status) VALUES (?, ?, ?, ?, ?, 'pending')"
-  ).bind(id, type, JSON.stringify(data), email, ip).run();
+    "INSERT INTO contributions (id, type, payload, submitter_email, submitter_name, submitter_ip, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')"
+  ).bind(id, type, JSON.stringify(data), email, submitterName, ip).run();
 
   // Bestätigungsmail wenn E-Mail angegeben — via waitUntil, damit CF den Fetch nicht abbricht
   if (email) {
@@ -704,7 +729,7 @@ export async function postContribution(req, env, _params, ctx) {
     if (ctx?.waitUntil) ctx.waitUntil(mailPromise);
   }
   // Admin sofort informieren — unabhängig davon, ob eine E-Mail angegeben wurde
-  const notifyPromise = sendAdminNotification(env, { type, id, data, email });
+  const notifyPromise = sendAdminNotification(env, { type, id, data, email, submitterName });
   if (ctx?.waitUntil) ctx.waitUntil(notifyPromise);
 
   return json({ ok: true, id, status: "pending" }, { status: 201 });
@@ -917,6 +942,7 @@ export async function adminListContributions(req, env) {
       type: c.type,
       payload: (() => { try { return JSON.parse(c.payload); } catch { return {}; } })(),
       submitterEmail: c.submitter_email,
+      submitterName: c.submitter_name || null,
       status: c.status,
       adminNotes: c.admin_notes,
       createdAt: c.created_at,
@@ -2121,12 +2147,12 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-18",
-  "/ranglisten": "2026-10-19",
+  "/":           "2026-10-21",
+  "/ranglisten": "2026-10-21",
   "/wissen":     "2026-10-17",
   "/sorten":     "2026-10-17",
   "/rivalen":    "2026-10-17",
-  "/beitragen":  "2026-10-19",
+  "/beitragen":  "2026-10-21",
   "/staedte":    "2026-10-17",
 };
 

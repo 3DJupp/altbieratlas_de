@@ -221,6 +221,11 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
           </div>
 
           <div class="field">
+            <label for="f-submitter" data-i18n="field.submitterName">Dein Name oder Spitzname (optional)</label>
+            <input id="f-submitter" name="submitterName" maxlength="100" autocomplete="nickname" />
+          </div>
+
+          <div class="field">
             <label for="f-email" data-i18n="field.email">E-Mail (optional)</label>
             <input id="f-email" name="email" type="email" placeholder="name@example.com" />
             <div style="font-size:12px;color:var(--ink-muted);margin-top:4px" data-i18n="contrib.anonymous">Du kannst anonym beitragen. E-Mail ist optional.</div>
@@ -727,11 +732,20 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
   const fd = new FormData(e.target);
   const data = {};
   fd.forEach((v, k) => {
-    if (k === "email") return;
+    // Kontaktfelder gehen separat mit, das Turnstile-Token steckt schon in turnstileToken
+    if (k === "email" || k === "submitterName" || k === "cf-turnstile-response") return;
     if (typeof v === "string") data[k] = v.trim();
     else data[k] = v;
   });
   const email = (fd.get("email") || "").toString().trim() || null;
+  const submitterName = (fd.get("submitterName") || "").toString().trim() || null;
+
+  // Ohne E-Mail einmal nachfragen: keine Bestätigung, keine Rückfragen möglich
+  if (!email && !window.confirm(window.t("contrib.noEmailConfirm"))) {
+    btn.disabled = false;
+    document.getElementById("f-email").focus();
+    return;
+  }
 
   // Normalisiere Größe bei freier Eingabe
   if (currentTyp === "preis" && data.size === "custom") {
@@ -756,6 +770,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
       type: apiType,
       data,
       email,
+      submitterName,
       lang: window.__atlasLang || "de",
       turnstileToken,
     });

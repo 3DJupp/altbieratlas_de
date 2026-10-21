@@ -1,4 +1,4 @@
-# Altbieratlas · v0.12.1
+# Altbieratlas · v0.13.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -336,7 +336,7 @@ das nicht, der gemeinsame Endpunkt verteilt an alle.
 
 Jeder aktuelle Ort kann eine Google Place ID haben (`breweries.google_place_id`).
 Sie vereinheitlicht den Maps-Link und schaltet die Google-Bewertung auf der
-Ortsseite frei. Historische Orte (`is_historical = 1`) bekommen keine.
+Ortsseite, im Karten-Popup und in der Rangliste „Google-Bewertung" frei. Historische Orte (`is_historical = 1`) bekommen keine.
 
 **Key anlegen:** In der Google Cloud Console die *Places API (New)* aktivieren,
 einen API-Key erzeugen und ihn unter *API restrictions* **nur** für
@@ -419,6 +419,8 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 - **„In meiner Nähe"** — Browser-Geolocation schwenkt die Karte auf den Standort und zeigt den nächstgelegenen Ort (Haversine, ohne Backend)
 - Popup-Preis wie auf der Ortsseite: jüngste 0,25-l-Meldung, sonst die kleinste gemeldete Größe
   (ohne Umrechnung, Größe steht dabei); darunter grau der Literpreis als reine Zusatzinfo
+- Popup zeigt außerdem die Google-Bewertung (Sterne-Schnitt, Anzahl, „bei Google"),
+  sofern ein höchstens 30 Tage alter Cache-Eintrag existiert
 - Schnellübersicht „Günstigstes/Teuerstes Alt" vergleicht nur 0,25 l; ein Hinweis nennt,
   wie viele Orte bisher nur andere Größen gemeldet haben, und verlinkt `/ranglisten`
 
@@ -468,6 +470,11 @@ Fünf Einreichungstypen mit Moderation:
 - **Korrektur** — Freitext-Hinweis
 - **Event** — Name, Datum, optionale Brauerei-Zuordnung
 
+Optional Name/Spitzname (`contributions.submitter_name`) und E-Mail. Ohne E-Mail fragt
+das Formular einmal nach, weil dann weder Freischalt-Benachrichtigung noch Rückfragen
+möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filtert
+`cf-turnstile-response` & Co. zusätzlich heraus).
+
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken + neueste offene Beiträge
 - **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick)
@@ -484,6 +491,10 @@ Fünf Einreichungstypen mit Moderation:
 
 ### Ranglisten
 - Günstigste Brauereien, neueste Preismeldungen, Meistgemeldet
+- **Google-Bewertung**: Orte nach Google-Sterneschnitt (Cache ≤ 30 Tage), nur ab
+  25 Bewertungen (`GOOGLE_MIN_COUNT` in `ranglisten.html`), Gleichstand nach Anzahl
+- **Preis gesucht**: alle aktiven Orte ohne Preismeldung, nach Stadt sortiert, je
+  mit Link „Preis melden" (`/beitragen?typ=preis&brauerei=<id>`)
 - Jüngste Meldung je Ort **und Sorte**; Filter nach Sorte (nur Sorten mit Preismeldungen)
 - Top 10 (0,25 l), Kennzahlen und Meta-Description werden serverseitig gerendert;
   JSON-LD mit `ItemList` und `Dataset` (Altbier-Preise, Lizenz CC BY-SA 4.0)
@@ -614,7 +625,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 |---|---|---|
 | GET | `/api/config` | Turnstile-Key, GA4-ID, priceSizes, highlightedSizes, `cities` … |
 | GET | `/api/stats` | Kennzahlen |
-| GET | `/api/breweries` | Alle freigegebenen Brauereien |
+| GET | `/api/breweries` | Alle freigegebenen Brauereien (inkl. `googleRating` aus dem Cache ≤ 30 Tage) |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |
 | GET | `/api/prices` | Preismeldungen (max. 2000), je mit `styleId` |
 | POST | `/api/prices` | Preismeldung einreichen (Wrapper) |

@@ -96,6 +96,8 @@
 .pr-cell .dt { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); display: block; margin-top: 2px; }
 
 .rank-table { padding: 30px 0 80px; }
+.rank-foot { font-size: 12px; color: var(--ink-muted); margin-top: 12px; }
+.wanted-link { font-size: 13px; white-space: nowrap; }
 .rank-card-full { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); overflow: hidden; }
 .rank-head-full {
   display: flex; justify-content: space-between; align-items: center;
@@ -150,6 +152,8 @@
         <button data-tab="prices" class="active" data-i18n="rank.tabPrices">Preise</button>
         <button data-tab="most" data-i18n="rank.tabMost">Meistgemeldet</button>
         <button data-tab="newest" data-i18n="rank.tabNewest">Neu auf dem Atlas</button>
+        <button data-tab="google" data-i18n="rank.tabGoogle">Google-Bewertung</button>
+        <button data-tab="wanted" data-i18n="rank.tabWanted">Preis gesucht</button>
       </div>
       <div id="controls-row" style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
         <div class="pill-toggle" id="sort-toggle">
@@ -171,12 +175,13 @@
         </div>
         <div class="rank-row head">
           <span data-i18n="rank.colBrewery">Brauerei</span>
-          <span style="text-align:right" data-i18n="rank.colPrice">Preis</span>
+          <span style="text-align:right" id="rank-col" data-i18n="rank.colPrice">Preis</span>
         </div>
         <div id="rank-body">
           <p style="color:var(--ink-muted);padding:20px" data-i18n="common.loading">Lade…</p>
         </div>
       </div>
+      <p class="rank-foot" id="rank-foot" hidden></p>
     </div>
   </section>
 
@@ -192,6 +197,8 @@
 <script>
 renderShell({ activeNav: "rankings" });
 
+// Mindestanzahl Google-Bewertungen für die Rangliste
+const GOOGLE_MIN_COUNT = 25;
 let breweries = [];
 let prices = [];
 const breweryById = new Map();
@@ -410,6 +417,23 @@ function render() {
       brewery: x.brewery, price: null, date: null, size: null, count: x.n,
     }));
     title = t("rank.titleMost");
+  } else if (currentTab === "google") {
+    // Nur Orte mit genug Bewertungen, sonst führen Ein-Stern-Ausreißer die Liste an
+    list = breweries
+      .filter((br) => !br.isHistorical && br.googleRating?.rating != null
+        && (br.googleRating.userRatingCount || 0) >= GOOGLE_MIN_COUNT)
+      .sort((a, b) => b.googleRating.rating - a.googleRating.rating
+        || b.googleRating.userRatingCount - a.googleRating.userRatingCount)
+      .map((br) => ({ brewery: br, rating: br.googleRating }));
+    title = t("rank.titleGoogle");
+  } else if (currentTab === "wanted") {
+    // Aktive Orte ohne jede Preismeldung, nach Stadt und Name
+    const withPrice = new Set(prices.map((p) => p.breweryId));
+    list = breweries
+      .filter((br) => !br.isHistorical && !withPrice.has(br.id))
+      .sort((a, b) => (a.city || "").localeCompare(b.city || "") || a.name.localeCompare(b.name))
+      .map((br) => ({ brewery: br }));
+    title = t("rank.titleWanted");
   } else if (currentTab === "newest") {
     // Nach Eintragung (created_at) sortieren und dieses Datum zeigen; Mock-Daten
     // haben kein createdAt → Preisdatum als Ersatz.
@@ -427,9 +451,44 @@ function render() {
 
   document.getElementById("rank-title").textContent = title;
   document.getElementById("rank-title").removeAttribute("data-i18n");
-  document.getElementById("rank-meta").innerHTML = Math.min(list.length, 10) + " <span>" + t("rank.entries") + "</span>";
+  // „Preis gesucht“ zeigt alle offenen Orte, die anderen Listen die ersten zehn
+  const limit = currentTab === "wanted" ? list.length : 10;
+  document.getElementById("rank-meta").innerHTML = Math.min(list.length, limit) + " <span>" + t("rank.entries") + "</span>";
+  const col = document.getElementById("rank-col");
+  col.removeAttribute("data-i18n");
+  col.textContent = t(currentTab === "google" ? "rank.colRating" : currentTab === "wanted" ? "rank.colWanted" : "rank.colPrice");
+  const loc = window.__atlasLang === "en" ? "en-GB" : "de-DE";
 
-  body.innerHTML = list.slice(0, 10).map((it) => {
+  body.innerHTML = list.slice(0, limit).map((it) => {
+    if (it.rating) {
+      const r = Number(it.rating.rating).toLocaleString(loc, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      const n = Number(it.rating.userRatingCount).toLocaleString(loc);
+      const sub = [t("type." + it.brewery.type), it.brewery.city].filter(Boolean).join(" · ");
+      return `
+      <div class="rank-row">
+        <span class="nm">
+          <a href="/ort/${encodeURIComponent(it.brewery.id)}">${it.brewery.name}</a>
+          <div class="sub">${sub}</div>
+        </span>
+        <span class="pr-cell">
+          <span class="pr">${r} ★</span>
+          <span class="dt">${n} ${t("brewery.googleRatingCount")}</span>
+        </span>
+      </div>`;
+    }
+    if (currentTab === "wanted") {
+      const sub = [t("type." + it.brewery.type), it.brewery.city].filter(Boolean).join(" · ");
+      return `
+      <div class="rank-row">
+        <span class="nm">
+          <a href="/ort/${encodeURIComponent(it.brewery.id)}">${it.brewery.name}</a>
+          <div class="sub">${sub}</div>
+        </span>
+        <span class="pr-cell">
+          <a class="wanted-link" href="/beitragen?typ=preis&brauerei=${encodeURIComponent(it.brewery.id)}">${t("brewery.addPrice")} →</a>
+        </span>
+      </div>`;
+    }
     const priceDisplay = it.price != null
       ? "€ " + window.formatPrice(it.price)
       : (it.count ? "×" + it.count : "—");
@@ -457,6 +516,11 @@ function render() {
       </div>
     `;
   }).join("") || `<p style="color:var(--ink-muted);padding:20px">${t("rank.noEntries")}</p>`;
+  const note = document.getElementById("rank-foot");
+  note.hidden = !(currentTab === "google" || currentTab === "wanted");
+  note.textContent = currentTab === "google"
+    ? t("rank.googleNote").replace("{n}", GOOGLE_MIN_COUNT)
+    : t("rank.wantedNote");
 }
 
 document.querySelectorAll(".tab-bar button").forEach((b) => {

@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.12.1";
+export const APP_VERSION = "0.13.0";
 
 import { mapsLink } from "./googlePlaces.js";
 
@@ -490,7 +490,7 @@ export async function sendAdminDigest(env) {
     ).bind(DIGEST_KEY).first();
     from = win.since; until = win.until;
     ({ results: rows } = await env.DB.prepare(
-      "SELECT id, type, payload, submitter_email, submitter_ip, status, created_at FROM contributions WHERE created_at > ? AND created_at <= ? ORDER BY created_at DESC"
+      "SELECT id, type, payload, submitter_email, submitter_name, submitter_ip, status, created_at FROM contributions WHERE created_at > ? AND created_at <= ? ORDER BY created_at DESC"
     ).bind(from, until).all());
   } catch (e) {
     console.error("[digest] DB-Fehler:", e);
@@ -520,7 +520,7 @@ export async function sendAdminDigest(env) {
     const label = typeLabels[r.type] || r.type;
     const ts = fmtBerlin(r.created_at);
     const summary = data.name || data.breweryId || data.eventName || "?";
-    const email = r.submitter_email ? _esc(r.submitter_email) : "anonym";
+    const email = _esc([r.submitter_name, r.submitter_email].filter(Boolean).join(" · ") || "anonym");
     const status = r.status !== "pending" ? ` <span style="color:#888;font-size:12px">(${_esc(statusLabels[r.status] || r.status)})</span>` : "";
     return `<tr style="border-bottom:1px solid #efe8e0">
       <td style="padding:9px 14px 9px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b57a3a;white-space:nowrap;font-family:'Courier New',monospace;vertical-align:top">${_esc(label)}</td>
@@ -536,7 +536,7 @@ export async function sendAdminDigest(env) {
     const label = typeLabels[r.type] || r.type;
     const summary = data.name || data.breweryId || data.eventName || "?";
     const status = r.status !== "pending" ? `, ${statusLabels[r.status] || r.status}` : "";
-    return `  [${label}] ${summary} (${r.submitter_email || "anonym"}${status})`;
+    return `  [${label}] ${summary} (${[r.submitter_name, r.submitter_email].filter(Boolean).join(" · ") || "anonym"}${status})`;
   }).join("\n");
 
   const n = rows.length;
@@ -605,7 +605,7 @@ export async function sendAdminDigest(env) {
 
 // ---- Sofort-Benachrichtigung an den Admin bei jeder Einreichung ----
 // Benötigt env.RESEND_API_KEY + env.ADMIN_EMAIL. Fire & forget, wirft nie.
-export async function sendAdminNotification(env, { type, id, data = {}, email }) {
+export async function sendAdminNotification(env, { type, id, data = {}, email, submitterName }) {
   if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
   const sc = siteConfig(env);
   const siteUrl = sc.siteUrl || "https://altbieratlas.de";
@@ -616,7 +616,7 @@ export async function sendAdminNotification(env, { type, id, data = {}, email })
   };
   const label = typeLabels[type] || type;
   const summary = data.name || data._breweryName || data.breweryId || data.eventName || "";
-  const rows = [..._emailDataRows(type, data, true), ["E-Mail", email || "anonym"], ["ID", id]];
+  const rows = [..._emailDataRows(type, data, true), ["Von", submitterName || "–"], ["E-Mail", email || "anonym"], ["ID", id]];
 
   const subject = `Altbieratlas: neue ${label}${summary ? ` (${summary})` : ""}`;
   const text = [
