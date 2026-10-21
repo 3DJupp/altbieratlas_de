@@ -107,7 +107,8 @@ Das normale Deploy spielt den Seed **nicht** ein (nur `deploy.sh --seed` bei Neu
 - **Die Live-D1 ist die Quelle der Wahrheit.** Seed und `data.js` sind nur Startbestand bzw. Mock und müssen nicht mit ihr synchron sein. Bei Abweichungen gilt die D1; vor Datenänderungen dort nachsehen, was existiert.
 - **Events** (insbesondere die neusten/aktuellen) → immer **beides**: in `0002_seed.sql` **und** `public/data.js` (Mock-Modus) **sowie** per `INSERT OR IGNORE` in die Live-D1 (`wrangler d1 execute <db> --remote --command "…"`, Cloudflare-MCP `d1_database_query` oder Admin-Panel). Am Ende stehen dort also i. d. R. mehrere Events.
 - **Status:** ungeprüfte Funde (z. B. aus der Daten-Recherche) → `status = 'pending'` (im Seed wie in der DB); der Admin prüft und schaltet frei. Nur verifizierte Einträge `approved`. Nie ungeprüft mit `approved` in die Produktion schreiben.
-- Geplante Daten-Recherche-Routinen: Funde im PR dokumentieren und zusätzlich mit `pending` in die Live-D1 schreiben; vorher prüfen, ob IDs/Brauereien existieren.
+- Geplante Daten-Recherche-Routinen: Funde mit `pending` in die Live-D1 schreiben; vorher prüfen, ob IDs/Brauereien existieren.
+- **Keine PRs und keine Commits für reine Datenpflege.** Neue Orte, Preise oder Status einzelner Lokale gehen nur in die Live-D1; Ergebnis und verworfene Kandidaten stehen in der Antwort an den Nutzer, nicht in `BACKLOG.md`. PRs nur für Code-Änderungen (inkl. Seed/Mock, wenn Brauereien oder Events betroffen sind).
 
 ### Zweisprachigkeit — immer DE und EN
 
