@@ -15,11 +15,16 @@ Stand 2026-10-20.
   auf den Eingang setzen. Hilfe: Der Backfill-Bericht (`place-ids-backfill.json`) bzw. die
   Place-ID-Suche liefern Googles Koordinaten und die Entfernung zur DB, große Abstände
   zeigen weitere Kandidaten.
-- **Top 20 Ausgehlokale und Restaurants in Düsseldorf ergänzen**, in denen es Altbier gibt
-  (Kneipen, Gastronomie, Restaurants). Nur in die Live-D1, nicht in Seed/Mock, mit
-  `status = 'pending'`, DE+EN-Beschreibung; vorher auf Dubletten prüfen.
-- **Top 5 je Nachbarstadt ergänzen** (Neuss, Ratingen, Hilden, Krefeld, Mönchengladbach,
-  Meerbusch, Erkrath …), gleiche Regeln wie oben.
+- **Weitere Altbier-Lokale recherchieren.** Erste Runde (2026-10-21, 9 Orte als `pending`) ist
+  in der Live-D1. Noch dünn: Meerbusch, Ratingen, Hilden, Krefeld (Kneipen), Flughafen,
+  Hotelbars, Ausland (Niederlande, Belgien, USA). Ohne Altbier-Beleg nichts eintragen
+  (geprüft und verworfen: Rheinturm/QOMO, Bierkönig Mallorca, Tim's Brauereiausschank, Eigelstein).
+- **Offene Place IDs.** `altus` (Google findet nur den Firmensitz Sonnbornstraße, 5 km entfernt;
+  klären, wo der Ausschank ist), `diebels` (Google liefert nur die Straßenadresse, keinen Ort),
+  `kasematten-frankenheim` / `kasematten-schluessel` (Google kennt nur einen gemeinsamen Ort
+  „Kasematten Düsseldorf“; bewusst ohne Place ID, sonst zeigen beide dieselbe Bewertung).
+- **Sorten von `pending`-Produzenten sind öffentlich.** `styles` hat keinen Status; eine neue
+  Sorte (zuletzt Hensen Alt) erscheint auf /sorten, bevor ihr Ort freigegeben ist.
 
 ## Admin-Panel
 

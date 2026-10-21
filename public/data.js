@@ -682,6 +682,30 @@ window.ATLAS_DATA = {
       logoUrl: null,
     },
     {
+      id: "hensen",
+      name: "Brauerei Hensen",
+      short: "Hensen",
+      type: "brewery",
+      city: "Mönchengladbach",
+      country: "DE",
+      address: "Untere Straße 133, 41068 Mönchengladbach",
+      mapsUrl: null,
+      coords: [51.197481, 6.4099019],
+      founded: 1793,
+      website: null,
+      description: {
+        de: "1793 gegründete Brauerei in Mönchengladbach-Waldhausen, nach der Schließung in den 1970ern 2017 wiederbelebt. Braut ein niederrheinisches Altbier, dazu Pils, IPA und weitere Sorten.",
+        en: "Brewery in Mönchengladbach-Waldhausen founded in 1793, revived in 2017 after closing in the 1970s. Brews a Lower Rhine Altbier as well as Pils, IPA and other beers.",
+      },
+      styles: ["hensen-alt"],
+      verified: false,
+      isHistorical: false,
+      status: "pending",
+      pending: true,
+      logoKey: null,
+      logoUrl: null,
+    },
+    {
       id: "rhenania",
       name: "Brauerei Rhenania",
       short: "Rhenania",
@@ -1132,6 +1156,17 @@ window.ATLAS_DATA = {
       tasting: {
         de: "Mild, leicht herb, gut trinkbar. Der typische Niederrhein-Alt — weicher und runder als die Düsseldorfer Hausbrauerei-Versionen.",
         en: "Mild, slightly bitter, very drinkable. The typical Lower-Rhine Alt — softer and rounder than the Düsseldorf brewpub versions.",
+      },
+    },
+    {
+      id: "hensen-alt",
+      name: "Hensen Alt",
+      abv: null,
+      ibu: null,
+      color: "#8b4513",
+      tasting: {
+        de: "Niederrheinisches Altbier der wiederbelebten Brauerei Hensen aus Mönchengladbach-Waldhausen.",
+        en: "Lower Rhine Altbier from the revived Hensen brewery in Mönchengladbach-Waldhausen.",
       },
     },
     {
