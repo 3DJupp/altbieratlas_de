@@ -181,9 +181,29 @@ export async function listBreweries(req, env) {
   for (const s of stylesRes.results) {
     (stylesByBrewery[s.brewery_id] ||= []).push(s.style_id);
   }
+  const ratings = await googleRatingsByPlace(env);
   return json({
-    breweries: breweriesRes.results.map((r) => brewRow(r, stylesByBrewery[r.id] || [])),
+    breweries: breweriesRes.results.map((r) => ({
+      ...brewRow(r, stylesByBrewery[r.id] || []),
+      googleRating: r.is_historical ? null : ratings.get(r.google_place_id) || null,
+    })),
   });
+}
+
+// Alle Google-Bewertungen aus dem Cache (höchstens 30 Tage alt) als Map
+// place_id → { rating, userRatingCount, fetchedAt }. Fehlt die Tabelle → leer.
+async function googleRatingsByPlace(env) {
+  const map = new Map();
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT place_id, rating, user_rating_count, fetched_at FROM google_places_cache
+       WHERE rating IS NOT NULL AND fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
+    ).all();
+    for (const c of results) {
+      map.set(c.place_id, { rating: c.rating, userRatingCount: c.user_rating_count ?? null, fetchedAt: c.fetched_at });
+    }
+  } catch {}
+  return map;
 }
 
 // GET /api/breweries/:id
@@ -2121,8 +2141,8 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-18",
-  "/ranglisten": "2026-10-19",
+  "/":           "2026-10-21",
+  "/ranglisten": "2026-10-21",
   "/wissen":     "2026-10-17",
   "/sorten":     "2026-10-17",
   "/rivalen":    "2026-10-17",

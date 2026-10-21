@@ -386,6 +386,10 @@ const markerMap = new Map();
 let geoMarker = null;             // Geocode-Treffer (temporärer Pin)
 
 // ============ Marker-Rendering ============
+function popLocale() { return window.__atlasLang === "en" ? "en-GB" : "de-DE"; }
+function popRating(r) {
+  return Number(r).toLocaleString(popLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
 function renderMarkers(filter = "all", search = "") {
   markerMap.forEach((m) => map.removeLayer(m));
   markerMap.clear();
@@ -415,6 +419,11 @@ function renderMarkers(filter = "all", search = "") {
         // Literpreis nur als Zusatzinfo, nie zum Sortieren: größere Gläser sind pro Liter günstiger
         + (normSize(latest.size) > 0 ? `<div class="pop-liter">≈ € ${window.formatPrice(latest.price / normSize(latest.size))} / l</div>` : "")
       : `<div style="font-size:12px;opacity:.6;margin-top:6px">${window.t("brewery.noPrice")}</div>`;
+    // Google-Bewertung (Cache ≤ 30 Tage, kommt mit /api/breweries); „Google" bleibt sichtbar
+    const g = !b.isHistorical && b.googleRating;
+    const googleText = g && g.rating != null
+      ? `<div class="pop-google">${popRating(g.rating)} ★${g.userRatingCount ? ` <span style="opacity:.6">(${Number(g.userRatingCount).toLocaleString(popLocale())})</span>` : ""} <span style="opacity:.6">${window.t("brewery.googleRatingOn")}</span></div>`
+      : "";
     const historicalBadge = b.isHistorical
       ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>` : "";
     function popInitials(str) {
@@ -436,6 +445,7 @@ function renderMarkers(filter = "all", search = "") {
         </div>
       </div>
       ${priceText}
+      ${googleText}
       <div style="margin-top:10px"><a href="/ort/${encodeURIComponent(b.id)}">Details →</a></div>
     `);
     marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
