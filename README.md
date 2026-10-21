@@ -470,6 +470,11 @@ Fünf Einreichungstypen mit Moderation:
 - **Korrektur** — Freitext-Hinweis
 - **Event** — Name, Datum, optionale Brauerei-Zuordnung
 
+Optional Name/Spitzname (`contributions.submitter_name`) und E-Mail. Ohne E-Mail fragt
+das Formular einmal nach, weil dann weder Freischalt-Benachrichtigung noch Rückfragen
+möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filtert
+`cf-turnstile-response` & Co. zusätzlich heraus).
+
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken + neueste offene Beiträge
 - **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick)
