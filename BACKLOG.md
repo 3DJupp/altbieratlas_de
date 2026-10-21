@@ -19,11 +19,6 @@ Stand 2026-10-20.
   in der Live-D1. Noch dünn: Meerbusch, Ratingen, Hilden, Krefeld (Kneipen), Flughafen,
   Hotelbars, Ausland (Niederlande, Belgien, USA). Ohne Altbier-Beleg nichts eintragen
   (geprüft und verworfen: Rheinturm/QOMO, Bierkönig Mallorca, Tim's Brauereiausschank, Eigelstein).
-  Speisekarten-Runde 2026-10-21: Velvet, Alchemist, Sabi & Gari, The Cloud One KöBogen und
-  Hahnenbalken (Werne) eingetragen; Yaki The Emon als `pending` (Getränkekarte von 2023).
-  Verworfen: Su Nuraghe (nur „Altbier“ ohne Marke, Karte von 2022), Novotel Düsseldorf Airport
-  (Karte von 2021, unter der Adresse steht heute ein „Airporthotel Düsseldorf“), Aria Café
-  (Karten-PDF auf speisekarte.menu nicht abrufbar).
 - **Offene Place IDs.** `altus` (Google findet nur den Firmensitz Sonnbornstraße, 5 km entfernt;
   klären, wo der Ausschank ist), `diebels` (Google liefert nur die Straßenadresse, keinen Ort),
   `kasematten-frankenheim` / `kasematten-schluessel` (Google kennt nur einen gemeinsamen Ort
