@@ -975,6 +975,32 @@
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHighlightedHint">Goldener Pin auf der Startseitenkarte.</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.fieldHours">Öffnungszeiten</label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px 14px">
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.mo">Mo</span><input data-hours-day="mo" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.tu">Di</span><input data-hours-day="tu" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.we">Mi</span><input data-hours-day="we" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.th">Do</span><input data-hours-day="th" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.fr">Fr</span><input data-hours-day="fr" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.sa">Sa</span><input data-hours-day="sa" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.su">So</span><input data-hours-day="su" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+          </div>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHoursHint">Z. B. „11-23“ oder „11:30–14, 17–1“ (über Mitternacht erlaubt). Leer = unbekannt, „zu“ = Ruhetag. Ohne eigene Angaben zeigt die Ortsseite Googles Zeiten.</span>
+          <div id="edit-hours-error" style="font-size:12px;color:#9b1f1f" hidden></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.fieldHoursNoteDe">Hinweis Öffnungszeiten (DE)</label>
+          <input id="edit-hours-note-de" type="text" maxlength="500" data-i18n-placeholder="admin.fieldHoursNotePh" placeholder="z. B. Küche bis 22 Uhr" />
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.fieldHoursNoteEn">Hinweis Öffnungszeiten (EN)</label>
+          <input id="edit-hours-note-en" type="text" maxlength="500" />
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.fieldHoursChecked">Zeiten geprüft am</label>
+          <input id="edit-hours-checked" type="date" />
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldStyles">Stile</label>
           <select id="edit-styles-select" multiple size="6" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px">
           </select>
@@ -1976,6 +2002,10 @@ async function loadBreweriesTable() {
           data-untappd-id="${b.untappdId ?? ""}"
           data-historical="${b.isHistorical ? "1" : ""}"
           data-highlighted="${b.highlighted ? "1" : ""}"
+          data-hours="${b.openingHours ? JSON.stringify(b.openingHours).replace(/"/g, "&quot;") : ""}"
+          data-hours-note-de="${(b.openingHoursNote?.de || "").replace(/"/g, "&quot;")}"
+          data-hours-note-en="${(b.openingHoursNote?.en || "").replace(/"/g, "&quot;")}"
+          data-hours-checked="${b.openingHoursChecked || ""}"
           data-lat="${b.coords?.[0] ?? ""}"
           data-lng="${b.coords?.[1] ?? ""}"
           data-founded="${b.founded ?? ""}"
@@ -2079,6 +2109,17 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-untappd-result").textContent = "";
   document.getElementById("edit-historical").checked  = rowEl.dataset.historical === "1";
   document.getElementById("edit-highlighted").checked = rowEl.dataset.highlighted === "1";
+  // Öffnungszeiten: je Tag als Text, „zu“ für Ruhetag, leer für unbekannt
+  let hours = null;
+  try { hours = rowEl.dataset.hours ? JSON.parse(rowEl.dataset.hours) : null; } catch {}
+  document.querySelectorAll("#edit-dialog [data-hours-day]").forEach((inp) => {
+    const r = hours?.[inp.dataset.hoursDay];
+    inp.value = r ? (r.length ? window.atlasHours.formatDay(r, "") : "zu") : "";
+  });
+  document.getElementById("edit-hours-note-de").value = rowEl.dataset.hoursNoteDe || "";
+  document.getElementById("edit-hours-note-en").value = rowEl.dataset.hoursNoteEn || "";
+  document.getElementById("edit-hours-checked").value = rowEl.dataset.hoursChecked || "";
+  document.getElementById("edit-hours-error").hidden = true;
   document.getElementById("edit-place-search").disabled = rowEl.dataset.historical === "1";
   document.getElementById("edit-lat").value           = rowEl.dataset.lat || "";
   document.getElementById("edit-lng").value           = rowEl.dataset.lng || "";
@@ -2369,8 +2410,37 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const successorId    = document.getElementById("edit-successor").value || null;
   const historical     = document.getElementById("edit-historical").checked;
   const highlighted    = document.getElementById("edit-highlighted").checked;
+  // Öffnungszeiten einlesen; unlesbare Angaben blockieren das Speichern
+  const hoursErr = document.getElementById("edit-hours-error");
+  let openingHours = {};
+  try {
+    document.querySelectorAll("#edit-dialog [data-hours-day]").forEach((inp) => {
+      let r;
+      try { r = window.atlasHours.parseDay(inp.value); }
+      catch { throw new Error(`${t("day." + inp.dataset.hoursDay)}: „${inp.value}“`); }
+      if (r !== undefined) openingHours[inp.dataset.hoursDay] = r;
+    });
+  } catch (err) {
+    hoursErr.textContent = t("admin.hoursInvalid") + " " + err.message;
+    hoursErr.hidden = false;
+    return;
+  }
+  hoursErr.hidden = true;
+  if (!Object.keys(openingHours).length) openingHours = null;
+  const hoursJson = openingHours ? JSON.stringify(openingHours) : "";
+  const hoursNoteDe = document.getElementById("edit-hours-note-de").value.trim();
+  const hoursNoteEn = document.getElementById("edit-hours-note-en").value.trim();
+  let hoursChecked = document.getElementById("edit-hours-checked").value || null;
+  // Zeiten geändert, Datum nicht angefasst → heute als Prüfdatum
+  if (hoursJson !== (pendingEdit.rowEl.dataset.hours || "") && hoursChecked === (pendingEdit.rowEl.dataset.hoursChecked || null) && openingHours) {
+    hoursChecked = window.atlasHours.berlinNow().date;
+  }
   msg.style.display = "none";
-  if (!confirmBothLangs([[t("admin.langFieldDescription"), description, descriptionEn]])) return;
+  if (!confirmBothLangs([
+    [t("admin.langFieldDescription"), description, descriptionEn],
+    // Hinweis ist optional: nur nachfragen, wenn genau eine Sprache fehlt
+    ...(hoursNoteDe || hoursNoteEn ? [[t("admin.fieldHours"), hoursNoteDe, hoursNoteEn]] : []),
+  ])) return;
   try {
     const patch = {
       name, short, city, country, type, status, address, maps_url: mapsUrl,
@@ -2383,6 +2453,10 @@ document.getElementById("edit-save").addEventListener("click", async () => {
       successor_id: successorId,
       is_historical: historical,
       highlighted,
+      opening_hours: openingHours,
+      opening_hours_note_de: hoursNoteDe || null,
+      opening_hours_note_en: hoursNoteEn || null,
+      opening_hours_checked: hoursChecked,
     };
     // Remove undefined values so they aren't sent as null
     Object.keys(patch).forEach((k) => patch[k] === undefined && delete patch[k]);
@@ -2411,6 +2485,10 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.successor      = successorId || "";
     row.dataset.historical     = historical ? "1" : "";
     row.dataset.highlighted    = highlighted ? "1" : "";
+    row.dataset.hours          = hoursJson;
+    row.dataset.hoursNoteDe    = hoursNoteDe;
+    row.dataset.hoursNoteEn    = hoursNoteEn;
+    row.dataset.hoursChecked   = hoursChecked || "";
     // Der Worker entfernt die Place ID historischer Orte
     if (historical) row.dataset.placeId = "";
     row.querySelector("td:nth-child(1) a").textContent = name;

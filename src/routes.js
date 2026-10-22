@@ -5,6 +5,7 @@ import { generateOgImage } from "./og.js";
 import {
   searchPlace, mapsLink, refreshRatings, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
 } from "./googlePlaces.js";
+import { normalizeHours, schemaOrgHours, hoursLinesDe } from "./hours.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
@@ -233,10 +234,13 @@ export async function getBrewery(req, env, { id }) {
     "SELECT date, size, price, source, notes, style_id FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC, price ASC"
   ).bind(id).all();
   const googleRating = await googleRatingFor(env, row);
+  const base = brewRow(row, styles.results.map((s) => s.style_id));
   return json({
     brewery: {
-      ...brewRow(row, styles.results.map((s) => s.style_id)),
+      ...base,
       googleRating,
+      // Googles Zeiten nur, wenn keine eigenen gepflegt sind (Anzeige „laut Google“)
+      googleOpeningHours: base.openingHours ? null : await googleHoursFor(env, row),
       successor: successor || null,
       predecessors: predecessors.results,
       // Überschrift über den Sorten aus dem Ortstyp ("Was hier ausgeschenkt wird" …)
@@ -249,6 +253,18 @@ export async function getBrewery(req, env, { id }) {
       styleId: p.style_id || null,
     })),
   });
+}
+
+// Googles Öffnungszeiten aus dem höchstens 30 Tage alten Cache, sonst null
+async function googleHoursFor(env, row) {
+  if (!row?.google_place_id || row.is_historical) return null;
+  try {
+    const c = await env.DB.prepare(
+      `SELECT opening_hours, fetched_at FROM google_places_cache
+       WHERE place_id = ? AND fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
+    ).bind(row.google_place_id).first();
+    return c?.opening_hours ? { days: JSON.parse(c.opening_hours), fetchedAt: c.fetched_at } : null;
+  } catch { return null; }
 }
 
 // Google-Bewertung aus dem Cache, nur wenn höchstens 30 Tage alt (Google-
@@ -1252,6 +1268,22 @@ export async function adminUpdateBrewery(req, env, { id }) {
     body.untappd_id = uid;
   }
   if ("highlighted" in body) body.highlighted = body.highlighted ? 1 : 0;
+  if ("opening_hours" in body) {
+    try {
+      const h = normalizeHours(body.opening_hours);
+      body.opening_hours = h ? JSON.stringify(h) : null;
+    } catch (e) {
+      return error(400, "invalid-opening-hours", { detail: e.message });
+    }
+  }
+  if ("opening_hours_checked" in body) {
+    const d = body.opening_hours_checked || null;
+    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return error(400, "invalid-date");
+    body.opening_hours_checked = d;
+  }
+  for (const k of ["opening_hours_note_de", "opening_hours_note_en"]) {
+    if (k in body) body[k] = body[k] ? String(body[k]).trim().slice(0, 500) || null : null;
+  }
   if ("is_historical" in body) {
     body.is_historical = body.is_historical ? 1 : 0;
     // Historische Orte bekommen keine Place ID (keine Bewertung für geschlossene Betriebe)
@@ -1266,6 +1298,8 @@ export async function adminUpdateBrewery(req, env, { id }) {
     website: "website", description_de: "description_de", description_en: "description_en",
     verified: "verified", status: "status", logo_key: "logo_key", is_historical: "is_historical",
     highlighted: "highlighted",
+    opening_hours: "opening_hours", opening_hours_note_de: "opening_hours_note_de",
+    opening_hours_note_en: "opening_hours_note_en", opening_hours_checked: "opening_hours_checked",
     successor_id: "successor_id", google_place_id: "google_place_id", untappd_id: "untappd_id",
   };
   for (const [k, col] of Object.entries(allow)) {
@@ -2618,8 +2652,10 @@ export async function serveOrt(req, env, params = {}) {
   try {
     const [bRes, pRes, sRes] = await Promise.all([
       env.DB.prepare(
-        `SELECT b.*, COALESCE(v.name_de, b.type) AS type_label
+        `SELECT b.*, COALESCE(v.name_de, b.type) AS type_label, g.opening_hours AS g_opening_hours
          FROM breweries b LEFT JOIN venue_types v ON v.id = b.type
+         LEFT JOIN google_places_cache g ON g.place_id = b.google_place_id AND b.is_historical = 0
+           AND g.fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')
          WHERE b.id = ? AND b.status = 'approved'`
       ).bind(id).first(),
       env.DB.prepare(
@@ -2692,11 +2728,18 @@ export async function serveOrt(req, env, params = {}) {
   const metaDesc = head + (desc
     || `${row.name} in ${row.city}: Adresse, Altbier-Sorten und aktuelle Preise im Altbieratlas.`);
 
+  // Öffnungszeiten: eigene (auch ins JSON-LD), sonst Googles aus dem Cache (nur Anzeige)
+  const parseHours = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
+  const ownHours = row.is_historical ? null : parseHours(row.opening_hours);
+  const shownHours = ownHours || (row.is_historical ? null : parseHours(row.g_opening_hours));
+  const hoursSpec = schemaOrgHours(ownHours);
+
   const ld = JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": row.is_historical ? "Place" : (SCHEMA_TYPE[row.type] || "BarOrPub"),
+        ...(hoursSpec.length ? { "openingHoursSpecification": hoursSpec } : {}),
         "@id": pageUrl + "#business",
         "name": row.name,
         "url": pageUrl,
@@ -2792,6 +2835,15 @@ export async function serveOrt(req, env, params = {}) {
         <h2>Über ${escHtml(row.name)}</h2>
         <p>${escHtml(row.description_de || row.description_en || `${row.name} ist als ${row.type_label || row.type} in ${row.city} im Altbieratlas verzeichnet.`)}</p>
         ${row.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${escHtml(row.address)}</p>` : ""}
+        ${shownHours ? `
+        <div class="ort-hours">
+          <h3>Öffnungszeiten</h3>
+          <table>${hoursLinesDe(shownHours).map(([d, v]) => `<tr><th>${d}</th><td>${escHtml(v)}</td></tr>`).join("")}</table>
+          ${ownHours && row.opening_hours_note_de ? `<p>${escHtml(row.opening_hours_note_de)}</p>` : ""}
+          <p class="hours-src">${ownHours
+            ? (row.opening_hours_checked ? `Stand ${escHtml(fmtDateDe(row.opening_hours_checked))}` : "")
+            : "laut Google"}</p>
+        </div>` : ""}
       </div>
       <div><div class="detail-map" id="detail-map"></div></div>
     </section>

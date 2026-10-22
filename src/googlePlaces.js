@@ -9,8 +9,10 @@
 // Skript: process.env.GOOGLE_PLACES_KEY) und wird nie geloggt.
 //
 // Google-Bedingungen: dauerhaft speichern darf man nur die Place ID.
-// Bewertung, Anzahl und Googles Koordinaten landen höchstens 30 Tage in
-// google_places_cache; die Koordinaten nie in breweries.lat/lng übernehmen.
+// Bewertung, Anzahl, Googles Koordinaten und Öffnungszeiten landen höchstens
+// 30 Tage in google_places_cache; nie in breweries übernehmen.
+
+import { fromGooglePeriods } from "./hours.js";
 
 const API = "https://places.googleapis.com/v1";
 
@@ -100,19 +102,20 @@ export async function searchPlace(apiKey, { name, address, lat, lng }, fetchImpl
   return { status: best ? best.status : STATUS.NONE, best, candidates };
 }
 
-// Bewertung, Anzahl und Koordinaten für eine Place ID. Wirft bei HTTP-Fehlern.
-// location kostet nichts extra: abgerechnet wird die teuerste Stufe der
-// Feldmaske, und die setzt rating.
+// Bewertung, Anzahl, Koordinaten und Öffnungszeiten für eine Place ID. Wirft bei
+// HTTP-Fehlern. location und regularOpeningHours kosten nichts extra: abgerechnet
+// wird die teuerste Stufe der Feldmaske, und die setzt rating.
 export async function fetchRating(apiKey, placeId, fetchImpl = fetch) {
   if (!apiKey) throw new Error("GOOGLE_PLACES_KEY fehlt");
   const res = await fetchImpl(`${API}/places/${encodeURIComponent(placeId)}`, {
-    headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "rating,userRatingCount,location" },
+    headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "rating,userRatingCount,location,regularOpeningHours" },
   });
   if (!res.ok) throw new Error(`Places details HTTP ${res.status}`);
   const d = await res.json();
   return {
     rating: d.rating ?? null, userRatingCount: d.userRatingCount ?? null,
     lat: d.location?.latitude ?? null, lng: d.location?.longitude ?? null,
+    openingHours: fromGooglePeriods(d.regularOpeningHours?.periods),
   };
 }
 
@@ -167,12 +170,13 @@ export async function refreshRatings(env, { limit = MAX_PER_RUN, minAgeHours = 1
     try {
       const r = await fetchRating(apiKey, place_id);
       writes.push(env.DB.prepare(
-        `INSERT INTO google_places_cache (place_id, rating, user_rating_count, lat, lng, fetched_at)
-         VALUES (?, ?, ?, ?, ?, datetime('now'))
+        `INSERT INTO google_places_cache (place_id, rating, user_rating_count, lat, lng, opening_hours, fetched_at)
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(place_id) DO UPDATE SET rating = excluded.rating,
            user_rating_count = excluded.user_rating_count, lat = excluded.lat, lng = excluded.lng,
-           fetched_at = excluded.fetched_at`
-      ).bind(place_id, r.rating, r.userRatingCount, r.lat, r.lng));
+           opening_hours = excluded.opening_hours, fetched_at = excluded.fetched_at`
+      ).bind(place_id, r.rating, r.userRatingCount, r.lat, r.lng,
+             r.openingHours ? JSON.stringify(r.openingHours) : null));
     } catch (e) {
       summary.failed++;
       if (summary.errors.length < 10) summary.errors.push({ placeId: place_id, error: String(e?.message || e) });

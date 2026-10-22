@@ -356,6 +356,86 @@ window.atlasInComparisons = function (b) {
   return !!b && b.type !== "brewery";
 };
 
+// ---- Öffnungszeiten und Wochentage -------------------------------
+// Format wie src/hours.js: { mo: [["11:00","23:00"]], tu: [], … }; fehlender Tag =
+// unbekannt, leere Liste = Ruhetag, Ende vor Beginn = über Mitternacht.
+// Alle Zeitvergleiche in Europe/Berlin, unabhängig von der Zeitzone des Geräts.
+window.atlasHours = (() => {
+  const DAYS = ["mo", "tu", "we", "th", "fr", "sa", "su"];
+  const toMin = (hm) => { const [h, m] = String(hm).split(":").map(Number); return h * 60 + (m || 0); };
+  const pad = (n) => String(n).padStart(2, "0");
+
+  // Wochentag, Minuten seit Mitternacht und Datum in Berlin
+  function berlinNow(date = new Date()) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Berlin", weekday: "short", hour: "2-digit", minute: "2-digit",
+      year: "numeric", month: "2-digit", day: "2-digit", hourCycle: "h23",
+    }).formatToParts(date).map((p) => [p.type, p.value]));
+    const day = DAYS[["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(parts.weekday)];
+    return { day, minutes: Number(parts.hour) * 60 + Number(parts.minute), date: `${parts.year}-${parts.month}-${parts.day}` };
+  }
+
+  // Liegt `minutes` am Tag `day` in einem Fenster? Berücksichtigt Fenster des
+  // Vortags, die über Mitternacht reichen. null = für den Tag nichts bekannt.
+  function inWindows(hours, day, minutes) {
+    const i = DAYS.indexOf(day);
+    const prev = DAYS[(i + 6) % 7];
+    const today = hours?.[day];
+    const yesterday = hours?.[prev] || [];
+    const spill = yesterday.some(([a, b]) => toMin(b) <= toMin(a) && minutes < toMin(b));
+    if (spill) return true;
+    if (!today) return null;
+    return today.some(([a, b]) => {
+      const o = toMin(a), c = toMin(b);
+      return c > o ? minutes >= o && minutes < c : minutes >= o;
+    });
+  }
+
+  // { open: true, until } | { open: false, opensAt } | null (unbekannt)
+  function status(hours, now = berlinNow()) {
+    if (!hours) return null;
+    const open = inWindows(hours, now.day, now.minutes);
+    if (open === null) return null;
+    const today = hours[now.day] || [];
+    if (open) {
+      const w = today.find(([a, b]) => toMin(a) <= now.minutes && (toMin(b) <= toMin(a) || now.minutes < toMin(b)));
+      const prev = hours[DAYS[(DAYS.indexOf(now.day) + 6) % 7]] || [];
+      const until = w ? w[1] : (prev.find(([a, b]) => toMin(b) <= toMin(a)) || [])[1];
+      return { open: true, until: until || null };
+    }
+    const next = today.find(([a]) => toMin(a) > now.minutes);
+    return { open: false, opensAt: next ? next[0] : null };
+  }
+
+  // Admin-Eingabe „11-23, 17:30–1“ → [["11:00","23:00"],["17:30","01:00"]];
+  // leer → undefined (unbekannt), „zu“/„Ruhetag“/„closed“/„-“ → [] (Ruhetag).
+  // Wirft bei unlesbaren Angaben.
+  function parseDay(text) {
+    const s = String(text || "").trim().toLowerCase();
+    if (!s) return undefined;
+    if (/^(zu|ruhetag|geschlossen|closed|-|–)$/.test(s)) return [];
+    const time = (t) => {
+      const m = t.trim().match(/^(\d{1,2})(?:[:.](\d{2}))?$/);
+      if (!m) throw new Error(t);
+      const h = Number(m[1]), min = Number(m[2] || 0);
+      if (h > 24 || min > 59 || (h === 24 && min)) throw new Error(t);
+      return `${pad(h)}:${pad(min)}`;
+    };
+    return s.split(/[,;]/).map((r) => {
+      const [a, b] = r.split(/\s*(?:-|–|bis)\s*/);
+      if (b == null) throw new Error(r);
+      return [time(a), time(b)];
+    });
+  }
+
+  function formatDay(ranges, closedLabel) {
+    if (!ranges) return "";
+    return ranges.length ? ranges.map(([a, b]) => `${a}–${b}`).join(", ") : closedLabel;
+  }
+
+  return { DAYS, berlinNow, inWindows, status, parseDay, formatDay, toMin };
+})();
+
 // ---- Kartenkacheln ------------------------------------------------
 // Maps-Link eines Orts. Live liefert die API ihn fertig (mapsLink() in
 // src/googlePlaces.js); im Mock-Modus wird er hier nach denselben Regeln

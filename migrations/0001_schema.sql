@@ -42,6 +42,12 @@ CREATE TABLE IF NOT EXISTS breweries (
   -- Hervorhebung auf der Karte (goldener Pin), z. B. für Sponsoring.
   -- 0 = normal, > 0 = hervorgehoben; als Zahl angelegt, damit spätere Stufen passen
   highlighted    INTEGER NOT NULL DEFAULT 0,
+  -- Öffnungszeiten, selbst gepflegt (Format siehe src/hours.js); NULL = unbekannt.
+  -- Fehlen sie, zeigt die Ortsseite Googles Zeiten aus google_places_cache.
+  opening_hours         TEXT,
+  opening_hours_note_de TEXT,
+  opening_hours_note_en TEXT,
+  opening_hours_checked TEXT,  -- Datum der letzten Prüfung (YYYY-MM-DD)
   -- Wer Marke/Betrieb heute führt (Übernahme einer historischen Brauerei)
   successor_id   TEXT REFERENCES breweries(id) ON DELETE SET NULL,
   status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
@@ -214,6 +220,8 @@ CREATE TABLE IF NOT EXISTS google_places_cache (
   -- („Pins prüfen“ im Admin); wie die Bewertung höchstens 30 Tage gespeichert
   lat               REAL,
   lng               REAL,
+  -- Googles Öffnungszeiten (Format siehe src/hours.js), Fallback für die Ortsseite
+  opening_hours     TEXT,
   fetched_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

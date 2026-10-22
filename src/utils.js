@@ -759,6 +759,11 @@ export async function sendAdminNotification(env, { type, id, data = {}, email, s
 // No legacy type mapping needed — types are now canonical IDs (brewpub, brewery, pub, etc.)
 const LEGACY_TYPE = {};
 
+function parseJsonOrNull(v) {
+  if (!v) return null;
+  try { return JSON.parse(v); } catch { return null; }
+}
+
 export function brewRow(r, styles = []) {
   if (!r) return null;
   return {
@@ -782,6 +787,11 @@ export function brewRow(r, styles = []) {
     verified: !!r.verified,
     isHistorical: !!r.is_historical,
     highlighted: (r.highlighted || 0) > 0,
+    // Selbst gepflegte Öffnungszeiten (Format siehe src/hours.js), null = unbekannt
+    openingHours: parseJsonOrNull(r.opening_hours),
+    openingHoursNote: r.opening_hours_note_de || r.opening_hours_note_en
+      ? { de: r.opening_hours_note_de || null, en: r.opening_hours_note_en || null } : null,
+    openingHoursChecked: r.opening_hours_checked || null,
     successorId: r.successor_id || null,
     status: r.status,
     photoKey: r.photo_key || null,
