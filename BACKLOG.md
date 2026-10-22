@@ -7,9 +7,9 @@ Offene Punkte, grob nach Wichtigkeit sortiert. Erledigtes wird gelöscht, nicht 
 Inhalte (Orte, Preise, Koordinaten) pflegen die Mitwirkenden über Beiträge und Admin-Panel;
 hier stehen nur technische Lücken.
 
-- **Pins prüfen.** Der Backfill-Bericht (`place-ids-backfill.json`) bzw. die Place-ID-Suche
-  liefern Googles Koordinaten und den Abstand zur DB. Eine Liste der Orte mit großem Abstand
-  im Admin-Panel würde schiefe Pins ohne Skript sichtbar machen.
+- **Pins prüfen.** Der Place-ID-Probelauf im Admin-Panel zeigt den Abstand zwischen Googles
+  Koordinaten und der DB, aber nur für Orte ohne Place ID. Für Orte mit Place ID fehlt eine
+  Liste mit großem Abstand, die schiefe Pins ohne Skript sichtbar macht.
 - **Mehrere Orte unter einer Google-Adresse.** Teilen sich zwei Einträge einen Google-Ort
   (z. B. zwei Ausschänke unter einem Dach), zeigen beide dieselbe Bewertung. Heute bleibt
   einer bewusst ohne Place ID; eine Kennzeichnung im Admin fehlt.
@@ -24,7 +24,7 @@ Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
 
 - **„Historisch“ im Ort-Dialog setzen.** `breweries.is_historical` lässt sich nur per D1-Konsole
   ändern; weder `adminUpdateBrewery` (Allow-Liste) noch der Dialog kennen das Feld. Gehört
-  zusammen mit dem Nachfolger-Feld („Heute bei …“) in den Dialog.
+  neben das vorhandene Nachfolger-Feld („Heute bei …“).
 - **Nachfolger und Historisch beim Anlegen.** Das Formular „Neuer Ort“ hat weder `successor_id`
   noch `is_historical`; beides geht erst nachträglich über „Bearbeiten“.
 - **Schema-Drift `breweries.highlighted`.** Die Spalte existiert in der Live-D1, aber nicht in
