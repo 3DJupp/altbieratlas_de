@@ -7,10 +7,19 @@
 #
 #   database_id    — UUID der D1-Datenbank
 #   database_name  — Name der D1-Datenbank
+#   PRODUCTION_BRANCH (optional) — Branch, der live geht. Standard: main
 #
 # Verwendung:
 #   bash scripts/deploy.sh          # nur Worker deployen (Standard)
 #   bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
+#
+# Schutz vor Branch-Deploys:
+#   Workers Builds setzt WORKERS_CI_BRANCH. Ist das nicht der Production-
+#   Branch, lädt das Script nur eine Version hoch (wrangler versions upload)
+#   und schaltet nichts live, auch kein Seed. So kann ein Build eines
+#   Feature-Branches die Produktion nicht mehr überschreiben, selbst wenn
+#   das Dashboard das Script als Version command für Branch-Builds nutzt.
+#   Lokal (ohne WORKERS_CI_BRANCH) wird wie bisher deployt.
 #
 # Migrations-Strategie:
 #   Es gibt immer genau zwei kanonische SQL-Dateien:
@@ -39,6 +48,12 @@ sed -i \
   -e "s/REPLACE_WITH_YOUR_D1_ID/${database_id}/g" \
   -e "s/REPLACE_WITH_YOUR_D1_NAME/${database_name}/g" \
   wrangler.toml
+
+PRODUCTION_BRANCH="${PRODUCTION_BRANCH:-main}"
+if [ -n "${WORKERS_CI_BRANCH:-}" ] && [ "$WORKERS_CI_BRANCH" != "$PRODUCTION_BRANCH" ]; then
+  echo "▶ Branch '${WORKERS_CI_BRANCH}' ist nicht '${PRODUCTION_BRANCH}': nur Version hochladen, nicht live schalten"
+  exec npx wrangler versions upload
+fi
 
 if [ "$SEED" = true ]; then
   echo "▶ Schema einspielen..."

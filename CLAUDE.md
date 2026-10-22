@@ -76,7 +76,7 @@ Map tiles: `MAP_TILE_API_KEY` is substituted into the `{apiKey}` placeholder of 
 
 Admin-configurable content (banner, social links/author, impressum) is stored **solely** in the `site_settings` D1 table and edited via the admin panel — there is no `SITE_CONFIG` fallback for these (single source).
 
-The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_D1_ID`, `REPLACE_WITH_YOUR_D1_NAME`). `scripts/deploy.sh` replaces these via `sed` at deploy time using `database_id` and `database_name` build environment variables set in the dashboard.
+The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_D1_ID`, `REPLACE_WITH_YOUR_D1_NAME`). `scripts/deploy.sh` replaces these via `sed` at deploy time using `database_id` and `database_name` build environment variables set in the dashboard. In a Workers Builds run for any branch other than `main` (`WORKERS_CI_BRANCH`, overridable via `PRODUCTION_BRANCH`) it only runs `wrangler versions upload` and never goes live — a branch build once overwrote production this way. Keep that guard.
 
 ### Database Schema
 
