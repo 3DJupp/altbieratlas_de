@@ -96,6 +96,7 @@ const ROUTES = [
   ["GET",    "/api/offers",                                R.listOffers],
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],
+  ["POST",   "/api/contact",                               R.postContact],
   ["POST",   "/api/contributions",                         R.postContribution],
   // --- OG-Image ---
   ["GET",    "/api/og/ort",                                R.serveOgBrewery],
@@ -330,7 +331,7 @@ async function handle(request, env, ctx) {
 
   // /<page>.html → /<page>  (301, kanonische Clean URLs)
   // /index.html  → /
-  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "impressum", "admin", "ort", "brauerei", "event"];
+  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "impressum", "admin", "ort", "brauerei", "event"];
   if (request.method === "GET" && url.pathname.endsWith(".html")) {
     const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
     if (name === "index") {
@@ -458,7 +459,14 @@ async function handle(request, env, ctx) {
   // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
   // impressum ausgenommen — wird oben mit SSI bedient
   // brauerei ausgenommen — wird oben auf /ort weitergeleitet
-  const PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "admin", "ort", "event", "staedte"];
+  const PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "admin", "ort", "event", "staedte"];
+  // /presse ist ein sprechender Einstieg in denselben Inhalt
+  if (request.method === "GET" && /^\/presse\/?$/.test(url.pathname)) {
+    const dest = new URL(request.url);
+    dest.pathname = "/kooperation";
+    dest.hash = "presse";
+    return Response.redirect(dest.toString(), 301);
+  }
   if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
     const bare = url.pathname.replace(/\/$/, "");
     const name = bare.slice(1); // strip leading /

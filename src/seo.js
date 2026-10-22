@@ -172,7 +172,8 @@ English: Altbieratlas is a community-maintained map of Altbier, the top-fermente
 - [Sorten](${base}/sorten): Alle Altbier-Sorten mit Alkoholgehalt, Bittere und Geschmack
 - [Alt vs. Kölsch](${base}/rivalen): Das Rheinderby zwischen Düsseldorf und Köln, Fakten und Abstimmung
 - [Städte](${base}/staedte): Übersicht aller Städte mit Altbier-Orten im Atlas
-- [Beitragen](${base}/beitragen): Preise melden, Orte eintragen, Korrekturen und Termine einreichen
+- [Beitragen](${base}/beitragen): Preise melden, Orte eintragen, Korrekturen, Termine und Aktionen einreichen
+- [Kooperation & Presse](${base}/kooperation): Presseanfragen, Kooperationen mit Brauereien und Lokalen, Atlas-Coupons, Unterstützung
 
 ## Altbier nach Stadt
 

@@ -778,6 +778,10 @@
                 <label>Ko-fi</label>
                 <input id="author-kofi" name="author.kofi" type="url" maxlength="300" placeholder="https://ko-fi.com/..." />
               </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="admin.settingsBeer">„Spendier mir ein Alt“ (Spendenlink)</label>
+                <input id="author-beer" name="author.beer" type="url" maxlength="300" placeholder="https://paypal.me/... oder https://buymeacoffee.com/..." />
+              </div>
               <div style="display:flex;align-items:center;gap:12px">
                 <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-social-msg" style="font-size:13px;display:none"></span>
@@ -3814,6 +3818,7 @@ async function loadSettingsTab() {
     document.getElementById("author-instagram").value = s["author.instagram"] || "";
     document.getElementById("author-mastodon").value  = s["author.mastodon"]  || "";
     document.getElementById("author-kofi").value      = s["author.kofi"]      || "";
+    document.getElementById("author-beer").value      = s["author.beer"]      || "";
   } catch (e) {
     console.warn("[settings] load failed:", e.message);
   }
@@ -3857,6 +3862,7 @@ settingsFormHandler("settings-social-form", "settings-social-msg", (fd) => ({
   "author.instagram": fd.get("author.instagram").trim(),
   "author.mastodon":  fd.get("author.mastodon").trim(),
   "author.kofi":      fd.get("author.kofi").trim(),
+  "author.beer":      fd.get("author.beer").trim(),
 }));
 
 // ============ Venue-Typen Tab ============

@@ -74,6 +74,12 @@ window.renderShell = function ({ activeNav }) {
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M13.5 3.5h-11A1.5 1.5 0 0 0 1 5v6a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 15 11V5a1.5 1.5 0 0 0-1.5-1.5zM10 9.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM4 7.5h3M4 9h1.5"/></svg>
         <span>Ko-fi</span></a>`);
     }
+    if (author.beer) {
+      // Bierglas statt Kaffeetasse: „Spendier mir ein Alt“
+      socialLinks.push(`<a href="${author.beer}" target="_blank" rel="noopener" class="social-link" aria-label="${window.t ? window.t("footer.beer") : "Spendier mir ein Alt"}">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3.5 3.5h7v10a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-10Z"/><path d="M10.5 6h1.5a1.5 1.5 0 0 1 1.5 1.5v2A1.5 1.5 0 0 1 12 11h-1.5"/><path d="M3.5 5.5h7" /><path d="M5.5 8v4M8.5 8v4"/></svg>
+        <span data-i18n="footer.beer">Spendier mir ein Alt</span></a>`);
+    }
     const host = document.getElementById("shell-social");
     if (!host) return;
     if (!socialLinks.length) { host.innerHTML = ""; return; }
@@ -134,6 +140,7 @@ window.renderShell = function ({ activeNav }) {
               <li><a href="/sorten" data-i18n="know.styles">Sorten</a></li>
               <li><a href="/ranglisten" data-i18n="nav.rankings">Ranglisten</a></li>
               <li><a href="/rivalen" data-i18n="nav.rivals">Rivalen</a></li>
+              <li><a href="/kooperation" data-i18n="footer.coop">Kooperation & Presse</a></li>
             </ul>
           </div>
           <div>

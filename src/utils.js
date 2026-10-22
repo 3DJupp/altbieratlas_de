@@ -711,6 +711,46 @@ export async function sendAdminDigest(env, { reminder = false, test = false } = 
   }
 }
 
+// ---- Kontaktformular (/kooperation) → ADMIN_EMAIL ----
+// Antworten gehen per reply_to direkt an den Absender. Nichts wird gespeichert.
+// Rückgabe { ok, reason }.
+export const CONTACT_TOPICS = {
+  press: "Presse", partner: "Kooperation / Partner", coupon: "Coupon / Aktion", other: "Sonstiges",
+};
+export async function sendContactEmail(env, { topic, name, email, organisation, message, lang }) {
+  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return { ok: false, reason: "not-configured" };
+  const sc = siteConfig(env);
+  const topicLabel = CONTACT_TOPICS[topic] || topic;
+  const rows = [["Thema", topicLabel], ["Name", name], ["E-Mail", email], ["Organisation", organisation || "–"], ["Sprache", lang]];
+  const text = [...rows.map(([k, v]) => `${k}: ${v}`), "", message].join("\n");
+  const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#222">
+<h2 style="font-family:Georgia,serif;font-weight:500">Kontaktanfrage: ${_esc(topicLabel)}</h2>
+<table cellpadding="4">${rows.map(([k, v]) => `<tr><td style="color:#888">${_esc(k)}</td><td>${_esc(v)}</td></tr>`).join("")}</table>
+<p style="white-space:pre-wrap;border-left:3px solid #b57a3a;padding-left:12px">${_esc(message)}</p>
+</body></html>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: sc.resendFrom || "Altbieratlas <noreply@altbieratlas.de>",
+        to: env.ADMIN_EMAIL,
+        reply_to: email,
+        subject: `Altbieratlas Kontakt (${topicLabel}): ${name}${organisation ? ` · ${organisation}` : ""}`,
+        text, html,
+      }),
+    });
+    if (!res.ok) {
+      console.error("[contact] Resend-Status:", res.status);
+      return { ok: false, reason: `resend-${res.status}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    console.error("[contact] Resend-Fehler:", e);
+    return { ok: false, reason: "resend-error" };
+  }
+}
+
 // ---- Sofort-Benachrichtigung an den Admin bei jeder Einreichung ----
 // Benötigt env.RESEND_API_KEY + env.ADMIN_EMAIL. Fire & forget, wirft nie.
 export async function sendAdminNotification(env, { type, id, data = {}, email, submitterName }) {

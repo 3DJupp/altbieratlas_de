@@ -13,6 +13,7 @@ import {
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
   clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification, sendAdminDigest,
+  sendContactEmail, CONTACT_TOPICS,
   siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons, isHighlighted,
 } from "./utils.js";
 
@@ -94,6 +95,8 @@ export async function getPublicConfig(req, env) {
     instagram: v(dbSettings["author.instagram"]),
     mastodon:  v(dbSettings["author.mastodon"]),
     kofi:      v(dbSettings["author.kofi"]),
+    // „Spendier mir ein Alt“: beliebiger Spendenlink (PayPal.me, Buy Me a Coffee …)
+    beer:      v(dbSettings["author.beer"]),
   };
 
   const banner = (dbSettings["banner.text_de"] || dbSettings["banner.text_en"])
@@ -907,6 +910,39 @@ export async function postRivalVote(req, env) {
   ).all();
   if (!ins.meta?.changes) return error(429, "already-voted", countRivalVotes(res.results));
   return json({ ok: true, ...countRivalVotes(res.results) });
+}
+
+// ============================================================
+//  KONTAKT (/kooperation)
+// ============================================================
+
+// POST /api/contact  { topic, name, email, organisation?, message, lang?, turnstileToken }
+// Presse- und Kooperationsanfragen, per Resend an ADMIN_EMAIL. Rate-Limit 5/h je IP.
+export async function postContact(req, env) {
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const tsActive = turnstileActive(env);
+  const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req));
+  if (!ts.success) return error(403, "turnstile-failed");
+  let topic, name, email, organisation, message;
+  try {
+    topic        = oneOf(body.topic, Object.keys(CONTACT_TOPICS), { required: true, name: "topic" });
+    name         = str(body.name,         { required: true, max: 100, name: "name" });
+    email        = str(body.email,        { required: true, max: 200, name: "email" });
+    organisation = str(body.organisation, { max: 150, name: "organisation" });
+    message      = str(body.message,      { required: true, max: 4000, name: "message" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error(400, "invalid-email");
+  const hour = new Date().toISOString().slice(0, 13);
+  const rl = await rateLimit(env.DB, `contact:${clientIp(req)}:${hour}`, 5, 3600);
+  if (!rl.allowed) return error(429, "too-many-requests");
+  const r = await sendContactEmail(env, {
+    topic, name, email, organisation, message, lang: body.lang === "en" ? "en" : "de",
+  });
+  if (!r.ok) return error(r.reason === "not-configured" ? 503 : 502, r.reason);
+  return json({ ok: true });
 }
 
 // ============================================================
@@ -2580,9 +2616,10 @@ export const PAGE_DATES = {
   "/ranglisten": "2026-10-22",
   "/wissen":     "2026-10-22",
   "/sorten":     "2026-10-22",
-  "/rivalen":    "2026-10-17",
-  "/beitragen":  "2026-10-21",
+  "/rivalen":    "2026-10-22",
+  "/beitragen":  "2026-10-22",
   "/staedte":    "2026-10-22",
+  "/kooperation": "2026-10-22",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -2594,7 +2631,7 @@ export async function sitemap(req, env) {
                               .replace(/'/g, "&apos;");
   // /impressum fehlt bewusst: die Seite ist noindex, und noindex-URLs in der
   // Sitemap meldet die Search Console als Fehler.
-  const staticPaths = ["/", "/ranglisten", "/wissen", "/sorten", "/rivalen", "/beitragen", "/staedte"];
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/sorten", "/rivalen", "/beitragen", "/staedte", "/kooperation"];
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
@@ -2690,7 +2727,7 @@ export async function adminUpdateSettings(req, env) {
     "impressum.owner", "impressum.address", "impressum.email",
     "banner.text_de", "banner.text_en", "banner.enabled",
     "author.name", "author.github", "author.linkedin", "author.website",
-    "author.instagram", "author.mastodon", "author.kofi",
+    "author.instagram", "author.mastodon", "author.kofi", "author.beer",
   ];
   const stmts = [];
   for (const key of allowed) {
