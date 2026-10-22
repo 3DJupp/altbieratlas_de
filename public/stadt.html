@@ -69,6 +69,8 @@
 .city-card .cc-type { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
 .city-card .cc-price { font-family: var(--font-mono); font-size: 14px; color: var(--copper); margin-top: 4px; }
 .city-card.historical { opacity: .8; }
+.city-card.highlighted { border-color: #d9a35b; box-shadow: 0 0 0 2px rgba(217, 163, 91, 0.25); }
+.cc-partner { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
 .city-empty { color: var(--ink-muted); padding: 16px 0; }
 
 @media (max-width: 800px) { .stats-strip { grid-template-columns: 1fr 1fr; } }
@@ -181,7 +183,9 @@ function paint() {
   statsEl.hidden = false;
   document.getElementById("stat-count").textContent = inCity.length;
   document.getElementById("stat-count-lbl").textContent = window.t("city.stat.places");
-  const prices = current.map((b) => quarterByBrewery.get(b.id)).filter((x) => x != null);
+  // Reine Brauereien schenken nicht aus und zählen im Durchschnitt nicht mit
+  const prices = current.filter(window.atlasInComparisons)
+    .map((b) => quarterByBrewery.get(b.id)).filter((x) => x != null);
   const priceWrap = document.getElementById("stat-price-wrap");
   if (prices.length) {
     const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
@@ -196,7 +200,9 @@ function paint() {
 
   const card = (b) => {
     const p = pricesByBrewery.get(b.id);
-    return `<a class="city-card${b.isHistorical ? " historical" : ""}" href="/ort/${encodeURIComponent(b.id)}">
+    const hl = b.highlighted && !b.isHistorical;
+    return `<a class="city-card${b.isHistorical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${encodeURIComponent(b.id)}">
+      ${hl ? `<span class="cc-partner">${window.t("offer.partnerShort")}</span>` : ""}
       <span class="cc-name">${b.name}</span>
       <span class="cc-type">${typeLabel(b.type)}</span>
       ${p ? `<span class="cc-price">€ ${window.formatPrice(p.price)} <span style="opacity:.55;font-size:11px">/ ${String(p.size).replace(".", ",")} l</span></span>` : ""}
@@ -205,7 +211,8 @@ function paint() {
 
   const cont = document.getElementById("city-venues");
   if (current.length) {
-    cont.innerHTML = current.map(card).join("");
+    // Hervorgehobene (gekennzeichnete) Partner zuerst, wie im SSR
+    cont.innerHTML = [...current].sort((a, b) => !!b.highlighted - !!a.highlighted).map(card).join("");
     cont.dataset.ssr = "1";
   } else {
     cont.innerHTML = `<p class="city-empty">${fillTpl("city.empty", { city: CITY })} <a href="/beitragen?typ=ort">${window.t("city.contribute")}</a></p>`;

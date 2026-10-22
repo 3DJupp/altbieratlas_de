@@ -2,14 +2,19 @@
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
 import { generateOgImage } from "./og.js";
-import { searchPlace, mapsLink, refreshRatings, backfillBatch, CACHE_MAX_AGE_DAYS } from "./googlePlaces.js";
+import {
+  searchPlace, mapsLink, refreshRatings, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
+} from "./googlePlaces.js";
+import { normalizeHours, schemaOrgHours, hoursLinesDe } from "./hours.js";
+import { normalizeOffer, offerRow, OFFER_PUBLIC_SQL } from "./offers.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
-  clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification,
-  siteConfig,
+  clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification, sendAdminDigest,
+  sendContactEmail, CONTACT_TOPICS,
+  siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons, isHighlighted,
 } from "./utils.js";
 
 // Nominatim-User-Agent-E-Mail aus SITE_CONFIG.contactEmail
@@ -90,6 +95,8 @@ export async function getPublicConfig(req, env) {
     instagram: v(dbSettings["author.instagram"]),
     mastodon:  v(dbSettings["author.mastodon"]),
     kofi:      v(dbSettings["author.kofi"]),
+    // „Spendier mir ein Alt“: beliebiger Spendenlink (PayPal.me, Buy Me a Coffee …)
+    beer:      v(dbSettings["author.beer"]),
   };
 
   const banner = (dbSettings["banner.text_de"] || dbSettings["banner.text_en"])
@@ -147,11 +154,13 @@ export async function getStats(req, env) {
     env.DB.prepare("SELECT COUNT(*) AS n FROM prices WHERE status = 'approved'").first(),
     // „Aktuelles 0,25 l Alt im Schnitt" — wie in den Ranglisten zählt nur die
     // jüngste Meldung je Brauerei, sonst zieht die Preishistorie den Wert nach unten.
+    // Reine Brauereien schenken nicht aus und zählen nicht mit.
     env.DB.prepare(
       `SELECT AVG(price) AS avg FROM (
          SELECT p.price
-         FROM prices p
-         WHERE p.status = 'approved'
+         FROM prices p JOIN breweries b ON b.id = p.brewery_id
+         WHERE p.status = 'approved' AND b.status = 'approved'
+           AND b.type NOT IN (${NON_SERVING_TYPES.map((t) => `'${t}'`).join(", ")})
            AND ABS(${sizeNumSql('p.size')} - 0.25) < 0.001
            AND p.date = (
              SELECT MAX(p2.date) FROM prices p2
@@ -228,11 +237,18 @@ export async function getBrewery(req, env, { id }) {
   const prices = await env.DB.prepare(
     "SELECT date, size, price, source, notes, style_id FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC, price ASC"
   ).bind(id).all();
-  const googleRating = await googleRatingFor(env, row);
+  const google = await googleCacheFor(env, row);
+  const offers = await env.DB.prepare(
+    `SELECT o.* FROM offers o JOIN breweries b ON b.id = o.brewery_id
+     WHERE o.brewery_id = ? AND ${OFFER_PUBLIC_SQL} ORDER BY o.kind DESC, o.id`
+  ).bind(id).all().catch(() => ({ results: [] }));
+  const base = brewRow(row, styles.results.map((s) => s.style_id));
   return json({
     brewery: {
-      ...brewRow(row, styles.results.map((s) => s.style_id)),
-      googleRating,
+      ...base,
+      googleRating: google.rating,
+      // Googles Zeiten nur, wenn keine eigenen gepflegt sind (Anzeige „laut Google“)
+      googleOpeningHours: base.openingHours ? null : google.hours,
       successor: successor || null,
       predecessors: predecessors.results,
       // Überschrift über den Sorten aus dem Ortstyp ("Was hier ausgeschenkt wird" …)
@@ -244,22 +260,110 @@ export async function getBrewery(req, env, { id }) {
       breweryId: id, date: p.date, size: p.size, price: p.price, source: p.source, notes: p.notes,
       styleId: p.style_id || null,
     })),
+    offers: offers.results.map(offerRow),
   });
 }
 
-// Google-Bewertung aus dem Cache, nur wenn höchstens 30 Tage alt (Google-
-// Bedingungen). Kein Eintrag, zu alt oder Tabelle fehlt → null, nichts anzeigen.
-async function googleRatingFor(env, row) {
-  if (!row?.google_place_id || row.is_historical) return null;
+// ============================================================
+//  AKTIONEN UND COUPONS
+// ============================================================
+
+// GET /api/offers → alle laufenden und kommenden Aktionen freigegebener Orte.
+// CROSS JOIN legt die Reihenfolge fest: erst offers, dann der Ort per Primärschlüssel;
+// sonst liest SQLite alle Orte, auch wenn es kaum Aktionen gibt.
+export async function listOffers(req, env) {
+  const { results } = await env.DB.prepare(
+    `SELECT o.* FROM offers o CROSS JOIN breweries b ON b.id = o.brewery_id
+     WHERE ${OFFER_PUBLIC_SQL} ORDER BY o.brewery_id, o.id`
+  ).all();
+  return json({ offers: results.map(offerRow) });
+}
+
+async function insertOffer(env, o) {
+  const cols = Object.keys(o);
+  const res = await env.DB.prepare(
+    `INSERT INTO offers (${cols.join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`
+  ).bind(...cols.map((k) => o[k])).run();
+  return res.meta?.last_row_id;
+}
+
+// GET /api/admin/offers → alle Aktionen inkl. abgelaufener und offener
+export async function adminListOffers(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const { results } = await env.DB.prepare(
+    `SELECT o.*, b.name AS brewery_name, b.city AS brewery_city
+     FROM offers o LEFT JOIN breweries b ON b.id = o.brewery_id
+     ORDER BY o.status = 'pending' DESC, o.updated_at DESC`
+  ).all();
+  return json({
+    offers: results.map((r) => ({
+      ...offerRow(r), code: r.code || null, status: r.status,
+      breweryName: r.brewery_name, breweryCity: r.brewery_city,
+      titleDe: r.title_de, titleEn: r.title_en, descriptionDe: r.description_de, descriptionEn: r.description_en,
+    })),
+  });
+}
+
+// POST /api/admin/offers
+export async function adminCreateOffer(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  let o;
+  try { o = normalizeOffer(body); } catch (e) { return error(400, "validation-failed", { detail: e.message }); }
+  const b = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(o.brewery_id).first();
+  if (!b) return error(400, "brewery-not-found");
+  const id = await insertOffer(env, o);
+  return json({ ok: true, id }, { status: 201 });
+}
+
+// PUT /api/admin/offers/:id
+export async function adminUpdateOffer(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  let o;
+  try { o = normalizeOffer(body, { partial: true }); } catch (e) { return error(400, "validation-failed", { detail: e.message }); }
+  const cols = Object.keys(o);
+  if (!cols.length) return error(400, "no-fields");
+  const res = await env.DB.prepare(
+    `UPDATE offers SET ${cols.map((k) => `${k} = ?`).join(", ")}, updated_at = datetime('now') WHERE id = ?`
+  ).bind(...cols.map((k) => o[k]), parseInt(id, 10)).run();
+  if (!res.meta?.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/offers/:id
+export async function adminDeleteOffer(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("DELETE FROM offers WHERE id = ?").bind(parseInt(id, 10)).run();
+  if (!res.meta?.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// Google-Bewertung und -Öffnungszeiten aus dem Cache, in einer Abfrage, nur wenn
+// höchstens 30 Tage alt (Google-Bedingungen). Kein Eintrag, zu alt oder Tabelle
+// fehlt → beides null, nichts anzeigen.
+async function googleCacheFor(env, row) {
+  const none = { rating: null, hours: null };
+  if (!row?.google_place_id || row.is_historical) return none;
   try {
     const c = await env.DB.prepare(
-      `SELECT rating, user_rating_count, fetched_at FROM google_places_cache
+      `SELECT rating, user_rating_count, opening_hours, fetched_at FROM google_places_cache
        WHERE place_id = ? AND fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
     ).bind(row.google_place_id).first();
-    if (!c || c.rating == null) return null;
-    return { rating: c.rating, userRatingCount: c.user_rating_count ?? null, fetchedAt: c.fetched_at };
+    if (!c) return none;
+    return {
+      rating: c.rating == null ? null
+        : { rating: c.rating, userRatingCount: c.user_rating_count ?? null, fetchedAt: c.fetched_at },
+      hours: c.opening_hours ? { days: JSON.parse(c.opening_hours), fetchedAt: c.fetched_at } : null,
+    };
   } catch {
-    return null;
+    return none;
   }
 }
 
@@ -269,6 +373,7 @@ export async function listStyles(req, env) {
     `SELECT s.*, b.name AS primary_brewery_name
      FROM styles s
      LEFT JOIN breweries b ON b.id = s.primary_brewery_id AND b.status = 'approved'
+     WHERE ${STYLE_PUBLIC_SQL}
      ORDER BY s.name`
   ).all();
   return json({
@@ -284,9 +389,12 @@ export async function listStyles(req, env) {
 }
 
 // GET /api/prices
+// Bewusst ohne LIMIT: Ranglisten zählen die ganze Historie („Meistgemeldet“),
+// eine Obergrenze ließe ältere Meldungen still verschwinden. Die Antwort liegt im
+// Edge-Cache; wird sie zu groß, auf „jüngste Meldung je Slot + Anzahl“ umbauen.
 export async function listPrices(req, env) {
   const res = await env.DB.prepare(
-    "SELECT brewery_id, date, size, price, source, style_id, created_at FROM prices WHERE status = 'approved' ORDER BY date DESC LIMIT 2000"
+    "SELECT brewery_id, date, size, price, source, style_id, created_at FROM prices WHERE status = 'approved' ORDER BY date DESC"
   ).all();
   return json({
     prices: res.results.map((r) => ({
@@ -647,7 +755,7 @@ export async function postContribution(req, env, _params, ctx) {
 
   let type, data, email, submitterName;
   try {
-    type = oneOf(body.type, ["price", "brewery", "style", "correction", "event"], { required: true, name: "type" });
+    type = oneOf(body.type, ["price", "brewery", "style", "correction", "event", "offer"], { required: true, name: "type" });
     email = str(body.email, { max: 200, name: "email" });
     submitterName = str(body.submitterName, { max: 100, name: "submitterName" });
     if (!body.data || typeof body.data !== "object") throw new Error("data: required");
@@ -679,13 +787,20 @@ export async function postContribution(req, env, _params, ctx) {
     } else if (type === "correction") {
       str(data.breweryId, { required: true, max: 80, name: "breweryId" });
       str(data.correction, { required: true, max: 4000, name: "correction" });
+    } else if (type === "offer") {
+      // Gleiche Regeln wie beim Anlegen im Admin; Coupons gibt es nur über den Admin
+      normalizeOffer({
+        brewery_id: data.breweryId, kind: "offer", title_de: data.offerTitle,
+        description_de: data.offerDescription, weekdays: data.weekdays,
+        time_from: data.timeFrom, time_to: data.timeTo, valid_until: data.validUntil,
+      });
     }
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }
 
   // Brauerei-Name für Anzeige in E-Mails nachschlagen (für alle Typen mit breweryId)
-  if (data.breweryId && ["price", "style", "correction", "event"].includes(type)) {
+  if (data.breweryId && ["price", "style", "correction", "event", "offer"].includes(type)) {
     try {
       const bRow = await env.DB.prepare("SELECT name, city FROM breweries WHERE id = ? LIMIT 1")
         .bind(data.breweryId).first();
@@ -793,6 +908,162 @@ export async function postRivalVote(req, env) {
   return json({ ok: true, ...countRivalVotes(res.results) });
 }
 
+// ============================================================
+//  KONTAKT (/kooperation)
+// ============================================================
+
+// POST /api/contact  { topic, name, email, organisation?, message, lang?, turnstileToken }
+// Presse- und Kooperationsanfragen, per Resend an ADMIN_EMAIL. Rate-Limit 5/h je IP.
+export async function postContact(req, env) {
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  const tsActive = turnstileActive(env);
+  const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req));
+  if (!ts.success) return error(403, "turnstile-failed");
+  let topic, name, email, organisation, message;
+  try {
+    topic        = oneOf(body.topic, Object.keys(CONTACT_TOPICS), { required: true, name: "topic" });
+    name         = str(body.name,         { required: true, max: 100, name: "name" });
+    email        = str(body.email,        { required: true, max: 200, name: "email" });
+    organisation = str(body.organisation, { max: 150, name: "organisation" });
+    message      = str(body.message,      { required: true, max: 4000, name: "message" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error(400, "invalid-email");
+  const hour = new Date().toISOString().slice(0, 13);
+  const rl = await rateLimit(env.DB, `contact:${clientIp(req)}:${hour}`, 5, 3600);
+  if (!rl.allowed) return error(429, "too-many-requests");
+  const r = await sendContactEmail(env, {
+    topic, name, email, organisation, message, lang: body.lang === "en" ? "en" : "de",
+  });
+  if (!r.ok) return error(r.reason === "not-configured" ? 503 : 502, r.reason);
+  return json({ ok: true });
+}
+
+// ============================================================
+//  RHEINDERBY (Admin)
+// ============================================================
+
+// GET /api/admin/rivals → Stand inkl. Enthaltungen und Zeitraum
+export async function adminRivalVotes(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const [counts, span] = await Promise.all([
+    env.DB.prepare("SELECT choice, COUNT(*) AS n FROM rival_votes GROUP BY choice").all(),
+    env.DB.prepare("SELECT MIN(created_at) AS first, MAX(created_at) AS last FROM rival_votes").first(),
+  ]);
+  return json({ ...countRivalVotes(counts.results), first: span?.first || null, last: span?.last || null });
+}
+
+// Bestätigungswort für das Zurücksetzen. Der Server prüft es selbst, damit kein
+// versehentlicher Request (Doppelklick, Skript) die Stimmen löscht.
+export const RIVAL_RESET_CONFIRM = "ZURÜCKSETZEN";
+
+// POST /api/admin/rivals/reset  { confirm: "ZURÜCKSETZEN" } → löscht alle Stimmen
+export async function adminResetRivalVotes(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (body?.confirm !== RIVAL_RESET_CONFIRM) return error(400, "confirm-required");
+  const res = await env.DB.prepare("DELETE FROM rival_votes").run();
+  console.log(`[rivals] ${auth.username} hat ${res.meta?.changes ?? 0} Stimmen zurückgesetzt`);
+  return json({ ok: true, deleted: res.meta?.changes ?? 0 });
+}
+
+// ============================================================
+//  DIGEST (Admin)
+// ============================================================
+
+// POST /api/admin/digest/send → Testversand aller offenen Einreichungen an ADMIN_EMAIL
+export async function adminSendDigest(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const r = await sendAdminDigest(env, { test: true });
+  if (!r?.ok) return error(r?.reason === "not-configured" ? 503 : 502, r?.reason || "digest-failed");
+  return json({ ok: true, count: r.count ?? 0 });
+}
+
+// ============================================================
+//  ADMIN-BENUTZER (Admin)
+// ============================================================
+
+// GET /api/admin/users
+export async function adminListUsers(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const { results } = await env.DB.prepare(
+    "SELECT username, email, created_at FROM admin_users ORDER BY username"
+  ).all();
+  return json({
+    me: auth.username,
+    users: results.map((u) => ({ username: u.username, email: u.email || null, createdAt: u.created_at })),
+  });
+}
+
+// POST /api/admin/users  { username, password, email? }
+export async function adminCreateUser(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  let username, password, email;
+  try {
+    username = str(body.username, { required: true, max: 50, name: "username" });
+    password = str(body.password, { required: true, max: 200, trim: false, name: "password" });
+    email    = str(body.email,    { max: 200, name: "email" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  if (!/^[a-zA-Z0-9_.-]{3,50}$/.test(username)) return error(400, "invalid-username");
+  if (password.length < 10) return error(400, "password-too-short");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error(400, "invalid-email");
+  const exists = await env.DB.prepare("SELECT 1 AS n FROM admin_users WHERE username = ?").bind(username).first();
+  if (exists) return error(409, "username-taken");
+  await env.DB.prepare(
+    "INSERT INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)"
+  ).bind(username, await hashPassword(password), email || null).run();
+  return json({ ok: true, username }, { status: 201 });
+}
+
+// DELETE /api/admin/users/:username — nie sich selbst, nie den letzten Admin
+export async function adminDeleteUser(req, env, { username }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (username === auth.username) return error(400, "cannot-delete-self");
+  const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM admin_users").first();
+  if ((count?.n || 0) <= 1) return error(400, "last-admin");
+  const res = await env.DB.batch([
+    env.DB.prepare("DELETE FROM admin_sessions WHERE username = ?").bind(username),
+    env.DB.prepare("DELETE FROM password_reset_tokens WHERE username = ?").bind(username),
+    env.DB.prepare("DELETE FROM admin_users WHERE username = ?").bind(username),
+  ]);
+  if (!res[2]?.meta?.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// PUT /api/admin/users/me/password  { current, password }
+// Beendet alle anderen Sessions des Benutzers, die aktuelle bleibt.
+export async function adminChangePassword(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  const current = typeof body?.current === "string" ? body.current : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+  if (password.length < 10) return error(400, "password-too-short");
+  if (password.length > 200) return error(400, "password-too-long");
+  const row = await env.DB.prepare("SELECT password_hash FROM admin_users WHERE username = ?")
+    .bind(auth.username).first();
+  if (!row || !(await verifyPassword(current, row.password_hash))) return error(401, "invalid-credentials");
+  const token = parseCookies(req)["atlas_session"];
+  await env.DB.batch([
+    env.DB.prepare("UPDATE admin_users SET password_hash = ? WHERE username = ?")
+      .bind(await hashPassword(password), auth.username),
+    env.DB.prepare("DELETE FROM admin_sessions WHERE username = ? AND token != ?").bind(auth.username, token),
+  ]);
+  return json({ ok: true });
+}
+
 // POST /api/prices (Convenience — wrapt als Contribution vom Typ "price")
 export async function postPrice(req, env, _params, ctx) {
   const body = await req.json().catch(() => null);
@@ -840,6 +1111,8 @@ export async function adminLogin(req, env) {
 
   const token = randomToken(32);
   const expires = new Date(Date.now() + 8 * 3600 * 1000); // 8h
+  // Abgelaufene Sessions aufräumen (expires_at ist ein ISO-String wie unten)
+  await env.DB.prepare("DELETE FROM admin_sessions WHERE expires_at < ?").bind(new Date().toISOString()).run();
   await env.DB.prepare(
     "INSERT INTO admin_sessions (token, username, expires_at) VALUES (?, ?, ?)"
   ).bind(token, username, expires.toISOString()).run();
@@ -1025,6 +1298,17 @@ export async function adminApprove(req, env, { id }) {
         payload.eventUrl || null,
         payload.description || null, payload.description || null,
       ).run();
+    } else if (c.type === "offer") {
+      // Community-Text kommt in einer Sprache; EN bis zur Übersetzung gleich DE
+      // (fehlende Übersetzungen zeigt das Dashboard)
+      const o = normalizeOffer({
+        brewery_id: payload.breweryId, kind: "offer",
+        title_de: payload.offerTitle, title_en: payload.offerTitle,
+        description_de: payload.offerDescription, description_en: payload.offerDescription,
+        weekdays: payload.weekdays, time_from: payload.timeFrom, time_to: payload.timeTo,
+        valid_until: payload.validUntil, status: "approved",
+      });
+      await insertOffer(env, o);
     } else if (c.type === "style") {
       const sid = "usr-" + (payload.styleName || "stil").toLowerCase()
         .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) + "-" + Math.random().toString(36).slice(2, 6);
@@ -1118,6 +1402,37 @@ export async function adminUpdateBrewery(req, env, { id }) {
     if (uid != null && (!Number.isInteger(uid) || uid < 0)) return error(400, "invalid-untappd-id");
     body.untappd_id = uid;
   }
+  if ("highlighted" in body) {
+    // true/false aus der Checkbox oder eine Stufe als Zahl
+    const lvl = typeof body.highlighted === "number" ? Math.max(0, Math.min(9, Math.trunc(body.highlighted))) : (body.highlighted ? 1 : 0);
+    body.highlighted = lvl;
+  }
+  if ("highlighted_until" in body) {
+    const d = body.highlighted_until || null;
+    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return error(400, "invalid-date");
+    body.highlighted_until = d;
+  }
+  if ("opening_hours" in body) {
+    try {
+      const h = normalizeHours(body.opening_hours);
+      body.opening_hours = h ? JSON.stringify(h) : null;
+    } catch (e) {
+      return error(400, "invalid-opening-hours", { detail: e.message });
+    }
+  }
+  if ("opening_hours_checked" in body) {
+    const d = body.opening_hours_checked || null;
+    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return error(400, "invalid-date");
+    body.opening_hours_checked = d;
+  }
+  for (const k of ["opening_hours_note_de", "opening_hours_note_en"]) {
+    if (k in body) body[k] = body[k] ? String(body[k]).trim().slice(0, 500) || null : null;
+  }
+  if ("is_historical" in body) {
+    body.is_historical = body.is_historical ? 1 : 0;
+    // Historische Orte bekommen keine Place ID (keine Bewertung für geschlossene Betriebe)
+    if (body.is_historical) body.google_place_id = null;
+  }
 
   const fields = [];
   const values = [];
@@ -1125,7 +1440,10 @@ export async function adminUpdateBrewery(req, env, { id }) {
     name: "name", short: "short_name", type: "type", city: "city", country: "country",
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
-    verified: "verified", status: "status", logo_key: "logo_key",
+    verified: "verified", status: "status", logo_key: "logo_key", is_historical: "is_historical",
+    highlighted: "highlighted", highlighted_until: "highlighted_until",
+    opening_hours: "opening_hours", opening_hours_note_de: "opening_hours_note_de",
+    opening_hours_note_en: "opening_hours_note_en", opening_hours_checked: "opening_hours_checked",
     successor_id: "successor_id", google_place_id: "google_place_id", untappd_id: "untappd_id",
   };
   for (const [k, col] of Object.entries(allow)) {
@@ -1220,6 +1538,7 @@ export async function adminTranslationGaps(req, env) {
       [["title", "title_de", "title_en"], ["description", "description_de", "description_en"]]],
     ["eventBeer", "SELECT event_id AS id, COALESCE(name_de, name_en, '') AS label, %F FROM event_beers", [["name", "name_de", "name_en"]]],
     ["glossary", "SELECT term AS id, term AS label, %F FROM glossary", [["definition", "definition_de", "definition_en"]]],
+    ["offer", "SELECT id, COALESCE(title_de, title_en, '') AS label, %F FROM offers WHERE status != 'rejected'", [["title", "title_de", "title_en"]]],
     ["venueType", "SELECT id, COALESCE(name_de, name_en, id) AS label, %F FROM venue_types",
       [["name", "name_de", "name_en"], ["header", "header_de", "header_en"]]],
   ];
@@ -1277,6 +1596,39 @@ export async function adminRefreshGoogleRatings(req, env) {
   const body = await req.json().catch(() => ({}));
   const summary = await refreshRatings(env, { limit: body?.limit, minAgeHours: 1, delayMs: 50 });
   return json({ ok: true, ...summary });
+}
+
+// GET /api/admin/google-places/pin-check
+// Abstand zwischen DB-Pin und Googles Koordinaten für alle Orte mit Place ID,
+// größter zuerst. Liest nur den Cache (kein Google-Aufruf); Orte, deren Cache
+// noch keine Koordinaten hat, zählt `missing` – „Google-Bewertungen abrufen“
+// füllt sie nach. `shared` = so viele Orte teilen sich diese Place ID.
+export async function adminPinCheck(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const { results } = await env.DB.prepare(
+    `SELECT b.id, b.name, b.city, b.address, b.status, b.lat, b.lng, b.google_place_id,
+            c.lat AS g_lat, c.lng AS g_lng, c.fetched_at, sh.n AS shared
+     FROM breweries b
+     LEFT JOIN google_places_cache c ON c.place_id = b.google_place_id
+     JOIN (SELECT google_place_id, COUNT(*) AS n FROM breweries
+           WHERE google_place_id IS NOT NULL GROUP BY google_place_id) sh
+       ON sh.google_place_id = b.google_place_id
+     WHERE b.google_place_id IS NOT NULL AND b.google_place_id != '' AND b.is_historical = 0`
+  ).all();
+  const items = [];
+  let missing = 0;
+  for (const r of results) {
+    if (r.g_lat == null || r.g_lng == null) { missing++; continue; }
+    items.push({
+      id: r.id, name: r.name, city: r.city, address: r.address, status: r.status,
+      placeId: r.google_place_id, shared: r.shared, fetchedAt: r.fetched_at,
+      lat: r.lat, lng: r.lng, googleLat: r.g_lat, googleLng: r.g_lng,
+      distance: Math.round(haversine(r.lat, r.lng, r.g_lat, r.g_lng)),
+    });
+  }
+  items.sort((a, b) => b.distance - a.distance);
+  return json({ ok: true, threshold: PIN_CHECK_DISTANCE_M, missing, items });
 }
 
 // POST /api/admin/google-places/backfill  { after?, limit? }
@@ -1629,10 +1981,12 @@ export async function adminListStyles(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare(
-    `SELECT s.*, b.name AS primary_brewery_name,
-            (SELECT GROUP_CONCAT(bs.brewery_id) FROM brewery_styles bs WHERE bs.style_id = s.id) AS brewery_ids
+    `SELECT s.*, b.name AS primary_brewery_name, bs.brewery_ids
      FROM styles s
      LEFT JOIN breweries b ON b.id = s.primary_brewery_id
+     -- Einmal gruppieren statt je Sorte: brewery_styles hat keinen Index auf style_id
+     LEFT JOIN (SELECT style_id, GROUP_CONCAT(brewery_id) AS brewery_ids
+                FROM brewery_styles GROUP BY style_id) bs ON bs.style_id = s.id
      ORDER BY s.name`
   ).all();
   return json({
@@ -1987,7 +2341,7 @@ export async function adminCreateBrewery(req, env) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
 
-  let id, name, shortName, type, city, country, address, mapsUrl, lat, lng, founded, website, descDe, descEn;
+  let id, name, shortName, type, city, country, address, mapsUrl, lat, lng, founded, website, descDe, descEn, successorId;
   try {
     id        = str(body.id,             { required: true, max: 80,   name: "id" });
     name      = str(body.name,           { required: true, max: 200,  name: "name" });
@@ -2003,20 +2357,28 @@ export async function adminCreateBrewery(req, env) {
     website   = str(body.website,        { max: 500,  name: "website" });
     descDe    = str(body.description_de, { max: 2000, name: "description_de" });
     descEn    = str(body.description_en, { max: 2000, name: "description_en" });
+    successorId = str(body.successor_id, { max: 80,  name: "successor_id" });
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }
+  const isHistorical = body.is_historical ? 1 : 0;
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return error(400, "invalid-id-format");
   const exists = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(id).first();
   if (exists) return error(409, "id-already-exists");
+  if (successorId) {
+    if (successorId === id) return error(400, "successor-self");
+    const succ = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(successorId).first();
+    if (!succ) return error(400, "successor-not-found");
+  }
 
   await env.DB.prepare(
     `INSERT INTO breweries
        (id, name, short_name, type, city, country, address, maps_url, lat, lng,
-        founded, website, description_de, description_en, verified, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'approved')`
+        founded, website, description_de, description_en, is_historical, successor_id, verified, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'approved')`
   ).bind(id, name, shortName || null, type, city, country, address || null, mapsUrl || null,
-         lat, lng, founded, website || null, descDe || null, descEn || null).run();
+         lat, lng, founded, website || null, descDe || null, descEn || null,
+         isHistorical, successorId || null).run();
   return json({ ok: true, id }, { status: 201 });
 }
 
@@ -2249,10 +2611,11 @@ export const PAGE_DATES = {
   "/":           "2026-10-22",
   "/ranglisten": "2026-10-22",
   "/wissen":     "2026-10-22",
-  "/sorten":     "2026-10-17",
-  "/rivalen":    "2026-10-17",
-  "/beitragen":  "2026-10-21",
+  "/sorten":     "2026-10-22",
+  "/rivalen":    "2026-10-22",
+  "/beitragen":  "2026-10-22",
   "/staedte":    "2026-10-22",
+  "/kooperation": "2026-10-22",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -2264,7 +2627,7 @@ export async function sitemap(req, env) {
                               .replace(/'/g, "&apos;");
   // /impressum fehlt bewusst: die Seite ist noindex, und noindex-URLs in der
   // Sitemap meldet die Search Console als Fehler.
-  const staticPaths = ["/", "/ranglisten", "/wissen", "/sorten", "/rivalen", "/beitragen", "/staedte"];
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/sorten", "/rivalen", "/beitragen", "/staedte", "/kooperation"];
   let breweryIds = [];
   let eventIds = [];
   let lastMod = null;
@@ -2360,7 +2723,7 @@ export async function adminUpdateSettings(req, env) {
     "impressum.owner", "impressum.address", "impressum.email",
     "banner.text_de", "banner.text_en", "banner.enabled",
     "author.name", "author.github", "author.linkedin", "author.website",
-    "author.instagram", "author.mastodon", "author.kofi",
+    "author.instagram", "author.mastodon", "author.kofi", "author.beer",
   ];
   const stmts = [];
   for (const key of allowed) {
@@ -2435,8 +2798,10 @@ export async function serveOrt(req, env, params = {}) {
   try {
     const [bRes, pRes, sRes] = await Promise.all([
       env.DB.prepare(
-        `SELECT b.*, COALESCE(v.name_de, b.type) AS type_label
+        `SELECT b.*, COALESCE(v.name_de, b.type) AS type_label, g.opening_hours AS g_opening_hours
          FROM breweries b LEFT JOIN venue_types v ON v.id = b.type
+         LEFT JOIN google_places_cache g ON g.place_id = b.google_place_id AND b.is_historical = 0
+           AND g.fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')
          WHERE b.id = ? AND b.status = 'approved'`
       ).bind(id).first(),
       env.DB.prepare(
@@ -2509,11 +2874,18 @@ export async function serveOrt(req, env, params = {}) {
   const metaDesc = head + (desc
     || `${row.name} in ${row.city}: Adresse, Altbier-Sorten und aktuelle Preise im Altbieratlas.`);
 
+  // Öffnungszeiten: eigene (auch ins JSON-LD), sonst Googles aus dem Cache (nur Anzeige)
+  const parseHours = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
+  const ownHours = row.is_historical ? null : parseHours(row.opening_hours);
+  const shownHours = ownHours || (row.is_historical ? null : parseHours(row.g_opening_hours));
+  const hoursSpec = schemaOrgHours(ownHours);
+
   const ld = JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": row.is_historical ? "Place" : (SCHEMA_TYPE[row.type] || "BarOrPub"),
+        ...(hoursSpec.length ? { "openingHoursSpecification": hoursSpec } : {}),
         "@id": pageUrl + "#business",
         "name": row.name,
         "url": pageUrl,
@@ -2586,6 +2958,7 @@ export async function serveOrt(req, env, params = {}) {
               <h1 class="brewery-title">${escHtml(row.name)}</h1>
               <div class="brewery-meta">
                 <span>${escHtml(row.type_label || row.type)}</span>
+                ${!row.is_historical && isHighlighted(row) ? `<span class="tag" style="color:#a0702c;border-color:#d9a35b;font-size:11px">Partner</span>` : ""}
                 <span class="dot"></span>
                 <span>${escHtml(row.city)}${row.country && row.country !== "DE" ? " · " + escHtml(row.country) : ""}</span>
                 ${row.founded ? `<span class="dot"></span><span>seit ${escHtml(row.founded)}</span>` : ""}
@@ -2609,6 +2982,15 @@ export async function serveOrt(req, env, params = {}) {
         <h2>Über ${escHtml(row.name)}</h2>
         <p>${escHtml(row.description_de || row.description_en || `${row.name} ist als ${row.type_label || row.type} in ${row.city} im Altbieratlas verzeichnet.`)}</p>
         ${row.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${escHtml(row.address)}</p>` : ""}
+        ${shownHours ? `
+        <div class="ort-hours">
+          <h3>Öffnungszeiten</h3>
+          <table>${hoursLinesDe(shownHours).map(([d, v]) => `<tr><th>${d}</th><td>${escHtml(v)}</td></tr>`).join("")}</table>
+          ${ownHours && row.opening_hours_note_de ? `<p>${escHtml(row.opening_hours_note_de)}</p>` : ""}
+          <p class="hours-src">${ownHours
+            ? (row.opening_hours_checked ? `Stand ${escHtml(fmtDateDe(row.opening_hours_checked))}` : "")
+            : "laut Google"}</p>
+        </div>` : ""}
       </div>
       <div><div class="detail-map" id="detail-map"></div></div>
     </section>
@@ -2937,7 +3319,7 @@ export async function serveCity(req, env) {
   try {
     const [bRes, pRes] = await Promise.all([
       env.DB.prepare(
-        "SELECT id, name, type, is_historical FROM breweries WHERE status = 'approved' AND verified = 1 AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
+        "SELECT id, name, type, is_historical, highlighted, highlighted_until FROM breweries WHERE status = 'approved' AND verified = 1 AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
       ).bind(city).all(),
       // Alle Meldungen der Orte dieser Stadt, neueste zuerst
       env.DB.prepare(
@@ -2952,7 +3334,8 @@ export async function serveCity(req, env) {
   } catch { /* D1 nicht verfügbar — statische Datei mit Client-Rendering ausliefern */ }
 
   // Karte: jüngster Preis der kleinsten gemeldeten Größe (nicht jeder Ort hat 0,25 l).
-  // Durchschnitt: nur 0,25 l, damit er vergleichbar bleibt.
+  // Durchschnitt: nur 0,25 l, nur aktuelle Orte mit Ausschank, damit er vergleichbar bleibt.
+  const averaged = new Set(rows.filter((r) => !r.is_historical && inComparisons(r)).map((r) => r.id));
   const priceByBrewery = new Map();
   const quarterByBrewery = new Map();
   for (const p of priceRows) {
@@ -2960,7 +3343,9 @@ export async function serveCity(req, env) {
     if (n == null) continue;
     const prev = priceByBrewery.get(p.brewery_id);
     if (!prev || n < sizeNum(prev.size) - 0.001) priceByBrewery.set(p.brewery_id, p);
-    if (Math.abs(n - 0.25) < 0.001 && !quarterByBrewery.has(p.brewery_id)) quarterByBrewery.set(p.brewery_id, p);
+    if (Math.abs(n - 0.25) < 0.001 && averaged.has(p.brewery_id) && !quarterByBrewery.has(p.brewery_id)) {
+      quarterByBrewery.set(p.brewery_id, p);
+    }
   }
   const priceVals = [...quarterByBrewery.values()].map((p) => Number(p.price));
   const avgPrice = priceVals.length
@@ -2990,14 +3375,17 @@ export async function serveCity(req, env) {
   };
   const cardHtml = (r) => {
     const p = priceByBrewery.get(r.id);
-    return `<a class="city-card${r.is_historical ? " historical" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
+    const hl = !r.is_historical && isHighlighted(r);
+    return `<a class="city-card${r.is_historical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
+      (hl ? `<span class="cc-partner">Partner</span>` : "") +
       `<span class="cc-name">${escHtml(r.name)}</span>` +
       `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
       (p ? `<span class="cc-price">€ ${escHtml(fmtPriceDe(p.price))} <span style="opacity:.55;font-size:11px">/ ${escHtml(fmtSizeDe(p.size))}</span></span>` : "") +
       `</a>`;
   };
+  // Hervorgehobene (gekennzeichnete) Partner zuerst, sonst alphabetisch wie gehabt
   const venuesHtml = current.length
-    ? current.map(cardHtml).join("")
+    ? [...current].sort((a, b) => isHighlighted(b) - isHighlighted(a)).map(cardHtml).join("")
     : `<p class="city-empty">Noch keine aktiven Orte in ${escHtml(city)} im Atlas. <a href="/beitragen?typ=ort">Ort eintragen →</a></p>`;
   const historicalHtml = historical.map(cardHtml).join("");
 

@@ -39,6 +39,16 @@ CREATE TABLE IF NOT EXISTS breweries (
   description_en TEXT,
   verified       INTEGER NOT NULL DEFAULT 0,
   is_historical  INTEGER NOT NULL DEFAULT 0,
+  -- Hervorhebung auf der Karte (goldener Pin), z. B. für Sponsoring.
+  -- 0 = normal, > 0 = hervorgehoben; als Zahl angelegt, damit spätere Stufen passen
+  highlighted    INTEGER NOT NULL DEFAULT 0,
+  highlighted_until TEXT,      -- YYYY-MM-DD, letzter Tag der Hervorhebung; NULL = unbefristet
+  -- Öffnungszeiten, selbst gepflegt (Format siehe src/hours.js); NULL = unbekannt.
+  -- Fehlen sie, zeigt die Ortsseite Googles Zeiten aus google_places_cache.
+  opening_hours         TEXT,
+  opening_hours_note_de TEXT,
+  opening_hours_note_en TEXT,
+  opening_hours_checked TEXT,  -- Datum der letzten Prüfung (YYYY-MM-DD)
   -- Wer Marke/Betrieb heute führt (Übernahme einer historischen Brauerei)
   successor_id   TEXT REFERENCES breweries(id) ON DELETE SET NULL,
   status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
@@ -50,6 +60,8 @@ CREATE TABLE IF NOT EXISTS breweries (
 CREATE INDEX IF NOT EXISTS idx_breweries_city    ON breweries(city);
 CREATE INDEX IF NOT EXISTS idx_breweries_status  ON breweries(status);
 CREATE INDEX IF NOT EXISTS idx_breweries_country ON breweries(country);
+-- Ortsseite sucht übernommene Marken (WHERE successor_id = ?)
+CREATE INDEX IF NOT EXISTS idx_breweries_successor ON breweries(successor_id);
 
 -- Beer styles
 CREATE TABLE IF NOT EXISTS styles (
@@ -90,6 +102,9 @@ CREATE TABLE IF NOT EXISTS prices (
   FOREIGN KEY (brewery_id) REFERENCES breweries(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_prices_brewery ON prices(brewery_id);
+-- Preise eines Orts: ohne diesen Index wählt SQLite idx_prices_status und
+-- liest alle freigegebenen Preise statt nur die des Orts
+CREATE INDEX IF NOT EXISTS idx_prices_brewery_status ON prices(brewery_id, status);
 CREATE INDEX IF NOT EXISTS idx_prices_date    ON prices(date DESC);
 CREATE INDEX IF NOT EXISTS idx_prices_status  ON prices(status);
 CREATE INDEX IF NOT EXISTS idx_prices_style   ON prices(style_id);
@@ -130,6 +145,27 @@ CREATE TABLE IF NOT EXISTS event_beers (
 );
 CREATE INDEX IF NOT EXISTS idx_event_beers_event ON event_beers(event_id);
 
+-- Aktionen und Coupons je Ort (Logik und Felder siehe src/offers.js)
+CREATE TABLE IF NOT EXISTS offers (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  brewery_id     TEXT NOT NULL REFERENCES breweries(id) ON DELETE CASCADE,
+  kind           TEXT NOT NULL DEFAULT 'offer' CHECK (kind IN ('offer','coupon')),
+  title_de       TEXT NOT NULL,
+  title_en       TEXT,
+  description_de TEXT,
+  description_en TEXT,
+  weekdays       TEXT,           -- "mo,we"; NULL = jeden Tag
+  time_from      TEXT,           -- "HH:MM"; NULL = ganztags
+  time_to        TEXT,
+  valid_from     TEXT,           -- YYYY-MM-DD; NULL = ab sofort
+  valid_until    TEXT,           -- YYYY-MM-DD; NULL = unbefristet
+  code           TEXT,           -- Coupon-Code (nur kind = 'coupon')
+  status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_offers_brewery ON offers(brewery_id);
+
 -- Glossary
 CREATE TABLE IF NOT EXISTS glossary (
   term          TEXT PRIMARY KEY,
@@ -140,7 +176,7 @@ CREATE TABLE IF NOT EXISTS glossary (
 -- Contribution queue (moderation pipeline)
 CREATE TABLE IF NOT EXISTS contributions (
   id              TEXT PRIMARY KEY,
-  type            TEXT NOT NULL CHECK (type IN ('price','brewery','style','correction','event')),
+  type            TEXT NOT NULL CHECK (type IN ('price','brewery','style','correction','event','offer')),
   payload         TEXT NOT NULL,
   submitter_email TEXT,
   -- Freiwilliger Name/Spitzname, damit der Admin weiß, von wem ein Hinweis kommt
@@ -204,6 +240,12 @@ CREATE TABLE IF NOT EXISTS google_places_cache (
   place_id          TEXT PRIMARY KEY,
   rating            REAL,
   user_rating_count INTEGER,
+  -- Googles Koordinaten des Orts, nur zum Abgleich mit breweries.lat/lng
+  -- („Pins prüfen“ im Admin); wie die Bewertung höchstens 30 Tage gespeichert
+  lat               REAL,
+  lng               REAL,
+  -- Googles Öffnungszeiten (Format siehe src/hours.js), Fallback für die Ortsseite
+  opening_hours     TEXT,
   fetched_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

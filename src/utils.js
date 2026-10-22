@@ -2,11 +2,28 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.14.0";
+export const APP_VERSION = "0.16.0";
 
 import { mapsLink } from "./googlePlaces.js";
 
 export const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
+
+// Reine Brauereien (Typ „brewery“) schenken nicht aus und fehlen deshalb in
+// Ranglisten und Durchschnittspreisen. Gleiche Regel im Browser:
+// window.atlasInComparisons() in public/shell.js.
+export const NON_SERVING_TYPES = ["brewery"];
+export const inComparisons = (v) => !!v && !NON_SERVING_TYPES.includes(v.type);
+
+// WHERE-Bedingung für öffentlich sichtbare Sorten (Tabellen-Alias s). Hängt eine
+// Sorte an Orten (Primär-Ort oder brewery_styles), braucht mindestens einer davon
+// status = 'approved'; sonst erschiene sie, bevor der Admin ihren Ort freigibt.
+// Sorten ganz ohne Ort bleiben sichtbar. Unkorrelierte Unterabfragen, damit D1
+// sie nur einmal auswertet statt je Sorte.
+export const STYLE_PUBLIC_SQL = `(
+  s.primary_brewery_id IN (SELECT id FROM breweries WHERE status = 'approved')
+  OR s.id IN (SELECT bs2.style_id FROM brewery_styles bs2
+              JOIN breweries b2 ON b2.id = bs2.brewery_id WHERE b2.status = 'approved')
+  OR (s.primary_brewery_id IS NULL AND s.id NOT IN (SELECT style_id FROM brewery_styles)))`;
 
 export function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
@@ -230,8 +247,8 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
   const de = lang !== "en";
   const siteUrl = sc.siteUrl || "https://altbieratlas.de";
   const typeLabels = {
-    de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung" },
-    en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event" },
+    de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung", offer: "Aktion" },
+    en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event", offer: "Special offer" },
   };
   const label = (de ? typeLabels.de : typeLabels.en)[type] || type;
   const ts = submittedAt || new Date().toISOString();
@@ -362,6 +379,14 @@ function _emailDataRows(type, data, de) {
     ...f(de ? "Ort" : "Location", data.eventLocation),
     ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
     ...f(de ? "Beschreibung" : "Description", data.description),
+  ];
+  if (type === "offer") return [
+    ...f(de ? "Ort" : "Venue", data._breweryName || data.breweryId),
+    ...f(de ? "Aktion" : "Offer", data.offerTitle),
+    ...f(de ? "Wochentage" : "Weekdays", Array.isArray(data.weekdays) ? data.weekdays.join(", ") : data.weekdays),
+    ...f(de ? "Uhrzeit" : "Time", data.timeFrom ? `${data.timeFrom}–${data.timeTo || ""}` : null),
+    ...f(de ? "Gültig bis" : "Valid until", data.validUntil),
+    ...f(de ? "Beschreibung" : "Description", data.offerDescription),
   ];
   if (type === "style") return [
     ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
@@ -521,8 +546,11 @@ export function digestSchedule(env, date = new Date()) {
   };
 }
 
-export async function sendAdminDigest(env, { reminder = false } = {}) {
-  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
+// test = Versand aus dem Admin-Panel („Jetzt senden“): listet alle offenen
+// Einreichungen, schickt auch ohne welche und lässt den Wasserstand unverändert,
+// damit der nächste reguläre Digest nichts verliert. Rückgabe { ok, sent, reason }.
+export async function sendAdminDigest(env, { reminder = false, test = false } = {}) {
+  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return { ok: false, reason: "not-configured" };
 
   const sc = siteConfig(env);
   const siteUrl = sc.siteUrl || "https://altbieratlas.de";
@@ -535,10 +563,14 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
               datetime('now', '-1 minute') AS until`
     ).bind(DIGEST_KEY).first();
     from = win.since; until = win.until;
-    ({ results: rows } = await env.DB.prepare(
-      `SELECT ${cols} FROM contributions WHERE ${open} AND created_at > ? AND created_at <= ? ORDER BY created_at DESC`
-    ).bind(from, until).all());
-    if (reminder) {
+    ({ results: rows } = test
+      ? await env.DB.prepare(
+        `SELECT ${cols} FROM contributions WHERE ${open} ORDER BY created_at DESC LIMIT ${DIGEST_REMINDER_LIMIT}`
+      ).all()
+      : await env.DB.prepare(
+        `SELECT ${cols} FROM contributions WHERE ${open} AND created_at > ? AND created_at <= ? ORDER BY created_at DESC`
+      ).bind(from, until).all());
+    if (reminder && !test) {
       const [list, count] = await Promise.all([
         env.DB.prepare(
           `SELECT ${cols} FROM contributions WHERE ${open} AND created_at <= ? ORDER BY created_at DESC LIMIT ${DIGEST_REMINDER_LIMIT}`
@@ -550,24 +582,24 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
     }
   } catch (e) {
     console.error("[digest] DB-Fehler:", e);
-    return;
+    return { ok: false, reason: "db-error" };
   }
-  const markSent = () => env.DB.prepare(
+  const markSent = () => test ? Promise.resolve() : env.DB.prepare(
     `INSERT INTO site_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
   ).bind(DIGEST_KEY, until).run().catch((e) => console.error("[digest] Stand nicht gespeichert:", e));
   rows = rows || [];
-  if (!rows.length && !older.length) { await markSent(); return; }
+  if (!rows.length && !older.length && !test) { await markSent(); return { ok: true, sent: false }; }
 
   const fmtBerlin = (sqlTs) => {
     try { return new Date(sqlTs.replace(" ", "T") + "Z").toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" }); }
     catch { return sqlTs; }
   };
-  const windowLabel = `${fmtBerlin(from)} – ${fmtBerlin(until)}`;
+  const windowLabel = test ? "alle offenen (Testversand)" : `${fmtBerlin(from)} – ${fmtBerlin(until)}`;
 
   const typeLabels = {
     price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
-    correction: "Korrektur", event: "Event",
+    correction: "Korrektur", event: "Event", offer: "Aktion",
   };
   const describe = (r) => {
     let data = {};
@@ -608,12 +640,13 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
   const newHeading = `${plural(n)} neu und offen`;
   const olderHeading = `${plural(olderTotal)} noch offen aus früheren Digests`;
   const moreOlder = olderTotal > older.length ? `… und ${olderTotal - older.length} weitere im Admin-Bereich.` : "";
-  const subject = n
+  const subject = (test ? "[Test] " : "") + (n
     ? `Altbieratlas Digest: ${newHeading}${older.length ? `, ${olderTotal} weitere offen` : ""}`
-    : `Altbieratlas Erinnerung: ${olderHeading}`;
+    : test ? "Altbieratlas Digest: keine offenen Einreichungen" : `Altbieratlas Erinnerung: ${olderHeading}`);
   const adminUrl = siteUrl + "/admin.html";
 
   const text = [
+    ...(test && !n ? ["Testversand: Es gibt keine offenen Einreichungen.", ""] : []),
     ...(n ? [`${newHeading} seit dem letzten Digest (${windowLabel}):`, "", listText(rows), ""] : []),
     ...(older.length ? [`Erinnerung: ${olderHeading}:`, "", listText(older), ...(moreOlder ? [moreOlder] : []), ""] : []),
     `Admin: ${adminUrl}`,
@@ -621,8 +654,9 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
 
   const h2Style = "margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410";
   const newHtml = n ? `<h2 style="${h2Style}">${newHeading}</h2>
-    <p style="margin:0 0 22px;font-size:13px;color:#888">Seit dem letzten Digest: ${_esc(windowLabel)}</p>
-    ${tableHtml(rows)}` : "";
+    <p style="margin:0 0 22px;font-size:13px;color:#888">${test ? "" : "Seit dem letzten Digest: "}${_esc(windowLabel)}</p>
+    ${tableHtml(rows)}` : test ? `<h2 style="${h2Style}">Keine offenen Einreichungen</h2>
+    <p style="margin:0 0 22px;font-size:13px;color:#888">Testversand aus dem Admin-Panel.</p>` : "";
   const olderHtml = older.length ? `<h2 style="${h2Style}">${olderHeading}</h2>
     <p style="margin:0 0 22px;font-size:13px;color:#888">Wöchentliche Erinnerung an Einreichungen, die noch auf Freigabe warten.</p>
     ${tableHtml(older)}${moreOlder ? `<p style="margin:-12px 0 24px;font-size:13px;color:#888">${_esc(moreOlder)}</p>` : ""}` : "";
@@ -665,10 +699,55 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
         subject, text, html,
       }),
     });
-    if (!res.ok) { console.error("[digest] Resend-Status:", res.status, await res.text().catch(() => "")); return; }
+    if (!res.ok) {
+      console.error("[digest] Resend-Status:", res.status, await res.text().catch(() => ""));
+      return { ok: false, reason: `resend-${res.status}` };
+    }
     await markSent();
+    return { ok: true, sent: true, count: n + older.length };
   } catch (e) {
     console.error("[digest] Resend-Fehler:", e);
+    return { ok: false, reason: "resend-error" };
+  }
+}
+
+// ---- Kontaktformular (/kooperation) → ADMIN_EMAIL ----
+// Antworten gehen per reply_to direkt an den Absender. Nichts wird gespeichert.
+// Rückgabe { ok, reason }.
+export const CONTACT_TOPICS = {
+  press: "Presse", partner: "Kooperation / Partner", coupon: "Coupon / Aktion", other: "Sonstiges",
+};
+export async function sendContactEmail(env, { topic, name, email, organisation, message, lang }) {
+  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return { ok: false, reason: "not-configured" };
+  const sc = siteConfig(env);
+  const topicLabel = CONTACT_TOPICS[topic] || topic;
+  const rows = [["Thema", topicLabel], ["Name", name], ["E-Mail", email], ["Organisation", organisation || "–"], ["Sprache", lang]];
+  const text = [...rows.map(([k, v]) => `${k}: ${v}`), "", message].join("\n");
+  const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#222">
+<h2 style="font-family:Georgia,serif;font-weight:500">Kontaktanfrage: ${_esc(topicLabel)}</h2>
+<table cellpadding="4">${rows.map(([k, v]) => `<tr><td style="color:#888">${_esc(k)}</td><td>${_esc(v)}</td></tr>`).join("")}</table>
+<p style="white-space:pre-wrap;border-left:3px solid #b57a3a;padding-left:12px">${_esc(message)}</p>
+</body></html>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: sc.resendFrom || "Altbieratlas <noreply@altbieratlas.de>",
+        to: env.ADMIN_EMAIL,
+        reply_to: email,
+        subject: `Altbieratlas Kontakt (${topicLabel}): ${name}${organisation ? ` · ${organisation}` : ""}`,
+        text, html,
+      }),
+    });
+    if (!res.ok) {
+      console.error("[contact] Resend-Status:", res.status);
+      return { ok: false, reason: `resend-${res.status}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    console.error("[contact] Resend-Fehler:", e);
+    return { ok: false, reason: "resend-error" };
   }
 }
 
@@ -681,7 +760,7 @@ export async function sendAdminNotification(env, { type, id, data = {}, email, s
   const adminUrl = siteUrl + "/admin.html";
   const typeLabels = {
     price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
-    correction: "Korrektur", event: "Event",
+    correction: "Korrektur", event: "Event", offer: "Aktion",
   };
   const label = typeLabels[type] || type;
   const summary = data.name || data._breweryName || data.breweryId || data.eventName || "";
@@ -728,6 +807,17 @@ export async function sendAdminNotification(env, { type, id, data = {}, email, s
 // No legacy type mapping needed — types are now canonical IDs (brewpub, brewery, pub, etc.)
 const LEGACY_TYPE = {};
 
+// Hervorhebung aktiv? Stufe > 0 und highlighted_until (letzter Tag) nicht vorbei
+export function isHighlighted(r) {
+  if (!((r?.highlighted || 0) > 0)) return false;
+  return !r.highlighted_until || r.highlighted_until >= new Date().toISOString().slice(0, 10);
+}
+
+function parseJsonOrNull(v) {
+  if (!v) return null;
+  try { return JSON.parse(v); } catch { return null; }
+}
+
 export function brewRow(r, styles = []) {
   if (!r) return null;
   return {
@@ -750,6 +840,15 @@ export function brewRow(r, styles = []) {
     styles,
     verified: !!r.verified,
     isHistorical: !!r.is_historical,
+    // Hervorhebung (Sponsoring): aktiv, solange Stufe > 0 und Enddatum nicht vorbei
+    highlighted: isHighlighted(r),
+    highlightLevel: r.highlighted || 0,
+    highlightedUntil: r.highlighted_until || null,
+    // Selbst gepflegte Öffnungszeiten (Format siehe src/hours.js), null = unbekannt
+    openingHours: parseJsonOrNull(r.opening_hours),
+    openingHoursNote: r.opening_hours_note_de || r.opening_hours_note_en
+      ? { de: r.opening_hours_note_de || null, en: r.opening_hours_note_en || null } : null,
+    openingHoursChecked: r.opening_hours_checked || null,
     successorId: r.successor_id || null,
     status: r.status,
     photoKey: r.photo_key || null,

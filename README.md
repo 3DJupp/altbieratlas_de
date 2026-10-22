@@ -1,4 +1,4 @@
-# Altbieratlas · v0.14.0
+# Altbieratlas · v0.16.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -10,6 +10,9 @@ altbieratlas/
 │   ├── seo.js               # llms.txt, SSR für /, /ranglisten, /wissen, /sorten, ?lang=en, IndexNow
 │   ├── cache.js             # Edge-Cache (Cache API) für öffentliche GET-Antworten
 │   ├── d1meter.js           # Zählt D1-Abfragen/gelesene Zeilen pro Request ([d1]-Logzeile)
+│   ├── googlePlaces.js      # Places API (New): Suche, Bewertungen, Koordinaten, Öffnungszeiten
+│   ├── hours.js             # Öffnungszeiten: Format, Prüfung, Google-Umrechnung, JSON-LD
+│   ├── offers.js            # Aktionen und Coupons: Prüfung und öffentliche Form
 │   └── utils.js             # PBKDF2, Turnstile, Rate-Limit, E-Mail
 ├── public/
 │   ├── index.html           # Landing + Karte (Leaflet)
@@ -21,7 +24,8 @@ altbieratlas/
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
 │   ├── stadt.html           # Stadt-Landingpage (SSR, Slugs kommen aus D1)
 │   ├── staedte.html         # Übersicht aller Städte (/staedte, SSR-Liste)
-│   ├── beitragen.html       # Beitrags-Formulare (5 Typen)
+│   ├── beitragen.html       # Beitrags-Formulare (6 Typen)
+│   ├── kooperation.html     # Kooperation & Presse, Kontaktformular (/kooperation, /presse)
 │   ├── impressum.html       # Impressum & Datenschutz
 │   ├── admin.html           # Moderations-Dashboard
 │   ├── 404.html             # Eigene Fehlerseite (Status 404, noindex)
@@ -405,6 +409,17 @@ Google-Bedingungen darf nur die Place ID dauerhaft gespeichert werden, alles
 andere höchstens 30 Tage. Manuell auslösen: Admin-Panel → *Brauereien* →
 „Google-Bewertungen abrufen" (wiederholt den Endpunkt, bis alle Orte durch sind)
 bzw. `POST /api/admin/google-ratings/refresh` (eine Portion je Aufruf, Antwort mit `remaining`).
+Derselbe Abruf holt Googles Koordinaten (`location`, ohne Mehrkosten) in den Cache;
+Einträge noch ohne Koordinaten gelten sofort als fällig.
+
+**Pins prüfen:** Admin-Panel → *Brauereien* → **„Pins prüfen"** listet den Abstand
+zwischen DB-Pin und Googles Koordinaten für alle Orte mit Place ID, größter zuerst;
+ab 75 m (`PIN_CHECK_DISTANCE_M`) gilt ein Pin als auffällig. Liest nur den Cache, ruft
+Google nicht auf. Je Zeile Links auf DB-Pin (OpenStreetMap) und Google sowie
+„Bearbeiten"; teilen sich mehrere Orte eine Place ID, steht das dabei. Googles
+Koordinaten werden nie in `breweries` übernommen (Google-Bedingungen), den Pin
+korrigiert der Admin selbst.
+
 Die Ortsseite zeigt z. B. „4,5 ★ (312 Bewertungen) bei Google" mit Link auf den
 Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 30 Tage, erscheint nichts.
@@ -457,6 +472,18 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 - **Google-Bewertung** (optional, `GOOGLE_PLACES_KEY`): „4,5 ★ (312 Bewertungen) bei Google"
   mit Link auf den Ort in Google Maps, aus dem höchstens 30 Tage alten Cache
 - **Maps-Link** über die Google Place ID (sonst `maps_url`, sonst Koordinaten), siehe [1.6](#16-google-place-ids-und-bewertungen-optional)
+- **Öffnungszeiten**: selbst gepflegt (`breweries.opening_hours`, Format in `src/hours.js`:
+  je Wochentag Zeitfenster, fehlender Tag = unbekannt, leere Liste = Ruhetag, über
+  Mitternacht erlaubt) mit Hinweis DE/EN und Prüfdatum; „Jetzt geöffnet · bis …“ in
+  Europe/Berlin (`window.atlasHours` in `shell.js`). Ohne eigene Zeiten erscheinen Googles
+  `regularOpeningHours` aus dem 30-Tage-Cache mit „laut Google“. Im SSR stehen die Zeiten
+  im HTML; ins JSON-LD (`openingHoursSpecification`) kommen nur eigene
+- **Aktionen und Coupons** (`offers`): z. B. „Mittwoch 2 für 1“ mit Wochentagen,
+  Uhrzeit und Gültigkeit; laufende zuerst, abgelaufene fallen weg. Atlas-Coupons aus
+  Kooperationen (optional mit Code) sind als „Partner-Aktion“ gekennzeichnet. Das
+  Karten-Popup nennt die Aktion des Tages
+- **Partner**: hervorgehobene Orte (`breweries.highlighted`, optional bis
+  `highlighted_until`) tragen „Partner“ im Kopf, im Popup und auf der Stadtseite
 
 ### Stadt-Landingpages (SEO)
 - Serverseitig gerenderte Seiten unter `/stadt/<slug>`
@@ -475,12 +502,14 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
   `/stadt/` leiten per 301 dorthin
 
 ### Beitragen
-Fünf Einreichungstypen mit Moderation:
+Sechs Einreichungstypen mit Moderation:
 - **Preismeldung** — Brauerei, Sorte (Auswahl aus den Sorten des Orts; bei genau einer vorbelegt, ohne hinterlegte Sorten ausgeblendet), Preis, Größe, Datum
 - **Brauerei / Kneipe** — inkl. automatischem Geocoding via Nominatim
 - **Sorte & Geschmacksnotizen** — Stil, ABV, IBU, Tasting
 - **Korrektur** — Freitext-Hinweis
 - **Event** — Name, Datum, optionale Brauerei-Zuordnung
+- **Aktion** — Ort, Titel, Wochentage, Uhrzeit, gültig bis; nach Freigabe in `offers`
+  (Coupons legt nur der Admin an)
 
 Optional Name/Spitzname (`contributions.submitter_name`) und E-Mail. Ohne E-Mail fragt
 das Formular einmal nach, weil dann weder Freischalt-Benachrichtigung noch Rückfragen
@@ -490,19 +519,27 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken, neueste offene Beiträge und **fehlende Übersetzungen** (alle Orte, Sorten, Events, Event-Biere, Glossar-Einträge und Typen mit leerem DE- oder EN-Text; Orte öffnen direkt den Bearbeiten-Dialog)
 - **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick). Beiträge zu einem bestehenden Ort (Preis, Sorte, Korrektur, Event) verlinken den Ort und springen per „Ort bearbeiten“ in dessen Dialog; Korrekturen werden danach als „Erledigt“ markiert, sie ändern selbst nichts
-- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen; Untappd-Zuordnung korrigieren (`untappd_id`: leer = Namenssuche, 0 = ausblenden, sonst feste Untappd-ID; „Prüfen“ verwirft den Cache und zeigt den Treffer)
-- **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
+- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, schiefe Pins per „Pins prüfen" finden, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) und „Historisch“ im Bearbeiten-Dialog und schon beim Anlegen setzen (historisch entfernt die Place ID); Orte per „Auf der Karte hervorheben“ mit goldenem Pin zeigen (`breweries.highlighted`, für Sponsoring); Untappd-Zuordnung korrigieren (`untappd_id`: leer = Namenssuche, 0 = ausblenden, sonst feste Untappd-ID; „Prüfen“ verwirft den Cache und zeigt den Treffer)
+- **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event anlegen, bearbeiten und löschen
 - **Preise** — Alle Preise einsehen, bearbeiten (inkl. Sorte), löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten (inkl. Ausschankorte per Mehrfachauswahl), löschen; beim Umbenennen behalten Preise ihre Sorte
 - **Glossar** — Einträge anlegen, bearbeiten, löschen
-- **Typen** — Venue-Typen (brewpub, brewery, taproom, gastronomie, pub, restaurant, kiosk, handel, supermarket, beverage_store) anlegen, bearbeiten, löschen
-- **Einstellungen** — Impressum, Ankündigungs-Banner (DE/EN, aktivierbar), Social-Links (GitHub, LinkedIn, Instagram, Mastodon, Ko-fi, Website)
+- **Typen** — Venue-Typen (brewpub, brewery, taproom, gastronomie, pub, restaurant, kiosk, handel, supermarket, beverage_store) anlegen, bearbeiten, löschen; „Produzent“ (`is_producer`) setzen
+- **Aktionen** — Aktionen und Atlas-Coupons anlegen, bearbeiten, freigeben, löschen
+- **Einstellungen** — Impressum, Ankündigungs-Banner (DE/EN, aktivierbar), Social-Links (GitHub, LinkedIn, Instagram, Mastodon, Ko-fi, „Spendier mir ein Alt“ als beliebiger Spendenlink, Website)
+- **System** — Rheinderby-Stand und Zurücksetzen (nur mit eingetipptem `ZURÜCKSETZEN`, Browser-Bestätigung und Server-Prüfung); Digest jetzt senden (Testversand aller offenen Einreichungen, ohne den Stand des regulären Digests zu verschieben); Admin-Benutzer anlegen und löschen (nie sich selbst, nie den letzten), eigenes Passwort ändern
+- **Öffnungszeiten** im Bearbeiten-Dialog: je Tag z. B. „11-23“ oder „11:30–14, 17–1“, „zu“ = Ruhetag; geteilte Place IDs sind in Tabelle und Dialog markiert
 - **Passwort-Reset per E-Mail** (DE/EN)
 - **Zweisprachigkeit**: fehlt beim Speichern DE oder EN (Beschreibung, Geschmack, Titel, Definition, Typ-Name/-Überschrift), fragt das Panel nach
 - Mobile-optimierte Tab-Navigation
 
 ### Ranglisten
 - Günstigste Brauereien, neueste Preismeldungen, Meistgemeldet
+- Reine Brauereien (Typ `brewery`) schenken nicht aus und fehlen in allen Vergleichen:
+  Preis-Ranglisten, Meistgemeldet, Google-Bewertung, Preis gesucht und alle
+  Durchschnittspreise (Startseite, Ranglisten, Stadtseiten, `/api/stats`). Regel an
+  einer Stelle je Seite: `inComparisons()` (`src/utils.js`) und
+  `window.atlasInComparisons()` (`shell.js`)
 - **Google-Bewertung**: Orte nach Google-Sterneschnitt (Cache ≤ 30 Tage), nur ab
   25 Bewertungen (`GOOGLE_MIN_COUNT` in `ranglisten.html`), Gleichstand nach Anzahl
 - **Preis gesucht**: alle aktiven Orte ohne Preismeldung, nach Stadt sortiert, je
@@ -518,6 +555,9 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 
 ### Altbier-Sorten (`/sorten`)
 - Alle Sorten aus D1 mit ABV, IBU, Geschmack und Link zur Hauptbrauerei
+- Eine Sorte erscheint erst, wenn mindestens einer ihrer Orte (Primär-Ort oder
+  Ausschankort) freigegeben ist; Sorten ohne Ort bleiben sichtbar (`STYLE_PUBLIC_SQL`
+  in `src/utils.js`, gilt auch für `/api/styles` und `llms-full.txt`)
 - Kurz eingeordnet: obergärig, Hausbrauerei, Alt aus dem Supermarkt
 - Serverseitig gerendert; JSON-LD `CollectionPage` mit `ItemList`
 
@@ -639,7 +679,9 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/stats` | Kennzahlen |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien (inkl. `googleRating` aus dem Cache ≤ 30 Tage) |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |
-| GET | `/api/prices` | Preismeldungen (max. 2000), je mit `styleId` |
+| GET | `/api/prices` | Alle freigegebenen Preismeldungen, je mit `styleId` |
+| GET | `/api/offers` | Laufende und kommende Aktionen/Coupons freigegebener Orte |
+| POST | `/api/contact` | Kontaktformular (/kooperation): Turnstile, 5/h je IP, Mail an `ADMIN_EMAIL` |
 | POST | `/api/prices` | Preismeldung einreichen (Wrapper) |
 | GET | `/api/events` | Events (inkl. `endDate`, `endTime`) |
 | GET | `/api/events/:id` | Event-Detail + Biere |
@@ -679,6 +721,15 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | POST | `/api/admin/google-ratings/refresh` | Google-Bewertungen abrufen, max. 40 Orte je Aufruf (`remaining` = noch offen) |
 | POST | `/api/admin/google-places/backfill` | Place-ID-Probelauf für Orte ohne ID, portionsweise (`{ after }` → `{ results, next, done }`), speichert nichts |
 | POST | `/api/admin/google-places/apply` | Bestätigte Place IDs speichern (`{ items: [{ id, placeId }] }`), überschreibt keine bestehenden |
+| GET/POST | `/api/admin/offers` | Aktionen auflisten / anlegen |
+| PUT/DELETE | `/api/admin/offers/:id` | Aktion ändern / löschen |
+| GET | `/api/admin/rivals` | Rheinderby-Stand |
+| POST | `/api/admin/rivals/reset` | Alle Stimmen löschen, nur mit `{ "confirm": "ZURÜCKSETZEN" }` |
+| POST | `/api/admin/digest/send` | Digest-Testversand an `ADMIN_EMAIL` |
+| GET/POST | `/api/admin/users` | Admins auflisten / anlegen |
+| DELETE | `/api/admin/users/:username` | Admin löschen (nicht sich selbst, nicht den letzten) |
+| PUT | `/api/admin/users/me/password` | Eigenes Passwort ändern (`{ current, password }`) |
+| GET | `/api/admin/google-places/pin-check` | Abstand DB-Pin ↔ Google je Ort mit Place ID aus dem Cache (`{ threshold, missing, items }`), größter zuerst |
 | DELETE | `/api/admin/breweries/:id` | Brauerei löschen |
 | GET | `/api/admin/events` | Alle Events |
 | POST | `/api/admin/events` | Neues Event anlegen (inkl. `end_date`, `end_time`) |

@@ -93,8 +93,10 @@ const ROUTES = [
   ["GET",    "/api/rivals/votes",                           R.getRivalVotes],
   ["POST",   "/api/rivals/vote",                            R.postRivalVote],
   ["GET",    "/api/venue-types",                            R.listVenueTypes],
+  ["GET",    "/api/offers",                                R.listOffers],
   ["GET",    "/api/glossary",                              R.listGlossary],
   ["GET",    "/api/geocode",                               R.geocode],
+  ["POST",   "/api/contact",                               R.postContact],
   ["POST",   "/api/contributions",                         R.postContribution],
   // --- OG-Image ---
   ["GET",    "/api/og/ort",                                R.serveOgBrewery],
@@ -120,6 +122,18 @@ const ROUTES = [
   ["POST",   "/api/admin/google-ratings/refresh",          R.adminRefreshGoogleRatings],
   ["POST",   "/api/admin/google-places/backfill",          R.adminPlacesBackfill],
   ["POST",   "/api/admin/google-places/apply",             R.adminPlacesApply],
+  ["GET",    "/api/admin/google-places/pin-check",         R.adminPinCheck],
+  ["GET",    "/api/admin/offers",                          R.adminListOffers],
+  ["POST",   "/api/admin/offers",                          R.adminCreateOffer],
+  ["PUT",    "/api/admin/offers/:id",                      R.adminUpdateOffer],
+  ["DELETE", "/api/admin/offers/:id",                      R.adminDeleteOffer],
+  ["GET",    "/api/admin/rivals",                          R.adminRivalVotes],
+  ["POST",   "/api/admin/rivals/reset",                    R.adminResetRivalVotes],
+  ["POST",   "/api/admin/digest/send",                     R.adminSendDigest],
+  ["GET",    "/api/admin/users",                           R.adminListUsers],
+  ["POST",   "/api/admin/users",                           R.adminCreateUser],
+  ["PUT",    "/api/admin/users/me/password",               R.adminChangePassword],
+  ["DELETE", "/api/admin/users/:username",                 R.adminDeleteUser],
   ["POST",   "/api/admin/breweries/:id/photo",             R.adminUploadBreweryPhoto],
   ["DELETE", "/api/admin/breweries/:id/photo",             R.adminDeleteBreweryPhoto],
   ["GET",    "/api/admin/events",                          R.adminListEvents],
@@ -317,7 +331,7 @@ async function handle(request, env, ctx) {
 
   // /<page>.html → /<page>  (301, kanonische Clean URLs)
   // /index.html  → /
-  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "impressum", "admin", "ort", "brauerei", "event"];
+  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "impressum", "admin", "ort", "brauerei", "event"];
   if (request.method === "GET" && url.pathname.endsWith(".html")) {
     const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
     if (name === "index") {
@@ -445,7 +459,14 @@ async function handle(request, env, ctx) {
   // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
   // impressum ausgenommen — wird oben mit SSI bedient
   // brauerei ausgenommen — wird oben auf /ort weitergeleitet
-  const PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "admin", "ort", "event", "staedte"];
+  const PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "admin", "ort", "event", "staedte"];
+  // /presse ist ein sprechender Einstieg in denselben Inhalt
+  if (request.method === "GET" && /^\/presse\/?$/.test(url.pathname)) {
+    const dest = new URL(request.url);
+    dest.pathname = "/kooperation";
+    dest.hash = "presse";
+    return Response.redirect(dest.toString(), 301);
+  }
   if (request.method === "GET" && !url.pathname.includes(".") && env.ASSETS) {
     const bare = url.pathname.replace(/\/$/, "");
     const name = bare.slice(1); // strip leading /

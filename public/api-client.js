@@ -147,6 +147,7 @@
       return { event: { ...event, breweryName: b ? b.name : null, breweryCity: b ? b.city : null }, beers };
     },
     async listGlossary() { return { glossary: window.ATLAS_DATA.glossary }; },
+    async listOffers() { return { offers: [] }; },
     async geocode(q) {
       if (!q || q.length < 2) return { results: [] };
       try {
@@ -176,6 +177,12 @@
     async submitContribution(body) {
       this._pushUserContrib({ type: body.type, data: body.data });
       return { ok: true, status: "pending", mock: true };
+    },
+    // Ohne Backend kann keine Mail raus: ehrlich scheitern statt Erfolg vorspielen
+    async sendContact() {
+      const e = new Error("mock-mode");
+      e.detail = { error: "mock-mode" };
+      throw e;
     },
     async getRivalVotes() { return { alt: 42, kolsch: 31, neutral: 5, total: 73 }; },
     async postRivalVote(choice) {
@@ -231,8 +238,10 @@
     listEvents:       () => req("/events"),
     getEvent:         (id) => req(`/events/${encodeURIComponent(id)}`),
     listGlossary:     () => req("/glossary"),
+    listOffers:       () => req("/offers"),
     geocode:          async (q) => { try { return await req(`/geocode?q=${encodeURIComponent(q)}`); } catch { return { results: [] }; } },
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
+    sendContact:        (body) => req("/contact", { method: "POST", body }),
     getRivalVotes:    () => req("/rivals/votes"),
     postRivalVote:    (choice) => req("/rivals/vote", { method: "POST", body: { choice } }),
     // Admin
@@ -253,6 +262,18 @@
       refreshGoogleRatings: () => req("/admin/google-ratings/refresh", { method: "POST" }),
       placesBackfill:       (after) => req("/admin/google-places/backfill", { method: "POST", body: { after } }),
       placesApply:          (items) => req("/admin/google-places/apply", { method: "POST", body: { items } }),
+      pinCheck:             () => req("/admin/google-places/pin-check"),
+      listOffers:           () => req("/admin/offers"),
+      createOffer:          (body) => req("/admin/offers", { method: "POST", body }),
+      updateOffer:          (id, body) => req(`/admin/offers/${encodeURIComponent(id)}`, { method: "PUT", body }),
+      deleteOffer:          (id) => req(`/admin/offers/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      rivalVotes:           () => req("/admin/rivals"),
+      resetRivalVotes:      (confirm) => req("/admin/rivals/reset", { method: "POST", body: { confirm } }),
+      sendDigest:           () => req("/admin/digest/send", { method: "POST", body: {} }),
+      listUsers:            () => req("/admin/users"),
+      createUser:           (body) => req("/admin/users", { method: "POST", body }),
+      deleteUser:           (name) => req(`/admin/users/${encodeURIComponent(name)}`, { method: "DELETE" }),
+      changePassword:       (current, password) => req("/admin/users/me/password", { method: "PUT", body: { current, password } }),
       uploadBreweryPhoto:   (id, file) => upload(`/admin/breweries/${encodeURIComponent(id)}/photo`, file, "photo"),
       deleteBreweryPhoto:   (id) => req(`/admin/breweries/${encodeURIComponent(id)}/photo`, { method: "DELETE" }),
       requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
@@ -317,8 +338,10 @@
     listEvents:         () => call("listEvents"),
     getEvent:           (id) => call("getEvent", id),
     listGlossary:       () => call("listGlossary"),
+    listOffers:         () => call("listOffers"),
     geocode:            (q) => call("geocode", q),
     submitContribution: (body) => call("submitContribution", body),
+    sendContact:        (body) => call("sendContact", body),
     getRivalVotes:      () => call("getRivalVotes"),
     postRivalVote:      (choice) => call("postRivalVote", choice),
 
@@ -349,6 +372,18 @@
       refreshGoogleRatings: () => window.AtlasAPI.admin._gate("refreshGoogleRatings"),
       placesBackfill:     (after) => window.AtlasAPI.admin._gate("placesBackfill", after),
       placesApply:        (items) => window.AtlasAPI.admin._gate("placesApply", items),
+      pinCheck:           () => window.AtlasAPI.admin._gate("pinCheck"),
+      listOffers:         () => window.AtlasAPI.admin._gate("listOffers"),
+      createOffer:        (b) => window.AtlasAPI.admin._gate("createOffer", b),
+      updateOffer:        (id, b) => window.AtlasAPI.admin._gate("updateOffer", id, b),
+      deleteOffer:        (id) => window.AtlasAPI.admin._gate("deleteOffer", id),
+      rivalVotes:         () => window.AtlasAPI.admin._gate("rivalVotes"),
+      resetRivalVotes:    (c) => window.AtlasAPI.admin._gate("resetRivalVotes", c),
+      sendDigest:         () => window.AtlasAPI.admin._gate("sendDigest"),
+      listUsers:          () => window.AtlasAPI.admin._gate("listUsers"),
+      createUser:         (b) => window.AtlasAPI.admin._gate("createUser", b),
+      deleteUser:         (n) => window.AtlasAPI.admin._gate("deleteUser", n),
+      changePassword:     (c, p) => window.AtlasAPI.admin._gate("changePassword", c, p),
       uploadBreweryPhoto: (id, f) => window.AtlasAPI.admin._gate("uploadBreweryPhoto", id, f),
       deleteBreweryPhoto: (id) => window.AtlasAPI.admin._gate("deleteBreweryPhoto", id),
       uploadBreweryLogo:      (id, f) => window.AtlasAPI.admin._gate("uploadBreweryLogo", id, f),

@@ -226,16 +226,17 @@ function isConfigSize(num) {
   return configSizes().some((c) => Math.abs(c - num) < 0.001);
 }
 
+// Reine Brauereien schenken nicht aus und zählen im Durchschnitt nicht mit
 function avgPrice(sizeNum) {
-  const xs = prices.filter((p) => Math.abs(normSize(p.size) - sizeNum) < 0.001);
+  const xs = prices.filter((p) => Math.abs(normSize(p.size) - sizeNum) < 0.001
+    && window.atlasInComparisons(breweryById.get(p.breweryId)));
   return xs.length ? xs.reduce((a, b) => a + b.price, 0) / xs.length : 0;
 }
 
 function renderStats() {
   const strip = document.getElementById("stats-strip");
   // Ø-Preis je konfigurierter Größe, die auch Meldungen hat (keine leeren Kacheln)
-  const sizes = configSizes().filter((s) =>
-    prices.some((p) => Math.abs(normSize(p.size) - s) < 0.001));
+  const sizes = configSizes().filter((s) => avgPrice(s) > 0);
 
   // Vorherige Preis-Kästen entfernen, dann neu einfügen
   strip.querySelectorAll(".stat-price-avg").forEach((el) => el.remove());
@@ -384,7 +385,7 @@ function latestPerBrewery(sizeNum) {
       if (!taken) list.push(p);
     });
   return Object.values(map).flat()
-    .map((p) => { const b = breweryById.get(p.breweryId); return b ? { ...p, brewery: b } : null; })
+    .map((p) => { const b = breweryById.get(p.breweryId); return window.atlasInComparisons(b) ? { ...p, brewery: b } : null; })
     .filter(Boolean);
 }
 
@@ -393,7 +394,7 @@ function countPerBrewery() {
   prices.forEach((p) => { map[p.breweryId] = (map[p.breweryId] || 0) + 1; });
   return Object.entries(map)
     .map(([bid, n]) => ({ brewery: breweryById.get(bid), n }))
-    .filter((x) => x.brewery);
+    .filter((x) => window.atlasInComparisons(x.brewery));
 }
 
 function render() {
@@ -420,7 +421,7 @@ function render() {
   } else if (currentTab === "google") {
     // Nur Orte mit genug Bewertungen, sonst führen Ein-Stern-Ausreißer die Liste an
     list = breweries
-      .filter((br) => !br.isHistorical && br.googleRating?.rating != null
+      .filter((br) => !br.isHistorical && window.atlasInComparisons(br) && br.googleRating?.rating != null
         && (br.googleRating.userRatingCount || 0) >= GOOGLE_MIN_COUNT)
       .sort((a, b) => b.googleRating.rating - a.googleRating.rating
         || b.googleRating.userRatingCount - a.googleRating.userRatingCount)
@@ -430,7 +431,7 @@ function render() {
     // Aktive Orte ohne jede Preismeldung, nach Stadt und Name
     const withPrice = new Set(prices.map((p) => p.breweryId));
     list = breweries
-      .filter((br) => !br.isHistorical && !withPrice.has(br.id))
+      .filter((br) => !br.isHistorical && window.atlasInComparisons(br) && !withPrice.has(br.id))
       .sort((a, b) => (a.city || "").localeCompare(b.city || "") || a.name.localeCompare(b.name))
       .map((br) => ({ brewery: br }));
     title = t("rank.titleWanted");

@@ -134,6 +134,28 @@
 .style-card p { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
 
 .price-history { padding-top: 40px; padding-bottom: 40px; }
+.ort-hours { margin-top: 18px; border-top: 1px solid var(--rule); padding-top: 14px; }
+.ort-hours h3 { font-size: 15px; margin: 0 0 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ort-hours table { border-collapse: collapse; font-size: 14px; }
+.ort-hours th { text-align: left; font-weight: 500; padding: 2px 16px 2px 0; color: var(--ink-muted); }
+.ort-hours td { padding: 2px 0; font-family: var(--font-mono); font-size: 13px; }
+.ort-hours tr.today th, .ort-hours tr.today td { color: var(--ink); font-weight: 600; }
+.ort-hours .hours-note { font-size: 13px; margin: 8px 0 0; }
+.ort-hours .hours-src { font-size: 12px; color: var(--ink-muted); margin: 6px 0 0; }
+.hours-chip { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.hours-chip.open { color: #2d7a2d; }
+.hours-chip.closed { color: #9b1f1f; }
+.offers-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin: 10px 0 30px; }
+.offer-card { padding: 16px 18px; }
+.offer-card.is-now { border-color: var(--copper); }
+.offer-card h3 { font-size: 16px; margin: 6px 0 4px; }
+.offer-card p { font-size: 14px; margin: 4px 0; }
+.offer-card .offer-when { font-size: 13px; color: var(--ink-muted); }
+.offer-badge { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; margin-right: 6px; border: 1px solid currentColor; }
+.offer-badge.now { color: #2d7a2d; }
+.offer-badge.today { color: var(--copper); }
+.offer-badge.partner { color: var(--ink-muted); }
+.offer-code { font-family: var(--font-mono); font-size: 14px; padding: 2px 8px; border: 1px dashed var(--rule-strong); border-radius: 4px; }
 .chart { width: 100%; height: 220px; }
 .chart svg { width: 100%; height: 100%; display: block; }
 .chart .grid-line { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
@@ -383,6 +405,7 @@ const isSsr = root.dataset.ssr === "1";
                 <span id="b-status" class="tag ${b.verified ? 'verified' : 'pending'}">${b.verified ? window.t('common.verified') : window.t('common.pending')}</span>
                 <span id="b-type">${typeLabel}</span>
                 ${b.isHistorical ? `<span class="tag" data-i18n="brewery.historical" style="color:#888;border-color:#888;font-size:11px">${window.t('brewery.historical')}</span>` : ''}
+                ${b.highlighted && !b.isHistorical ? `<span class="tag" data-i18n="offer.partnerShort" title="${window.t('offer.partnerHint')}" style="color:#a0702c;border-color:#d9a35b;font-size:11px">${window.t('offer.partnerShort')}</span>` : ''}
                 <span class="dot"></span>
                 <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
                 ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
@@ -409,6 +432,7 @@ const isSsr = root.dataset.ssr === "1";
         ${b.successor ? `<p class="ort-lineage"><span data-i18n="brewery.successor">${window.t('brewery.successor')}</span>: <a href="/ort/${encodeURIComponent(b.successor.id)}">${b.successor.name} →</a></p>` : ''}
         ${b.predecessors && b.predecessors.length ? `<p class="ort-lineage"><span data-i18n="brewery.predecessors">${window.t('brewery.predecessors')}</span>: ${b.predecessors.map((p) => `<a href="/ort/${encodeURIComponent(p.id)}">${p.name}</a>`).join(', ')}</p>` : ''}
         ${b.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${b.address}</p>` : ''}
+        <div id="hours-section"></div>
       </div>
       <div>
         <div class="detail-map" id="detail-map"></div>
@@ -437,6 +461,7 @@ const isSsr = root.dataset.ssr === "1";
       </section>
     ` : ''}
 
+    <div class="container" id="offers-section"></div>
     <div class="container" id="google-rating-section"></div>
     <div class="container" id="untappd-section" style="padding-bottom:20px"></div>
 
@@ -641,6 +666,75 @@ const isSsr = root.dataset.ssr === "1";
   }
   renderGoogleRating();
   document.addEventListener('atlas:lang-changed', renderGoogleRating);
+
+  // Öffnungszeiten: eigene, sonst Googles aus dem 30-Tage-Cache („laut Google“).
+  // „Jetzt geöffnet“ rechnet in Europe/Berlin (window.atlasHours in shell.js).
+  function renderHours() {
+    const sec = document.getElementById("hours-section");
+    const H = window.atlasHours;
+    const own = b.openingHours;
+    const hours = b.isHistorical ? null : (own || b.googleOpeningHours?.days || null);
+    if (!sec || !hours) return;
+    const t = window.t;
+    const l = window.__atlasLang;
+    const now = H.berlinNow();
+    const st = H.status(hours, now);
+    const chip = !st ? "" : st.open
+      ? `<span class="hours-chip open">${t("brewery.openNow")}${st.until ? " · " + t("brewery.openUntil").replace("{t}", st.until) : ""}</span>`
+      : `<span class="hours-chip closed">${t("brewery.closedNow")}${st.opensAt ? " · " + t("brewery.opensAt").replace("{t}", st.opensAt) : ""}</span>`;
+    const rows = H.DAYS.filter((d) => d in hours).map((d) => `
+      <tr class="${d === now.day ? "today" : ""}"><th>${t("day." + d)}</th><td>${H.formatDay(hours[d], t("brewery.closedDay"))}</td></tr>`).join("");
+    const note = own && b.openingHoursNote ? (b.openingHoursNote[l] || b.openingHoursNote.de || "") : "";
+    const src = own
+      ? (b.openingHoursChecked ? t("brewery.hoursChecked").replace("{date}", window.formatDate(b.openingHoursChecked)) : "")
+      : t("brewery.hoursGoogle");
+    sec.innerHTML = `
+      <div class="ort-hours">
+        <h3>${t("brewery.hours")} ${chip}</h3>
+        <table>${rows}</table>
+        ${note ? `<p class="hours-note">${note.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]))}</p>` : ""}
+        ${src ? `<p class="hours-src">${src}</p>` : ""}
+      </div>`;
+  }
+  renderHours();
+  document.addEventListener('atlas:lang-changed', renderHours);
+
+  // Aktionen und Coupons: laufende zuerst, abgelaufene fallen weg (Berliner Zeit).
+  // Coupons stammen aus Kooperationen und sind deshalb als Partner-Aktion markiert.
+  function renderOffers() {
+    const sec = document.getElementById("offers-section");
+    if (!sec) return;
+    const t = window.t;
+    const l = window.__atlasLang;
+    const list = window.atlasOffers.sort(result.offers || []);
+    if (!list.length || b.isHistorical) { sec.innerHTML = ""; return; }
+    const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const when = (o) => {
+      const days = o.weekdays ? o.weekdays.map((d) => t("day." + d)).join(", ") : t("offer.daily");
+      const time = o.timeFrom ? `${o.timeFrom}–${o.timeTo}` : t("offer.allDay");
+      const valid = o.validFrom && o.validFrom > window.atlasHours.berlinNow().date
+        ? " · " + t("offer.from").replace("{date}", window.formatDate(o.validFrom))
+        : o.validUntil ? " · " + t("offer.until").replace("{date}", window.formatDate(o.validUntil)) : "";
+      return `${days} · ${time}${valid}`;
+    };
+    sec.innerHTML = `
+      <div class="eyebrow">${t("offer.eyebrow")}</div>
+      <div class="offers-list">${list.map(({ o, s }) => `
+        <article class="card offer-card${s === "now" ? " is-now" : ""}">
+          ${s === "now" ? `<span class="offer-badge now">${t("offer.now")}</span>` : s === "today" ? `<span class="offer-badge today">${t("offer.today")}</span>` : ""}
+          ${o.kind === "coupon" ? `<span class="offer-badge partner">${t("offer.partner")}</span>` : ""}
+          <h3>${esc(o.title[l] || o.title.de)}</h3>
+          ${o.description ? `<p>${esc(o.description[l] || o.description.de)}</p>` : ""}
+          ${o.code ? `<p>${t("offer.code")} <span class="offer-code">${esc(o.code)}</span></p>` : ""}
+          <p class="offer-when">${esc(when(o))}</p>
+        </article>`).join("")}
+      </div>`;
+  }
+  renderOffers();
+  document.addEventListener('atlas:lang-changed', renderOffers);
+
+  // Status nach Minutenwechsel aktuell halten, falls die Seite länger offen bleibt
+  setInterval(() => { renderHours(); renderOffers(); }, 60 * 1000);
 
   // Untappd-Daten nachladen (fire & forget — zeigt nur wenn verfügbar)
   fetch(`/api/untappd/brewery/${encodeURIComponent(b.id)}`)

@@ -380,7 +380,8 @@ function getHighlightedSize() {
 
 // ============ State ============
 let allBreweries = [];
-let priceByBrewery = new Map();   // id → Popup-Preis: erste highlightedSize, sonst kleinste Größe
+let priceByBrewery = new Map();
+let offersByBrewery = new Map();   // id → Aktionen (/api/offers), Popup zeigt laufende/heutige   // id → Popup-Preis: erste highlightedSize, sonst kleinste Größe
 let cachedHlAvg = null;           // Durchschnittspreis für erste highlightedSize
 const markerMap = new Map();
 let geoMarker = null;             // Geocode-Treffer (temporärer Pin)
@@ -424,8 +425,16 @@ function renderMarkers(filter = "all", search = "") {
     const googleText = g && g.rating != null
       ? `<div class="pop-google">${popRating(g.rating)} ★${g.userRatingCount ? ` <span style="opacity:.6">(${Number(g.userRatingCount).toLocaleString(popLocale())})</span>` : ""} <span style="opacity:.6">${window.t("brewery.googleRatingOn")}</span></div>`
       : "";
+    // Aktion, die gerade läuft oder heute gilt (Berliner Zeit)
+    const todaysOffer = (window.atlasOffers.sort(offersByBrewery.get(b.id) || [])
+      .find((x) => x.s === "now" || x.s === "today") || {}).o;
+    const offerText = todaysOffer && !b.isHistorical
+      ? `<div class="pop-offer"><strong>${window.t("offer.popup")}:</strong> ${String((todaysOffer.title[window.__atlasLang] || todaysOffer.title.de)).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))}${todaysOffer.kind === "coupon" ? ` <span style="opacity:.6">(${window.t("offer.partner")})</span>` : ""}</div>`
+      : "";
     const historicalBadge = b.isHistorical
-      ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>` : "";
+      ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>`
+      // Hervorgehobene Orte sind gekennzeichnet (bezahlte Platzierung)
+      : b.highlighted ? `<div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-top:2px">${window.t("offer.partnerShort")}</div>` : "";
     function popInitials(str) {
       const w = (str || "").trim().split(/\s+/);
       return (w.length >= 2 ? w[0][0] + w[1][0] : (str || "?").slice(0, 2)).toUpperCase();
@@ -446,6 +455,7 @@ function renderMarkers(filter = "all", search = "") {
       </div>
       ${priceText}
       ${googleText}
+      ${offerText}
       <div style="margin-top:10px"><a href="/ort/${encodeURIComponent(b.id)}">Details →</a></div>
     `);
     marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
@@ -735,13 +745,16 @@ let cachedPrices = [];
 
 (async () => {
   try {
-    const [brews, prices, stats, events] = await Promise.all([
+    const [brews, prices, stats, events, offers] = await Promise.all([
       window.AtlasAPI.listBreweries(),
       window.AtlasAPI.listPrices(),
       window.AtlasAPI.getStats(),
       window.AtlasAPI.listEvents(),
+      window.AtlasAPI.listOffers().catch(() => ({ offers: [] })),
     ]);
     allBreweries = brews.breweries || [];
+    offersByBrewery = new Map();
+    (offers.offers || []).forEach((o) => offersByBrewery.set(o.breweryId, [...(offersByBrewery.get(o.breweryId) || []), o]));
     cachedPrices = prices.prices || [];
 
     // Preis-Index fürs Popup — gleiche Regel wie die Ortsseite: jüngste Meldung der
@@ -760,8 +773,10 @@ let cachedPrices = [];
     });
     priceByBrewery = byId;
 
-    // Durchschnittspreis für erste highlightedSize (für Ticker)
-    const hlPrices = cachedPrices.filter((p) => Math.abs(normSize(p.size) - hlSize) < 0.001);
+    // Durchschnittspreis für erste highlightedSize (für Ticker); reine Brauereien zählen nicht mit
+    const comparable = new Set(allBreweries.filter(window.atlasInComparisons).map((b) => b.id));
+    const hlPrices = cachedPrices.filter((p) => comparable.has(p.breweryId)
+      && Math.abs(normSize(p.size) - hlSize) < 0.001);
     cachedHlAvg = hlPrices.length ? hlPrices.reduce((a, b) => a + b.price, 0) / hlPrices.length : null;
 
     // Ticker
@@ -814,7 +829,7 @@ function renderRankings(prices) {
     .filter((p) => Math.abs(normSize(p.size) - hlSize) < 0.001)
     .map((p) => {
       const b = allBreweries.find((x) => x.id === p.breweryId);
-      return b ? { ...b, price: p.price, date: p.date } : null;
+      return window.atlasInComparisons(b) ? { ...b, price: p.price, date: p.date } : null;
     })
     .filter(Boolean);
 
@@ -871,7 +886,8 @@ function renderRankings(prices) {
   const withHl = new Set(uniq.map((b) => b.id));
   const missing = new Set(prices
     .map((p) => p.breweryId)
-    .filter((id) => !withHl.has(id) && allBreweries.some((b) => b.id === id && !b.isHistorical)));
+    .filter((id) => !withHl.has(id)
+      && allBreweries.some((b) => b.id === id && !b.isHistorical && window.atlasInComparisons(b))));
   const note = document.getElementById("rank-note");
   if (note) {
     note.hidden = missing.size === 0;

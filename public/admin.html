@@ -240,8 +240,10 @@
         <button data-tab="styles" data-i18n="admin.styles">Stile</button>
         <button data-tab="events" data-i18n="admin.events">Events</button>
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
+        <button data-tab="offers" data-i18n="admin.offers">Aktionen</button>
         <button data-tab="glossary" data-i18n="admin.glossary">Glossar</button>
         <button data-tab="settings" data-i18n="admin.settings">Einstellungen</button>
+        <button data-tab="system" data-i18n="admin.system">System</button>
       </div>
 
       <div class="admin-tab-content">
@@ -346,6 +348,18 @@
                 <label data-i18n="admin.fieldDescriptionEn">Beschreibung (EN)</label>
                 <textarea name="description_en" rows="2" maxlength="2000" style="resize:vertical"></textarea>
               </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label data-i18n="admin.fieldSuccessor">Heute bei (Nachfolger)</label>
+                <select name="successor_id" id="add-brewery-successor-select">
+                  <option value="" data-i18n="admin.noSuccessor">— kein Nachfolger —</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+                  <input name="is_historical" type="checkbox" style="width:auto" />
+                  <span data-i18n="admin.fieldHistorical">Historisch (Betrieb geschlossen)</span>
+                </label>
+              </div>
               <div>
                 <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.createBrewery">Brauerei anlegen</button>
               </div>
@@ -358,6 +372,7 @@
             <div style="display:flex;gap:10px;align-items:center">
               <span id="google-ratings-msg" style="font-size:12px;color:var(--ink-muted)"></span>
               <button class="btn" id="places-backfill-open" type="button" style="font-size:12px" data-i18n="admin.placesBackfill">Place IDs nachtragen</button>
+              <button class="btn" id="pin-check-open" type="button" style="font-size:12px" data-i18n="admin.pinCheck">Pins prüfen</button>
               <button class="btn" id="google-ratings-refresh" type="button" style="font-size:12px" data-i18n="admin.googleRatingsRefresh">Google-Bewertungen abrufen</button>
             </div>
           </div>
@@ -401,6 +416,13 @@
                 <label>Header-Text (EN)</label>
                 <input name="header_en" type="text" maxlength="1000" data-i18n-placeholder="admin.vtHeaderEnPh" placeholder="What is brewed and served here" />
               </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+                  <input name="is_producer" type="checkbox" style="width:auto" />
+                  <span data-i18n="admin.vtProducer">Produzent (braut selbst)</span>
+                </label>
+                <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.vtProducerHint">Kennzeichnet Typen, deren Orte selbst brauen. Nur solche Orte kommen in Seed und Mock.</span>
+              </div>
               <div>
                 <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.addVenueType">Typ hinzufügen</button>
               </div>
@@ -413,7 +435,7 @@
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th>ID</th><th>Name (DE)</th><th>Name (EN)</th><th data-i18n="admin.vtColHeaderDe">Header (DE)</th><th data-i18n="admin.vtColHeaderEn">Header (EN)</th><th></th>
+                  <th>ID</th><th>Name (DE)</th><th>Name (EN)</th><th data-i18n="admin.vtColHeaderDe">Header (DE)</th><th data-i18n="admin.vtColHeaderEn">Header (EN)</th><th data-i18n="admin.vtColProducer">Produzent</th><th></th>
                 </tr>
               </thead>
               <tbody id="vtype-tbody"></tbody>
@@ -756,11 +778,120 @@
                 <label>Ko-fi</label>
                 <input id="author-kofi" name="author.kofi" type="url" maxlength="300" placeholder="https://ko-fi.com/..." />
               </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="admin.settingsBeer">„Spendier mir ein Alt“ (Spendenlink)</label>
+                <input id="author-beer" name="author.beer" type="url" maxlength="300" placeholder="https://paypal.me/... oder https://buymeacoffee.com/..." />
+              </div>
               <div style="display:flex;align-items:center;gap:12px">
                 <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
                 <span id="settings-social-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
+          </div>
+        </section>
+
+        <section id="tab-offers">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.offersSub">Aktionen der Orte (z. B. „Mittwoch 2 für 1“) und Atlas-Coupons aus Kooperationen. Die Ortsseite zeigt sie passend zu Wochentag und Uhrzeit; Coupons sind als Partner-Aktion gekennzeichnet.</p>
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" id="offer-form-title" data-i18n="admin.offerAdd">Aktion anlegen</h3>
+            <form id="offer-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
+              <input type="hidden" name="id" />
+              <div class="field" style="margin:0;grid-column:span 2">
+                <label data-i18n="admin.offerVenue">Ort *</label>
+                <select name="brewery_id" id="offer-brewery-select" required></select>
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="admin.offerKind">Art</label>
+                <select name="kind" id="offer-kind">
+                  <option value="offer" data-i18n="admin.offerKindOffer">Aktion des Orts</option>
+                  <option value="coupon" data-i18n="admin.offerKindCoupon">Atlas-Coupon (Kooperation)</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="admin.editStatus">Status</label>
+                <select name="status">
+                  <option value="approved" data-i18n="admin.approved">Freigegeben</option>
+                  <option value="pending" data-i18n="common.pending">In Prüfung</option>
+                  <option value="rejected" data-i18n="admin.rejected">Abgelehnt</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerTitleDe">Titel (DE) *</label><input name="title_de" type="text" maxlength="120" required placeholder="2 Alt zum Preis von 1" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerTitleEn">Titel (EN)</label><input name="title_en" type="text" maxlength="120" placeholder="Two Alts for the price of one" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerDescDe">Beschreibung (DE)</label><input name="description_de" type="text" maxlength="500" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerDescEn">Beschreibung (EN)</label><input name="description_en" type="text" maxlength="500" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label data-i18n="admin.offerWeekdays">Wochentage (keiner = jeden Tag)</label>
+                <div><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="mo" style="width:auto" /><span data-i18n="day.mo">Mo</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="tu" style="width:auto" /><span data-i18n="day.tu">Di</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="we" style="width:auto" /><span data-i18n="day.we">Mi</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="th" style="width:auto" /><span data-i18n="day.th">Do</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="fr" style="width:auto" /><span data-i18n="day.fr">Fr</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="sa" style="width:auto" /><span data-i18n="day.sa">Sa</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="su" style="width:auto" /><span data-i18n="day.su">So</span></label></div>
+              </div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerTimeFrom">Von (Uhrzeit)</label><input name="time_from" type="time" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerTimeTo">Bis (Uhrzeit)</label><input name="time_to" type="time" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerValidFrom">Gültig ab</label><input name="valid_from" type="date" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerValidUntil">Gültig bis</label><input name="valid_until" type="date" /></div>
+              <div class="field" style="margin:0" id="offer-code-field" hidden><label data-i18n="admin.offerCode">Coupon-Code</label><input name="code" type="text" maxlength="40" style="font-family:var(--font-mono)" /></div>
+              <div style="grid-column:1/-1;display:flex;gap:8px">
+                <button class="btn btn-approve" type="submit" id="offer-submit" data-i18n="admin.offerAdd">Aktion anlegen</button>
+                <button class="btn btn-ghost" type="button" id="offer-cancel" hidden data-i18n="common.cancel">Abbrechen</button>
+              </div>
+            </form>
+            <div id="offer-msg" style="font-size:13px;margin-top:8px"></div>
+          </div>
+          <div style="overflow:auto">
+            <table class="brewery-table">
+              <thead><tr><th data-i18n="admin.offerVenue">Ort</th><th data-i18n="admin.offerTitle">Aktion</th><th data-i18n="admin.offerWhen">Wann</th><th data-i18n="admin.offerValid">Gültig</th><th data-i18n="admin.colStatus">Status</th><th></th></tr></thead>
+              <tbody id="offers-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="tab-system">
+          <!-- Rheinderby -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:12px" data-i18n="admin.rivalsTitle">Rheinderby-Stimmen</h3>
+            <div id="rivals-stats" style="font-size:14px;margin-bottom:14px"></div>
+            <details>
+              <summary style="cursor:pointer;font-size:13px;color:#9b1f1f" data-i18n="admin.rivalsResetOpen">Stimmen zurücksetzen …</summary>
+              <p style="font-size:13px;color:var(--ink-muted);margin:10px 0" data-i18n="admin.rivalsResetHint">Löscht alle Stimmen endgültig. Zur Bestätigung ZURÜCKSETZEN eintippen.</p>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <input id="rivals-reset-confirm" type="text" autocomplete="off" placeholder="ZURÜCKSETZEN" style="max-width:220px;font-family:var(--font-mono)" />
+                <button class="btn btn-reject" id="rivals-reset-btn" type="button" disabled data-i18n="admin.rivalsResetBtn">Endgültig zurücksetzen</button>
+              </div>
+              <div id="rivals-reset-msg" style="font-size:13px;margin-top:8px"></div>
+            </details>
+          </div>
+
+          <!-- Digest -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:12px" data-i18n="admin.digestTitle">Admin-Digest</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px" data-i18n="admin.digestHint">Schickt alle offenen Einreichungen sofort an ADMIN_EMAIL, auch wenn keine offen sind. Der reguläre Digest läuft unverändert weiter.</p>
+            <div style="display:flex;gap:12px;align-items:center">
+              <button class="btn" id="digest-send-btn" type="button" data-i18n="admin.digestSend">Digest jetzt senden</button>
+              <span id="digest-send-msg" style="font-size:13px"></span>
+            </div>
+          </div>
+
+          <!-- Admin-Benutzer -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:12px" data-i18n="admin.usersTitle">Admin-Benutzer</h3>
+            <table class="brewery-table" style="font-size:13px;margin-bottom:16px">
+              <thead><tr><th data-i18n="admin.usersName">Benutzer</th><th data-i18n="admin.usersEmail">E-Mail</th><th></th></tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+            <form id="add-user-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;align-items:end">
+              <div class="field" style="margin:0"><label data-i18n="admin.usersName">Benutzer</label><input name="username" type="text" required minlength="3" maxlength="50" pattern="[a-zA-Z0-9_.\-]+" autocomplete="off" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.usersEmail">E-Mail</label><input name="email" type="email" maxlength="200" autocomplete="off" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.usersPassword">Passwort (min. 10)</label><input name="password" type="password" required minlength="10" autocomplete="new-password" /></div>
+              <div><button class="btn btn-approve" type="submit" data-i18n="admin.usersAdd">Admin anlegen</button></div>
+            </form>
+            <div id="add-user-msg" style="font-size:13px;margin-top:8px"></div>
+
+            <h4 style="font-size:14px;font-weight:600;margin:22px 0 10px" data-i18n="admin.pwChangeTitle">Eigenes Passwort ändern</h4>
+            <form id="change-pw-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;align-items:end">
+              <div class="field" style="margin:0"><label data-i18n="admin.pwCurrent">Aktuelles Passwort</label><input name="current" type="password" required autocomplete="current-password" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.pwNew">Neues Passwort (min. 10)</label><input name="password" type="password" required minlength="10" autocomplete="new-password" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.pwRepeat">Wiederholen</label><input name="repeat" type="password" required minlength="10" autocomplete="new-password" /></div>
+              <div><button class="btn" type="submit" data-i18n="admin.pwChange">Passwort ändern</button></div>
+            </form>
+            <div id="change-pw-msg" style="font-size:13px;margin-top:8px"></div>
           </div>
         </section>
       </div>
@@ -845,6 +976,7 @@
             <button class="btn" id="edit-place-search" type="button" style="white-space:nowrap" data-i18n="admin.placeSearch">Bei Google suchen</button>
           </div>
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldPlaceIdHint">Hat Vorrang vor der Maps-URL. Die Suche nutzt Name, Adresse und Koordinaten wie gespeichert.</span>
+          <div id="edit-place-shared" style="font-size:12px;color:#8a5a00;margin-top:4px" hidden></div>
           <div id="edit-place-results"></div>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
@@ -885,6 +1017,47 @@
           <select id="edit-successor" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px">
           </select>
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldSuccessorHint">Wer Marke oder Betrieb heute führt, z. B. Hannen → Bolten</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+            <input id="edit-historical" type="checkbox" style="width:auto" />
+            <span data-i18n="admin.fieldHistorical">Historisch (Betrieb geschlossen)</span>
+          </label>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHistoricalHint">Historische Orte bekommen keine Google-Bewertung; eine gesetzte Place ID wird beim Speichern entfernt.</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+            <input id="edit-highlighted" type="checkbox" style="width:auto" />
+            <span data-i18n="admin.fieldHighlighted">Auf der Karte hervorheben (Sponsoring)</span>
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;margin-top:6px"><span style="font-size:12px" data-i18n="admin.fieldHighlightedUntil">bis einschließlich</span><input id="edit-highlighted-until" type="date" style="width:auto" /></label>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHighlightedHint">Goldener Pin auf der Karte, zuerst und markiert auf der Stadtseite, „Partner“ im Popup und auf der Ortsseite. Ohne Datum unbefristet. Nie Einfluss auf Ranglisten oder Preise.</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.fieldHours">Öffnungszeiten</label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px 14px">
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.mo">Mo</span><input data-hours-day="mo" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.tu">Di</span><input data-hours-day="tu" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.we">Mi</span><input data-hours-day="we" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.th">Do</span><input data-hours-day="th" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.fr">Fr</span><input data-hours-day="fr" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.sa">Sa</span><input data-hours-day="sa" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.su">So</span><input data-hours-day="su" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+          </div>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHoursHint">Z. B. „11-23“ oder „11:30–14, 17–1“ (über Mitternacht erlaubt). Leer = unbekannt, „zu“ = Ruhetag. Ohne eigene Angaben zeigt die Ortsseite Googles Zeiten.</span>
+          <div id="edit-hours-error" style="font-size:12px;color:#9b1f1f" hidden></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.fieldHoursNoteDe">Hinweis Öffnungszeiten (DE)</label>
+          <input id="edit-hours-note-de" type="text" maxlength="500" data-i18n-placeholder="admin.fieldHoursNotePh" placeholder="z. B. Küche bis 22 Uhr" />
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.fieldHoursNoteEn">Hinweis Öffnungszeiten (EN)</label>
+          <input id="edit-hours-note-en" type="text" maxlength="500" />
+        </div>
+        <div class="field" style="margin:0">
+          <label data-i18n="admin.fieldHoursChecked">Zeiten geprüft am</label>
+          <input id="edit-hours-checked" type="date" />
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldStyles">Stile</label>
@@ -936,6 +1109,26 @@
       <div class="edit-actions">
         <button class="btn btn-ghost" id="edit-cancel" data-i18n="common.cancel">Abbrechen</button>
         <button class="btn btn-approve" id="edit-save" data-i18n="admin.editSave">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pins prüfen: DB-Koordinaten gegen Google -->
+  <div class="edit-dialog" id="pin-check-dialog">
+    <div class="box" style="max-width:1100px;width:96vw;max-height:90vh;overflow-y:auto">
+      <h3 data-i18n="admin.pinCheckTitle">Pins prüfen</h3>
+      <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px" data-i18n="admin.pinCheckIntro">Abstand zwischen dem Pin in der Datenbank und Googles Koordinaten für alle Orte mit Place ID. Googles Koordinaten dürfen nicht übernommen werden; den Pin bei Bedarf im Bearbeiten-Dialog korrigieren.</p>
+      <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;cursor:pointer">
+        <input id="pin-check-all" type="checkbox" style="width:auto" />
+        <span data-i18n="admin.pinCheckShowAll">Auch unauffällige Orte zeigen</span>
+      </label>
+      <div id="pin-check-progress" style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted);margin-bottom:10px"></div>
+      <div style="overflow:auto"><table class="brewery-table" id="pin-check-table" style="display:none;font-size:12px">
+        <thead><tr><th data-i18n="admin.colName">Name</th><th data-i18n="admin.colCity">Stadt</th><th data-i18n="admin.pbDistance">Entfernung</th><th>Status</th><th data-i18n="admin.pinCheckLinks">Vergleich</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="edit-actions">
+        <button class="btn btn-ghost" id="pin-check-close" data-i18n="admin.placeDismiss">Schließen</button>
       </div>
     </div>
   </div>
@@ -1063,7 +1256,8 @@
             <input id="eb-notes" type="text" maxlength="500" placeholder="optional" />
           </div>
           <div style="grid-column:1/-1">
-            <button class="btn btn-approve" type="submit" style="font-size:12px;padding:6px 12px" data-i18n="admin.evAddBeer">Bier hinzufügen</button>
+            <button class="btn btn-approve" id="eb-submit" type="submit" style="font-size:12px;padding:6px 12px" data-i18n="admin.evAddBeer">Bier hinzufügen</button>
+            <button class="btn btn-ghost" id="eb-cancel" type="button" style="font-size:12px;padding:6px 12px" data-i18n="admin.evCancelBeerEdit" hidden>Bearbeiten abbrechen</button>
           </div>
         </form>
       </div>
@@ -1342,8 +1536,10 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     if (btn.dataset.tab === "styles")      loadStylesTab();
     if (btn.dataset.tab === "events")      loadEventsTab();
     if (btn.dataset.tab === "prices")      loadPricesTab();
+    if (btn.dataset.tab === "offers")      loadOffersTab();
     if (btn.dataset.tab === "glossary")    loadGlossaryTab();
     if (btn.dataset.tab === "settings")   loadSettingsTab();
+    if (btn.dataset.tab === "system")     loadSystemTab();
   });
 });
 
@@ -1405,7 +1601,7 @@ async function showAdmin() {
   loginSection.style.display = "none";
   adminSection.style.display = "block";
   document.getElementById("admin-username").textContent = me.username;
-  await Promise.all([loadDashboard(), rebuildBreweryTypeSelects(), populateAddEventBreweries()]);
+  await Promise.all([loadDashboard(), rebuildBreweryTypeSelects(), populateAddEventBreweries(), populateAddBrewerySuccessors()]);
 }
 
 // ============ Dashboard ============
@@ -1431,7 +1627,7 @@ async function loadDashboard() {
 
 // ============ Übersetzungs-Lücken ============
 // Orte öffnen direkt den Bearbeiten-Dialog, alles andere den passenden Tab.
-const GAP_TAB = { brewery: "breweries", style: "styles", event: "events", eventBeer: "events", glossary: "glossary", venueType: "venue-types" };
+const GAP_TAB = { brewery: "breweries", style: "styles", event: "events", eventBeer: "events", glossary: "glossary", venueType: "venue-types", offer: "offers" };
 async function loadTranslationGaps() {
   const host = document.getElementById("dashboard-gaps");
   const t = window.t;
@@ -1645,6 +1841,59 @@ document.getElementById("google-ratings-refresh").addEventListener("click", asyn
   }
 });
 
+// Pins prüfen: liest nur den Cache, kein Google-Aufruf. Ab threshold (Worker:
+// PIN_CHECK_DISTANCE_M) gilt ein Pin als auffällig.
+const pcDialog = document.getElementById("pin-check-dialog");
+let pcData = null;
+function pcRender() {
+  const table = document.getElementById("pin-check-table");
+  const progress = document.getElementById("pin-check-progress");
+  if (!pcData) return;
+  const showAll = document.getElementById("pin-check-all").checked;
+  const flagged = pcData.items.filter((r) => r.distance >= pcData.threshold);
+  const rows = showAll ? pcData.items : flagged;
+  progress.textContent = t("admin.pinCheckSummary")
+    .replace("{flagged}", flagged.length).replace("{total}", pcData.items.length).replace("{m}", pcData.threshold)
+    + (pcData.missing ? " · " + t("admin.pinCheckMissing").replace("{n}", pcData.missing) : "");
+  table.style.display = rows.length ? "" : "none";
+  table.querySelector("tbody").innerHTML = rows.map((r) => {
+    const google = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name)}&query_place_id=${encodeURIComponent(r.placeId)}`;
+    const osm = `https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lng}#map=19/${r.lat}/${r.lng}`;
+    const far = r.distance >= pcData.threshold;
+    return `
+    <tr>
+      <td><a href="/ort/${encodeURIComponent(r.id)}" target="_blank">${pbEsc(r.name)}</a>${r.shared > 1 ? ` <span style="color:var(--ink-muted)">(${t("admin.pinCheckShared").replace("{n}", r.shared)})</span>` : ""}<div style="color:var(--ink-muted)">${pbEsc(r.address)}</div></td>
+      <td>${pbEsc(r.city)}</td>
+      <td style="font-family:var(--font-mono);white-space:nowrap" class="${far ? "status-rejected" : ""}">${r.distance} m</td>
+      <td class="status-${pbEsc(r.status)}">${pbEsc(r.status)}</td>
+      <td style="white-space:nowrap"><a href="${osm}" target="_blank" rel="noopener">${t("admin.pinCheckDbPin")}</a> · <a href="${google}" target="_blank" rel="noopener">Google</a></td>
+      <td><button class="btn" type="button" style="font-size:11px;padding:3px 8px" data-pc-edit="${pbEsc(r.id)}">${t("admin.actionEdit")}</button></td>
+    </tr>`;
+  }).join("");
+  table.querySelectorAll("button[data-pc-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      pcDialog.classList.remove("visible");
+      openBreweryEdit(btn.dataset.pcEdit);
+    });
+  });
+}
+document.getElementById("pin-check-close").addEventListener("click", () => pcDialog.classList.remove("visible"));
+document.getElementById("pin-check-all").addEventListener("change", pcRender);
+document.getElementById("pin-check-open").addEventListener("click", async () => {
+  const progress = document.getElementById("pin-check-progress");
+  pcDialog.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.getAttribute("data-i18n")); });
+  pcData = null;
+  document.getElementById("pin-check-table").style.display = "none";
+  progress.textContent = t("common.loading");
+  pcDialog.classList.add("visible");
+  try {
+    pcData = await window.AtlasAPI.admin.pinCheck();
+    pcRender();
+  } catch (e) {
+    progress.textContent = placeErrorText(e);
+  }
+});
+
 // Place-ID-Backfill: Probelauf portionsweise, Anzeige als Tabelle,
 // Speichern nur der angehakten sicheren Treffer nach Bestätigung
 const pbDialog = document.getElementById("places-backfill-dialog");
@@ -1788,6 +2037,17 @@ async function loadBreweriesTable() {
       const val = t(key);
       return val !== key ? val : (type || "—");
     };
+    // Orte je Place ID: teilen sich mehrere eine, zeigen alle dieselbe Google-Bewertung
+    const byPlace = new Map();
+    (r.breweries || []).forEach((b) => {
+      if (b.googlePlaceId) byPlace.set(b.googlePlaceId, [...(byPlace.get(b.googlePlaceId) || []), b.name]);
+    });
+    const sharedHint = (b) => {
+      const names = b.googlePlaceId ? byPlace.get(b.googlePlaceId) : null;
+      if (!names || names.length < 2) return "";
+      const others = names.filter((n) => n !== b.name).join(", ").replace(/"/g, "&quot;");
+      return ` <span class="status-pending" style="font-size:11px" title="${others}">${t("admin.placeShared").replace("{n}", names.length)}</span>`;
+    };
     tbody.innerHTML = (r.breweries || []).map((b) => `
       <tr data-id="${b.id}"
           data-name="${(b.name || "").replace(/"/g, "&quot;")}"
@@ -1798,8 +2058,15 @@ async function loadBreweriesTable() {
           data-address="${(b.address || "").replace(/"/g, "&quot;")}"
           data-maps-url="${(("rawMapsUrl" in b ? b.rawMapsUrl : b.mapsUrl) || "").replace(/"/g, "&quot;")}"
           data-place-id="${(b.googlePlaceId || "").replace(/"/g, "&quot;")}"
+          data-place-shared="${b.googlePlaceId ? (byPlace.get(b.googlePlaceId) || []).filter((n) => n !== b.name).join(", ").replace(/"/g, "&quot;") : ""}"
           data-untappd-id="${b.untappdId ?? ""}"
           data-historical="${b.isHistorical ? "1" : ""}"
+          data-highlighted="${b.highlightLevel > 0 ? "1" : ""}"
+          data-highlighted-until="${b.highlightedUntil || ""}"
+          data-hours="${b.openingHours ? JSON.stringify(b.openingHours).replace(/"/g, "&quot;") : ""}"
+          data-hours-note-de="${(b.openingHoursNote?.de || "").replace(/"/g, "&quot;")}"
+          data-hours-note-en="${(b.openingHoursNote?.en || "").replace(/"/g, "&quot;")}"
+          data-hours-checked="${b.openingHoursChecked || ""}"
           data-lat="${b.coords?.[0] ?? ""}"
           data-lng="${b.coords?.[1] ?? ""}"
           data-founded="${b.founded ?? ""}"
@@ -1811,7 +2078,7 @@ async function loadBreweriesTable() {
           data-successor="${b.successorId || ""}"
           data-photo-key="${b.photoKey || ""}"
           data-logo-key="${b.logoKey || ""}">
-        <td><a href="/ort/${encodeURIComponent(b.id)}" target="_blank">${b.name}</a></td>
+        <td><a href="/ort/${encodeURIComponent(b.id)}" target="_blank">${b.name}</a>${sharedHint(b)}</td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
@@ -1895,8 +2162,26 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-maps-url").value      = rowEl.dataset.mapsUrl || "";
   document.getElementById("edit-place-id").value      = rowEl.dataset.placeId || "";
   document.getElementById("edit-place-results").innerHTML = "";
+  const sharedEl = document.getElementById("edit-place-shared");
+  sharedEl.hidden = !rowEl.dataset.placeShared;
+  sharedEl.textContent = rowEl.dataset.placeShared
+    ? window.t("admin.placeSharedWith").replace("{names}", rowEl.dataset.placeShared) : "";
   document.getElementById("edit-untappd-id").value    = rowEl.dataset.untappdId || "";
   document.getElementById("edit-untappd-result").textContent = "";
+  document.getElementById("edit-historical").checked  = rowEl.dataset.historical === "1";
+  document.getElementById("edit-highlighted").checked = rowEl.dataset.highlighted === "1";
+  document.getElementById("edit-highlighted-until").value = rowEl.dataset.highlightedUntil || "";
+  // Öffnungszeiten: je Tag als Text, „zu“ für Ruhetag, leer für unbekannt
+  let hours = null;
+  try { hours = rowEl.dataset.hours ? JSON.parse(rowEl.dataset.hours) : null; } catch {}
+  document.querySelectorAll("#edit-dialog [data-hours-day]").forEach((inp) => {
+    const r = hours?.[inp.dataset.hoursDay];
+    inp.value = r ? (r.length ? window.atlasHours.formatDay(r, "") : "zu") : "";
+  });
+  document.getElementById("edit-hours-note-de").value = rowEl.dataset.hoursNoteDe || "";
+  document.getElementById("edit-hours-note-en").value = rowEl.dataset.hoursNoteEn || "";
+  document.getElementById("edit-hours-checked").value = rowEl.dataset.hoursChecked || "";
+  document.getElementById("edit-hours-error").hidden = true;
   document.getElementById("edit-place-search").disabled = rowEl.dataset.historical === "1";
   document.getElementById("edit-lat").value           = rowEl.dataset.lat || "";
   document.getElementById("edit-lng").value           = rowEl.dataset.lng || "";
@@ -2185,8 +2470,40 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const selEl          = document.getElementById("edit-styles-select");
   const styles         = Array.from(selEl.selectedOptions).map((o) => o.value);
   const successorId    = document.getElementById("edit-successor").value || null;
+  const historical     = document.getElementById("edit-historical").checked;
+  const highlighted    = document.getElementById("edit-highlighted").checked;
+  const highlightedUntil = document.getElementById("edit-highlighted-until").value || null;
+  // Öffnungszeiten einlesen; unlesbare Angaben blockieren das Speichern
+  const hoursErr = document.getElementById("edit-hours-error");
+  let openingHours = {};
+  try {
+    document.querySelectorAll("#edit-dialog [data-hours-day]").forEach((inp) => {
+      let r;
+      try { r = window.atlasHours.parseDay(inp.value); }
+      catch { throw new Error(`${t("day." + inp.dataset.hoursDay)}: „${inp.value}“`); }
+      if (r !== undefined) openingHours[inp.dataset.hoursDay] = r;
+    });
+  } catch (err) {
+    hoursErr.textContent = t("admin.hoursInvalid") + " " + err.message;
+    hoursErr.hidden = false;
+    return;
+  }
+  hoursErr.hidden = true;
+  if (!Object.keys(openingHours).length) openingHours = null;
+  const hoursJson = openingHours ? JSON.stringify(openingHours) : "";
+  const hoursNoteDe = document.getElementById("edit-hours-note-de").value.trim();
+  const hoursNoteEn = document.getElementById("edit-hours-note-en").value.trim();
+  let hoursChecked = document.getElementById("edit-hours-checked").value || null;
+  // Zeiten geändert, Datum nicht angefasst → heute als Prüfdatum
+  if (hoursJson !== (pendingEdit.rowEl.dataset.hours || "") && hoursChecked === (pendingEdit.rowEl.dataset.hoursChecked || null) && openingHours) {
+    hoursChecked = window.atlasHours.berlinNow().date;
+  }
   msg.style.display = "none";
-  if (!confirmBothLangs([[t("admin.langFieldDescription"), description, descriptionEn]])) return;
+  if (!confirmBothLangs([
+    [t("admin.langFieldDescription"), description, descriptionEn],
+    // Hinweis ist optional: nur nachfragen, wenn genau eine Sprache fehlt
+    ...(hoursNoteDe || hoursNoteEn ? [[t("admin.fieldHours"), hoursNoteDe, hoursNoteEn]] : []),
+  ])) return;
   try {
     const patch = {
       name, short, city, country, type, status, address, maps_url: mapsUrl,
@@ -2197,6 +2514,13 @@ document.getElementById("edit-save").addEventListener("click", async () => {
       founded: foundedRaw !== "" ? parseInt(foundedRaw, 10) : null,
       website, description_de: description, description_en: descriptionEn, styles,
       successor_id: successorId,
+      is_historical: historical,
+      highlighted,
+      highlighted_until: highlightedUntil,
+      opening_hours: openingHours,
+      opening_hours_note_de: hoursNoteDe || null,
+      opening_hours_note_en: hoursNoteEn || null,
+      opening_hours_checked: hoursChecked,
     };
     // Remove undefined values so they aren't sent as null
     Object.keys(patch).forEach((k) => patch[k] === undefined && delete patch[k]);
@@ -2223,6 +2547,15 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.descriptionEn  = descriptionEn;
     row.dataset.styles         = styles.join(",");
     row.dataset.successor      = successorId || "";
+    row.dataset.historical     = historical ? "1" : "";
+    row.dataset.highlighted    = highlighted ? "1" : "";
+    row.dataset.highlightedUntil = highlightedUntil || "";
+    row.dataset.hours          = hoursJson;
+    row.dataset.hoursNoteDe    = hoursNoteDe;
+    row.dataset.hoursNoteEn    = hoursNoteEn;
+    row.dataset.hoursChecked   = hoursChecked || "";
+    // Der Worker entfernt die Place ID historischer Orte
+    if (historical) row.dataset.placeId = "";
     row.querySelector("td:nth-child(1) a").textContent = name;
     row.querySelector("td:nth-child(1) a").href = `/ort/${encodeURIComponent(effectiveId)}`;
     row.querySelector("td:nth-child(2)").textContent = city;
@@ -2694,6 +3027,7 @@ async function openEventEditDialog(id, rowEl) {
   document.getElementById("ev-desc-de").value    = rowEl.dataset.descDe || "";
   document.getElementById("ev-desc-en").value    = rowEl.dataset.descEn || "";
   // Biere laden
+  resetBeerForm();
   loadEventBeers(id);
   const msg = document.getElementById("event-edit-msg");
   msg.style.display = "none";
@@ -2790,6 +3124,36 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
 });
 
 // ============ Event Beers ============
+// editingBeerId gesetzt = das Formular speichert ein bestehendes Bier statt eines neuen
+let editingBeerId = null;
+
+function resetBeerForm() {
+  editingBeerId = null;
+  ["eb-name-de", "eb-name-en", "eb-size", "eb-price", "eb-notes"]
+    .forEach((id) => { document.getElementById(id).value = ""; });
+  const submit = document.getElementById("eb-submit");
+  submit.textContent = window.t("admin.evAddBeer");
+  submit.setAttribute("data-i18n", "admin.evAddBeer");
+  document.getElementById("eb-cancel").hidden = true;
+}
+
+function startBeerEdit(b) {
+  editingBeerId = b.id;
+  document.getElementById("eb-name-de").value = b.name?.de || "";
+  // EN gleich DE heißt „Eigenname“ → Feld leer lassen wie beim Anlegen
+  document.getElementById("eb-name-en").value = b.name?.en && b.name.en !== b.name?.de ? b.name.en : "";
+  document.getElementById("eb-size").value = b.size || "";
+  document.getElementById("eb-price").value = b.price != null ? b.price : "";
+  document.getElementById("eb-notes").value = b.notes || "";
+  const submit = document.getElementById("eb-submit");
+  submit.textContent = window.t("admin.evSaveBeer");
+  submit.setAttribute("data-i18n", "admin.evSaveBeer");
+  document.getElementById("eb-cancel").hidden = false;
+  document.getElementById("eb-name-de").focus();
+}
+
+document.getElementById("eb-cancel").addEventListener("click", resetBeerForm);
+
 async function loadEventBeers(eventId) {
   const list = document.getElementById("ev-beers-list");
   list.innerHTML = "<em style='color:var(--ink-muted)'>Lade…</em>";
@@ -2808,14 +3172,22 @@ async function loadEventBeers(eventId) {
         <span style="flex:1">${name}</span>
         <span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted)">${size}</span>
         <span style="font-family:var(--font-mono);font-size:13px;color:var(--copper)">${price}</span>
-        <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}">✕</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-edit-beer-id="${b.id}" title="${window.t("admin.evEditBeer")}">✎</button>
+        <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}" title="${window.t("admin.evDeleteBeer")}">✕</button>
       </div>`;
     }).join("");
+    list.querySelectorAll("button[data-edit-beer-id]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const b = beers.find((x) => String(x.id) === btn.dataset.editBeerId);
+        if (b) startBeerEdit(b);
+      });
+    });
     list.querySelectorAll("button[data-beer-id]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm(window.t("admin.evAddBeer") + "?")) return;
+        if (!confirm(window.t("admin.evDeleteBeer") + "?")) return;
         try {
           await window.AtlasAPI.admin.deleteEventBeer(eventId, btn.dataset.beerId);
+          if (String(editingBeerId) === btn.dataset.beerId) resetBeerForm();
           loadEventBeers(eventId);
         } catch (e) { alert(window.t("admin.errorPrefix") + e.message); }
       });
@@ -2837,13 +3209,14 @@ document.getElementById("ev-beer-form").addEventListener("submit", async (e) => 
   const priceRaw = document.getElementById("eb-price").value;
   const price = priceRaw ? parseFloat(priceRaw) : null;
   const notes = document.getElementById("eb-notes").value.trim() || null;
+  const body = { name_de: nameDe, name_en: nameEn, size, price, notes };
   try {
-    await window.AtlasAPI.admin.addEventBeer(pendingEventEdit.id, { name_de: nameDe, name_en: nameEn, size, price, notes });
-    document.getElementById("eb-name-de").value = "";
-    document.getElementById("eb-name-en").value = "";
-    document.getElementById("eb-size").value = "";
-    document.getElementById("eb-price").value = "";
-    document.getElementById("eb-notes").value = "";
+    if (editingBeerId != null) {
+      await window.AtlasAPI.admin.updateEventBeer(pendingEventEdit.id, editingBeerId, body);
+    } else {
+      await window.AtlasAPI.admin.addEventBeer(pendingEventEdit.id, body);
+    }
+    resetBeerForm();
     loadEventBeers(pendingEventEdit.id);
   } catch (e) { alert(window.t("admin.evBeerError") + e.message); }
 });
@@ -3191,6 +3564,240 @@ document.getElementById("add-glossary-form").addEventListener("submit", async (e
 });
 
 // ============ Einstellungen Tab ============
+// ============ Aktionen und Coupons ============
+let offersCache = [];
+const offerEsc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// „Mo, Mi · 17:00–20:00“ bzw. „täglich · ganztags“
+function offerWhen(o) {
+  const t = window.t;
+  const days = o.weekdays ? o.weekdays.map((d) => t("day." + d)).join(", ") : t("offer.daily");
+  const time = o.timeFrom ? `${o.timeFrom}–${o.timeTo}` : t("offer.allDay");
+  return `${days} · ${time}`;
+}
+async function loadOffersTab() {
+  const t = window.t;
+  const sel = document.getElementById("offer-brewery-select");
+  if (sel.options.length <= 1) {
+    const brs = (await ensureBreweries()).slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
+    sel.innerHTML = `<option value="">${t("contrib.form.dash")}</option>` + brs.map((b) =>
+      `<option value="${offerEsc(b.id)}">${offerEsc(b.name)} · ${offerEsc(b.city)}</option>`).join("");
+  }
+  const tbody = document.getElementById("offers-tbody");
+  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
+  try {
+    offersCache = (await window.AtlasAPI.admin.listOffers()).offers || [];
+    const today = window.atlasHours.berlinNow().date;
+    tbody.innerHTML = offersCache.map((o) => {
+      const expired = o.validUntil && o.validUntil < today;
+      return `<tr>
+        <td>${offerEsc(o.breweryName || o.breweryId)}<div style="color:var(--ink-muted);font-size:12px">${offerEsc(o.breweryCity || "")}</div></td>
+        <td>${o.kind === "coupon" ? `<span class="status-pending" style="font-size:11px">${t("offer.partner")}</span> ` : ""}${offerEsc(o.titleDe)}${o.code ? ` <code>${offerEsc(o.code)}</code>` : ""}</td>
+        <td style="white-space:nowrap">${offerEsc(offerWhen(o))}</td>
+        <td style="white-space:nowrap${expired ? ";color:#9b1f1f" : ""}">${o.validFrom ? window.formatDate(o.validFrom) : ""}${o.validFrom || o.validUntil ? " – " : "—"}${o.validUntil ? window.formatDate(o.validUntil) : ""}</td>
+        <td><span class="status-${o.status}">${o.status}</span></td>
+        <td class="actions">
+          ${o.status !== "approved" ? `<button class="btn btn-approve" data-offer-approve="${o.id}">${t("admin.approve")}</button>` : ""}
+          <button class="btn" data-offer-edit="${o.id}">${t("admin.actionEdit")}</button>
+          <button class="btn btn-reject" data-offer-del="${o.id}">${t("admin.actionDelete")}</button>
+        </td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noTableEntries")}</td></tr>`;
+    tbody.querySelectorAll("[data-offer-edit]").forEach((b) => b.addEventListener("click", () => startOfferEdit(Number(b.dataset.offerEdit))));
+    tbody.querySelectorAll("[data-offer-approve]").forEach((b) => b.addEventListener("click", async () => {
+      try { await window.AtlasAPI.admin.updateOffer(b.dataset.offerApprove, { status: "approved" }); loadOffersTab(); }
+      catch (e) { alert(t("admin.errorPrefix") + (e.detail?.detail || e.message)); }
+    }));
+    tbody.querySelectorAll("[data-offer-del]").forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm(t("admin.offerConfirmDelete"))) return;
+      try { await window.AtlasAPI.admin.deleteOffer(b.dataset.offerDel); loadOffersTab(); }
+      catch (e) { alert(t("admin.errorPrefix") + (e.detail?.detail || e.message)); }
+    }));
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#9b1f1f;padding:20px">${offerEsc(e.message)}</td></tr>`;
+  }
+}
+function setOfferFormMode(editing) {
+  const t = window.t;
+  const key = editing ? "admin.offerSave" : "admin.offerAdd";
+  ["offer-form-title", "offer-submit"].forEach((id) => {
+    const el = document.getElementById(id);
+    el.setAttribute("data-i18n", key);
+    el.textContent = t(key);
+  });
+  document.getElementById("offer-cancel").hidden = !editing;
+}
+function syncOfferKind() {
+  document.getElementById("offer-code-field").hidden = document.getElementById("offer-kind").value !== "coupon";
+}
+document.getElementById("offer-kind").addEventListener("change", syncOfferKind);
+function resetOfferForm() {
+  const f = document.getElementById("offer-form");
+  f.reset();
+  f.elements.id.value = "";
+  setOfferFormMode(false);
+  syncOfferKind();
+}
+function startOfferEdit(id) {
+  const o = offersCache.find((x) => x.id === id);
+  if (!o) return;
+  const f = document.getElementById("offer-form");
+  f.elements.id.value = o.id;
+  f.elements.brewery_id.value = o.breweryId;
+  f.elements.kind.value = o.kind;
+  f.elements.status.value = o.status;
+  f.elements.title_de.value = o.titleDe || "";
+  f.elements.title_en.value = o.titleEn || "";
+  f.elements.description_de.value = o.descriptionDe || "";
+  f.elements.description_en.value = o.descriptionEn || "";
+  f.querySelectorAll("input[name=weekdays]").forEach((cb) => { cb.checked = !!o.weekdays?.includes(cb.value); });
+  f.elements.time_from.value = o.timeFrom || "";
+  f.elements.time_to.value = o.timeTo || "";
+  f.elements.valid_from.value = o.validFrom || "";
+  f.elements.valid_until.value = o.validUntil || "";
+  f.elements.code.value = o.code || "";
+  setOfferFormMode(true);
+  syncOfferKind();
+  f.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+document.getElementById("offer-cancel").addEventListener("click", resetOfferForm);
+document.getElementById("offer-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = window.t;
+  const f = e.target;
+  const fd = new FormData(f);
+  const msg = document.getElementById("offer-msg");
+  const val = (k) => (fd.get(k) || "").toString().trim() || null;
+  const body = {
+    brewery_id: val("brewery_id"), kind: val("kind"), status: val("status"),
+    title_de: val("title_de"), title_en: val("title_en"),
+    description_de: val("description_de"), description_en: val("description_en"),
+    weekdays: fd.getAll("weekdays"),
+    time_from: val("time_from"), time_to: val("time_to"),
+    valid_from: val("valid_from"), valid_until: val("valid_until"),
+    code: fd.get("kind") === "coupon" ? val("code") : null,
+  };
+  if (!confirmBothLangs([
+    [t("admin.offerTitle"), body.title_de, body.title_en],
+    ...(body.description_de || body.description_en ? [[t("admin.offerDescDe").replace(" (DE)", ""), body.description_de, body.description_en]] : []),
+  ])) return;
+  try {
+    const id = val("id");
+    if (id) await window.AtlasAPI.admin.updateOffer(id, body);
+    else await window.AtlasAPI.admin.createOffer(body);
+    msg.textContent = t(id ? "admin.offerSaved" : "admin.offerAdded");
+    msg.style.color = "#2d7a2d";
+    resetOfferForm();
+    loadOffersTab();
+  } catch (err) {
+    msg.textContent = t("admin.errorPrefix") + (err.detail?.detail || err.detail?.error || err.message);
+    msg.style.color = "#9b1f1f";
+  }
+});
+
+// ============ System: Rheinderby, Digest, Admin-Benutzer ============
+// Muss zu RIVAL_RESET_CONFIRM in src/routes.js passen (der Server prüft es selbst)
+const RIVAL_RESET_WORD = "ZURÜCKSETZEN";
+function sysMsg(el, text, ok) {
+  el.textContent = text;
+  el.style.color = ok ? "#2d7a2d" : "#9b1f1f";
+}
+async function loadSystemTab() {
+  const t = window.t;
+  const stats = document.getElementById("rivals-stats");
+  stats.textContent = t("common.loading");
+  try {
+    const r = await window.AtlasAPI.admin.rivalVotes();
+    const fmt = (ts) => ts ? new Date(ts.replace(" ", "T") + "Z").toLocaleDateString(window.__atlasLang === "en" ? "en-GB" : "de-DE") : "—";
+    stats.innerHTML = `<strong>Alt ${r.alt}</strong> · <strong>Kölsch ${r.kolsch}</strong> · ${t("admin.rivalsNeutral")} ${r.neutral}`
+      + `<div style="color:var(--ink-muted);font-size:12px;margin-top:4px">${fmt(r.first)} – ${fmt(r.last)}</div>`;
+  } catch (e) { stats.textContent = t("admin.errorPrefix") + e.message; }
+  loadUsers();
+}
+async function loadUsers() {
+  const t = window.t;
+  const tbody = document.getElementById("users-tbody");
+  try {
+    const r = await window.AtlasAPI.admin.listUsers();
+    const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    tbody.innerHTML = r.users.map((u) => `<tr>
+      <td>${esc(u.username)}${u.username === r.me ? ` <span style="color:var(--ink-muted)">(${t("admin.usersYou")})</span>` : ""}</td>
+      <td>${esc(u.email || "—")}</td>
+      <td>${u.username === r.me || r.users.length <= 1 ? "" : `<button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-del-user="${esc(u.username)}">${t("admin.actionDelete")}</button>`}</td>
+    </tr>`).join("");
+    tbody.querySelectorAll("button[data-del-user]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const name = btn.dataset.delUser;
+        if (!confirm(t("admin.usersConfirmDelete").replace("{name}", name))) return;
+        try { await window.AtlasAPI.admin.deleteUser(name); loadUsers(); }
+        catch (e) { alert(t("admin.errorPrefix") + (e.detail?.error || e.message)); }
+      });
+    });
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="3">${t("admin.errorPrefix")}${e.message}</td></tr>`; }
+}
+document.getElementById("rivals-reset-confirm").addEventListener("input", (e) => {
+  document.getElementById("rivals-reset-btn").disabled = e.target.value.trim() !== RIVAL_RESET_WORD;
+});
+document.getElementById("rivals-reset-btn").addEventListener("click", async (ev) => {
+  const t = window.t;
+  const input = document.getElementById("rivals-reset-confirm");
+  const msg = document.getElementById("rivals-reset-msg");
+  if (input.value.trim() !== RIVAL_RESET_WORD) return;
+  // Zweite Bestätigung im Browser-Dialog: das Löschen ist endgültig
+  if (!confirm(t("admin.rivalsResetConfirm"))) return;
+  ev.currentTarget.disabled = true;
+  try {
+    const r = await window.AtlasAPI.admin.resetRivalVotes(input.value.trim());
+    sysMsg(msg, t("admin.rivalsResetDone").replace("{n}", r.deleted), true);
+    input.value = "";
+    loadSystemTab();
+  } catch (e) {
+    sysMsg(msg, t("admin.errorPrefix") + (e.detail?.error || e.message), false);
+  }
+});
+document.getElementById("digest-send-btn").addEventListener("click", async (ev) => {
+  const t = window.t;
+  const btn = ev.currentTarget;
+  const msg = document.getElementById("digest-send-msg");
+  btn.disabled = true;
+  sysMsg(msg, t("common.loading"), true);
+  try {
+    const r = await window.AtlasAPI.admin.sendDigest();
+    sysMsg(msg, t("admin.digestSent").replace("{n}", r.count), true);
+  } catch (e) {
+    const code = e.detail?.error || e.message;
+    sysMsg(msg, code === "not-configured" ? t("admin.digestNotConfigured") : t("admin.errorPrefix") + code, false);
+  } finally { btn.disabled = false; }
+});
+document.getElementById("add-user-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = window.t;
+  const fd = new FormData(e.target);
+  const msg = document.getElementById("add-user-msg");
+  try {
+    await window.AtlasAPI.admin.createUser({
+      username: fd.get("username").trim(), email: fd.get("email").trim() || null, password: fd.get("password"),
+    });
+    sysMsg(msg, t("admin.usersAdded"), true);
+    e.target.reset();
+    loadUsers();
+  } catch (err) { sysMsg(msg, t("admin.errorPrefix") + (err.detail?.error || err.message), false); }
+});
+document.getElementById("change-pw-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = window.t;
+  const fd = new FormData(e.target);
+  const msg = document.getElementById("change-pw-msg");
+  if (fd.get("password") !== fd.get("repeat")) { sysMsg(msg, t("admin.pwMismatch"), false); return; }
+  try {
+    await window.AtlasAPI.admin.changePassword(fd.get("current"), fd.get("password"));
+    sysMsg(msg, t("admin.pwChanged"), true);
+    e.target.reset();
+  } catch (err) {
+    const code = err.detail?.error || err.message;
+    sysMsg(msg, code === "invalid-credentials" ? t("admin.pwWrongCurrent") : t("admin.errorPrefix") + code, false);
+  }
+});
+
 async function loadSettingsTab() {
   try {
     const r = await window.AtlasAPI.admin.getSettings();
@@ -3211,6 +3818,7 @@ async function loadSettingsTab() {
     document.getElementById("author-instagram").value = s["author.instagram"] || "";
     document.getElementById("author-mastodon").value  = s["author.mastodon"]  || "";
     document.getElementById("author-kofi").value      = s["author.kofi"]      || "";
+    document.getElementById("author-beer").value      = s["author.beer"]      || "";
   } catch (e) {
     console.warn("[settings] load failed:", e.message);
   }
@@ -3254,17 +3862,18 @@ settingsFormHandler("settings-social-form", "settings-social-msg", (fd) => ({
   "author.instagram": fd.get("author.instagram").trim(),
   "author.mastodon":  fd.get("author.mastodon").trim(),
   "author.kofi":      fd.get("author.kofi").trim(),
+  "author.beer":      fd.get("author.beer").trim(),
 }));
 
 // ============ Venue-Typen Tab ============
 async function loadVenueTypesTab() {
   const tbody = document.getElementById("vtype-tbody");
-  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
   try {
     const r = await window.AtlasAPI.admin.listVenueTypes();
     const items = r.venueTypes || [];
     if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Typen vorhanden.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Typen vorhanden.</td></tr>`;
       return;
     }
     tbody.innerHTML = items.map((vt) => `
@@ -3272,12 +3881,14 @@ async function loadVenueTypesTab() {
           data-name-de="${(vt.nameDe || "").replace(/"/g, "&quot;")}"
           data-name-en="${(vt.nameEn || "").replace(/"/g, "&quot;")}"
           data-header-de="${(vt.headerDe || "").replace(/"/g, "&quot;")}"
-          data-header-en="${(vt.headerEn || "").replace(/"/g, "&quot;")}">
+          data-header-en="${(vt.headerEn || "").replace(/"/g, "&quot;")}"
+          data-producer="${vt.isProducer ? "1" : ""}">
         <td style="font-family:var(--font-mono);font-size:12px">${vt.id}</td>
         <td>${vt.nameDe}</td>
         <td style="color:var(--ink-muted)">${vt.nameEn || "—"}</td>
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${vt.headerDe || "—"}</td>
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted)">${vt.headerEn || "—"}</td>
+        <td>${vt.isProducer ? "✓" : "—"}</td>
         <td class="actions">
           <button class="btn" data-act="edit-vtype">Bearbeiten</button>
           <button class="btn btn-reject" data-act="delete-vtype">Löschen</button>
@@ -3304,7 +3915,7 @@ async function loadVenueTypesTab() {
       });
     });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
   }
 }
 
@@ -3313,12 +3924,13 @@ function openVtypeEditInline(id, rowEl) {
   if (pendingVtypeEdit) { pendingVtypeEdit.editRow.remove(); pendingVtypeEdit = null; }
   const editRow = document.createElement("tr");
   editRow.innerHTML = `
-    <td colspan="6" style="padding:16px;background:var(--bg-elev)">
+    <td colspan="7" style="padding:16px;background:var(--bg-elev)">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-items:end">
         <div class="field" style="margin:0"><label>Name (DE)</label><input id="vte-name-de" type="text" maxlength="200" value="${rowEl.dataset.nameDe.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0"><label>Name (EN)</label><input id="vte-name-en" type="text" maxlength="200" value="${rowEl.dataset.nameEn.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Header-Text (DE)</label><input id="vte-header-de" type="text" maxlength="1000" value="${rowEl.dataset.headerDe.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Header-Text (EN)</label><input id="vte-header-en" type="text" maxlength="1000" value="${rowEl.dataset.headerEn.replace(/"/g, '&quot;')}" /></div>
+        <div class="field" style="margin:0;grid-column:1/-1"><label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input id="vte-producer" type="checkbox" style="width:auto" ${rowEl.dataset.producer === "1" ? "checked" : ""} /><span>${window.t("admin.vtProducer")}</span></label></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-approve" id="vte-save">${window.t("common.save")}</button>
           <button class="btn btn-ghost" id="vte-cancel">${window.t("common.cancel")}</button>
@@ -3340,6 +3952,7 @@ function openVtypeEditInline(id, rowEl) {
       name_en:   editRow.querySelector("#vte-name-en").value.trim() || null,
       header_de: editRow.querySelector("#vte-header-de").value.trim() || null,
       header_en: editRow.querySelector("#vte-header-en").value.trim() || null,
+      is_producer: editRow.querySelector("#vte-producer").checked,
     };
     if (!confirmBothLangs([
       [window.t("admin.langFieldName"), patch.name_de, patch.name_en],
@@ -3355,6 +3968,8 @@ function openVtypeEditInline(id, rowEl) {
       rowEl.cells[2].textContent = patch.name_en || "—";
       rowEl.cells[3].textContent = patch.header_de || "—";
       rowEl.cells[4].textContent = patch.header_en || "—";
+      rowEl.dataset.producer = patch.is_producer ? "1" : "";
+      rowEl.cells[5].textContent = patch.is_producer ? "✓" : "—";
       editRow.remove(); pendingVtypeEdit = null;
       rebuildBreweryTypeSelects();
     } catch (e) {
@@ -3381,6 +3996,7 @@ document.getElementById("add-vtype-form").addEventListener("submit", async (e) =
       name_en:   fd.get("name_en").trim() || null,
       header_de: fd.get("header_de").trim() || null,
       header_en: fd.get("header_en").trim() || null,
+      is_producer: fd.get("is_producer") === "on",
     });
     msg.textContent = window.t("admin.vtAdded");
     msg.style.color = "#2d7a2d";
@@ -3466,6 +4082,8 @@ document.getElementById("add-brewery-form").addEventListener("submit", async (e)
       website:        fd.get("website").trim() || null,
       description_de: fd.get("description_de").trim() || null,
       description_en: fd.get("description_en").trim() || null,
+      successor_id:   fd.get("successor_id") || null,
+      is_historical:  fd.get("is_historical") === "on",
     });
     msg.textContent = window.t("admin.breweryAdded");
     msg.style.color = "#2d7a2d";
@@ -3474,6 +4092,7 @@ document.getElementById("add-brewery-form").addEventListener("submit", async (e)
     cachedBreweries = null;
     loadBreweriesTable();
     loadDashboard();
+    populateAddBrewerySuccessors(true);
   } catch (err) {
     msg.textContent = window.t("admin.errorPrefix") + (err.detail?.detail || err.message);
     msg.style.color = "#9b1f1f";
@@ -3519,6 +4138,26 @@ document.getElementById("add-event-form").addEventListener("submit", async (e) =
     msg.style.display = "block";
   }
 });
+
+// Nachfolger-Auswahl im Formular „Neuer Ort“; refresh = nach dem Anlegen neu aufbauen
+document.getElementById("edit-historical").addEventListener("change", (e) => {
+  document.getElementById("edit-place-search").disabled = e.target.checked;
+});
+
+async function populateAddBrewerySuccessors(refresh = false) {
+  const sel = document.getElementById("add-brewery-successor-select");
+  if (!sel || (!refresh && sel.options.length > 1)) return;
+  try {
+    const brs = await ensureBreweries();
+    sel.length = 1;
+    brs.slice().sort((a, b) => a.name.localeCompare(b.name, "de")).forEach((b) => {
+      const opt = document.createElement("option");
+      opt.value = b.id;
+      opt.textContent = `${b.name} · ${b.city}`;
+      sel.appendChild(opt);
+    });
+  } catch {}
+}
 
 async function populateAddEventBreweries() {
   const sel = document.getElementById("add-event-brewery-select");

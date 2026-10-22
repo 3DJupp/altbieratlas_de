@@ -80,7 +80,11 @@ The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_
 
 ### Database Schema
 
-Key tables: `breweries` (incl. `is_historical` flag and `successor_id` — who runs the brand today, shown as „Heute bei …“; editable in the admin edit dialog), `venue_types`, `styles`, `brewery_styles` (n:m), `prices` (optional `style_id`: which beer the price is for — set it whenever a venue pours more than one Alt), `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_reset_tokens`, `rate_limits`, `glossary`, `site_settings`, `untappd_cache` (keyed by venue ID; `breweries.untappd_id` overrides the name search: NULL = search, 0 = hidden, > 0 = fixed Untappd ID — changing it clears the cache), `google_places_cache` (rating/count per Place ID, max. 30 days per Google terms — only `breweries.google_place_id` may be stored permanently; historical venues get no Place ID).
+Key tables: `breweries` (incl. `is_historical` flag, `highlighted` — golden map pin for sponsoring, 0 = off, > 0 = on, an integer so levels can be added later — and `successor_id` — who runs the brand today, shown as „Heute bei …“; editable in the admin edit dialog), `venue_types`, `styles`, `brewery_styles` (n:m), `prices` (optional `style_id`: which beer the price is for — set it whenever a venue pours more than one Alt), `events`, `event_beers`, `contributions`, `admin_users`, `admin_sessions`, `password_reset_tokens`, `rate_limits`, `glossary`, `site_settings`, `untappd_cache` (keyed by venue ID; `breweries.untappd_id` overrides the name search: NULL = search, 0 = hidden, > 0 = fixed Untappd ID — changing it clears the cache), `google_places_cache` (rating/count and Google's coordinates per Place ID, max. 30 days per Google terms — only `breweries.google_place_id` may be stored permanently, so Google's coordinates are only compared against the pin in the admin's „Pins prüfen“, never copied into `breweries`; historical venues get no Place ID, and setting `is_historical` clears it).
+
+Opening hours: `breweries.opening_hours` (own, format in `src/hours.js`) win; otherwise the venue page shows Google's `regularOpeningHours` from `google_places_cache` labelled „laut Google“ — never copy those into `breweries`, and only own hours go into JSON-LD. „Jetzt geöffnet“ and offer timing always use Europe/Berlin (`window.atlasHours`/`window.atlasOffers` in `shell.js`). `offers` (see `src/offers.js`) holds venue offers and partner coupons; coupons and `highlighted` venues are always visibly labelled „Partner“ (paid placement), and neither may ever influence rankings or price comparisons. `contributions.type` includes `offer`. The contact form (`POST /api/contact`, `/kooperation`) only mails `ADMIN_EMAIL` and stores nothing.
+
+Pure breweries (venue type `brewery`) don't pour and are left out of every comparison (price rankings, averages, „Preis gesucht“, Google ranking): use `inComparisons()` (`src/utils.js`) on the server and `window.atlasInComparisons()` (`shell.js`) in the browser, never a hand-written type check. Public style lists go through `STYLE_PUBLIC_SQL`, which hides a style until one of its places is approved.
 
 Maps links always go through `mapsLink()` (`src/googlePlaces.js`) / `window.atlasMapsLink()` (`shell.js`): Place ID → `maps_url` → coordinates. The API's `mapsUrl` is the resolved link, `rawMapsUrl` the stored field (the admin form must edit the raw one). A second cron `0 4-6 * * 1` refreshes `google_places_cache` (max. 40 places per run — the free plan allows 50 subrequests per invocation, so every Google-calling path works in batches) (`GOOGLE_RATINGS_CRON` in `worker.js` must match `wrangler.toml`).
 
@@ -119,7 +123,8 @@ Jedes Objekt mit Sprachfeldern wird **immer in beiden Sprachen** gepflegt: `brew
 
 - Admin sessions use a 32-byte random token in a `HttpOnly; Secure; SameSite=Strict` cookie named `atlas_session` (8h TTL)
 - Passwords: PBKDF2-SHA256, 100,000 iterations, 16-byte salt
-- Rate limits are D1-backed and IP-bound (`rate_limits` table): contributions 20/h, login 5/5min, password-reset 3/15min
+- Rate limits are D1-backed and IP-bound (`rate_limits` table): contributions 20/h, contact form 5/h, login 5/5min, password-reset 3/15min
+- Destructive admin actions confirm on the server too (e.g. resetting the Rhine-derby votes needs `confirm: "ZURÜCKSETZEN"`); admins can't delete themselves or the last admin
 - Turnstile verification is skipped when `TURNSTILE_SECRET_KEY` is absent (safe for local dev)
 
 ### Versioning
@@ -151,7 +156,7 @@ All transactional mail (contribution confirmations, an instant admin notificatio
 - Neue Seite in `public/` → URL zur `staticPaths`-Liste hinzufügen
 - Prioritäten: `/` = 1.0, Inhaltsseiten = 0.7
 - Nicht in die Sitemap: `/admin`, `noindex`-Seiten (`/impressum`, 404), dynamische Detail-URLs (werden separat über DB-Queries generiert)
-- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/sorten`, `/rivalen`, `/beitragen`, `/staedte`
+- Aktuelle Sitemap-Seiten: `/`, `/ranglisten`, `/wissen`, `/sorten`, `/rivalen`, `/beitragen`, `/staedte`, `/kooperation`
 - Neue öffentliche Seite → auch in `llmsTxt()` (`src/seo.js`, Abschnitt „Seiten") aufnehmen
 
 **Sitemap-Datum (`PAGE_DATES`, exportiert direkt über `sitemap()` in `src/routes.js`, auch für JSON-LD `dateModified` genutzt)**: Jede statische Seite hat ein eigenes `lastmod`-Datum in der `PAGE_DATES`-Map. Dieses Datum **muss** aktualisiert werden, wenn:
