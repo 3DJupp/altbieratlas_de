@@ -2,60 +2,6 @@
 
 Offene Punkte, grob nach Wichtigkeit sortiert. Erledigtes wird gelöscht, nicht abgehakt.
 
-## Daten-Werkzeuge
-
-Inhalte (Orte, Preise, Koordinaten) pflegen die Mitwirkenden über Beiträge und Admin-Panel;
-hier stehen nur technische Lücken.
-
-- **Mehrere Orte unter einer Google-Adresse.** Teilen sich zwei Einträge einen Google-Ort
-  (z. B. zwei Ausschänke unter einem Dach), zeigen beide dieselbe Bewertung. „Pins prüfen“
-  nennt geteilte Place IDs inzwischen; im Bearbeiten-Dialog und in der Orte-Tabelle fehlt
-  die Kennzeichnung noch.
-
-- **Stille Obergrenzen bei Preisen.** `/api/prices` liefert höchstens 2.000 Meldungen,
-  `loadVenues()` in `src/seo.js` liest höchstens 5.000. Darüber fehlen ältere Meldungen
-  ohne Hinweis in Karte, Ranglisten und SSR. Vorher umbauen: nur die jüngste Meldung je
-  Ort, Größe und Sorte laden statt der ganzen Historie, oder seitenweise.
-
-## Admin-Panel
-
-Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
-
-### Wichtig
-
-- **„Produzent“ bei Typen.** `venue_types.is_producer` steuert u. a. Seed/Mock-Regeln und
-  Kopfzeilen, die API nimmt das Feld an, das Admin-UI zeigt und setzt es aber nicht.
-
-### Später
-
-- **Admin-Benutzer verwalten.** Anlegen und Passwort ändern geht nur per
-  `scripts/create-admin.mjs`; im Panel gibt es nur den Passwort-Reset per Mail.
-- **Rheinderby-Stimmen.** `rival_votes` hat keine Admin-Ansicht (Stand, Zurücksetzen).
-- **Digest manuell auslösen.** Der Admin-Digest läuft nur per Cron; ein „Jetzt senden“-Knopf hilft
-  beim Testen von Resend.
-
-## Features
-
-- **Öffnungszeiten der Orte.** Laut Search Console wird zu Brauhäusern oft nach
-  „öffnungszeiten“ und „speisekarte“ gesucht, die Ortsseiten ranken dafür aber nur auf
-  Position 20 bis 60, weil die Angaben fehlen. Idee:
-  - **Schema:** Neue Spalte, z. B. `breweries.opening_hours` als JSON (je Wochentag Von/Bis,
-    mehrere Zeitfenster möglich, Ruhetage), plus optionaler Freitext für Ausnahmen (DE und EN).
-  - **Pflege:** Eingabe im Admin-Dialog „Bearbeiten“, außerdem als Korrektur-Beitrag über
-    `beitragen.html`. Datum der letzten Prüfung mitspeichern, damit veraltete Zeiten auffallen.
-  - **Anzeige:** Block auf der Ortsseite mit „Jetzt geöffnet“-Hinweis (Europe/Berlin), im SSR
-    mit ausgegeben, damit Crawler die Zeiten sehen.
-  - **Strukturierte Daten:** `openingHoursSpecification` im JSON-LD der Ortsseite, damit
-    Google und Bing die Zeiten direkt verstehen.
-  - **Quelle:** Die vorhandene Google-Places-Anbindung (`src/googlePlaces.js`, Place ID je Ort)
-    liefert auch `regularOpeningHours`.
-
-- **Hervorhebung (Sponsoring) ausbauen.** Heute nur ein goldener Pin auf der Startseitenkarte
-  (`breweries.highlighted`). Vor dem ersten bezahlten Einsatz: sichtbare Kennzeichnung als
-  „Anzeige“/„Partner“ in Popup und Ortsseite (Werbung muss erkennbar sein). Ideen danach:
-  Laufzeit mit Enddatum, damit eine Hervorhebung von selbst ausläuft; Stufen über den Zahlenwert;
-  Hervorhebung auch auf Stadtseiten. Nie in Ranglisten oder Preisvergleiche eingreifen.
-
 ## Vorschaubilder und Suchvorschauen
 
 Ziel: Geteilte Links und Suchtreffer zeigen den echten, aktuellen Inhalt der Seite und sehen
