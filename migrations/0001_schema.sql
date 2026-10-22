@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS breweries (
   description_en TEXT,
   verified       INTEGER NOT NULL DEFAULT 0,
   is_historical  INTEGER NOT NULL DEFAULT 0,
-  -- Wer Marke/Betrieb heute führt (z. B. Hannen, Gatzweiler → Bolten)
+  -- Wer Marke/Betrieb heute führt (Übernahme einer historischen Brauerei)
   successor_id   TEXT REFERENCES breweries(id) ON DELETE SET NULL,
   status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
   photo_key      TEXT,

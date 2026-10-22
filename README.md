@@ -91,7 +91,7 @@ bash scripts/db-setup.sh [--remote]
 | `0001_schema.sql` | Vollständiges Schema — alle Tabellen, Indizes, FK-Kaskaden. Idempotent. |
 | `0002_seed.sql` | Alle Seed-Daten: Venue-Typen (9), Bierstile, Glossar, Brauereien, Preise, Events. Idempotent via `INSERT OR IGNORE`. |
 
-> **Seed vs. Live-DB:** Der Seed wird nur bei Neuinstallationen eingespielt. Events (vor allem die neusten) stehen deshalb immer sowohl im Seed/`data.js` als auch in der Live-D1 (`INSERT OR IGNORE`, `wrangler d1 execute --remote`, Cloudflare-MCP oder Admin-Panel). Ungeprüfte Funde erhalten `status='pending'` und werden im Admin freigegeben. Bei Orten kommen nur Hausbrauereien/Brauereien in Seed und `data.js`; Kneipen, Gastronomie und Handel stehen nur in der Live-D1. Maßgeblich ist immer die Live-D1; Seed und `data.js` müssen nicht synchron sein.
+> **Seed vs. Live-DB:** Der Seed wird nur bei Neuinstallationen eingespielt. Events (vor allem die neusten) stehen deshalb immer sowohl im Seed/`data.js` als auch in der Live-D1 (`INSERT OR IGNORE`, `wrangler d1 execute --remote`, Cloudflare-MCP oder Admin-Panel). Ungeprüfte Funde erhalten `status='pending'` und werden im Admin freigegeben. Bei Orten enthalten Seed und `data.js` nur einen schlanken Startbestand nennenswerter Brauereien; Kneipen, Gastronomie und Handel stehen nur in der Live-D1 und werden von den Mitwirkenden gepflegt. Maßgeblich ist immer die Live-D1; Seed und `data.js` müssen nicht synchron sein.
 
 **Genau zwei Dateien — immer.** Neue Spalten, Brauereien, Stile etc. werden direkt in `0001` bzw. `0002` eingebaut, **nicht** als neue Datei `0003_…`. Für Upgrades bestehender Produktionsinstanzen: SQL direkt in der D1-Dashboard-Console ausführen.
 
@@ -271,7 +271,7 @@ Sitemap-URLs melden (das Script prüft die Schlüsseldatei, liest
 ```bash
 INDEXNOW_KEY=$KEY npm run seo:indexnow            # alles aus der Sitemap
 INDEXNOW_KEY=$KEY npm run seo:indexnow -- --dry-run   # vorher nur ansehen
-INDEXNOW_KEY=$KEY npm run seo:indexnow -- /ort/uerige /ranglisten  # Einzel-URLs
+INDEXNOW_KEY=$KEY npm run seo:indexnow -- /ort/<slug> /ranglisten  # Einzel-URLs
 ```
 
 #### curl direkt
@@ -279,7 +279,7 @@ INDEXNOW_KEY=$KEY npm run seo:indexnow -- /ort/uerige /ranglisten  # Einzel-URLs
 Einzelne URL (GET, der einfachste Weg):
 
 ```bash
-curl -i "https://api.indexnow.org/indexnow?url=https://altbieratlas.de/ort/uerige&key=$KEY&keyLocation=https://altbieratlas.de/$KEY.txt"
+curl -i "https://api.indexnow.org/indexnow?url=https://altbieratlas.de/ranglisten&key=$KEY&keyLocation=https://altbieratlas.de/$KEY.txt"
 ```
 
 Mehrere URLs (POST, bis 10 000 pro Request):
@@ -425,7 +425,7 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
   wie viele Orte bisher nur andere Größen gemeldet haben, und verlinkt `/ranglisten`
 
 ### Ort-Detail (`/ort/<slug>`)
-- **Sprechende URLs**: `/ort/uerige` statt `/ort?id=uerige`.
+- **Sprechende URLs**: `/ort/<slug>` statt `/ort?id=<slug>`.
   `/ort?id=…`, `/ort.html?id=…`, `/brauerei?id=…` und Trailing-Slash-Varianten
   leiten mit einem einzigen 301 auf die kanonische Form
 - **Serverseitig gerendert**: H1, Beschreibung, Adresse, Sorten und eine
@@ -440,7 +440,7 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
   ohne Sorte zählt für alle Sorten derselben Größe, eine neuere verdrängt sie
 - Stile, Geschmacksnotizen (DE/EN)
 - **Übernahmen** (`breweries.successor_id`): historische Orte zeigen „Heute bei: …“ mit Link,
-  der übernehmende Ort listet seine übernommenen Marken (z. B. Hannen und Gatzweiler → Bolten)
+  der übernehmende Ort listet seine übernommenen Marken
 - **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
 - **Google-Bewertung** (optional, `GOOGLE_PLACES_KEY`): „4,5 ★ (312 Bewertungen) bei Google"
   mit Link auf den Ort in Google Maps, aus dem höchstens 30 Tage alten Cache
@@ -449,8 +449,8 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 ### Stadt-Landingpages (SEO)
 - Serverseitig gerenderte Seiten unter `/stadt/<slug>`
 - **Slugs entstehen automatisch** aus den Städten der freigegebenen und geprüften Orte
-  (`citySlug()` in `src/routes.js`, umlautfest: Düsseldorf → `duesseldorf`,
-  Mönchengladbach → `moenchengladbach`). Keine Whitelist mehr zu pflegen —
+  (`citySlug()` in `src/routes.js`, umlautfest: „ü“ → `ue`, „ß“ → `ss`,
+  Leerzeichen → `-`). Keine Whitelist mehr zu pflegen —
   ein neuer Ort in einer neuen Stadt erzeugt Seite und Sitemap-Eintrag von selbst
 - Listet aktive **und historische** Orte einer Stadt inkl. Ø-Preis (nur 0,25 l, damit
   vergleichbar) und Preis je Ort (jüngster Preis der kleinsten gemeldeten Größe, mit

@@ -12,7 +12,7 @@
 # Verwendung:
 #   INDEXNOW_KEY=<key> bash scripts/indexnow.sh                 # alle Sitemap-URLs
 #   INDEXNOW_KEY=<key> bash scripts/indexnow.sh --dry-run       # nur auflisten
-#   INDEXNOW_KEY=<key> bash scripts/indexnow.sh /ort/uerige /ranglisten
+#   INDEXNOW_KEY=<key> bash scripts/indexnow.sh /ort/<slug> /ranglisten
 #   INDEXNOW_KEY=<key> bash scripts/indexnow.sh https://altbieratlas.de/
 #
 # Optionen:
