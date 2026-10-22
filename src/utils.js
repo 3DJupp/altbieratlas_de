@@ -482,12 +482,13 @@ export async function sendPasswordResetEmail(env, { to, resetUrl }) {
 // und immer noch offen sind. So geht nichts verloren, ohne zweimal täglich
 // dieselben Altlasten zu schicken.
 //
-// Steuerung über SITE_CONFIG (alle optional):
-//   digestHours:           Berliner Stunden des Digests, Standard [10, 22];
-//                          [] schaltet den regulären Digest ab.
-//   digestReminderWeekday: Wochentag der Erinnerung (0 = So … 6 = Sa),
-//                          Standard 1 (Montag); null schaltet sie ab.
-//   digestReminderHour:    Berliner Stunde der Erinnerung, Standard 10.
+// Steuerung über SITE_CONFIG (alle optional; jeder Wert darf eine Zahl oder
+// ein Array sein, null oder [] schaltet den jeweiligen Lauf ab):
+//   digestWeekdays:        Wochentage des Digests (0 = So … 6 = Sa),
+//                          Standard alle Tage.
+//   digestHours:           Berliner Stunden des Digests, Standard [10, 22].
+//   digestReminderWeekday: Wochentage der Erinnerung, Standard 1 (Montag).
+//   digestReminderHour:    Berliner Stunden der Erinnerung, Standard 10.
 const DIGEST_KEY = "digest_last_until";
 const DIGEST_REMINDER_LIMIT = 50;
 
@@ -502,15 +503,22 @@ export function berlinWeekday(date = new Date()) {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
 }
 
+// SITE_CONFIG-Wert als Zahlenliste: fehlt er → Standard, null/false → leer
+function numList(v, def) {
+  if (v === undefined) return def;
+  if (v === null || v === false) return [];
+  return (Array.isArray(v) ? v : [v]).map(Number).filter(Number.isInteger);
+}
+
 // Was soll im Lauf zu diesem Zeitpunkt passieren? → { digest, reminder }
 export function digestSchedule(env, date = new Date()) {
   const sc = siteConfig(env);
-  const h = berlinHour(date);
-  const hours = Array.isArray(sc.digestHours) ? sc.digestHours.map(Number) : [10, 22];
-  const wd = sc.digestReminderWeekday === undefined ? 1 : sc.digestReminderWeekday;
-  const rh = sc.digestReminderHour === undefined ? 10 : Number(sc.digestReminderHour);
-  const reminder = wd !== null && wd !== false && Number(wd) === berlinWeekday(date) && rh === h;
-  return { digest: hours.includes(h), reminder };
+  const h = berlinHour(date), wd = berlinWeekday(date);
+  const due = (days, hours) => days.includes(wd) && hours.includes(h);
+  return {
+    digest: due(numList(sc.digestWeekdays, [0, 1, 2, 3, 4, 5, 6]), numList(sc.digestHours, [10, 22])),
+    reminder: due(numList(sc.digestReminderWeekday, [1]), numList(sc.digestReminderHour, [10])),
+  };
 }
 
 export async function sendAdminDigest(env, { reminder = false } = {}) {

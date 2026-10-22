@@ -170,9 +170,9 @@ export default {
       return;
     }
     // Cron läuft stündlich (UTC): jede Stunde IndexNow-Nachmeldung, der
-    // Digest nur in den Berliner Stunden aus SITE_CONFIG.digestHours (Standard
-    // 10 und 22 Uhr), die Erinnerung an liegengebliebene Einreichungen einmal
-    // pro Woche (Standard Montag 10 Uhr).
+    // Digest nur an den Berliner Wochentagen und Stunden aus SITE_CONFIG
+    // (Standard täglich 10 und 22 Uhr), die Erinnerung an liegengebliebene
+    // Einreichungen ebenso (Standard Montag 10 Uhr).
     ctx.waitUntil(SEO.sweepIndexNow(env));
     const { digest, reminder } = digestSchedule(env, new Date(event.scheduledTime));
     if (digest || reminder) ctx.waitUntil(sendAdminDigest(env, { reminder }));

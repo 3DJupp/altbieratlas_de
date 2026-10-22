@@ -70,9 +70,9 @@ bucket_name = "altbieratlas-logos"
 # Jede Stunde meldet der Worker per IndexNow alle seit dem letzten Lauf
 # geänderten Orte/Preise/Termine (auch direkte D1-Einträge).
 # Der Digest (noch offene Beiträge seit dem letzten Digest an ADMIN_EMAIL)
-# geht nur in den Läufen raus, die in Berlin auf SITE_CONFIG.digestHours
-# fallen (Standard 10 und 22 Uhr), die Erinnerung an liegengebliebene Beiträge
-# einmal pro Woche (Standard Montag 10 Uhr); Zeitzone des Crons ist UTC,
+# geht nur in den Läufen raus, die in Berlin auf SITE_CONFIG.digestWeekdays
+# und digestHours fallen (Standard täglich 10 und 22 Uhr), die Erinnerung an
+# liegengebliebene Beiträge ebenso (Standard Montag 10 Uhr); Zeitzone des Crons ist UTC,
 # scheduled() prüft Berliner Stunde und Wochentag.
 #
 # Zweiter Cron: montags 4, 5 und 6 Uhr UTC Google-Bewertungen (Places API New)
@@ -174,11 +174,13 @@ persist = true
 #                     (CARTO dark_all) nicht passt — etwa beim Anbieterwechsel.
 #   mapTileAttribution: Attribution-Zeile zur obigen Kachel-URL. CARTO verlangt,
 #                     dass CARTO- und OSM-Attribution sichtbar bleiben.
-#   digestHours:      Berliner Stunden des Admin-Digests. Standard [10, 22];
-#                     [] schaltet ihn ab.
-#   digestReminderWeekday: Wochentag der Erinnerung an noch offene Beiträge
-#                     (0 = So … 6 = Sa). Standard 1; null schaltet sie ab.
-#   digestReminderHour: Berliner Stunde der Erinnerung. Standard 10.
+#   Digest-Zeitplan: jeder Wert Zahl oder Array, null/[] schaltet ab.
+#   digestWeekdays:   Wochentage des Admin-Digests (0 = So … 6 = Sa).
+#                     Standard alle Tage.
+#   digestHours:      Berliner Stunden des Admin-Digests. Standard [10, 22].
+#   digestReminderWeekday: Wochentage der Erinnerung an noch offene
+#                     Beiträge. Standard 1 (Montag).
+#   digestReminderHour: Berliner Stunden der Erinnerung. Standard 10.
 #
 # Autor/Social, Impressum und Banner werden ausschließlich im
 # Admin-Panel gepflegt (D1 site_settings) — nicht in SITE_CONFIG.
