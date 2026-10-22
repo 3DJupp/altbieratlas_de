@@ -718,6 +718,15 @@ export async function postContribution(req, env, _params, ctx) {
     } catch {}
   }
 
+  // Einreichung aus einer gültigen Admin-Sitzung → im Payload markieren; dafür
+  // gibt es weder Sofort-Benachrichtigung noch Digest-Eintrag. Ein vom Client
+  // mitgeschicktes _admin zählt nie.
+  delete data._admin;
+  if (parseCookies(req)["atlas_session"]) {
+    const auth = await requireAdmin(req, env).catch(() => ({ ok: false }));
+    if (auth.ok) data._admin = auth.username;
+  }
+
   const id = uuid();
   await env.DB.prepare(
     "INSERT INTO contributions (id, type, payload, submitter_email, submitter_name, submitter_ip, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')"
@@ -728,9 +737,12 @@ export async function postContribution(req, env, _params, ctx) {
     const mailPromise = sendConfirmationEmail(env, { to: email, type, id, data, ip, lang, submittedAt: new Date().toISOString() });
     if (ctx?.waitUntil) ctx.waitUntil(mailPromise);
   }
-  // Admin sofort informieren — unabhängig davon, ob eine E-Mail angegeben wurde
-  const notifyPromise = sendAdminNotification(env, { type, id, data, email, submitterName });
-  if (ctx?.waitUntil) ctx.waitUntil(notifyPromise);
+  // Admin sofort informieren — unabhängig davon, ob eine E-Mail angegeben wurde,
+  // außer der Admin hat selbst eingereicht
+  if (!data._admin) {
+    const notifyPromise = sendAdminNotification(env, { type, id, data, email, submitterName });
+    if (ctx?.waitUntil) ctx.waitUntil(notifyPromise);
+  }
 
   return json({ ok: true, id, status: "pending" }, { status: 201 });
 }

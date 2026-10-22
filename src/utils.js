@@ -460,8 +460,14 @@ export async function sendPasswordResetEmail(env, { to, resetUrl }) {
 }
 
 // ---- Admin-Digest via Resend API ----
-// Wird vom scheduled()-Handler um 10 und 22 Uhr (Europe/Berlin) aufgerufen.
+// Wird vom stündlichen scheduled()-Handler aufgerufen, sobald digestSchedule()
+// für die aktuelle Berliner Stunde einen Lauf meldet.
 // Benötigt env.RESEND_API_KEY (Secret) + env.ADMIN_EMAIL (Secret).
+//
+// Inhalt: nur Einreichungen, die noch offen sind (status = 'pending') und
+// nicht aus einer Admin-Sitzung stammen (payload._admin). Was der Admin schon
+// freigegeben oder abgelehnt hat, taucht nicht mehr auf; ohne offene neue
+// Einreichung geht keine Mail raus.
 //
 // Kein Overlap, keine Lücke: Der Digest merkt sich in site_settings
 // (DIGEST_KEY) das Ende des zuletzt verschickten Fensters und listet nur
@@ -470,19 +476,51 @@ export async function sendPasswordResetEmail(env, { to, resetUrl }) {
 // Schlägt der Versand fehl, bleibt der Stand stehen → nächster Digest holt nach.
 // Zeitvergleiche laufen in SQLite, weil created_at im datetime()-Format
 // ("YYYY-MM-DD HH:MM:SS") liegt und nicht mit ISO-Strings vergleichbar ist.
+//
+// Erinnerung: Im Erinnerungslauf (Standard: montags 10 Uhr) listet die Mail
+// zusätzlich alle Einreichungen, die schon in einem früheren Digest standen
+// und immer noch offen sind. So geht nichts verloren, ohne zweimal täglich
+// dieselben Altlasten zu schicken.
+//
+// Steuerung über SITE_CONFIG (alle optional):
+//   digestHours:           Berliner Stunden des Digests, Standard [10, 22];
+//                          [] schaltet den regulären Digest ab.
+//   digestReminderWeekday: Wochentag der Erinnerung (0 = So … 6 = Sa),
+//                          Standard 1 (Montag); null schaltet sie ab.
+//   digestReminderHour:    Berliner Stunde der Erinnerung, Standard 10.
 const DIGEST_KEY = "digest_last_until";
+const DIGEST_REMINDER_LIMIT = 50;
 
 // Stunde (0–23) in Europe/Berlin — für die Cron-Prüfung im Worker (Cron läuft in UTC)
 export function berlinHour(date = new Date()) {
   return Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "numeric", hourCycle: "h23" }).format(date));
 }
 
-export async function sendAdminDigest(env) {
+// Wochentag (0 = So … 6 = Sa) in Europe/Berlin
+export function berlinWeekday(date = new Date()) {
+  const wd = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Berlin", weekday: "short" }).format(date);
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
+}
+
+// Was soll im Lauf zu diesem Zeitpunkt passieren? → { digest, reminder }
+export function digestSchedule(env, date = new Date()) {
+  const sc = siteConfig(env);
+  const h = berlinHour(date);
+  const hours = Array.isArray(sc.digestHours) ? sc.digestHours.map(Number) : [10, 22];
+  const wd = sc.digestReminderWeekday === undefined ? 1 : sc.digestReminderWeekday;
+  const rh = sc.digestReminderHour === undefined ? 10 : Number(sc.digestReminderHour);
+  const reminder = wd !== null && wd !== false && Number(wd) === berlinWeekday(date) && rh === h;
+  return { digest: hours.includes(h), reminder };
+}
+
+export async function sendAdminDigest(env, { reminder = false } = {}) {
   if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
 
   const sc = siteConfig(env);
   const siteUrl = sc.siteUrl || "https://altbieratlas.de";
-  let rows, from, until;
+  const cols = "id, type, payload, submitter_email, submitter_name, created_at";
+  const open = "status = 'pending' AND json_extract(payload, '$._admin') IS NULL";
+  let rows, older = [], olderTotal = 0, from, until;
   try {
     const win = await env.DB.prepare(
       `SELECT COALESCE((SELECT value FROM site_settings WHERE key = ?), datetime('now', '-12 hours')) AS since,
@@ -490,8 +528,18 @@ export async function sendAdminDigest(env) {
     ).bind(DIGEST_KEY).first();
     from = win.since; until = win.until;
     ({ results: rows } = await env.DB.prepare(
-      "SELECT id, type, payload, submitter_email, submitter_name, submitter_ip, status, created_at FROM contributions WHERE created_at > ? AND created_at <= ? ORDER BY created_at DESC"
+      `SELECT ${cols} FROM contributions WHERE ${open} AND created_at > ? AND created_at <= ? ORDER BY created_at DESC`
     ).bind(from, until).all());
+    if (reminder) {
+      const [list, count] = await Promise.all([
+        env.DB.prepare(
+          `SELECT ${cols} FROM contributions WHERE ${open} AND created_at <= ? ORDER BY created_at DESC LIMIT ${DIGEST_REMINDER_LIMIT}`
+        ).bind(from).all(),
+        env.DB.prepare(`SELECT COUNT(*) AS n FROM contributions WHERE ${open} AND created_at <= ?`).bind(from).first(),
+      ]);
+      older = list.results || [];
+      olderTotal = count?.n || older.length;
+    }
   } catch (e) {
     console.error("[digest] DB-Fehler:", e);
     return;
@@ -500,54 +548,76 @@ export async function sendAdminDigest(env) {
     `INSERT INTO site_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
   ).bind(DIGEST_KEY, until).run().catch((e) => console.error("[digest] Stand nicht gespeichert:", e));
-  if (!rows || !rows.length) { await markSent(); return; }
+  rows = rows || [];
+  if (!rows.length && !older.length) { await markSent(); return; }
 
   const fmtBerlin = (sqlTs) => {
     try { return new Date(sqlTs.replace(" ", "T") + "Z").toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" }); }
     catch { return sqlTs; }
   };
   const windowLabel = `${fmtBerlin(from)} – ${fmtBerlin(until)}`;
-  const statusLabels = { pending: "offen", approved: "freigegeben", rejected: "abgelehnt" };
 
   const typeLabels = {
     price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
     correction: "Korrektur", event: "Event",
   };
-
-  const rowsHtml = rows.map((r) => {
+  const describe = (r) => {
     let data = {};
     try { data = JSON.parse(r.payload); } catch {}
-    const label = typeLabels[r.type] || r.type;
-    const ts = fmtBerlin(r.created_at);
-    const summary = data.name || data.breweryId || data.eventName || "?";
-    const email = _esc([r.submitter_name, r.submitter_email].filter(Boolean).join(" · ") || "anonym");
-    const status = r.status !== "pending" ? ` <span style="color:#888;font-size:12px">(${_esc(statusLabels[r.status] || r.status)})</span>` : "";
-    return `<tr style="border-bottom:1px solid #efe8e0">
-      <td style="padding:9px 14px 9px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b57a3a;white-space:nowrap;font-family:'Courier New',monospace;vertical-align:top">${_esc(label)}</td>
-      <td style="padding:9px 14px 9px 0;font-size:14px;color:#222;vertical-align:top">${_esc(summary)}${status}</td>
-      <td style="padding:9px 14px 9px 0;font-size:12px;color:#888;vertical-align:top">${email}</td>
-      <td style="padding:9px 0;font-size:12px;color:#888;white-space:nowrap;vertical-align:top">${ts}</td>
+    return {
+      label: typeLabels[r.type] || r.type,
+      summary: data.name || data.breweryId || data.eventName || "?",
+      who: [r.submitter_name, r.submitter_email].filter(Boolean).join(" · ") || "anonym",
+      ts: fmtBerlin(r.created_at),
+    };
+  };
+
+  const thStyle = "padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400";
+  const tableHtml = (list) => `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc;margin-bottom:24px">
+      <thead><tr style="border-bottom:1px solid #e4d8cc">
+        <th style="${thStyle}">Typ</th>
+        <th style="${thStyle}">Inhalt</th>
+        <th style="${thStyle}">E-Mail</th>
+        <th style="${thStyle.replace("8px 14px 8px 0", "8px 0")}">Zeit</th>
+      </tr></thead>
+      <tbody>${list.map((r) => {
+        const d = describe(r);
+        return `<tr style="border-bottom:1px solid #efe8e0">
+      <td style="padding:9px 14px 9px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b57a3a;white-space:nowrap;font-family:'Courier New',monospace;vertical-align:top">${_esc(d.label)}</td>
+      <td style="padding:9px 14px 9px 0;font-size:14px;color:#222;vertical-align:top">${_esc(d.summary)}</td>
+      <td style="padding:9px 14px 9px 0;font-size:12px;color:#888;vertical-align:top">${_esc(d.who)}</td>
+      <td style="padding:9px 0;font-size:12px;color:#888;white-space:nowrap;vertical-align:top">${d.ts}</td>
     </tr>`;
-  }).join("");
-
-  const rowsText = rows.map((r) => {
-    let data = {};
-    try { data = JSON.parse(r.payload); } catch {}
-    const label = typeLabels[r.type] || r.type;
-    const summary = data.name || data.breweryId || data.eventName || "?";
-    const status = r.status !== "pending" ? `, ${statusLabels[r.status] || r.status}` : "";
-    return `  [${label}] ${summary} (${[r.submitter_name, r.submitter_email].filter(Boolean).join(" · ") || "anonym"}${status})`;
+      }).join("")}</tbody>
+    </table>`;
+  const listText = (list) => list.map((r) => {
+    const d = describe(r);
+    return `  [${d.label}] ${d.summary} (${d.who}, ${d.ts})`;
   }).join("\n");
 
   const n = rows.length;
-  const subject = `Altbieratlas Digest: ${n} neue Einreichung${n > 1 ? "en" : ""}`;
+  const plural = (k) => `${k} ${k === 1 ? "Einreichung" : "Einreichungen"}`;
+  const newHeading = `${plural(n)} neu und offen`;
+  const olderHeading = `${plural(olderTotal)} noch offen aus früheren Digests`;
+  const moreOlder = olderTotal > older.length ? `… und ${olderTotal - older.length} weitere im Admin-Bereich.` : "";
+  const subject = n
+    ? `Altbieratlas Digest: ${newHeading}${older.length ? `, ${olderTotal} weitere offen` : ""}`
+    : `Altbieratlas Erinnerung: ${olderHeading}`;
   const adminUrl = siteUrl + "/admin.html";
 
   const text = [
-    `${n} neue Einreichung${n > 1 ? "en" : ""} seit dem letzten Digest (${windowLabel}):`,
-    "", rowsText, "",
+    ...(n ? [`${newHeading} seit dem letzten Digest (${windowLabel}):`, "", listText(rows), ""] : []),
+    ...(older.length ? [`Erinnerung: ${olderHeading}:`, "", listText(older), ...(moreOlder ? [moreOlder] : []), ""] : []),
     `Admin: ${adminUrl}`,
   ].join("\n");
+
+  const h2Style = "margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410";
+  const newHtml = n ? `<h2 style="${h2Style}">${newHeading}</h2>
+    <p style="margin:0 0 22px;font-size:13px;color:#888">Seit dem letzten Digest: ${_esc(windowLabel)}</p>
+    ${tableHtml(rows)}` : "";
+  const olderHtml = older.length ? `<h2 style="${h2Style}">${olderHeading}</h2>
+    <p style="margin:0 0 22px;font-size:13px;color:#888">Wöchentliche Erinnerung an Einreichungen, die noch auf Freigabe warten.</p>
+    ${tableHtml(older)}${moreOlder ? `<p style="margin:-12px 0 24px;font-size:13px;color:#888">${_esc(moreOlder)}</p>` : ""}` : "";
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no"></head>
@@ -568,17 +638,8 @@ export async function sendAdminDigest(env) {
   <tr><td style="background:#b57a3a;height:3px;border-left:1px solid #e4d8cc;border-right:1px solid #e4d8cc"></td></tr>
 
   <tr><td style="background:#fff;border:1px solid #e4d8cc;border-top:none;border-radius:0 0 8px 8px;padding:28px 28px 24px">
-    <h2 style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410">${n} neue Einreichung${n > 1 ? "en" : ""}</h2>
-    <p style="margin:0 0 22px;font-size:13px;color:#888">Seit dem letzten Digest: ${_esc(windowLabel)}</p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e4d8cc;margin-bottom:24px">
-      <thead><tr style="border-bottom:1px solid #e4d8cc">
-        <th style="padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">Typ</th>
-        <th style="padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">Inhalt</th>
-        <th style="padding:8px 14px 8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">E-Mail</th>
-        <th style="padding:8px 0;font-size:10px;text-align:left;color:#bbb;text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace;font-weight:400">Zeit</th>
-      </tr></thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
+    ${newHtml}
+    ${olderHtml}
     <a href="${adminUrl}" style="display:inline-block;background:#b57a3a;color:#fff;padding:11px 22px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:500">Admin-Bereich</a>
   </td></tr>
 

@@ -198,6 +198,9 @@ Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vo
 | `resendFrom` | Absenderadresse für Mails via Resend |
 | `mapTileUrl` | Optional. Kachel-URL der Karte; `{apiKey}` wird durch `MAP_TILE_API_KEY` ersetzt. CARTO erwartet den Schlüssel als Parameter `key`. Nur nötig beim Wechsel des Kachel-Anbieters |
 | `mapTileAttribution` | Optional. Attribution-Zeile zur obigen Kachel-URL |
+| `digestHours` | Optional. Berliner Stunden des Admin-Digests. Standard: `[10, 22]`; `[]` schaltet ihn ab |
+| `digestReminderWeekday` | Optional. Wochentag der Erinnerung an liegengebliebene Einreichungen (`0` = So … `6` = Sa). Standard: `1` (Montag); `null` schaltet sie ab |
+| `digestReminderHour` | Optional. Berliner Stunde dieser Erinnerung. Standard: `10` |
 
 > `SITE_CONFIG` ist eine **Plaintext-Variable** und überlebt Deploys nur, weil `keep_vars = true` korrekt am **Top-Level** der `wrangler.toml` steht (steht es nach einer `[table]`-Überschrift, parst TOML es als deren Property und wrangler ignoriert es). Einzelwerte, die garantiert deploy-fest sein müssen, liegen daher als **Secret** (siehe unten) — Secrets werden von `wrangler deploy` nie gelöscht.
 
@@ -714,7 +717,8 @@ Alle Mails laufen via [Resend](https://resend.com):
 |---|---|
 | Beitrags-Bestätigung | Einreichung mit E-Mail-Angabe |
 | Passwort-Reset | „Passwort vergessen?" im Admin-Login |
-| Admin-Digest | 10:00 und 22:00 Uhr (Europe/Berlin), Einreichungen seit dem letzten Digest |
+| Admin-Digest | 10:00 und 22:00 Uhr (Europe/Berlin), nur noch offene Einreichungen seit dem letzten Digest; ohne Neues keine Mail. Einreichungen aus einer Admin-Sitzung fehlen hier wie in der Sofort-Benachrichtigung |
+| Digest-Erinnerung | Einmal pro Woche (Standard Montag 10:00), listet alles, was schon in einem früheren Digest stand und noch immer offen ist |
 
 1. Account bei [resend.com](https://resend.com) anlegen
 2. Domain verifizieren, API-Key erstellen
