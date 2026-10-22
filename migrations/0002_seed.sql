@@ -464,7 +464,8 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending');
 
 -- ============================================================
--- Events — bestätigte Veranstaltungen
+-- Events — nur Beispiele (Fest ohne Brauerei, Brauerei-Termin mit Event-Bier);
+-- aktuelle Termine pflegen die Mitwirkenden in der Live-D1
 -- ============================================================
 INSERT OR IGNORE INTO events
   (id, title_de, title_en, brewery_id, date, end_date, time, end_time, location, url, description_de, description_en, status)
@@ -475,50 +476,12 @@ VALUES
     'Vom 20.–22. August 2027 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit über 30 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.',
     'From August 20–22, 2027, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for more than 30 years near the famous Benrath Palace, the event is known for its cozy beer gardens and authentic Rhineland atmosphere.',
     'approved'),
-  ('rheinkirmes-2026', 'Rheinkirmes 2026', 'Rheinkirmes 2026',
-    NULL, '2026-07-17', '2026-07-26', '11:00', '20:00', NULL,
-    'https://rheinkirmes-duesseldorf.de',
-    'Die Rheinkirmes („Größte Kirmes am Rhein") ist Düsseldorfs großes Sommer-Volksfest, jedes Jahr im Juli auf den Rheinwiesen in Oberkassel gegenüber der Altstadt. Ausgerichtet vom St. Sebastianus Schützenverein, kommen an neun Tagen rund vier Millionen Besucher. Eintritt frei, etwa 300 Fahrgeschäfte und Stände, Altbier-Zelte, Schützenumzug und zum Abschluss Höhenfeuerwerk über dem Rhein.',
-    'The Rheinkirmes ("Größte Kirmes am Rhein") is Düsseldorf''s big summer funfair, held every July on the Rheinwiesen in Oberkassel across from the Altstadt. Organised by the St. Sebastianus Schützenverein, it draws about four million visitors over nine days. Free entry, around 300 rides and stalls, Altbier tents, a Schützen parade, and fireworks over the Rhine to close.',
-    'approved'),
-  ('schluessel-stike-2026-10', 'Stike-Ausschank im Schlüssel', 'Stike tapping at Schlüssel',
-    'schluessel', '2026-10-14', NULL, NULL, NULL, 'Düsseldorf Altstadt',
-    'https://www.zumschluessel.de/events-termine-duesseldorf/stike-ausschank',
-    'Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.
-
-Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.
-
-Am 19. Oktober 2026 stand die Stike laut Aufsteller vor der Tür noch im Ausschank: 0,25 l für 3,10 € (Starkbier, 6,0 % vol.).',
-    'On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.
-
-Original Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot''s ban.
-
-On 19 October 2026 the Stike was still on tap according to the sign outside: 0.25 l for €3.10 (strong beer, 6.0% ABV).',
-    'approved'),
-  ('uerige-sticke-2026-10', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
-    'uerige', '2026-10-20', NULL, NULL, NULL, 'Düsseldorf Altstadt',
-    'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige',
-    'Am dritten Dienstag im Oktober wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird.',
-    'On the third Tuesday of October, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October).',
-    'approved'),
   ('schumacher-latzen-2026-11', 'Latzenbier-Ausschank bei Schumacher', 'Latzenbier tapping at Schumacher',
     'schumacher', '2026-11-19', NULL, NULL, NULL, 'Düsseldorf',
     'https://schumacher-alt.de',
     'Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 19. November 2026.',
     'Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 19 November 2026.',
-    'approved'),
-  ('uerige-sticke-2027-01', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
-    'uerige', '2027-01-19', NULL, NULL, NULL, 'Düsseldorf Altstadt',
-    'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige',
-    'Am dritten Dienstag im Januar wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird. Termin aus der Regel „dritter Dienstag" abgeleitet, bitte vor Besuch beim Uerige bestätigen.',
-    'On the third Tuesday of January, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October). Date derived from the "third Tuesday" rule; please confirm with Uerige before visiting.',
-    'pending'),
-  ('schumacher-latzen-2027-03', 'Latzenbier-Ausschank bei Schumacher', 'Latzenbier tapping at Schumacher',
-    'schumacher', '2027-03-18', NULL, NULL, NULL, 'Düsseldorf',
-    'https://schumacher-alt.de',
-    'Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 18. März 2027 (aus der Regel „dritter Donnerstag" abgeleitet, bitte bei Schumacher bestätigen).',
-    'Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 18 March 2027 (derived from the "third Thursday" rule; please confirm with Schumacher).',
-    'pending');
+    'approved');
 
 -- ============================================================
 -- Event beers
@@ -527,12 +490,6 @@ On 19 October 2026 the Stike was still on tap according to the sign outside: 0.2
 INSERT INTO event_beers (event_id, name_de, name_en, size, price)
 -- Biernamen sind Eigennamen: EN = DE
 SELECT v.column1, v.column2, v.column2, v.column3, v.column4 FROM (VALUES
-  ('rheinkirmes-2026', 'Schlüssel', '0.25l', 3.3),
-  ('rheinkirmes-2026', 'Uerige', '0.25l', 3.4),
-  ('rheinkirmes-2026', 'Schumacher', '0.25l', 3.5),
-  ('rheinkirmes-2026', 'Kürzer', '0.2l', 2.9),
-  ('rheinkirmes-2026', 'Schlösser', '0.2l', 3.0),
-  ('schumacher-latzen-2026-11', 'Latzenbier', '1l', NULL),
-  ('schluessel-stike-2026-10', 'Original Schlüssel Stike', '0.25l', 3.1)
+  ('schumacher-latzen-2026-11', 'Latzenbier', '1l', NULL)
 ) AS v
 WHERE NOT EXISTS (SELECT 1 FROM event_beers e WHERE e.event_id = v.column1 AND e.name_de = v.column2 AND e.size = v.column3);
