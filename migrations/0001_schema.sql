@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS breweries (
   -- Google Place ID (Places API New). Einzige Google-Angabe, die dauerhaft
   -- gespeichert werden darf; historische Orte bekommen keine.
   google_place_id TEXT,
+  -- Untappd-Brauerei: NULL = Suche nach Name, 0 = keine Untappd-Anzeige,
+  -- > 0 = feste Untappd-ID (wenn die Namenssuche den falschen Treffer liefert)
+  untappd_id     INTEGER,
   lat            REAL NOT NULL,
   lng            REAL NOT NULL,
   founded        INTEGER,

@@ -36,19 +36,6 @@ Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
 - **„Produzent“ bei Typen.** `venue_types.is_producer` steuert u. a. Seed/Mock-Regeln und
   Kopfzeilen, die API nimmt das Feld an, das Admin-UI zeigt und setzt es aber nicht.
 
-### Sinnvoll
-
-- **Korrektur-Beiträge.** „Freigeben“ markiert eine Korrektur nur als erledigt, ändert aber nichts.
-  Hilfreich wäre ein Link zum betroffenen Ort und ein Sprung in dessen Bearbeiten-Dialog.
-- **Untappd-Zuordnung korrigieren.** Die Untappd-Brauerei wird per Namenssuche gefunden und
-  24 h gecacht; bei falschem Treffer gibt es keine manuelle Untappd-ID und keinen Cache-Reset.
-  Optional auch Untappd-Links je Sorte.
-- **Sorten-Seite: Ausschankorte.** Welche Orte eine Sorte führen, lässt sich nur von der Ort-Seite
-  aus pflegen. Eine Mehrfachauswahl im Sorten-Dialog spart Klicks, wenn eine Sorte neu an mehrere
-  Orte kommt.
-- **Übersetzungs-Übersicht.** Die Nachfrage beim Speichern verhindert neue Lücken; eine Liste aller
-  Objekte mit fehlendem DE oder EN im Dashboard würde alte Lücken sichtbar machen.
-
 ### Später
 
 - **Admin-Benutzer verwalten.** Anlegen und Passwort ändern geht nur per
@@ -104,8 +91,3 @@ nach Altbieratlas aus, nicht nach generischer Vorlage. Stand 2026-10-19.
   „zuletzt aktualisiert“ könnten serverseitig einfließen. Bei Orten mit mehreren Sorten die
   Sorte in Description und `Offer` nennen (Grundlage seit `prices.style_id` vorhanden).
   Danach mit dem Rich-Results-Test und einer Link-Vorschau (z. B. WhatsApp, Signal) prüfen.
-
-## Doku
-
-- README, Abschnitt Moderations-Dashboard: „Preise — einsehen, löschen“ ist veraltet, Preise
-  lassen sich inzwischen auch bearbeiten.

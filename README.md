@@ -1,4 +1,4 @@
-# Altbieratlas · v0.13.0
+# Altbieratlas · v0.14.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -441,7 +441,7 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 - Stile, Geschmacksnotizen (DE/EN)
 - **Übernahmen** (`breweries.successor_id`): historische Orte zeigen „Heute bei: …“ mit Link,
   der übernehmende Ort listet seine übernommenen Marken
-- **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht
+- **Untappd-Rating** (optional): Bewertung + Link, 24h in D1 gecacht; Treffer per Namenssuche oder fester `untappd_id` aus dem Admin
 - **Google-Bewertung** (optional, `GOOGLE_PLACES_KEY`): „4,5 ★ (312 Bewertungen) bei Google"
   mit Link auf den Ort in Google Maps, aus dem höchstens 30 Tage alten Cache
 - **Maps-Link** über die Google Place ID (sonst `maps_url`, sonst Koordinaten), siehe [1.6](#16-google-place-ids-und-bewertungen-optional)
@@ -476,12 +476,12 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 `cf-turnstile-response` & Co. zusätzlich heraus).
 
 ### Moderations-Dashboard (`/admin`)
-- **Übersicht** — Statistiken + neueste offene Beiträge
-- **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick)
-- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen
+- **Übersicht** — Statistiken, neueste offene Beiträge und **fehlende Übersetzungen** (alle Orte, Sorten, Events, Event-Biere, Glossar-Einträge und Typen mit leerem DE- oder EN-Text; Orte öffnen direkt den Bearbeiten-Dialog)
+- **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick). Beiträge zu einem bestehenden Ort (Preis, Sorte, Korrektur, Event) verlinken den Ort und springen per „Ort bearbeiten“ in dessen Dialog; Korrekturen werden danach als „Erledigt“ markiert, sie ändern selbst nichts
+- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen; Untappd-Zuordnung korrigieren (`untappd_id`: leer = Namenssuche, 0 = ausblenden, sonst feste Untappd-ID; „Prüfen“ verwirft den Cache und zeigt den Treffer)
 - **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
 - **Preise** — Alle Preise einsehen, bearbeiten (inkl. Sorte), löschen; neue Preise direkt eintragen
-- **Stile** — Bierstile anlegen, bearbeiten, löschen
+- **Stile** — Bierstile anlegen, bearbeiten (inkl. Ausschankorte per Mehrfachauswahl), löschen; beim Umbenennen behalten Preise ihre Sorte
 - **Glossar** — Einträge anlegen, bearbeiten, löschen
 - **Typen** — Venue-Typen (brewpub, brewery, taproom, gastronomie, pub, restaurant, kiosk, handel, supermarket, beverage_store) anlegen, bearbeiten, löschen
 - **Einstellungen** — Impressum, Ankündigungs-Banner (DE/EN, aktivierbar), Social-Links (GitHub, LinkedIn, Instagram, Mastodon, Ko-fi, Website)
@@ -660,7 +660,9 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | POST | `/api/admin/contributions/:id/reject` | Ablehnen |
 | GET | `/api/admin/breweries` | Alle Brauereien |
 | POST | `/api/admin/breweries` | Neue Brauerei anlegen |
-| PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten (inkl. `google_place_id`) |
+| PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten (inkl. `google_place_id`, `untappd_id`) |
+| DELETE | `/api/admin/breweries/:id/untappd-cache` | Untappd-Cache des Orts verwerfen |
+| GET | `/api/admin/translation-gaps` | Alle Einträge mit fehlendem DE- oder EN-Text |
 | GET | `/api/admin/breweries/:id/place-search` | Google-Places-Suche für den Ort (Treffer, Adresse, Entfernung, Status), speichert nichts |
 | POST | `/api/admin/google-ratings/refresh` | Google-Bewertungen abrufen, max. 40 Orte je Aufruf (`remaining` = noch offen) |
 | POST | `/api/admin/google-places/backfill` | Place-ID-Probelauf für Orte ohne ID, portionsweise (`{ after }` → `{ results, next, done }`), speichert nichts |
@@ -680,7 +682,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | DELETE | `/api/admin/prices/:id` | Preis löschen |
 | GET | `/api/admin/styles` | Alle Bierstile |
 | POST | `/api/admin/styles` | Stil anlegen |
-| PUT | `/api/admin/styles/:id` | Stil bearbeiten |
+| PUT | `/api/admin/styles/:id` | Stil bearbeiten (inkl. Ausschankorte via `brewery_ids`) |
 | DELETE | `/api/admin/styles/:id` | Stil löschen |
 | GET | `/api/admin/glossary` | Alle Glossar-Einträge |
 | POST | `/api/admin/glossary` | Eintrag anlegen |
