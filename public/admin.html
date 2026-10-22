@@ -346,6 +346,18 @@
                 <label data-i18n="admin.fieldDescriptionEn">Beschreibung (EN)</label>
                 <textarea name="description_en" rows="2" maxlength="2000" style="resize:vertical"></textarea>
               </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label data-i18n="admin.fieldSuccessor">Heute bei (Nachfolger)</label>
+                <select name="successor_id" id="add-brewery-successor-select">
+                  <option value="" data-i18n="admin.noSuccessor">— kein Nachfolger —</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+                  <input name="is_historical" type="checkbox" style="width:auto" />
+                  <span data-i18n="admin.fieldHistorical">Historisch (Betrieb geschlossen)</span>
+                </label>
+              </div>
               <div>
                 <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.createBrewery">Brauerei anlegen</button>
               </div>
@@ -358,6 +370,7 @@
             <div style="display:flex;gap:10px;align-items:center">
               <span id="google-ratings-msg" style="font-size:12px;color:var(--ink-muted)"></span>
               <button class="btn" id="places-backfill-open" type="button" style="font-size:12px" data-i18n="admin.placesBackfill">Place IDs nachtragen</button>
+              <button class="btn" id="pin-check-open" type="button" style="font-size:12px" data-i18n="admin.pinCheck">Pins prüfen</button>
               <button class="btn" id="google-ratings-refresh" type="button" style="font-size:12px" data-i18n="admin.googleRatingsRefresh">Google-Bewertungen abrufen</button>
             </div>
           </div>
@@ -887,6 +900,13 @@
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldSuccessorHint">Wer Marke oder Betrieb heute führt, z. B. Hannen → Bolten</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
+          <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+            <input id="edit-historical" type="checkbox" style="width:auto" />
+            <span data-i18n="admin.fieldHistorical">Historisch (Betrieb geschlossen)</span>
+          </label>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHistoricalHint">Historische Orte bekommen keine Google-Bewertung; eine gesetzte Place ID wird beim Speichern entfernt.</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldStyles">Stile</label>
           <select id="edit-styles-select" multiple size="6" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px">
           </select>
@@ -936,6 +956,26 @@
       <div class="edit-actions">
         <button class="btn btn-ghost" id="edit-cancel" data-i18n="common.cancel">Abbrechen</button>
         <button class="btn btn-approve" id="edit-save" data-i18n="admin.editSave">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pins prüfen: DB-Koordinaten gegen Google -->
+  <div class="edit-dialog" id="pin-check-dialog">
+    <div class="box" style="max-width:1100px;width:96vw;max-height:90vh;overflow-y:auto">
+      <h3 data-i18n="admin.pinCheckTitle">Pins prüfen</h3>
+      <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px" data-i18n="admin.pinCheckIntro">Abstand zwischen dem Pin in der Datenbank und Googles Koordinaten für alle Orte mit Place ID. Googles Koordinaten dürfen nicht übernommen werden; den Pin bei Bedarf im Bearbeiten-Dialog korrigieren.</p>
+      <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;cursor:pointer">
+        <input id="pin-check-all" type="checkbox" style="width:auto" />
+        <span data-i18n="admin.pinCheckShowAll">Auch unauffällige Orte zeigen</span>
+      </label>
+      <div id="pin-check-progress" style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted);margin-bottom:10px"></div>
+      <div style="overflow:auto"><table class="brewery-table" id="pin-check-table" style="display:none;font-size:12px">
+        <thead><tr><th data-i18n="admin.colName">Name</th><th data-i18n="admin.colCity">Stadt</th><th data-i18n="admin.pbDistance">Entfernung</th><th>Status</th><th data-i18n="admin.pinCheckLinks">Vergleich</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="edit-actions">
+        <button class="btn btn-ghost" id="pin-check-close" data-i18n="admin.placeDismiss">Schließen</button>
       </div>
     </div>
   </div>
@@ -1063,7 +1103,8 @@
             <input id="eb-notes" type="text" maxlength="500" placeholder="optional" />
           </div>
           <div style="grid-column:1/-1">
-            <button class="btn btn-approve" type="submit" style="font-size:12px;padding:6px 12px" data-i18n="admin.evAddBeer">Bier hinzufügen</button>
+            <button class="btn btn-approve" id="eb-submit" type="submit" style="font-size:12px;padding:6px 12px" data-i18n="admin.evAddBeer">Bier hinzufügen</button>
+            <button class="btn btn-ghost" id="eb-cancel" type="button" style="font-size:12px;padding:6px 12px" data-i18n="admin.evCancelBeerEdit" hidden>Bearbeiten abbrechen</button>
           </div>
         </form>
       </div>
@@ -1405,7 +1446,7 @@ async function showAdmin() {
   loginSection.style.display = "none";
   adminSection.style.display = "block";
   document.getElementById("admin-username").textContent = me.username;
-  await Promise.all([loadDashboard(), rebuildBreweryTypeSelects(), populateAddEventBreweries()]);
+  await Promise.all([loadDashboard(), rebuildBreweryTypeSelects(), populateAddEventBreweries(), populateAddBrewerySuccessors()]);
 }
 
 // ============ Dashboard ============
@@ -1642,6 +1683,59 @@ document.getElementById("google-ratings-refresh").addEventListener("click", asyn
     msg.textContent = placeErrorText(e);
   } finally {
     btn.disabled = false;
+  }
+});
+
+// Pins prüfen: liest nur den Cache, kein Google-Aufruf. Ab threshold (Worker:
+// PIN_CHECK_DISTANCE_M) gilt ein Pin als auffällig.
+const pcDialog = document.getElementById("pin-check-dialog");
+let pcData = null;
+function pcRender() {
+  const table = document.getElementById("pin-check-table");
+  const progress = document.getElementById("pin-check-progress");
+  if (!pcData) return;
+  const showAll = document.getElementById("pin-check-all").checked;
+  const flagged = pcData.items.filter((r) => r.distance >= pcData.threshold);
+  const rows = showAll ? pcData.items : flagged;
+  progress.textContent = t("admin.pinCheckSummary")
+    .replace("{flagged}", flagged.length).replace("{total}", pcData.items.length).replace("{m}", pcData.threshold)
+    + (pcData.missing ? " · " + t("admin.pinCheckMissing").replace("{n}", pcData.missing) : "");
+  table.style.display = rows.length ? "" : "none";
+  table.querySelector("tbody").innerHTML = rows.map((r) => {
+    const google = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name)}&query_place_id=${encodeURIComponent(r.placeId)}`;
+    const osm = `https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lng}#map=19/${r.lat}/${r.lng}`;
+    const far = r.distance >= pcData.threshold;
+    return `
+    <tr>
+      <td><a href="/ort/${encodeURIComponent(r.id)}" target="_blank">${pbEsc(r.name)}</a>${r.shared > 1 ? ` <span style="color:var(--ink-muted)">(${t("admin.pinCheckShared").replace("{n}", r.shared)})</span>` : ""}<div style="color:var(--ink-muted)">${pbEsc(r.address)}</div></td>
+      <td>${pbEsc(r.city)}</td>
+      <td style="font-family:var(--font-mono);white-space:nowrap" class="${far ? "status-rejected" : ""}">${r.distance} m</td>
+      <td class="status-${pbEsc(r.status)}">${pbEsc(r.status)}</td>
+      <td style="white-space:nowrap"><a href="${osm}" target="_blank" rel="noopener">${t("admin.pinCheckDbPin")}</a> · <a href="${google}" target="_blank" rel="noopener">Google</a></td>
+      <td><button class="btn" type="button" style="font-size:11px;padding:3px 8px" data-pc-edit="${pbEsc(r.id)}">${t("admin.actionEdit")}</button></td>
+    </tr>`;
+  }).join("");
+  table.querySelectorAll("button[data-pc-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      pcDialog.classList.remove("visible");
+      openBreweryEdit(btn.dataset.pcEdit);
+    });
+  });
+}
+document.getElementById("pin-check-close").addEventListener("click", () => pcDialog.classList.remove("visible"));
+document.getElementById("pin-check-all").addEventListener("change", pcRender);
+document.getElementById("pin-check-open").addEventListener("click", async () => {
+  const progress = document.getElementById("pin-check-progress");
+  pcDialog.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.getAttribute("data-i18n")); });
+  pcData = null;
+  document.getElementById("pin-check-table").style.display = "none";
+  progress.textContent = t("common.loading");
+  pcDialog.classList.add("visible");
+  try {
+    pcData = await window.AtlasAPI.admin.pinCheck();
+    pcRender();
+  } catch (e) {
+    progress.textContent = placeErrorText(e);
   }
 });
 
@@ -1897,6 +1991,7 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-place-results").innerHTML = "";
   document.getElementById("edit-untappd-id").value    = rowEl.dataset.untappdId || "";
   document.getElementById("edit-untappd-result").textContent = "";
+  document.getElementById("edit-historical").checked  = rowEl.dataset.historical === "1";
   document.getElementById("edit-place-search").disabled = rowEl.dataset.historical === "1";
   document.getElementById("edit-lat").value           = rowEl.dataset.lat || "";
   document.getElementById("edit-lng").value           = rowEl.dataset.lng || "";
@@ -2185,6 +2280,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const selEl          = document.getElementById("edit-styles-select");
   const styles         = Array.from(selEl.selectedOptions).map((o) => o.value);
   const successorId    = document.getElementById("edit-successor").value || null;
+  const historical     = document.getElementById("edit-historical").checked;
   msg.style.display = "none";
   if (!confirmBothLangs([[t("admin.langFieldDescription"), description, descriptionEn]])) return;
   try {
@@ -2197,6 +2293,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
       founded: foundedRaw !== "" ? parseInt(foundedRaw, 10) : null,
       website, description_de: description, description_en: descriptionEn, styles,
       successor_id: successorId,
+      is_historical: historical,
     };
     // Remove undefined values so they aren't sent as null
     Object.keys(patch).forEach((k) => patch[k] === undefined && delete patch[k]);
@@ -2223,6 +2320,9 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.descriptionEn  = descriptionEn;
     row.dataset.styles         = styles.join(",");
     row.dataset.successor      = successorId || "";
+    row.dataset.historical     = historical ? "1" : "";
+    // Der Worker entfernt die Place ID historischer Orte
+    if (historical) row.dataset.placeId = "";
     row.querySelector("td:nth-child(1) a").textContent = name;
     row.querySelector("td:nth-child(1) a").href = `/ort/${encodeURIComponent(effectiveId)}`;
     row.querySelector("td:nth-child(2)").textContent = city;
@@ -2694,6 +2794,7 @@ async function openEventEditDialog(id, rowEl) {
   document.getElementById("ev-desc-de").value    = rowEl.dataset.descDe || "";
   document.getElementById("ev-desc-en").value    = rowEl.dataset.descEn || "";
   // Biere laden
+  resetBeerForm();
   loadEventBeers(id);
   const msg = document.getElementById("event-edit-msg");
   msg.style.display = "none";
@@ -2790,6 +2891,36 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
 });
 
 // ============ Event Beers ============
+// editingBeerId gesetzt = das Formular speichert ein bestehendes Bier statt eines neuen
+let editingBeerId = null;
+
+function resetBeerForm() {
+  editingBeerId = null;
+  ["eb-name-de", "eb-name-en", "eb-size", "eb-price", "eb-notes"]
+    .forEach((id) => { document.getElementById(id).value = ""; });
+  const submit = document.getElementById("eb-submit");
+  submit.textContent = window.t("admin.evAddBeer");
+  submit.setAttribute("data-i18n", "admin.evAddBeer");
+  document.getElementById("eb-cancel").hidden = true;
+}
+
+function startBeerEdit(b) {
+  editingBeerId = b.id;
+  document.getElementById("eb-name-de").value = b.name?.de || "";
+  // EN gleich DE heißt „Eigenname“ → Feld leer lassen wie beim Anlegen
+  document.getElementById("eb-name-en").value = b.name?.en && b.name.en !== b.name?.de ? b.name.en : "";
+  document.getElementById("eb-size").value = b.size || "";
+  document.getElementById("eb-price").value = b.price != null ? b.price : "";
+  document.getElementById("eb-notes").value = b.notes || "";
+  const submit = document.getElementById("eb-submit");
+  submit.textContent = window.t("admin.evSaveBeer");
+  submit.setAttribute("data-i18n", "admin.evSaveBeer");
+  document.getElementById("eb-cancel").hidden = false;
+  document.getElementById("eb-name-de").focus();
+}
+
+document.getElementById("eb-cancel").addEventListener("click", resetBeerForm);
+
 async function loadEventBeers(eventId) {
   const list = document.getElementById("ev-beers-list");
   list.innerHTML = "<em style='color:var(--ink-muted)'>Lade…</em>";
@@ -2808,14 +2939,22 @@ async function loadEventBeers(eventId) {
         <span style="flex:1">${name}</span>
         <span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted)">${size}</span>
         <span style="font-family:var(--font-mono);font-size:13px;color:var(--copper)">${price}</span>
-        <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}">✕</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-edit-beer-id="${b.id}" title="${window.t("admin.evEditBeer")}">✎</button>
+        <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}" title="${window.t("admin.evDeleteBeer")}">✕</button>
       </div>`;
     }).join("");
+    list.querySelectorAll("button[data-edit-beer-id]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const b = beers.find((x) => String(x.id) === btn.dataset.editBeerId);
+        if (b) startBeerEdit(b);
+      });
+    });
     list.querySelectorAll("button[data-beer-id]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm(window.t("admin.evAddBeer") + "?")) return;
+        if (!confirm(window.t("admin.evDeleteBeer") + "?")) return;
         try {
           await window.AtlasAPI.admin.deleteEventBeer(eventId, btn.dataset.beerId);
+          if (String(editingBeerId) === btn.dataset.beerId) resetBeerForm();
           loadEventBeers(eventId);
         } catch (e) { alert(window.t("admin.errorPrefix") + e.message); }
       });
@@ -2837,13 +2976,14 @@ document.getElementById("ev-beer-form").addEventListener("submit", async (e) => 
   const priceRaw = document.getElementById("eb-price").value;
   const price = priceRaw ? parseFloat(priceRaw) : null;
   const notes = document.getElementById("eb-notes").value.trim() || null;
+  const body = { name_de: nameDe, name_en: nameEn, size, price, notes };
   try {
-    await window.AtlasAPI.admin.addEventBeer(pendingEventEdit.id, { name_de: nameDe, name_en: nameEn, size, price, notes });
-    document.getElementById("eb-name-de").value = "";
-    document.getElementById("eb-name-en").value = "";
-    document.getElementById("eb-size").value = "";
-    document.getElementById("eb-price").value = "";
-    document.getElementById("eb-notes").value = "";
+    if (editingBeerId != null) {
+      await window.AtlasAPI.admin.updateEventBeer(pendingEventEdit.id, editingBeerId, body);
+    } else {
+      await window.AtlasAPI.admin.addEventBeer(pendingEventEdit.id, body);
+    }
+    resetBeerForm();
     loadEventBeers(pendingEventEdit.id);
   } catch (e) { alert(window.t("admin.evBeerError") + e.message); }
 });
@@ -3466,6 +3606,8 @@ document.getElementById("add-brewery-form").addEventListener("submit", async (e)
       website:        fd.get("website").trim() || null,
       description_de: fd.get("description_de").trim() || null,
       description_en: fd.get("description_en").trim() || null,
+      successor_id:   fd.get("successor_id") || null,
+      is_historical:  fd.get("is_historical") === "on",
     });
     msg.textContent = window.t("admin.breweryAdded");
     msg.style.color = "#2d7a2d";
@@ -3474,6 +3616,7 @@ document.getElementById("add-brewery-form").addEventListener("submit", async (e)
     cachedBreweries = null;
     loadBreweriesTable();
     loadDashboard();
+    populateAddBrewerySuccessors(true);
   } catch (err) {
     msg.textContent = window.t("admin.errorPrefix") + (err.detail?.detail || err.message);
     msg.style.color = "#9b1f1f";
@@ -3519,6 +3662,26 @@ document.getElementById("add-event-form").addEventListener("submit", async (e) =
     msg.style.display = "block";
   }
 });
+
+// Nachfolger-Auswahl im Formular „Neuer Ort“; refresh = nach dem Anlegen neu aufbauen
+document.getElementById("edit-historical").addEventListener("change", (e) => {
+  document.getElementById("edit-place-search").disabled = e.target.checked;
+});
+
+async function populateAddBrewerySuccessors(refresh = false) {
+  const sel = document.getElementById("add-brewery-successor-select");
+  if (!sel || (!refresh && sel.options.length > 1)) return;
+  try {
+    const brs = await ensureBreweries();
+    sel.length = 1;
+    brs.slice().sort((a, b) => a.name.localeCompare(b.name, "de")).forEach((b) => {
+      const opt = document.createElement("option");
+      opt.value = b.id;
+      opt.textContent = `${b.name} · ${b.city}`;
+      sel.appendChild(opt);
+    });
+  } catch {}
+}
 
 async function populateAddEventBreweries() {
   const sel = document.getElementById("add-event-brewery-select");

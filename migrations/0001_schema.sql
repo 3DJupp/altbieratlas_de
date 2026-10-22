@@ -204,6 +204,10 @@ CREATE TABLE IF NOT EXISTS google_places_cache (
   place_id          TEXT PRIMARY KEY,
   rating            REAL,
   user_rating_count INTEGER,
+  -- Googles Koordinaten des Orts, nur zum Abgleich mit breweries.lat/lng
+  -- („Pins prüfen“ im Admin); wie die Bewertung höchstens 30 Tage gespeichert
+  lat               REAL,
+  lng               REAL,
   fetched_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

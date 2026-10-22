@@ -2,11 +2,28 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.14.0";
+export const APP_VERSION = "0.15.0";
 
 import { mapsLink } from "./googlePlaces.js";
 
 export const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
+
+// Reine Brauereien (Typ „brewery“) schenken nicht aus und fehlen deshalb in
+// Ranglisten und Durchschnittspreisen. Gleiche Regel im Browser:
+// window.atlasInComparisons() in public/shell.js.
+export const NON_SERVING_TYPES = ["brewery"];
+export const inComparisons = (v) => !!v && !NON_SERVING_TYPES.includes(v.type);
+
+// WHERE-Bedingung für öffentlich sichtbare Sorten (Tabellen-Alias s). Hängt eine
+// Sorte an Orten (Primär-Ort oder brewery_styles), braucht mindestens einer davon
+// status = 'approved'; sonst erschiene sie, bevor der Admin ihren Ort freigibt.
+// Sorten ganz ohne Ort bleiben sichtbar. Unkorrelierte Unterabfragen, damit D1
+// sie nur einmal auswertet statt je Sorte.
+export const STYLE_PUBLIC_SQL = `(
+  s.primary_brewery_id IN (SELECT id FROM breweries WHERE status = 'approved')
+  OR s.id IN (SELECT bs2.style_id FROM brewery_styles bs2
+              JOIN breweries b2 ON b2.id = bs2.brewery_id WHERE b2.status = 'approved')
+  OR (s.primary_brewery_id IS NULL AND s.id NOT IN (SELECT style_id FROM brewery_styles)))`;
 
 export function json(data, init = {}) {
   return new Response(JSON.stringify(data), {

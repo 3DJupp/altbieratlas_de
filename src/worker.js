@@ -120,6 +120,7 @@ const ROUTES = [
   ["POST",   "/api/admin/google-ratings/refresh",          R.adminRefreshGoogleRatings],
   ["POST",   "/api/admin/google-places/backfill",          R.adminPlacesBackfill],
   ["POST",   "/api/admin/google-places/apply",             R.adminPlacesApply],
+  ["GET",    "/api/admin/google-places/pin-check",         R.adminPinCheck],
   ["POST",   "/api/admin/breweries/:id/photo",             R.adminUploadBreweryPhoto],
   ["DELETE", "/api/admin/breweries/:id/photo",             R.adminDeleteBreweryPhoto],
   ["GET",    "/api/admin/events",                          R.adminListEvents],

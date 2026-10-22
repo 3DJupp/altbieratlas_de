@@ -9,12 +9,15 @@
 // Skript: process.env.GOOGLE_PLACES_KEY) und wird nie geloggt.
 //
 // Google-Bedingungen: dauerhaft speichern darf man nur die Place ID.
-// Bewertung und Anzahl landen höchstens 30 Tage in google_places_cache.
+// Bewertung, Anzahl und Googles Koordinaten landen höchstens 30 Tage in
+// google_places_cache; die Koordinaten nie in breweries.lat/lng übernehmen.
 
 const API = "https://places.googleapis.com/v1";
 
 // Treffer gilt als sicher: näher als SAFE_DISTANCE_M UND Hausnummer passt
 export const SAFE_DISTANCE_M = 75;
+// „Pins prüfen“: ab diesem Abstand zwischen DB-Pin und Google-Ort gilt ein Pin als schief
+export const PIN_CHECK_DISTANCE_M = 75;
 // Bewertungen älter als das werden weder angezeigt noch behalten
 export const CACHE_MAX_AGE_DAYS = 30;
 
@@ -97,15 +100,20 @@ export async function searchPlace(apiKey, { name, address, lat, lng }, fetchImpl
   return { status: best ? best.status : STATUS.NONE, best, candidates };
 }
 
-// Bewertung + Anzahl für eine Place ID. Wirft bei HTTP-Fehlern.
+// Bewertung, Anzahl und Koordinaten für eine Place ID. Wirft bei HTTP-Fehlern.
+// location kostet nichts extra: abgerechnet wird die teuerste Stufe der
+// Feldmaske, und die setzt rating.
 export async function fetchRating(apiKey, placeId, fetchImpl = fetch) {
   if (!apiKey) throw new Error("GOOGLE_PLACES_KEY fehlt");
   const res = await fetchImpl(`${API}/places/${encodeURIComponent(placeId)}`, {
-    headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "rating,userRatingCount" },
+    headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "rating,userRatingCount,location" },
   });
   if (!res.ok) throw new Error(`Places details HTTP ${res.status}`);
   const d = await res.json();
-  return { rating: d.rating ?? null, userRatingCount: d.userRatingCount ?? null };
+  return {
+    rating: d.rating ?? null, userRatingCount: d.userRatingCount ?? null,
+    lat: d.location?.latitude ?? null, lng: d.location?.longitude ?? null,
+  };
 }
 
 // Einheitlicher Maps-Link für einen Ort (DB-Zeile oder API-Shape).
@@ -134,7 +142,8 @@ export const MAX_PER_RUN = 40;
 // Bewertungsabruf für bis zu `limit` Orte mit Place ID, deren Cache-Eintrag
 // fehlt oder älter als `minAgeHours` ist (älteste zuerst). So arbeiten
 // mehrere Läufe nacheinander alle Orte ab: der Cron montags 4, 5 und 6 Uhr
-// UTC bzw. das Admin-Panel in einer Schleife. Danach werden Einträge > 30 Tage
+// UTC bzw. das Admin-Panel in einer Schleife. Einträge ohne Koordinaten (vor
+// deren Einführung abgerufen) sind sofort fällig. Danach werden Einträge > 30 Tage
 // gelöscht. Fehler je Ort werden gezählt, nicht geworfen; die Zusammenfassung
 // enthält keine Schlüsseldaten.
 export async function refreshRatings(env, { limit = MAX_PER_RUN, minAgeHours = 144, delayMs = 100 } = {}) {
@@ -147,9 +156,9 @@ export async function refreshRatings(env, { limit = MAX_PER_RUN, minAgeHours = 1
   const due = `FROM (SELECT DISTINCT google_place_id AS place_id FROM breweries
       WHERE google_place_id IS NOT NULL AND google_place_id != '' AND status = 'approved' AND is_historical = 0) b
     LEFT JOIN google_places_cache c ON c.place_id = b.place_id
-    WHERE c.fetched_at IS NULL OR c.fetched_at < datetime('now', '-${hours} hours')`;
+    WHERE c.fetched_at IS NULL OR c.lat IS NULL OR c.fetched_at < datetime('now', '-${hours} hours')`;
   const { results } = await env.DB.prepare(
-    `SELECT b.place_id ${due} ORDER BY c.fetched_at IS NOT NULL, c.fetched_at LIMIT ?`
+    `SELECT b.place_id ${due} ORDER BY c.fetched_at IS NOT NULL, c.lat IS NOT NULL, c.fetched_at LIMIT ?`
   ).bind(limit).all();
   summary.total = results.length;
 
@@ -158,11 +167,12 @@ export async function refreshRatings(env, { limit = MAX_PER_RUN, minAgeHours = 1
     try {
       const r = await fetchRating(apiKey, place_id);
       writes.push(env.DB.prepare(
-        `INSERT INTO google_places_cache (place_id, rating, user_rating_count, fetched_at)
-         VALUES (?, ?, ?, datetime('now'))
+        `INSERT INTO google_places_cache (place_id, rating, user_rating_count, lat, lng, fetched_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(place_id) DO UPDATE SET rating = excluded.rating,
-           user_rating_count = excluded.user_rating_count, fetched_at = excluded.fetched_at`
-      ).bind(place_id, r.rating, r.userRatingCount));
+           user_rating_count = excluded.user_rating_count, lat = excluded.lat, lng = excluded.lng,
+           fetched_at = excluded.fetched_at`
+      ).bind(place_id, r.rating, r.userRatingCount, r.lat, r.lng));
     } catch (e) {
       summary.failed++;
       if (summary.errors.length < 10) summary.errors.push({ placeId: place_id, error: String(e?.message || e) });

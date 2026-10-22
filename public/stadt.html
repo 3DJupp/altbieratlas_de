@@ -181,7 +181,9 @@ function paint() {
   statsEl.hidden = false;
   document.getElementById("stat-count").textContent = inCity.length;
   document.getElementById("stat-count-lbl").textContent = window.t("city.stat.places");
-  const prices = current.map((b) => quarterByBrewery.get(b.id)).filter((x) => x != null);
+  // Reine Brauereien schenken nicht aus und zählen im Durchschnitt nicht mit
+  const prices = current.filter(window.atlasInComparisons)
+    .map((b) => quarterByBrewery.get(b.id)).filter((x) => x != null);
   const priceWrap = document.getElementById("stat-price-wrap");
   if (prices.length) {
     const avg = prices.reduce((s, p) => s + p, 0) / prices.length;

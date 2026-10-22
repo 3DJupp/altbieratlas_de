@@ -12,7 +12,7 @@ import {
   escHtml, fmtPriceDe, fmtSizeDe, fmtDateDe, sizeNum, sameSlot,
   citySlug, cityIndex, PAGE_DATES,
 } from "./routes.js";
-import { siteConfig } from "./utils.js";
+import { siteConfig, STYLE_PUBLIC_SQL, inComparisons } from "./utils.js";
 
 const SITE = "https://altbieratlas.de";
 // Datenlizenz der Preismeldungen — als URL, wie Google sie im Dataset-Feld
@@ -78,9 +78,11 @@ async function loadVenues(env) {
   return { venues: [...byId.values()], priceCount };
 }
 
-// Jüngste Meldung je Ort für eine Größe (Standard 0,25 l), aufsteigend nach Preis
+// Jüngste Meldung je Ort für eine Größe (Standard 0,25 l), aufsteigend nach Preis.
+// Reine Brauereien zählen nicht mit (siehe inComparisons()).
 function pricedAt(venues, size = 0.25) {
   return venues
+    .filter(inComparisons)
     .map((v) => ({ v, p: v.latest.find((x) => Math.abs(x.size - size) < 0.001) }))
     .filter((x) => x.p)
     .sort((a, b) => a.p.price - b.p.price);
@@ -201,6 +203,7 @@ export async function llmsFullTxt(req, env) {
       env.DB.prepare(
         `SELECT s.name, s.abv, s.ibu, s.tasting_de, b.id AS bid, b.name AS bname
          FROM styles s LEFT JOIN breweries b ON b.id = s.primary_brewery_id AND b.status = 'approved'
+         WHERE ${STYLE_PUBLIC_SQL}
          ORDER BY s.name`
       ).all(),
       env.DB.prepare("SELECT term, definition_de FROM glossary ORDER BY term").all(),
@@ -531,6 +534,7 @@ export async function serveSorten(req, env) {
       `SELECT s.name, s.abv, s.ibu, s.color, s.tasting_de, s.logo_key,
               b.id AS bid, b.name AS bname
        FROM styles s LEFT JOIN breweries b ON b.id = s.primary_brewery_id AND b.status = 'approved'
+       WHERE ${STYLE_PUBLIC_SQL}
        ORDER BY s.name`
     ).all(),
   ]);

@@ -760,8 +760,10 @@ let cachedPrices = [];
     });
     priceByBrewery = byId;
 
-    // Durchschnittspreis für erste highlightedSize (für Ticker)
-    const hlPrices = cachedPrices.filter((p) => Math.abs(normSize(p.size) - hlSize) < 0.001);
+    // Durchschnittspreis für erste highlightedSize (für Ticker); reine Brauereien zählen nicht mit
+    const comparable = new Set(allBreweries.filter(window.atlasInComparisons).map((b) => b.id));
+    const hlPrices = cachedPrices.filter((p) => comparable.has(p.breweryId)
+      && Math.abs(normSize(p.size) - hlSize) < 0.001);
     cachedHlAvg = hlPrices.length ? hlPrices.reduce((a, b) => a + b.price, 0) / hlPrices.length : null;
 
     // Ticker
@@ -814,7 +816,7 @@ function renderRankings(prices) {
     .filter((p) => Math.abs(normSize(p.size) - hlSize) < 0.001)
     .map((p) => {
       const b = allBreweries.find((x) => x.id === p.breweryId);
-      return b ? { ...b, price: p.price, date: p.date } : null;
+      return window.atlasInComparisons(b) ? { ...b, price: p.price, date: p.date } : null;
     })
     .filter(Boolean);
 
@@ -871,7 +873,8 @@ function renderRankings(prices) {
   const withHl = new Set(uniq.map((b) => b.id));
   const missing = new Set(prices
     .map((p) => p.breweryId)
-    .filter((id) => !withHl.has(id) && allBreweries.some((b) => b.id === id && !b.isHistorical)));
+    .filter((id) => !withHl.has(id)
+      && allBreweries.some((b) => b.id === id && !b.isHistorical && window.atlasInComparisons(b))));
   const note = document.getElementById("rank-note");
   if (note) {
     note.hidden = missing.size === 0;

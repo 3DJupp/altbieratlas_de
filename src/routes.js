@@ -2,14 +2,16 @@
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
 import { generateOgImage } from "./og.js";
-import { searchPlace, mapsLink, refreshRatings, backfillBatch, CACHE_MAX_AGE_DAYS } from "./googlePlaces.js";
+import {
+  searchPlace, mapsLink, refreshRatings, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
+} from "./googlePlaces.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
   clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification,
-  siteConfig,
+  siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons,
 } from "./utils.js";
 
 // Nominatim-User-Agent-E-Mail aus SITE_CONFIG.contactEmail
@@ -147,11 +149,13 @@ export async function getStats(req, env) {
     env.DB.prepare("SELECT COUNT(*) AS n FROM prices WHERE status = 'approved'").first(),
     // „Aktuelles 0,25 l Alt im Schnitt" — wie in den Ranglisten zählt nur die
     // jüngste Meldung je Brauerei, sonst zieht die Preishistorie den Wert nach unten.
+    // Reine Brauereien schenken nicht aus und zählen nicht mit.
     env.DB.prepare(
       `SELECT AVG(price) AS avg FROM (
          SELECT p.price
-         FROM prices p
-         WHERE p.status = 'approved'
+         FROM prices p JOIN breweries b ON b.id = p.brewery_id
+         WHERE p.status = 'approved' AND b.status = 'approved'
+           AND b.type NOT IN (${NON_SERVING_TYPES.map((t) => `'${t}'`).join(", ")})
            AND ABS(${sizeNumSql('p.size')} - 0.25) < 0.001
            AND p.date = (
              SELECT MAX(p2.date) FROM prices p2
@@ -269,6 +273,7 @@ export async function listStyles(req, env) {
     `SELECT s.*, b.name AS primary_brewery_name
      FROM styles s
      LEFT JOIN breweries b ON b.id = s.primary_brewery_id AND b.status = 'approved'
+     WHERE ${STYLE_PUBLIC_SQL}
      ORDER BY s.name`
   ).all();
   return json({
@@ -1118,6 +1123,11 @@ export async function adminUpdateBrewery(req, env, { id }) {
     if (uid != null && (!Number.isInteger(uid) || uid < 0)) return error(400, "invalid-untappd-id");
     body.untappd_id = uid;
   }
+  if ("is_historical" in body) {
+    body.is_historical = body.is_historical ? 1 : 0;
+    // Historische Orte bekommen keine Place ID (keine Bewertung für geschlossene Betriebe)
+    if (body.is_historical) body.google_place_id = null;
+  }
 
   const fields = [];
   const values = [];
@@ -1125,7 +1135,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     name: "name", short: "short_name", type: "type", city: "city", country: "country",
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
-    verified: "verified", status: "status", logo_key: "logo_key",
+    verified: "verified", status: "status", logo_key: "logo_key", is_historical: "is_historical",
     successor_id: "successor_id", google_place_id: "google_place_id", untappd_id: "untappd_id",
   };
   for (const [k, col] of Object.entries(allow)) {
@@ -1277,6 +1287,37 @@ export async function adminRefreshGoogleRatings(req, env) {
   const body = await req.json().catch(() => ({}));
   const summary = await refreshRatings(env, { limit: body?.limit, minAgeHours: 1, delayMs: 50 });
   return json({ ok: true, ...summary });
+}
+
+// GET /api/admin/google-places/pin-check
+// Abstand zwischen DB-Pin und Googles Koordinaten für alle Orte mit Place ID,
+// größter zuerst. Liest nur den Cache (kein Google-Aufruf); Orte, deren Cache
+// noch keine Koordinaten hat, zählt `missing` – „Google-Bewertungen abrufen“
+// füllt sie nach. `shared` = so viele Orte teilen sich diese Place ID.
+export async function adminPinCheck(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const { results } = await env.DB.prepare(
+    `SELECT b.id, b.name, b.city, b.address, b.status, b.lat, b.lng, b.google_place_id,
+            c.lat AS g_lat, c.lng AS g_lng, c.fetched_at,
+            (SELECT COUNT(*) FROM breweries b3 WHERE b3.google_place_id = b.google_place_id) AS shared
+     FROM breweries b
+     LEFT JOIN google_places_cache c ON c.place_id = b.google_place_id
+     WHERE b.google_place_id IS NOT NULL AND b.google_place_id != '' AND b.is_historical = 0`
+  ).all();
+  const items = [];
+  let missing = 0;
+  for (const r of results) {
+    if (r.g_lat == null || r.g_lng == null) { missing++; continue; }
+    items.push({
+      id: r.id, name: r.name, city: r.city, address: r.address, status: r.status,
+      placeId: r.google_place_id, shared: r.shared, fetchedAt: r.fetched_at,
+      lat: r.lat, lng: r.lng, googleLat: r.g_lat, googleLng: r.g_lng,
+      distance: Math.round(haversine(r.lat, r.lng, r.g_lat, r.g_lng)),
+    });
+  }
+  items.sort((a, b) => b.distance - a.distance);
+  return json({ ok: true, threshold: PIN_CHECK_DISTANCE_M, missing, items });
 }
 
 // POST /api/admin/google-places/backfill  { after?, limit? }
@@ -1987,7 +2028,7 @@ export async function adminCreateBrewery(req, env) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
 
-  let id, name, shortName, type, city, country, address, mapsUrl, lat, lng, founded, website, descDe, descEn;
+  let id, name, shortName, type, city, country, address, mapsUrl, lat, lng, founded, website, descDe, descEn, successorId;
   try {
     id        = str(body.id,             { required: true, max: 80,   name: "id" });
     name      = str(body.name,           { required: true, max: 200,  name: "name" });
@@ -2003,20 +2044,28 @@ export async function adminCreateBrewery(req, env) {
     website   = str(body.website,        { max: 500,  name: "website" });
     descDe    = str(body.description_de, { max: 2000, name: "description_de" });
     descEn    = str(body.description_en, { max: 2000, name: "description_en" });
+    successorId = str(body.successor_id, { max: 80,  name: "successor_id" });
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }
+  const isHistorical = body.is_historical ? 1 : 0;
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return error(400, "invalid-id-format");
   const exists = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(id).first();
   if (exists) return error(409, "id-already-exists");
+  if (successorId) {
+    if (successorId === id) return error(400, "successor-self");
+    const succ = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(successorId).first();
+    if (!succ) return error(400, "successor-not-found");
+  }
 
   await env.DB.prepare(
     `INSERT INTO breweries
        (id, name, short_name, type, city, country, address, maps_url, lat, lng,
-        founded, website, description_de, description_en, verified, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'approved')`
+        founded, website, description_de, description_en, is_historical, successor_id, verified, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'approved')`
   ).bind(id, name, shortName || null, type, city, country, address || null, mapsUrl || null,
-         lat, lng, founded, website || null, descDe || null, descEn || null).run();
+         lat, lng, founded, website || null, descDe || null, descEn || null,
+         isHistorical, successorId || null).run();
   return json({ ok: true, id }, { status: 201 });
 }
 
@@ -2249,7 +2298,7 @@ export const PAGE_DATES = {
   "/":           "2026-10-22",
   "/ranglisten": "2026-10-22",
   "/wissen":     "2026-10-22",
-  "/sorten":     "2026-10-17",
+  "/sorten":     "2026-10-22",
   "/rivalen":    "2026-10-17",
   "/beitragen":  "2026-10-21",
   "/staedte":    "2026-10-22",
@@ -2952,7 +3001,8 @@ export async function serveCity(req, env) {
   } catch { /* D1 nicht verfügbar — statische Datei mit Client-Rendering ausliefern */ }
 
   // Karte: jüngster Preis der kleinsten gemeldeten Größe (nicht jeder Ort hat 0,25 l).
-  // Durchschnitt: nur 0,25 l, damit er vergleichbar bleibt.
+  // Durchschnitt: nur 0,25 l, nur aktuelle Orte mit Ausschank, damit er vergleichbar bleibt.
+  const averaged = new Set(rows.filter((r) => !r.is_historical && inComparisons(r)).map((r) => r.id));
   const priceByBrewery = new Map();
   const quarterByBrewery = new Map();
   for (const p of priceRows) {
@@ -2960,7 +3010,9 @@ export async function serveCity(req, env) {
     if (n == null) continue;
     const prev = priceByBrewery.get(p.brewery_id);
     if (!prev || n < sizeNum(prev.size) - 0.001) priceByBrewery.set(p.brewery_id, p);
-    if (Math.abs(n - 0.25) < 0.001 && !quarterByBrewery.has(p.brewery_id)) quarterByBrewery.set(p.brewery_id, p);
+    if (Math.abs(n - 0.25) < 0.001 && averaged.has(p.brewery_id) && !quarterByBrewery.has(p.brewery_id)) {
+      quarterByBrewery.set(p.brewery_id, p);
+    }
   }
   const priceVals = [...quarterByBrewery.values()].map((p) => Number(p.price));
   const avgPrice = priceVals.length

@@ -348,6 +348,14 @@ window.atlasLogoBackdrop = function (img) {
   else img.addEventListener("load", run, { once: true });
 };
 
+// ---- Vergleiche ---------------------------------------------------
+// Reine Brauereien (Typ „brewery“) schenken nicht aus: Ihre Preise sind keine
+// Glaspreise. Sie fehlen deshalb in Ranglisten, Durchschnitten und „Preis gesucht“.
+// Gleiche Regel im Worker: inComparisons() in src/utils.js.
+window.atlasInComparisons = function (b) {
+  return !!b && b.type !== "brewery";
+};
+
 // ---- Kartenkacheln ------------------------------------------------
 // Maps-Link eines Orts. Live liefert die API ihn fertig (mapsLink() in
 // src/googlePlaces.js); im Mock-Modus wird er hier nach denselben Regeln

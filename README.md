@@ -1,4 +1,4 @@
-# Altbieratlas · v0.14.0
+# Altbieratlas · v0.15.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -405,6 +405,17 @@ Google-Bedingungen darf nur die Place ID dauerhaft gespeichert werden, alles
 andere höchstens 30 Tage. Manuell auslösen: Admin-Panel → *Brauereien* →
 „Google-Bewertungen abrufen" (wiederholt den Endpunkt, bis alle Orte durch sind)
 bzw. `POST /api/admin/google-ratings/refresh` (eine Portion je Aufruf, Antwort mit `remaining`).
+Derselbe Abruf holt Googles Koordinaten (`location`, ohne Mehrkosten) in den Cache;
+Einträge noch ohne Koordinaten gelten sofort als fällig.
+
+**Pins prüfen:** Admin-Panel → *Brauereien* → **„Pins prüfen"** listet den Abstand
+zwischen DB-Pin und Googles Koordinaten für alle Orte mit Place ID, größter zuerst;
+ab 75 m (`PIN_CHECK_DISTANCE_M`) gilt ein Pin als auffällig. Liest nur den Cache, ruft
+Google nicht auf. Je Zeile Links auf DB-Pin (OpenStreetMap) und Google sowie
+„Bearbeiten"; teilen sich mehrere Orte eine Place ID, steht das dabei. Googles
+Koordinaten werden nie in `breweries` übernommen (Google-Bedingungen), den Pin
+korrigiert der Admin selbst.
+
 Die Ortsseite zeigt z. B. „4,5 ★ (312 Bewertungen) bei Google" mit Link auf den
 Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 30 Tage, erscheint nichts.
@@ -490,8 +501,8 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken, neueste offene Beiträge und **fehlende Übersetzungen** (alle Orte, Sorten, Events, Event-Biere, Glossar-Einträge und Typen mit leerem DE- oder EN-Text; Orte öffnen direkt den Bearbeiten-Dialog)
 - **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick). Beiträge zu einem bestehenden Ort (Preis, Sorte, Korrektur, Event) verlinken den Ort und springen per „Ort bearbeiten“ in dessen Dialog; Korrekturen werden danach als „Erledigt“ markiert, sie ändern selbst nichts
-- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) per Auswahl setzen; Untappd-Zuordnung korrigieren (`untappd_id`: leer = Namenssuche, 0 = ausblenden, sonst feste Untappd-ID; „Prüfen“ verwirft den Cache und zeigt den Treffer)
-- **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event verwalten
+- **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, schiefe Pins per „Pins prüfen" finden, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) und „Historisch“ im Bearbeiten-Dialog und schon beim Anlegen setzen (historisch entfernt die Place ID); Untappd-Zuordnung korrigieren (`untappd_id`: leer = Namenssuche, 0 = ausblenden, sonst feste Untappd-ID; „Prüfen“ verwirft den Cache und zeigt den Treffer)
+- **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event anlegen, bearbeiten und löschen
 - **Preise** — Alle Preise einsehen, bearbeiten (inkl. Sorte), löschen; neue Preise direkt eintragen
 - **Stile** — Bierstile anlegen, bearbeiten (inkl. Ausschankorte per Mehrfachauswahl), löschen; beim Umbenennen behalten Preise ihre Sorte
 - **Glossar** — Einträge anlegen, bearbeiten, löschen
@@ -503,6 +514,11 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 
 ### Ranglisten
 - Günstigste Brauereien, neueste Preismeldungen, Meistgemeldet
+- Reine Brauereien (Typ `brewery`) schenken nicht aus und fehlen in allen Vergleichen:
+  Preis-Ranglisten, Meistgemeldet, Google-Bewertung, Preis gesucht und alle
+  Durchschnittspreise (Startseite, Ranglisten, Stadtseiten, `/api/stats`). Regel an
+  einer Stelle je Seite: `inComparisons()` (`src/utils.js`) und
+  `window.atlasInComparisons()` (`shell.js`)
 - **Google-Bewertung**: Orte nach Google-Sterneschnitt (Cache ≤ 30 Tage), nur ab
   25 Bewertungen (`GOOGLE_MIN_COUNT` in `ranglisten.html`), Gleichstand nach Anzahl
 - **Preis gesucht**: alle aktiven Orte ohne Preismeldung, nach Stadt sortiert, je
@@ -518,6 +534,9 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 
 ### Altbier-Sorten (`/sorten`)
 - Alle Sorten aus D1 mit ABV, IBU, Geschmack und Link zur Hauptbrauerei
+- Eine Sorte erscheint erst, wenn mindestens einer ihrer Orte (Primär-Ort oder
+  Ausschankort) freigegeben ist; Sorten ohne Ort bleiben sichtbar (`STYLE_PUBLIC_SQL`
+  in `src/utils.js`, gilt auch für `/api/styles` und `llms-full.txt`)
 - Kurz eingeordnet: obergärig, Hausbrauerei, Alt aus dem Supermarkt
 - Serverseitig gerendert; JSON-LD `CollectionPage` mit `ItemList`
 
@@ -679,6 +698,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | POST | `/api/admin/google-ratings/refresh` | Google-Bewertungen abrufen, max. 40 Orte je Aufruf (`remaining` = noch offen) |
 | POST | `/api/admin/google-places/backfill` | Place-ID-Probelauf für Orte ohne ID, portionsweise (`{ after }` → `{ results, next, done }`), speichert nichts |
 | POST | `/api/admin/google-places/apply` | Bestätigte Place IDs speichern (`{ items: [{ id, placeId }] }`), überschreibt keine bestehenden |
+| GET | `/api/admin/google-places/pin-check` | Abstand DB-Pin ↔ Google je Ort mit Place ID aus dem Cache (`{ threshold, missing, items }`), größter zuerst |
 | DELETE | `/api/admin/breweries/:id` | Brauerei löschen |
 | GET | `/api/admin/events` | Alle Events |
 | POST | `/api/admin/events` | Neues Event anlegen (inkl. `end_date`, `end_time`) |
