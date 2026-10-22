@@ -145,6 +145,17 @@
 .hours-chip { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
 .hours-chip.open { color: #2d7a2d; }
 .hours-chip.closed { color: #9b1f1f; }
+.offers-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin: 10px 0 30px; }
+.offer-card { padding: 16px 18px; }
+.offer-card.is-now { border-color: var(--copper); }
+.offer-card h3 { font-size: 16px; margin: 6px 0 4px; }
+.offer-card p { font-size: 14px; margin: 4px 0; }
+.offer-card .offer-when { font-size: 13px; color: var(--ink-muted); }
+.offer-badge { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; margin-right: 6px; border: 1px solid currentColor; }
+.offer-badge.now { color: #2d7a2d; }
+.offer-badge.today { color: var(--copper); }
+.offer-badge.partner { color: var(--ink-muted); }
+.offer-code { font-family: var(--font-mono); font-size: 14px; padding: 2px 8px; border: 1px dashed var(--rule-strong); border-radius: 4px; }
 .chart { width: 100%; height: 220px; }
 .chart svg { width: 100%; height: 100%; display: block; }
 .chart .grid-line { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
@@ -449,6 +460,7 @@ const isSsr = root.dataset.ssr === "1";
       </section>
     ` : ''}
 
+    <div class="container" id="offers-section"></div>
     <div class="container" id="google-rating-section"></div>
     <div class="container" id="untappd-section" style="padding-bottom:20px"></div>
 
@@ -685,8 +697,43 @@ const isSsr = root.dataset.ssr === "1";
   }
   renderHours();
   document.addEventListener('atlas:lang-changed', renderHours);
+
+  // Aktionen und Coupons: laufende zuerst, abgelaufene fallen weg (Berliner Zeit).
+  // Coupons stammen aus Kooperationen und sind deshalb als Partner-Aktion markiert.
+  function renderOffers() {
+    const sec = document.getElementById("offers-section");
+    if (!sec) return;
+    const t = window.t;
+    const l = window.__atlasLang;
+    const list = window.atlasOffers.sort(result.offers || []);
+    if (!list.length || b.isHistorical) { sec.innerHTML = ""; return; }
+    const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const when = (o) => {
+      const days = o.weekdays ? o.weekdays.map((d) => t("day." + d)).join(", ") : t("offer.daily");
+      const time = o.timeFrom ? `${o.timeFrom}–${o.timeTo}` : t("offer.allDay");
+      const valid = o.validFrom && o.validFrom > window.atlasHours.berlinNow().date
+        ? " · " + t("offer.from").replace("{date}", window.formatDate(o.validFrom))
+        : o.validUntil ? " · " + t("offer.until").replace("{date}", window.formatDate(o.validUntil)) : "";
+      return `${days} · ${time}${valid}`;
+    };
+    sec.innerHTML = `
+      <div class="eyebrow">${t("offer.eyebrow")}</div>
+      <div class="offers-list">${list.map(({ o, s }) => `
+        <article class="card offer-card${s === "now" ? " is-now" : ""}">
+          ${s === "now" ? `<span class="offer-badge now">${t("offer.now")}</span>` : s === "today" ? `<span class="offer-badge today">${t("offer.today")}</span>` : ""}
+          ${o.kind === "coupon" ? `<span class="offer-badge partner">${t("offer.partner")}</span>` : ""}
+          <h3>${esc(o.title[l] || o.title.de)}</h3>
+          ${o.description ? `<p>${esc(o.description[l] || o.description.de)}</p>` : ""}
+          ${o.code ? `<p>${t("offer.code")} <span class="offer-code">${esc(o.code)}</span></p>` : ""}
+          <p class="offer-when">${esc(when(o))}</p>
+        </article>`).join("")}
+      </div>`;
+  }
+  renderOffers();
+  document.addEventListener('atlas:lang-changed', renderOffers);
+
   // Status nach Minutenwechsel aktuell halten, falls die Seite länger offen bleibt
-  setInterval(renderHours, 60 * 1000);
+  setInterval(() => { renderHours(); renderOffers(); }, 60 * 1000);
 
   // Untappd-Daten nachladen (fire & forget — zeigt nur wenn verfügbar)
   fetch(`/api/untappd/brewery/${encodeURIComponent(b.id)}`)

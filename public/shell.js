@@ -436,6 +436,30 @@ window.atlasHours = (() => {
   return { DAYS, berlinNow, inWindows, status, parseDay, formatDay, toMin };
 })();
 
+// ---- Aktionen und Coupons ------------------------------------------
+// Felder wie offerRow() in src/offers.js. state(): "now" = läuft gerade,
+// "today" = heute noch/heute gewesen, "later" = an anderen Tagen, "upcoming" =
+// beginnt erst (valid_from in der Zukunft), "expired" = abgelaufen.
+window.atlasOffers = (() => {
+  const H = window.atlasHours;
+  function hours(o) {
+    const range = o.timeFrom && o.timeTo ? [[o.timeFrom, o.timeTo]] : [["00:00", "24:00"]];
+    return Object.fromEntries((o.weekdays || H.DAYS).map((d) => [d, range]));
+  }
+  function state(o, now = H.berlinNow()) {
+    if (o.validUntil && o.validUntil < now.date) return "expired";
+    if (o.validFrom && o.validFrom > now.date) return "upcoming";
+    if (H.inWindows(hours(o), now.day, now.minutes)) return "now";
+    if (!o.weekdays || o.weekdays.includes(now.day)) return "today";
+    return "later";
+  }
+  const ORDER = { now: 0, today: 1, later: 2, upcoming: 3, expired: 4 };
+  const sort = (list, now = H.berlinNow()) =>
+    list.map((o) => ({ o, s: state(o, now) })).filter((x) => x.s !== "expired")
+      .sort((a, b) => ORDER[a.s] - ORDER[b.s]);
+  return { state, sort };
+})();
+
 // ---- Kartenkacheln ------------------------------------------------
 // Maps-Link eines Orts. Live liefert die API ihn fertig (mapsLink() in
 // src/googlePlaces.js); im Mock-Modus wird er hier nach denselben Regeln

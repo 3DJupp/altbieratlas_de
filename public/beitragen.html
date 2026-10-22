@@ -124,6 +124,9 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 }
 .field textarea { min-height: 80px; resize: vertical; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.day-cbs { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.day-cb { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; cursor: pointer; }
+.day-cb input { width: auto; }
 @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 
 .autocomplete-field { position: relative; }
@@ -212,6 +215,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
         <button type="button" data-typ="sorte" data-i18n="contrib.type.style">Sorte & Geschmacksnotizen</button>
         <button type="button" data-typ="korrektur" data-i18n="contrib.type.correction">Korrektur einreichen</button>
         <button type="button" data-typ="event" data-i18n="contrib.type.event">Event melden</button>
+        <button type="button" data-typ="aktion" data-i18n="contrib.type.offer">Aktion melden</button>
       </div>
 
       <form id="contrib-form">
@@ -298,6 +302,7 @@ const TYP_TO_API = {
   sorte: "style",
   korrektur: "correction",
   event: "event",
+  aktion: "offer",
 };
 
 // ============ Laden: Brauereien + Config ============
@@ -609,6 +614,40 @@ function forms(typ) {
       <textarea name="description" placeholder="${t("contrib.eventDescPh")}"></textarea>
     </div>
   `;
+  if (typ === "aktion") return `
+    <h2>${t("contrib.form.offerTitle")}</h2>
+    <p class="hint">${t("contrib.form.offerSub")}</p>
+    <div class="field">
+      <label>${t("field.brewery")}</label>
+      <select name="breweryId" required>${breweryOptions}</select>
+    </div>
+    <div class="field">
+      <label>${t("field.offerTitle")}</label>
+      <input name="offerTitle" required maxlength="120" placeholder="${t("contrib.form.offerTitlePh")}" />
+    </div>
+    <div class="field">
+      <label>${t("field.offerWeekdays")}</label>
+      <div class="day-cbs"><label class="day-cb"><input type="checkbox" name="weekdays" value="mo" /> ${t("day.mo")}</label><label class="day-cb"><input type="checkbox" name="weekdays" value="tu" /> ${t("day.tu")}</label><label class="day-cb"><input type="checkbox" name="weekdays" value="we" /> ${t("day.we")}</label><label class="day-cb"><input type="checkbox" name="weekdays" value="th" /> ${t("day.th")}</label><label class="day-cb"><input type="checkbox" name="weekdays" value="fr" /> ${t("day.fr")}</label><label class="day-cb"><input type="checkbox" name="weekdays" value="sa" /> ${t("day.sa")}</label><label class="day-cb"><input type="checkbox" name="weekdays" value="su" /> ${t("day.su")}</label></div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>${t("field.offerTimeFrom")}</label>
+        <input name="timeFrom" type="time" />
+      </div>
+      <div class="field">
+        <label>${t("field.offerTimeTo")}</label>
+        <input name="timeTo" type="time" />
+      </div>
+    </div>
+    <div class="field">
+      <label>${t("field.offerValidUntil")}</label>
+      <input name="validUntil" type="date" min="${today}" />
+    </div>
+    <div class="field">
+      <label>${t("field.description")}</label>
+      <textarea name="offerDescription" maxlength="500" placeholder="${t("contrib.form.offerDescPh")}"></textarea>
+    </div>
+  `;
   return "";
 }
 
@@ -734,9 +773,16 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
   fd.forEach((v, k) => {
     // Kontaktfelder gehen separat mit, das Turnstile-Token steckt schon in turnstileToken
     if (k === "email" || k === "submitterName" || k === "cf-turnstile-response") return;
+    if (k === "weekdays") return; // Mehrfachauswahl, unten gesammelt
     if (typeof v === "string") data[k] = v.trim();
     else data[k] = v;
   });
+  if (currentTyp === "aktion") {
+    data.weekdays = fd.getAll("weekdays");
+    // Uhrzeit nur als Paar sinnvoll
+    if (!data.timeFrom || !data.timeTo) { delete data.timeFrom; delete data.timeTo; }
+    if (!data.validUntil) delete data.validUntil;
+  }
   const email = (fd.get("email") || "").toString().trim() || null;
   const submitterName = (fd.get("submitterName") || "").toString().trim() || null;
 
@@ -784,6 +830,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
       : apiType === "brewery"    ? `${data.name || ""} · ${data.city || ""}`
       : apiType === "style"      ? `${data.styleName || ""} · ${brLabel}`
       : apiType === "correction" ? brLabel
+      : apiType === "offer"      ? `${data.offerTitle || ""} · ${brLabel}`
       :                            `${data.eventName || ""}`;
     // tg: Korrektur-Ziel (roh, wird in renderRecent übersetzt)
     // ed: Eventdatum (ISO, wird in renderRecent sprachspezifisch formatiert)

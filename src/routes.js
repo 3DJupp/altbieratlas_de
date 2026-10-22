@@ -6,6 +6,7 @@ import {
   searchPlace, mapsLink, refreshRatings, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
 } from "./googlePlaces.js";
 import { normalizeHours, schemaOrgHours, hoursLinesDe } from "./hours.js";
+import { normalizeOffer, offerRow, OFFER_PUBLIC_SQL } from "./offers.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
@@ -234,6 +235,10 @@ export async function getBrewery(req, env, { id }) {
     "SELECT date, size, price, source, notes, style_id FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC, price ASC"
   ).bind(id).all();
   const googleRating = await googleRatingFor(env, row);
+  const offers = await env.DB.prepare(
+    `SELECT o.* FROM offers o JOIN breweries b ON b.id = o.brewery_id
+     WHERE o.brewery_id = ? AND ${OFFER_PUBLIC_SQL} ORDER BY o.kind DESC, o.id`
+  ).bind(id).all().catch(() => ({ results: [] }));
   const base = brewRow(row, styles.results.map((s) => s.style_id));
   return json({
     brewery: {
@@ -252,7 +257,87 @@ export async function getBrewery(req, env, { id }) {
       breweryId: id, date: p.date, size: p.size, price: p.price, source: p.source, notes: p.notes,
       styleId: p.style_id || null,
     })),
+    offers: offers.results.map(offerRow),
   });
+}
+
+// ============================================================
+//  AKTIONEN UND COUPONS
+// ============================================================
+
+// GET /api/offers → alle laufenden und kommenden Aktionen freigegebener Orte
+export async function listOffers(req, env) {
+  const { results } = await env.DB.prepare(
+    `SELECT o.* FROM offers o JOIN breweries b ON b.id = o.brewery_id
+     WHERE ${OFFER_PUBLIC_SQL} ORDER BY o.brewery_id, o.id`
+  ).all();
+  return json({ offers: results.map(offerRow) });
+}
+
+async function insertOffer(env, o) {
+  const cols = Object.keys(o);
+  const res = await env.DB.prepare(
+    `INSERT INTO offers (${cols.join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`
+  ).bind(...cols.map((k) => o[k])).run();
+  return res.meta?.last_row_id;
+}
+
+// GET /api/admin/offers → alle Aktionen inkl. abgelaufener und offener
+export async function adminListOffers(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const { results } = await env.DB.prepare(
+    `SELECT o.*, b.name AS brewery_name, b.city AS brewery_city
+     FROM offers o LEFT JOIN breweries b ON b.id = o.brewery_id
+     ORDER BY o.status = 'pending' DESC, o.updated_at DESC`
+  ).all();
+  return json({
+    offers: results.map((r) => ({
+      ...offerRow(r), code: r.code || null, status: r.status,
+      breweryName: r.brewery_name, breweryCity: r.brewery_city,
+      titleDe: r.title_de, titleEn: r.title_en, descriptionDe: r.description_de, descriptionEn: r.description_en,
+    })),
+  });
+}
+
+// POST /api/admin/offers
+export async function adminCreateOffer(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  let o;
+  try { o = normalizeOffer(body); } catch (e) { return error(400, "validation-failed", { detail: e.message }); }
+  const b = await env.DB.prepare("SELECT id FROM breweries WHERE id = ?").bind(o.brewery_id).first();
+  if (!b) return error(400, "brewery-not-found");
+  const id = await insertOffer(env, o);
+  return json({ ok: true, id }, { status: 201 });
+}
+
+// PUT /api/admin/offers/:id
+export async function adminUpdateOffer(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  let o;
+  try { o = normalizeOffer(body, { partial: true }); } catch (e) { return error(400, "validation-failed", { detail: e.message }); }
+  const cols = Object.keys(o);
+  if (!cols.length) return error(400, "no-fields");
+  const res = await env.DB.prepare(
+    `UPDATE offers SET ${cols.map((k) => `${k} = ?`).join(", ")}, updated_at = datetime('now') WHERE id = ?`
+  ).bind(...cols.map((k) => o[k]), parseInt(id, 10)).run();
+  if (!res.meta?.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// DELETE /api/admin/offers/:id
+export async function adminDeleteOffer(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const res = await env.DB.prepare("DELETE FROM offers WHERE id = ?").bind(parseInt(id, 10)).run();
+  if (!res.meta?.changes) return error(404, "not-found");
+  return json({ ok: true });
 }
 
 // Googles Öffnungszeiten aus dem höchstens 30 Tage alten Cache, sonst null
@@ -671,7 +756,7 @@ export async function postContribution(req, env, _params, ctx) {
 
   let type, data, email, submitterName;
   try {
-    type = oneOf(body.type, ["price", "brewery", "style", "correction", "event"], { required: true, name: "type" });
+    type = oneOf(body.type, ["price", "brewery", "style", "correction", "event", "offer"], { required: true, name: "type" });
     email = str(body.email, { max: 200, name: "email" });
     submitterName = str(body.submitterName, { max: 100, name: "submitterName" });
     if (!body.data || typeof body.data !== "object") throw new Error("data: required");
@@ -703,13 +788,20 @@ export async function postContribution(req, env, _params, ctx) {
     } else if (type === "correction") {
       str(data.breweryId, { required: true, max: 80, name: "breweryId" });
       str(data.correction, { required: true, max: 4000, name: "correction" });
+    } else if (type === "offer") {
+      // Gleiche Regeln wie beim Anlegen im Admin; Coupons gibt es nur über den Admin
+      normalizeOffer({
+        brewery_id: data.breweryId, kind: "offer", title_de: data.offerTitle,
+        description_de: data.offerDescription, weekdays: data.weekdays,
+        time_from: data.timeFrom, time_to: data.timeTo, valid_until: data.validUntil,
+      });
     }
   } catch (e) {
     return error(400, "validation-failed", { detail: e.message });
   }
 
   // Brauerei-Name für Anzeige in E-Mails nachschlagen (für alle Typen mit breweryId)
-  if (data.breweryId && ["price", "style", "correction", "event"].includes(type)) {
+  if (data.breweryId && ["price", "style", "correction", "event", "offer"].includes(type)) {
     try {
       const bRow = await env.DB.prepare("SELECT name, city FROM breweries WHERE id = ? LIMIT 1")
         .bind(data.breweryId).first();
@@ -1174,6 +1266,17 @@ export async function adminApprove(req, env, { id }) {
         payload.eventUrl || null,
         payload.description || null, payload.description || null,
       ).run();
+    } else if (c.type === "offer") {
+      // Community-Text kommt in einer Sprache; EN bis zur Übersetzung gleich DE
+      // (fehlende Übersetzungen zeigt das Dashboard)
+      const o = normalizeOffer({
+        brewery_id: payload.breweryId, kind: "offer",
+        title_de: payload.offerTitle, title_en: payload.offerTitle,
+        description_de: payload.offerDescription, description_en: payload.offerDescription,
+        weekdays: payload.weekdays, time_from: payload.timeFrom, time_to: payload.timeTo,
+        valid_until: payload.validUntil, status: "approved",
+      });
+      await insertOffer(env, o);
     } else if (c.type === "style") {
       const sid = "usr-" + (payload.styleName || "stil").toLowerCase()
         .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) + "-" + Math.random().toString(36).slice(2, 6);
@@ -1394,6 +1497,7 @@ export async function adminTranslationGaps(req, env) {
       [["title", "title_de", "title_en"], ["description", "description_de", "description_en"]]],
     ["eventBeer", "SELECT event_id AS id, COALESCE(name_de, name_en, '') AS label, %F FROM event_beers", [["name", "name_de", "name_en"]]],
     ["glossary", "SELECT term AS id, term AS label, %F FROM glossary", [["definition", "definition_de", "definition_en"]]],
+    ["offer", "SELECT id, COALESCE(title_de, title_en, '') AS label, %F FROM offers WHERE status != 'rejected'", [["title", "title_de", "title_en"]]],
     ["venueType", "SELECT id, COALESCE(name_de, name_en, id) AS label, %F FROM venue_types",
       [["name", "name_de", "name_en"], ["header", "header_de", "header_en"]]],
   ];

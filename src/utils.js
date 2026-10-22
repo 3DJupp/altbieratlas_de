@@ -247,8 +247,8 @@ export async function sendConfirmationEmail(env, { to, type, id, data = {}, ip =
   const de = lang !== "en";
   const siteUrl = sc.siteUrl || "https://altbieratlas.de";
   const typeLabels = {
-    de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung" },
-    en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event" },
+    de: { price: "Preismeldung", brewery: "Brauerei-Eintrag", style: "Sorten-Ergänzung", correction: "Korrektur", event: "Event-Meldung", offer: "Aktion" },
+    en: { price: "Price Report", brewery: "Brewery Entry", style: "Beer Style", correction: "Correction", event: "Event", offer: "Special offer" },
   };
   const label = (de ? typeLabels.de : typeLabels.en)[type] || type;
   const ts = submittedAt || new Date().toISOString();
@@ -379,6 +379,14 @@ function _emailDataRows(type, data, de) {
     ...f(de ? "Ort" : "Location", data.eventLocation),
     ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
     ...f(de ? "Beschreibung" : "Description", data.description),
+  ];
+  if (type === "offer") return [
+    ...f(de ? "Ort" : "Venue", data._breweryName || data.breweryId),
+    ...f(de ? "Aktion" : "Offer", data.offerTitle),
+    ...f(de ? "Wochentage" : "Weekdays", Array.isArray(data.weekdays) ? data.weekdays.join(", ") : data.weekdays),
+    ...f(de ? "Uhrzeit" : "Time", data.timeFrom ? `${data.timeFrom}–${data.timeTo || ""}` : null),
+    ...f(de ? "Gültig bis" : "Valid until", data.validUntil),
+    ...f(de ? "Beschreibung" : "Description", data.offerDescription),
   ];
   if (type === "style") return [
     ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
@@ -591,7 +599,7 @@ export async function sendAdminDigest(env, { reminder = false, test = false } = 
 
   const typeLabels = {
     price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
-    correction: "Korrektur", event: "Event",
+    correction: "Korrektur", event: "Event", offer: "Aktion",
   };
   const describe = (r) => {
     let data = {};
@@ -712,7 +720,7 @@ export async function sendAdminNotification(env, { type, id, data = {}, email, s
   const adminUrl = siteUrl + "/admin.html";
   const typeLabels = {
     price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
-    correction: "Korrektur", event: "Event",
+    correction: "Korrektur", event: "Event", offer: "Aktion",
   };
   const label = typeLabels[type] || type;
   const summary = data.name || data._breweryName || data.breweryId || data.eventName || "";

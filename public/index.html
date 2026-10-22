@@ -380,7 +380,8 @@ function getHighlightedSize() {
 
 // ============ State ============
 let allBreweries = [];
-let priceByBrewery = new Map();   // id → Popup-Preis: erste highlightedSize, sonst kleinste Größe
+let priceByBrewery = new Map();
+let offersByBrewery = new Map();   // id → Aktionen (/api/offers), Popup zeigt laufende/heutige   // id → Popup-Preis: erste highlightedSize, sonst kleinste Größe
 let cachedHlAvg = null;           // Durchschnittspreis für erste highlightedSize
 const markerMap = new Map();
 let geoMarker = null;             // Geocode-Treffer (temporärer Pin)
@@ -424,6 +425,12 @@ function renderMarkers(filter = "all", search = "") {
     const googleText = g && g.rating != null
       ? `<div class="pop-google">${popRating(g.rating)} ★${g.userRatingCount ? ` <span style="opacity:.6">(${Number(g.userRatingCount).toLocaleString(popLocale())})</span>` : ""} <span style="opacity:.6">${window.t("brewery.googleRatingOn")}</span></div>`
       : "";
+    // Aktion, die gerade läuft oder heute gilt (Berliner Zeit)
+    const todaysOffer = (window.atlasOffers.sort(offersByBrewery.get(b.id) || [])
+      .find((x) => x.s === "now" || x.s === "today") || {}).o;
+    const offerText = todaysOffer && !b.isHistorical
+      ? `<div class="pop-offer"><strong>${window.t("offer.popup")}:</strong> ${String((todaysOffer.title[window.__atlasLang] || todaysOffer.title.de)).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))}${todaysOffer.kind === "coupon" ? ` <span style="opacity:.6">(${window.t("offer.partner")})</span>` : ""}</div>`
+      : "";
     const historicalBadge = b.isHistorical
       ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>` : "";
     function popInitials(str) {
@@ -446,6 +453,7 @@ function renderMarkers(filter = "all", search = "") {
       </div>
       ${priceText}
       ${googleText}
+      ${offerText}
       <div style="margin-top:10px"><a href="/ort/${encodeURIComponent(b.id)}">Details →</a></div>
     `);
     marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
@@ -735,13 +743,16 @@ let cachedPrices = [];
 
 (async () => {
   try {
-    const [brews, prices, stats, events] = await Promise.all([
+    const [brews, prices, stats, events, offers] = await Promise.all([
       window.AtlasAPI.listBreweries(),
       window.AtlasAPI.listPrices(),
       window.AtlasAPI.getStats(),
       window.AtlasAPI.listEvents(),
+      window.AtlasAPI.listOffers().catch(() => ({ offers: [] })),
     ]);
     allBreweries = brews.breweries || [];
+    offersByBrewery = new Map();
+    (offers.offers || []).forEach((o) => offersByBrewery.set(o.breweryId, [...(offersByBrewery.get(o.breweryId) || []), o]));
     cachedPrices = prices.prices || [];
 
     // Preis-Index fürs Popup — gleiche Regel wie die Ortsseite: jüngste Meldung der

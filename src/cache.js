@@ -29,7 +29,7 @@ const EXACT = new Set([
   "/sitemap.xml", "/llms.txt", "/llms-full.txt",
   "/api/config", "/api/stats", "/api/breweries", "/api/styles", "/api/prices",
   "/api/events", "/api/venue-types", "/api/glossary", "/api/rivals/votes",
-  "/api/og/ort",
+  "/api/og/ort", "/api/offers",
 ]);
 const PREFIXES = ["/ort/", "/stadt/", "/api/breweries/", "/api/events/"];
 

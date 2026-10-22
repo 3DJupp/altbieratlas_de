@@ -240,6 +240,7 @@
         <button data-tab="styles" data-i18n="admin.styles">Stile</button>
         <button data-tab="events" data-i18n="admin.events">Events</button>
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
+        <button data-tab="offers" data-i18n="admin.offers">Aktionen</button>
         <button data-tab="glossary" data-i18n="admin.glossary">Glossar</button>
         <button data-tab="settings" data-i18n="admin.settings">Einstellungen</button>
         <button data-tab="system" data-i18n="admin.system">System</button>
@@ -782,6 +783,59 @@
                 <span id="settings-social-msg" style="font-size:13px;display:none"></span>
               </div>
             </form>
+          </div>
+        </section>
+
+        <section id="tab-offers">
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n="admin.offersSub">Aktionen der Orte (z. B. „Mittwoch 2 für 1“) und Atlas-Coupons aus Kooperationen. Die Ortsseite zeigt sie passend zu Wochentag und Uhrzeit; Coupons sind als Partner-Aktion gekennzeichnet.</p>
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" id="offer-form-title" data-i18n="admin.offerAdd">Aktion anlegen</h3>
+            <form id="offer-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
+              <input type="hidden" name="id" />
+              <div class="field" style="margin:0;grid-column:span 2">
+                <label data-i18n="admin.offerVenue">Ort *</label>
+                <select name="brewery_id" id="offer-brewery-select" required></select>
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="admin.offerKind">Art</label>
+                <select name="kind" id="offer-kind">
+                  <option value="offer" data-i18n="admin.offerKindOffer">Aktion des Orts</option>
+                  <option value="coupon" data-i18n="admin.offerKindCoupon">Atlas-Coupon (Kooperation)</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label data-i18n="admin.editStatus">Status</label>
+                <select name="status">
+                  <option value="approved" data-i18n="admin.approved">Freigegeben</option>
+                  <option value="pending" data-i18n="common.pending">In Prüfung</option>
+                  <option value="rejected" data-i18n="admin.rejected">Abgelehnt</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerTitleDe">Titel (DE) *</label><input name="title_de" type="text" maxlength="120" required placeholder="2 Alt zum Preis von 1" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerTitleEn">Titel (EN)</label><input name="title_en" type="text" maxlength="120" placeholder="Two Alts for the price of one" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerDescDe">Beschreibung (DE)</label><input name="description_de" type="text" maxlength="500" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1"><label data-i18n="admin.offerDescEn">Beschreibung (EN)</label><input name="description_en" type="text" maxlength="500" /></div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label data-i18n="admin.offerWeekdays">Wochentage (keiner = jeden Tag)</label>
+                <div><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="mo" style="width:auto" /><span data-i18n="day.mo">Mo</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="tu" style="width:auto" /><span data-i18n="day.tu">Di</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="we" style="width:auto" /><span data-i18n="day.we">Mi</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="th" style="width:auto" /><span data-i18n="day.th">Do</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="fr" style="width:auto" /><span data-i18n="day.fr">Fr</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="sa" style="width:auto" /><span data-i18n="day.sa">Sa</span></label><label style="display:inline-flex;gap:4px;align-items:center;margin-right:10px;cursor:pointer"><input type="checkbox" name="weekdays" value="su" style="width:auto" /><span data-i18n="day.su">So</span></label></div>
+              </div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerTimeFrom">Von (Uhrzeit)</label><input name="time_from" type="time" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerTimeTo">Bis (Uhrzeit)</label><input name="time_to" type="time" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerValidFrom">Gültig ab</label><input name="valid_from" type="date" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.offerValidUntil">Gültig bis</label><input name="valid_until" type="date" /></div>
+              <div class="field" style="margin:0" id="offer-code-field" hidden><label data-i18n="admin.offerCode">Coupon-Code</label><input name="code" type="text" maxlength="40" style="font-family:var(--font-mono)" /></div>
+              <div style="grid-column:1/-1;display:flex;gap:8px">
+                <button class="btn btn-approve" type="submit" id="offer-submit" data-i18n="admin.offerAdd">Aktion anlegen</button>
+                <button class="btn btn-ghost" type="button" id="offer-cancel" hidden data-i18n="common.cancel">Abbrechen</button>
+              </div>
+            </form>
+            <div id="offer-msg" style="font-size:13px;margin-top:8px"></div>
+          </div>
+          <div style="overflow:auto">
+            <table class="brewery-table">
+              <thead><tr><th data-i18n="admin.offerVenue">Ort</th><th data-i18n="admin.offerTitle">Aktion</th><th data-i18n="admin.offerWhen">Wann</th><th data-i18n="admin.offerValid">Gültig</th><th data-i18n="admin.colStatus">Status</th><th></th></tr></thead>
+              <tbody id="offers-tbody"></tbody>
+            </table>
           </div>
         </section>
 
@@ -1477,6 +1531,7 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     if (btn.dataset.tab === "styles")      loadStylesTab();
     if (btn.dataset.tab === "events")      loadEventsTab();
     if (btn.dataset.tab === "prices")      loadPricesTab();
+    if (btn.dataset.tab === "offers")      loadOffersTab();
     if (btn.dataset.tab === "glossary")    loadGlossaryTab();
     if (btn.dataset.tab === "settings")   loadSettingsTab();
     if (btn.dataset.tab === "system")     loadSystemTab();
@@ -1567,7 +1622,7 @@ async function loadDashboard() {
 
 // ============ Übersetzungs-Lücken ============
 // Orte öffnen direkt den Bearbeiten-Dialog, alles andere den passenden Tab.
-const GAP_TAB = { brewery: "breweries", style: "styles", event: "events", eventBeer: "events", glossary: "glossary", venueType: "venue-types" };
+const GAP_TAB = { brewery: "breweries", style: "styles", event: "events", eventBeer: "events", glossary: "glossary", venueType: "venue-types", offer: "offers" };
 async function loadTranslationGaps() {
   const host = document.getElementById("dashboard-gaps");
   const t = window.t;
@@ -3499,6 +3554,136 @@ document.getElementById("add-glossary-form").addEventListener("submit", async (e
 });
 
 // ============ Einstellungen Tab ============
+// ============ Aktionen und Coupons ============
+let offersCache = [];
+const offerEsc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// „Mo, Mi · 17:00–20:00“ bzw. „täglich · ganztags“
+function offerWhen(o) {
+  const t = window.t;
+  const days = o.weekdays ? o.weekdays.map((d) => t("day." + d)).join(", ") : t("offer.daily");
+  const time = o.timeFrom ? `${o.timeFrom}–${o.timeTo}` : t("offer.allDay");
+  return `${days} · ${time}`;
+}
+async function loadOffersTab() {
+  const t = window.t;
+  const sel = document.getElementById("offer-brewery-select");
+  if (sel.options.length <= 1) {
+    const brs = (await ensureBreweries()).slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
+    sel.innerHTML = `<option value="">${t("contrib.form.dash")}</option>` + brs.map((b) =>
+      `<option value="${offerEsc(b.id)}">${offerEsc(b.name)} · ${offerEsc(b.city)}</option>`).join("");
+  }
+  const tbody = document.getElementById("offers-tbody");
+  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">${t("common.loading")}</td></tr>`;
+  try {
+    offersCache = (await window.AtlasAPI.admin.listOffers()).offers || [];
+    const today = window.atlasHours.berlinNow().date;
+    tbody.innerHTML = offersCache.map((o) => {
+      const expired = o.validUntil && o.validUntil < today;
+      return `<tr>
+        <td>${offerEsc(o.breweryName || o.breweryId)}<div style="color:var(--ink-muted);font-size:12px">${offerEsc(o.breweryCity || "")}</div></td>
+        <td>${o.kind === "coupon" ? `<span class="status-pending" style="font-size:11px">${t("offer.partner")}</span> ` : ""}${offerEsc(o.titleDe)}${o.code ? ` <code>${offerEsc(o.code)}</code>` : ""}</td>
+        <td style="white-space:nowrap">${offerEsc(offerWhen(o))}</td>
+        <td style="white-space:nowrap${expired ? ";color:#9b1f1f" : ""}">${o.validFrom ? window.formatDate(o.validFrom) : ""}${o.validFrom || o.validUntil ? " – " : "—"}${o.validUntil ? window.formatDate(o.validUntil) : ""}</td>
+        <td><span class="status-${o.status}">${o.status}</span></td>
+        <td class="actions">
+          ${o.status !== "approved" ? `<button class="btn btn-approve" data-offer-approve="${o.id}">${t("admin.approve")}</button>` : ""}
+          <button class="btn" data-offer-edit="${o.id}">${t("admin.actionEdit")}</button>
+          <button class="btn btn-reject" data-offer-del="${o.id}">${t("admin.actionDelete")}</button>
+        </td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">${t("admin.noTableEntries")}</td></tr>`;
+    tbody.querySelectorAll("[data-offer-edit]").forEach((b) => b.addEventListener("click", () => startOfferEdit(Number(b.dataset.offerEdit))));
+    tbody.querySelectorAll("[data-offer-approve]").forEach((b) => b.addEventListener("click", async () => {
+      try { await window.AtlasAPI.admin.updateOffer(b.dataset.offerApprove, { status: "approved" }); loadOffersTab(); }
+      catch (e) { alert(t("admin.errorPrefix") + (e.detail?.detail || e.message)); }
+    }));
+    tbody.querySelectorAll("[data-offer-del]").forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm(t("admin.offerConfirmDelete"))) return;
+      try { await window.AtlasAPI.admin.deleteOffer(b.dataset.offerDel); loadOffersTab(); }
+      catch (e) { alert(t("admin.errorPrefix") + (e.detail?.detail || e.message)); }
+    }));
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#9b1f1f;padding:20px">${offerEsc(e.message)}</td></tr>`;
+  }
+}
+function setOfferFormMode(editing) {
+  const t = window.t;
+  const key = editing ? "admin.offerSave" : "admin.offerAdd";
+  ["offer-form-title", "offer-submit"].forEach((id) => {
+    const el = document.getElementById(id);
+    el.setAttribute("data-i18n", key);
+    el.textContent = t(key);
+  });
+  document.getElementById("offer-cancel").hidden = !editing;
+}
+function syncOfferKind() {
+  document.getElementById("offer-code-field").hidden = document.getElementById("offer-kind").value !== "coupon";
+}
+document.getElementById("offer-kind").addEventListener("change", syncOfferKind);
+function resetOfferForm() {
+  const f = document.getElementById("offer-form");
+  f.reset();
+  f.elements.id.value = "";
+  setOfferFormMode(false);
+  syncOfferKind();
+}
+function startOfferEdit(id) {
+  const o = offersCache.find((x) => x.id === id);
+  if (!o) return;
+  const f = document.getElementById("offer-form");
+  f.elements.id.value = o.id;
+  f.elements.brewery_id.value = o.breweryId;
+  f.elements.kind.value = o.kind;
+  f.elements.status.value = o.status;
+  f.elements.title_de.value = o.titleDe || "";
+  f.elements.title_en.value = o.titleEn || "";
+  f.elements.description_de.value = o.descriptionDe || "";
+  f.elements.description_en.value = o.descriptionEn || "";
+  f.querySelectorAll("input[name=weekdays]").forEach((cb) => { cb.checked = !!o.weekdays?.includes(cb.value); });
+  f.elements.time_from.value = o.timeFrom || "";
+  f.elements.time_to.value = o.timeTo || "";
+  f.elements.valid_from.value = o.validFrom || "";
+  f.elements.valid_until.value = o.validUntil || "";
+  f.elements.code.value = o.code || "";
+  setOfferFormMode(true);
+  syncOfferKind();
+  f.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+document.getElementById("offer-cancel").addEventListener("click", resetOfferForm);
+document.getElementById("offer-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = window.t;
+  const f = e.target;
+  const fd = new FormData(f);
+  const msg = document.getElementById("offer-msg");
+  const val = (k) => (fd.get(k) || "").toString().trim() || null;
+  const body = {
+    brewery_id: val("brewery_id"), kind: val("kind"), status: val("status"),
+    title_de: val("title_de"), title_en: val("title_en"),
+    description_de: val("description_de"), description_en: val("description_en"),
+    weekdays: fd.getAll("weekdays"),
+    time_from: val("time_from"), time_to: val("time_to"),
+    valid_from: val("valid_from"), valid_until: val("valid_until"),
+    code: fd.get("kind") === "coupon" ? val("code") : null,
+  };
+  if (!confirmBothLangs([
+    [t("admin.offerTitle"), body.title_de, body.title_en],
+    ...(body.description_de || body.description_en ? [[t("admin.offerDescDe").replace(" (DE)", ""), body.description_de, body.description_en]] : []),
+  ])) return;
+  try {
+    const id = val("id");
+    if (id) await window.AtlasAPI.admin.updateOffer(id, body);
+    else await window.AtlasAPI.admin.createOffer(body);
+    msg.textContent = t(id ? "admin.offerSaved" : "admin.offerAdded");
+    msg.style.color = "#2d7a2d";
+    resetOfferForm();
+    loadOffersTab();
+  } catch (err) {
+    msg.textContent = t("admin.errorPrefix") + (err.detail?.detail || err.detail?.error || err.message);
+    msg.style.color = "#9b1f1f";
+  }
+});
+
 // ============ System: Rheinderby, Digest, Admin-Benutzer ============
 // Muss zu RIVAL_RESET_CONFIRM in src/routes.js passen (der Server prüft es selbst)
 const RIVAL_RESET_WORD = "ZURÜCKSETZEN";

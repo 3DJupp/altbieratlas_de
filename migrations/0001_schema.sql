@@ -142,6 +142,27 @@ CREATE TABLE IF NOT EXISTS event_beers (
 );
 CREATE INDEX IF NOT EXISTS idx_event_beers_event ON event_beers(event_id);
 
+-- Aktionen und Coupons je Ort (Logik und Felder siehe src/offers.js)
+CREATE TABLE IF NOT EXISTS offers (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  brewery_id     TEXT NOT NULL REFERENCES breweries(id) ON DELETE CASCADE,
+  kind           TEXT NOT NULL DEFAULT 'offer' CHECK (kind IN ('offer','coupon')),
+  title_de       TEXT NOT NULL,
+  title_en       TEXT,
+  description_de TEXT,
+  description_en TEXT,
+  weekdays       TEXT,           -- "mo,we"; NULL = jeden Tag
+  time_from      TEXT,           -- "HH:MM"; NULL = ganztags
+  time_to        TEXT,
+  valid_from     TEXT,           -- YYYY-MM-DD; NULL = ab sofort
+  valid_until    TEXT,           -- YYYY-MM-DD; NULL = unbefristet
+  code           TEXT,           -- Coupon-Code (nur kind = 'coupon')
+  status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_offers_brewery ON offers(brewery_id);
+
 -- Glossary
 CREATE TABLE IF NOT EXISTS glossary (
   term          TEXT PRIMARY KEY,
@@ -152,7 +173,7 @@ CREATE TABLE IF NOT EXISTS glossary (
 -- Contribution queue (moderation pipeline)
 CREATE TABLE IF NOT EXISTS contributions (
   id              TEXT PRIMARY KEY,
-  type            TEXT NOT NULL CHECK (type IN ('price','brewery','style','correction','event')),
+  type            TEXT NOT NULL CHECK (type IN ('price','brewery','style','correction','event','offer')),
   payload         TEXT NOT NULL,
   submitter_email TEXT,
   -- Freiwilliger Name/Spitzname, damit der Admin weiß, von wem ein Hinweis kommt
