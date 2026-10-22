@@ -432,7 +432,9 @@ function renderMarkers(filter = "all", search = "") {
       ? `<div class="pop-offer"><strong>${window.t("offer.popup")}:</strong> ${String((todaysOffer.title[window.__atlasLang] || todaysOffer.title.de)).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))}${todaysOffer.kind === "coupon" ? ` <span style="opacity:.6">(${window.t("offer.partner")})</span>` : ""}</div>`
       : "";
     const historicalBadge = b.isHistorical
-      ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>` : "";
+      ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>`
+      // Hervorgehobene Orte sind gekennzeichnet (bezahlte Platzierung)
+      : b.highlighted ? `<div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-top:2px">${window.t("offer.partnerShort")}</div>` : "";
     function popInitials(str) {
       const w = (str || "").trim().split(/\s+/);
       return (w.length >= 2 ? w[0][0] + w[1][0] : (str || "?").slice(0, 2)).toUpperCase();

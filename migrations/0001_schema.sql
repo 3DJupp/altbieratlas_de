@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS breweries (
   -- Hervorhebung auf der Karte (goldener Pin), z. B. für Sponsoring.
   -- 0 = normal, > 0 = hervorgehoben; als Zahl angelegt, damit spätere Stufen passen
   highlighted    INTEGER NOT NULL DEFAULT 0,
+  highlighted_until TEXT,      -- YYYY-MM-DD, letzter Tag der Hervorhebung; NULL = unbefristet
   -- Öffnungszeiten, selbst gepflegt (Format siehe src/hours.js); NULL = unbekannt.
   -- Fehlen sie, zeigt die Ortsseite Googles Zeiten aus google_places_cache.
   opening_hours         TEXT,

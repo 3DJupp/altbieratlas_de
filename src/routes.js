@@ -13,7 +13,7 @@ import {
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
   clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification, sendAdminDigest,
-  siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons,
+  siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons, isHighlighted,
 } from "./utils.js";
 
 // Nominatim-User-Agent-E-Mail aus SITE_CONFIG.contactEmail
@@ -1370,7 +1370,16 @@ export async function adminUpdateBrewery(req, env, { id }) {
     if (uid != null && (!Number.isInteger(uid) || uid < 0)) return error(400, "invalid-untappd-id");
     body.untappd_id = uid;
   }
-  if ("highlighted" in body) body.highlighted = body.highlighted ? 1 : 0;
+  if ("highlighted" in body) {
+    // true/false aus der Checkbox oder eine Stufe als Zahl
+    const lvl = typeof body.highlighted === "number" ? Math.max(0, Math.min(9, Math.trunc(body.highlighted))) : (body.highlighted ? 1 : 0);
+    body.highlighted = lvl;
+  }
+  if ("highlighted_until" in body) {
+    const d = body.highlighted_until || null;
+    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return error(400, "invalid-date");
+    body.highlighted_until = d;
+  }
   if ("opening_hours" in body) {
     try {
       const h = normalizeHours(body.opening_hours);
@@ -1400,7 +1409,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
     verified: "verified", status: "status", logo_key: "logo_key", is_historical: "is_historical",
-    highlighted: "highlighted",
+    highlighted: "highlighted", highlighted_until: "highlighted_until",
     opening_hours: "opening_hours", opening_hours_note_de: "opening_hours_note_de",
     opening_hours_note_en: "opening_hours_note_en", opening_hours_checked: "opening_hours_checked",
     successor_id: "successor_id", google_place_id: "google_place_id", untappd_id: "untappd_id",
@@ -2916,6 +2925,7 @@ export async function serveOrt(req, env, params = {}) {
               <h1 class="brewery-title">${escHtml(row.name)}</h1>
               <div class="brewery-meta">
                 <span>${escHtml(row.type_label || row.type)}</span>
+                ${!row.is_historical && isHighlighted(row) ? `<span class="tag" style="color:#a0702c;border-color:#d9a35b;font-size:11px">Partner</span>` : ""}
                 <span class="dot"></span>
                 <span>${escHtml(row.city)}${row.country && row.country !== "DE" ? " · " + escHtml(row.country) : ""}</span>
                 ${row.founded ? `<span class="dot"></span><span>seit ${escHtml(row.founded)}</span>` : ""}
@@ -3276,7 +3286,7 @@ export async function serveCity(req, env) {
   try {
     const [bRes, pRes] = await Promise.all([
       env.DB.prepare(
-        "SELECT id, name, type, is_historical FROM breweries WHERE status = 'approved' AND verified = 1 AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
+        "SELECT id, name, type, is_historical, highlighted, highlighted_until FROM breweries WHERE status = 'approved' AND verified = 1 AND LOWER(city) = LOWER(?) ORDER BY is_historical ASC, name ASC"
       ).bind(city).all(),
       // Alle Meldungen der Orte dieser Stadt, neueste zuerst
       env.DB.prepare(
@@ -3332,14 +3342,17 @@ export async function serveCity(req, env) {
   };
   const cardHtml = (r) => {
     const p = priceByBrewery.get(r.id);
-    return `<a class="city-card${r.is_historical ? " historical" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
+    const hl = !r.is_historical && isHighlighted(r);
+    return `<a class="city-card${r.is_historical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
+      (hl ? `<span class="cc-partner">Partner</span>` : "") +
       `<span class="cc-name">${escHtml(r.name)}</span>` +
       `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
       (p ? `<span class="cc-price">€ ${escHtml(fmtPriceDe(p.price))} <span style="opacity:.55;font-size:11px">/ ${escHtml(fmtSizeDe(p.size))}</span></span>` : "") +
       `</a>`;
   };
+  // Hervorgehobene (gekennzeichnete) Partner zuerst, sonst alphabetisch wie gehabt
   const venuesHtml = current.length
-    ? current.map(cardHtml).join("")
+    ? [...current].sort((a, b) => isHighlighted(b) - isHighlighted(a)).map(cardHtml).join("")
     : `<p class="city-empty">Noch keine aktiven Orte in ${escHtml(city)} im Atlas. <a href="/beitragen?typ=ort">Ort eintragen →</a></p>`;
   const historicalHtml = historical.map(cardHtml).join("");
 

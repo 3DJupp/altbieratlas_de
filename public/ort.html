@@ -405,6 +405,7 @@ const isSsr = root.dataset.ssr === "1";
                 <span id="b-status" class="tag ${b.verified ? 'verified' : 'pending'}">${b.verified ? window.t('common.verified') : window.t('common.pending')}</span>
                 <span id="b-type">${typeLabel}</span>
                 ${b.isHistorical ? `<span class="tag" data-i18n="brewery.historical" style="color:#888;border-color:#888;font-size:11px">${window.t('brewery.historical')}</span>` : ''}
+                ${b.highlighted && !b.isHistorical ? `<span class="tag" data-i18n="offer.partnerShort" title="${window.t('offer.partnerHint')}" style="color:#a0702c;border-color:#d9a35b;font-size:11px">${window.t('offer.partnerShort')}</span>` : ''}
                 <span class="dot"></span>
                 <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
                 ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}

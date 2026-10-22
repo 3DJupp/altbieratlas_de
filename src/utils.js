@@ -767,6 +767,12 @@ export async function sendAdminNotification(env, { type, id, data = {}, email, s
 // No legacy type mapping needed — types are now canonical IDs (brewpub, brewery, pub, etc.)
 const LEGACY_TYPE = {};
 
+// Hervorhebung aktiv? Stufe > 0 und highlighted_until (letzter Tag) nicht vorbei
+export function isHighlighted(r) {
+  if (!((r?.highlighted || 0) > 0)) return false;
+  return !r.highlighted_until || r.highlighted_until >= new Date().toISOString().slice(0, 10);
+}
+
 function parseJsonOrNull(v) {
   if (!v) return null;
   try { return JSON.parse(v); } catch { return null; }
@@ -794,7 +800,10 @@ export function brewRow(r, styles = []) {
     styles,
     verified: !!r.verified,
     isHistorical: !!r.is_historical,
-    highlighted: (r.highlighted || 0) > 0,
+    // Hervorhebung (Sponsoring): aktiv, solange Stufe > 0 und Enddatum nicht vorbei
+    highlighted: isHighlighted(r),
+    highlightLevel: r.highlighted || 0,
+    highlightedUntil: r.highlighted_until || null,
     // Selbst gepflegte Öffnungszeiten (Format siehe src/hours.js), null = unbekannt
     openingHours: parseJsonOrNull(r.opening_hours),
     openingHoursNote: r.opening_hours_note_de || r.opening_hours_note_en

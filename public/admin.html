@@ -1026,7 +1026,8 @@
             <input id="edit-highlighted" type="checkbox" style="width:auto" />
             <span data-i18n="admin.fieldHighlighted">Auf der Karte hervorheben (Sponsoring)</span>
           </label>
-          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHighlightedHint">Goldener Pin auf der Startseitenkarte.</span>
+          <label style="display:flex;gap:8px;align-items:center;margin-top:6px"><span style="font-size:12px" data-i18n="admin.fieldHighlightedUntil">bis einschließlich</span><input id="edit-highlighted-until" type="date" style="width:auto" /></label>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHighlightedHint">Goldener Pin auf der Karte, zuerst und markiert auf der Stadtseite, „Partner“ im Popup und auf der Ortsseite. Ohne Datum unbefristet. Nie Einfluss auf Ranglisten oder Preise.</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldHours">Öffnungszeiten</label>
@@ -2056,7 +2057,8 @@ async function loadBreweriesTable() {
           data-place-shared="${b.googlePlaceId ? (byPlace.get(b.googlePlaceId) || []).filter((n) => n !== b.name).join(", ").replace(/"/g, "&quot;") : ""}"
           data-untappd-id="${b.untappdId ?? ""}"
           data-historical="${b.isHistorical ? "1" : ""}"
-          data-highlighted="${b.highlighted ? "1" : ""}"
+          data-highlighted="${b.highlightLevel > 0 ? "1" : ""}"
+          data-highlighted-until="${b.highlightedUntil || ""}"
           data-hours="${b.openingHours ? JSON.stringify(b.openingHours).replace(/"/g, "&quot;") : ""}"
           data-hours-note-de="${(b.openingHoursNote?.de || "").replace(/"/g, "&quot;")}"
           data-hours-note-en="${(b.openingHoursNote?.en || "").replace(/"/g, "&quot;")}"
@@ -2164,6 +2166,7 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-untappd-result").textContent = "";
   document.getElementById("edit-historical").checked  = rowEl.dataset.historical === "1";
   document.getElementById("edit-highlighted").checked = rowEl.dataset.highlighted === "1";
+  document.getElementById("edit-highlighted-until").value = rowEl.dataset.highlightedUntil || "";
   // Öffnungszeiten: je Tag als Text, „zu“ für Ruhetag, leer für unbekannt
   let hours = null;
   try { hours = rowEl.dataset.hours ? JSON.parse(rowEl.dataset.hours) : null; } catch {}
@@ -2465,6 +2468,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const successorId    = document.getElementById("edit-successor").value || null;
   const historical     = document.getElementById("edit-historical").checked;
   const highlighted    = document.getElementById("edit-highlighted").checked;
+  const highlightedUntil = document.getElementById("edit-highlighted-until").value || null;
   // Öffnungszeiten einlesen; unlesbare Angaben blockieren das Speichern
   const hoursErr = document.getElementById("edit-hours-error");
   let openingHours = {};
@@ -2508,6 +2512,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
       successor_id: successorId,
       is_historical: historical,
       highlighted,
+      highlighted_until: highlightedUntil,
       opening_hours: openingHours,
       opening_hours_note_de: hoursNoteDe || null,
       opening_hours_note_en: hoursNoteEn || null,
@@ -2540,6 +2545,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.successor      = successorId || "";
     row.dataset.historical     = historical ? "1" : "";
     row.dataset.highlighted    = highlighted ? "1" : "";
+    row.dataset.highlightedUntil = highlightedUntil || "";
     row.dataset.hours          = hoursJson;
     row.dataset.hoursNoteDe    = hoursNoteDe;
     row.dataset.hoursNoteEn    = hoursNoteEn;
