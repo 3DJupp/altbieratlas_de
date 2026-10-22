@@ -162,6 +162,14 @@ bash scripts/deploy.sh          # Standard — jeder Push auf main (nur Worker)
 bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
 ```
 
+Live geht nur der Production-Branch. Läuft das Script in einem Build eines
+anderen Branches (Workers Builds setzt `WORKERS_CI_BRANCH`), lädt es nur eine
+Version hoch (`wrangler versions upload`), ohne sie live zu schalten. Das
+schützt die Produktion, falls „Builds for non-production branches“ aktiv ist
+und das Dashboard `deploy.sh` auch als Version command verwendet. Ein anderer
+Production-Branch als `main` wird über die Build-Variable `PRODUCTION_BRANCH`
+gesetzt.
+
 ### 1.3 Build-Variablen setzen
 
 Unter *Settings → Build → Variables and secrets* (**Build-Sektion**):
