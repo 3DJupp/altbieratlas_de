@@ -538,8 +538,11 @@ export function digestSchedule(env, date = new Date()) {
   };
 }
 
-export async function sendAdminDigest(env, { reminder = false } = {}) {
-  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
+// test = Versand aus dem Admin-Panel („Jetzt senden“): listet alle offenen
+// Einreichungen, schickt auch ohne welche und lässt den Wasserstand unverändert,
+// damit der nächste reguläre Digest nichts verliert. Rückgabe { ok, sent, reason }.
+export async function sendAdminDigest(env, { reminder = false, test = false } = {}) {
+  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return { ok: false, reason: "not-configured" };
 
   const sc = siteConfig(env);
   const siteUrl = sc.siteUrl || "https://altbieratlas.de";
@@ -552,10 +555,14 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
               datetime('now', '-1 minute') AS until`
     ).bind(DIGEST_KEY).first();
     from = win.since; until = win.until;
-    ({ results: rows } = await env.DB.prepare(
-      `SELECT ${cols} FROM contributions WHERE ${open} AND created_at > ? AND created_at <= ? ORDER BY created_at DESC`
-    ).bind(from, until).all());
-    if (reminder) {
+    ({ results: rows } = test
+      ? await env.DB.prepare(
+        `SELECT ${cols} FROM contributions WHERE ${open} ORDER BY created_at DESC LIMIT ${DIGEST_REMINDER_LIMIT}`
+      ).all()
+      : await env.DB.prepare(
+        `SELECT ${cols} FROM contributions WHERE ${open} AND created_at > ? AND created_at <= ? ORDER BY created_at DESC`
+      ).bind(from, until).all());
+    if (reminder && !test) {
       const [list, count] = await Promise.all([
         env.DB.prepare(
           `SELECT ${cols} FROM contributions WHERE ${open} AND created_at <= ? ORDER BY created_at DESC LIMIT ${DIGEST_REMINDER_LIMIT}`
@@ -567,20 +574,20 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
     }
   } catch (e) {
     console.error("[digest] DB-Fehler:", e);
-    return;
+    return { ok: false, reason: "db-error" };
   }
-  const markSent = () => env.DB.prepare(
+  const markSent = () => test ? Promise.resolve() : env.DB.prepare(
     `INSERT INTO site_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
   ).bind(DIGEST_KEY, until).run().catch((e) => console.error("[digest] Stand nicht gespeichert:", e));
   rows = rows || [];
-  if (!rows.length && !older.length) { await markSent(); return; }
+  if (!rows.length && !older.length && !test) { await markSent(); return { ok: true, sent: false }; }
 
   const fmtBerlin = (sqlTs) => {
     try { return new Date(sqlTs.replace(" ", "T") + "Z").toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" }); }
     catch { return sqlTs; }
   };
-  const windowLabel = `${fmtBerlin(from)} – ${fmtBerlin(until)}`;
+  const windowLabel = test ? "alle offenen (Testversand)" : `${fmtBerlin(from)} – ${fmtBerlin(until)}`;
 
   const typeLabels = {
     price: "Preismeldung", brewery: "Brauerei", style: "Sorte",
@@ -625,12 +632,13 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
   const newHeading = `${plural(n)} neu und offen`;
   const olderHeading = `${plural(olderTotal)} noch offen aus früheren Digests`;
   const moreOlder = olderTotal > older.length ? `… und ${olderTotal - older.length} weitere im Admin-Bereich.` : "";
-  const subject = n
+  const subject = (test ? "[Test] " : "") + (n
     ? `Altbieratlas Digest: ${newHeading}${older.length ? `, ${olderTotal} weitere offen` : ""}`
-    : `Altbieratlas Erinnerung: ${olderHeading}`;
+    : test ? "Altbieratlas Digest: keine offenen Einreichungen" : `Altbieratlas Erinnerung: ${olderHeading}`);
   const adminUrl = siteUrl + "/admin.html";
 
   const text = [
+    ...(test && !n ? ["Testversand: Es gibt keine offenen Einreichungen.", ""] : []),
     ...(n ? [`${newHeading} seit dem letzten Digest (${windowLabel}):`, "", listText(rows), ""] : []),
     ...(older.length ? [`Erinnerung: ${olderHeading}:`, "", listText(older), ...(moreOlder ? [moreOlder] : []), ""] : []),
     `Admin: ${adminUrl}`,
@@ -638,8 +646,9 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
 
   const h2Style = "margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;color:#1a1410";
   const newHtml = n ? `<h2 style="${h2Style}">${newHeading}</h2>
-    <p style="margin:0 0 22px;font-size:13px;color:#888">Seit dem letzten Digest: ${_esc(windowLabel)}</p>
-    ${tableHtml(rows)}` : "";
+    <p style="margin:0 0 22px;font-size:13px;color:#888">${test ? "" : "Seit dem letzten Digest: "}${_esc(windowLabel)}</p>
+    ${tableHtml(rows)}` : test ? `<h2 style="${h2Style}">Keine offenen Einreichungen</h2>
+    <p style="margin:0 0 22px;font-size:13px;color:#888">Testversand aus dem Admin-Panel.</p>` : "";
   const olderHtml = older.length ? `<h2 style="${h2Style}">${olderHeading}</h2>
     <p style="margin:0 0 22px;font-size:13px;color:#888">Wöchentliche Erinnerung an Einreichungen, die noch auf Freigabe warten.</p>
     ${tableHtml(older)}${moreOlder ? `<p style="margin:-12px 0 24px;font-size:13px;color:#888">${_esc(moreOlder)}</p>` : ""}` : "";
@@ -682,10 +691,15 @@ export async function sendAdminDigest(env, { reminder = false } = {}) {
         subject, text, html,
       }),
     });
-    if (!res.ok) { console.error("[digest] Resend-Status:", res.status, await res.text().catch(() => "")); return; }
+    if (!res.ok) {
+      console.error("[digest] Resend-Status:", res.status, await res.text().catch(() => ""));
+      return { ok: false, reason: `resend-${res.status}` };
+    }
     await markSent();
+    return { ok: true, sent: true, count: n + older.length };
   } catch (e) {
     console.error("[digest] Resend-Fehler:", e);
+    return { ok: false, reason: "resend-error" };
   }
 }
 

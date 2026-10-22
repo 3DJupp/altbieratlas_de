@@ -55,7 +55,7 @@ async function loadVenues(env) {
     env.DB.prepare(
       `SELECT p.brewery_id, p.date, p.size, p.price, s.name AS style_name
        FROM prices p LEFT JOIN styles s ON s.id = p.style_id
-       WHERE p.status = 'approved' ORDER BY p.date DESC LIMIT 5000`
+       WHERE p.status = 'approved' ORDER BY p.date DESC`
     ).all(),
     env.DB.prepare(
       `SELECT bs.brewery_id, s.name, s.abv

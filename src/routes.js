@@ -10,7 +10,7 @@ import {
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
   verifyTurnstile, rateLimit, str, num, oneOf,
-  clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification,
+  clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification, sendAdminDigest,
   siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons,
 } from "./utils.js";
 
@@ -289,9 +289,12 @@ export async function listStyles(req, env) {
 }
 
 // GET /api/prices
+// Bewusst ohne LIMIT: Ranglisten zählen die ganze Historie („Meistgemeldet“),
+// eine Obergrenze ließe ältere Meldungen still verschwinden. Die Antwort liegt im
+// Edge-Cache; wird sie zu groß, auf „jüngste Meldung je Slot + Anzahl“ umbauen.
 export async function listPrices(req, env) {
   const res = await env.DB.prepare(
-    "SELECT brewery_id, date, size, price, source, style_id, created_at FROM prices WHERE status = 'approved' ORDER BY date DESC LIMIT 2000"
+    "SELECT brewery_id, date, size, price, source, style_id, created_at FROM prices WHERE status = 'approved' ORDER BY date DESC"
   ).all();
   return json({
     prices: res.results.map((r) => ({
@@ -796,6 +799,129 @@ export async function postRivalVote(req, env) {
   ).all();
   if (!ins.meta?.changes) return error(429, "already-voted", countRivalVotes(res.results));
   return json({ ok: true, ...countRivalVotes(res.results) });
+}
+
+// ============================================================
+//  RHEINDERBY (Admin)
+// ============================================================
+
+// GET /api/admin/rivals → Stand inkl. Enthaltungen und Zeitraum
+export async function adminRivalVotes(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const [counts, span] = await Promise.all([
+    env.DB.prepare("SELECT choice, COUNT(*) AS n FROM rival_votes GROUP BY choice").all(),
+    env.DB.prepare("SELECT MIN(created_at) AS first, MAX(created_at) AS last FROM rival_votes").first(),
+  ]);
+  return json({ ...countRivalVotes(counts.results), first: span?.first || null, last: span?.last || null });
+}
+
+// Bestätigungswort für das Zurücksetzen. Der Server prüft es selbst, damit kein
+// versehentlicher Request (Doppelklick, Skript) die Stimmen löscht.
+export const RIVAL_RESET_CONFIRM = "ZURÜCKSETZEN";
+
+// POST /api/admin/rivals/reset  { confirm: "ZURÜCKSETZEN" } → löscht alle Stimmen
+export async function adminResetRivalVotes(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (body?.confirm !== RIVAL_RESET_CONFIRM) return error(400, "confirm-required");
+  const res = await env.DB.prepare("DELETE FROM rival_votes").run();
+  console.log(`[rivals] ${auth.username} hat ${res.meta?.changes ?? 0} Stimmen zurückgesetzt`);
+  return json({ ok: true, deleted: res.meta?.changes ?? 0 });
+}
+
+// ============================================================
+//  DIGEST (Admin)
+// ============================================================
+
+// POST /api/admin/digest/send → Testversand aller offenen Einreichungen an ADMIN_EMAIL
+export async function adminSendDigest(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const r = await sendAdminDigest(env, { test: true });
+  if (!r?.ok) return error(r?.reason === "not-configured" ? 503 : 502, r?.reason || "digest-failed");
+  return json({ ok: true, count: r.count ?? 0 });
+}
+
+// ============================================================
+//  ADMIN-BENUTZER (Admin)
+// ============================================================
+
+// GET /api/admin/users
+export async function adminListUsers(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const { results } = await env.DB.prepare(
+    "SELECT username, email, created_at FROM admin_users ORDER BY username"
+  ).all();
+  return json({
+    me: auth.username,
+    users: results.map((u) => ({ username: u.username, email: u.email || null, createdAt: u.created_at })),
+  });
+}
+
+// POST /api/admin/users  { username, password, email? }
+export async function adminCreateUser(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  if (!body) return error(400, "invalid-json");
+  let username, password, email;
+  try {
+    username = str(body.username, { required: true, max: 50, name: "username" });
+    password = str(body.password, { required: true, max: 200, trim: false, name: "password" });
+    email    = str(body.email,    { max: 200, name: "email" });
+  } catch (e) {
+    return error(400, "validation-failed", { detail: e.message });
+  }
+  if (!/^[a-zA-Z0-9_.-]{3,50}$/.test(username)) return error(400, "invalid-username");
+  if (password.length < 10) return error(400, "password-too-short");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error(400, "invalid-email");
+  const exists = await env.DB.prepare("SELECT 1 AS n FROM admin_users WHERE username = ?").bind(username).first();
+  if (exists) return error(409, "username-taken");
+  await env.DB.prepare(
+    "INSERT INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)"
+  ).bind(username, await hashPassword(password), email || null).run();
+  return json({ ok: true, username }, { status: 201 });
+}
+
+// DELETE /api/admin/users/:username — nie sich selbst, nie den letzten Admin
+export async function adminDeleteUser(req, env, { username }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  if (username === auth.username) return error(400, "cannot-delete-self");
+  const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM admin_users").first();
+  if ((count?.n || 0) <= 1) return error(400, "last-admin");
+  const res = await env.DB.batch([
+    env.DB.prepare("DELETE FROM admin_sessions WHERE username = ?").bind(username),
+    env.DB.prepare("DELETE FROM password_reset_tokens WHERE username = ?").bind(username),
+    env.DB.prepare("DELETE FROM admin_users WHERE username = ?").bind(username),
+  ]);
+  if (!res[2]?.meta?.changes) return error(404, "not-found");
+  return json({ ok: true });
+}
+
+// PUT /api/admin/users/me/password  { current, password }
+// Beendet alle anderen Sessions des Benutzers, die aktuelle bleibt.
+export async function adminChangePassword(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const body = await req.json().catch(() => null);
+  const current = typeof body?.current === "string" ? body.current : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+  if (password.length < 10) return error(400, "password-too-short");
+  if (password.length > 200) return error(400, "password-too-long");
+  const row = await env.DB.prepare("SELECT password_hash FROM admin_users WHERE username = ?")
+    .bind(auth.username).first();
+  if (!row || !(await verifyPassword(current, row.password_hash))) return error(401, "invalid-credentials");
+  const token = parseCookies(req)["atlas_session"];
+  await env.DB.batch([
+    env.DB.prepare("UPDATE admin_users SET password_hash = ? WHERE username = ?")
+      .bind(await hashPassword(password), auth.username),
+    env.DB.prepare("DELETE FROM admin_sessions WHERE username = ? AND token != ?").bind(auth.username, token),
+  ]);
+  return json({ ok: true });
 }
 
 // POST /api/prices (Convenience — wrapt als Contribution vom Typ "price")

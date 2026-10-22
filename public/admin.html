@@ -242,6 +242,7 @@
         <button data-tab="prices" data-i18n="admin.prices">Preise</button>
         <button data-tab="glossary" data-i18n="admin.glossary">Glossar</button>
         <button data-tab="settings" data-i18n="admin.settings">Einstellungen</button>
+        <button data-tab="system" data-i18n="admin.system">System</button>
       </div>
 
       <div class="admin-tab-content">
@@ -414,6 +415,13 @@
                 <label>Header-Text (EN)</label>
                 <input name="header_en" type="text" maxlength="1000" data-i18n-placeholder="admin.vtHeaderEnPh" placeholder="What is brewed and served here" />
               </div>
+              <div class="field" style="margin:0;grid-column:1/-1">
+                <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+                  <input name="is_producer" type="checkbox" style="width:auto" />
+                  <span data-i18n="admin.vtProducer">Produzent (braut selbst)</span>
+                </label>
+                <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.vtProducerHint">Kennzeichnet Typen, deren Orte selbst brauen. Nur solche Orte kommen in Seed und Mock.</span>
+              </div>
               <div>
                 <button class="btn btn-approve" type="submit" style="white-space:nowrap" data-i18n="admin.addVenueType">Typ hinzufügen</button>
               </div>
@@ -426,7 +434,7 @@
             <table class="brewery-table">
               <thead>
                 <tr>
-                  <th>ID</th><th>Name (DE)</th><th>Name (EN)</th><th data-i18n="admin.vtColHeaderDe">Header (DE)</th><th data-i18n="admin.vtColHeaderEn">Header (EN)</th><th></th>
+                  <th>ID</th><th>Name (DE)</th><th>Name (EN)</th><th data-i18n="admin.vtColHeaderDe">Header (DE)</th><th data-i18n="admin.vtColHeaderEn">Header (EN)</th><th data-i18n="admin.vtColProducer">Produzent</th><th></th>
                 </tr>
               </thead>
               <tbody id="vtype-tbody"></tbody>
@@ -776,6 +784,58 @@
             </form>
           </div>
         </section>
+
+        <section id="tab-system">
+          <!-- Rheinderby -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:12px" data-i18n="admin.rivalsTitle">Rheinderby-Stimmen</h3>
+            <div id="rivals-stats" style="font-size:14px;margin-bottom:14px"></div>
+            <details>
+              <summary style="cursor:pointer;font-size:13px;color:#9b1f1f" data-i18n="admin.rivalsResetOpen">Stimmen zurücksetzen …</summary>
+              <p style="font-size:13px;color:var(--ink-muted);margin:10px 0" data-i18n="admin.rivalsResetHint">Löscht alle Stimmen endgültig. Zur Bestätigung ZURÜCKSETZEN eintippen.</p>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <input id="rivals-reset-confirm" type="text" autocomplete="off" placeholder="ZURÜCKSETZEN" style="max-width:220px;font-family:var(--font-mono)" />
+                <button class="btn btn-reject" id="rivals-reset-btn" type="button" disabled data-i18n="admin.rivalsResetBtn">Endgültig zurücksetzen</button>
+              </div>
+              <div id="rivals-reset-msg" style="font-size:13px;margin-top:8px"></div>
+            </details>
+          </div>
+
+          <!-- Digest -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:12px" data-i18n="admin.digestTitle">Admin-Digest</h3>
+            <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px" data-i18n="admin.digestHint">Schickt alle offenen Einreichungen sofort an ADMIN_EMAIL, auch wenn keine offen sind. Der reguläre Digest läuft unverändert weiter.</p>
+            <div style="display:flex;gap:12px;align-items:center">
+              <button class="btn" id="digest-send-btn" type="button" data-i18n="admin.digestSend">Digest jetzt senden</button>
+              <span id="digest-send-msg" style="font-size:13px"></span>
+            </div>
+          </div>
+
+          <!-- Admin-Benutzer -->
+          <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;max-width:640px">
+            <h3 style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:12px" data-i18n="admin.usersTitle">Admin-Benutzer</h3>
+            <table class="brewery-table" style="font-size:13px;margin-bottom:16px">
+              <thead><tr><th data-i18n="admin.usersName">Benutzer</th><th data-i18n="admin.usersEmail">E-Mail</th><th></th></tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+            <form id="add-user-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;align-items:end">
+              <div class="field" style="margin:0"><label data-i18n="admin.usersName">Benutzer</label><input name="username" type="text" required minlength="3" maxlength="50" pattern="[a-zA-Z0-9_.\-]+" autocomplete="off" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.usersEmail">E-Mail</label><input name="email" type="email" maxlength="200" autocomplete="off" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.usersPassword">Passwort (min. 10)</label><input name="password" type="password" required minlength="10" autocomplete="new-password" /></div>
+              <div><button class="btn btn-approve" type="submit" data-i18n="admin.usersAdd">Admin anlegen</button></div>
+            </form>
+            <div id="add-user-msg" style="font-size:13px;margin-top:8px"></div>
+
+            <h4 style="font-size:14px;font-weight:600;margin:22px 0 10px" data-i18n="admin.pwChangeTitle">Eigenes Passwort ändern</h4>
+            <form id="change-pw-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;align-items:end">
+              <div class="field" style="margin:0"><label data-i18n="admin.pwCurrent">Aktuelles Passwort</label><input name="current" type="password" required autocomplete="current-password" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.pwNew">Neues Passwort (min. 10)</label><input name="password" type="password" required minlength="10" autocomplete="new-password" /></div>
+              <div class="field" style="margin:0"><label data-i18n="admin.pwRepeat">Wiederholen</label><input name="repeat" type="password" required minlength="10" autocomplete="new-password" /></div>
+              <div><button class="btn" type="submit" data-i18n="admin.pwChange">Passwort ändern</button></div>
+            </form>
+            <div id="change-pw-msg" style="font-size:13px;margin-top:8px"></div>
+          </div>
+        </section>
       </div>
     </div>
   </main>
@@ -858,6 +918,7 @@
             <button class="btn" id="edit-place-search" type="button" style="white-space:nowrap" data-i18n="admin.placeSearch">Bei Google suchen</button>
           </div>
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldPlaceIdHint">Hat Vorrang vor der Maps-URL. Die Suche nutzt Name, Adresse und Koordinaten wie gespeichert.</span>
+          <div id="edit-place-shared" style="font-size:12px;color:#8a5a00;margin-top:4px" hidden></div>
           <div id="edit-place-results"></div>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
@@ -1392,6 +1453,7 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     if (btn.dataset.tab === "prices")      loadPricesTab();
     if (btn.dataset.tab === "glossary")    loadGlossaryTab();
     if (btn.dataset.tab === "settings")   loadSettingsTab();
+    if (btn.dataset.tab === "system")     loadSystemTab();
   });
 });
 
@@ -1889,6 +1951,17 @@ async function loadBreweriesTable() {
       const val = t(key);
       return val !== key ? val : (type || "—");
     };
+    // Orte je Place ID: teilen sich mehrere eine, zeigen alle dieselbe Google-Bewertung
+    const byPlace = new Map();
+    (r.breweries || []).forEach((b) => {
+      if (b.googlePlaceId) byPlace.set(b.googlePlaceId, [...(byPlace.get(b.googlePlaceId) || []), b.name]);
+    });
+    const sharedHint = (b) => {
+      const names = b.googlePlaceId ? byPlace.get(b.googlePlaceId) : null;
+      if (!names || names.length < 2) return "";
+      const others = names.filter((n) => n !== b.name).join(", ").replace(/"/g, "&quot;");
+      return ` <span class="status-pending" style="font-size:11px" title="${others}">${t("admin.placeShared").replace("{n}", names.length)}</span>`;
+    };
     tbody.innerHTML = (r.breweries || []).map((b) => `
       <tr data-id="${b.id}"
           data-name="${(b.name || "").replace(/"/g, "&quot;")}"
@@ -1899,6 +1972,7 @@ async function loadBreweriesTable() {
           data-address="${(b.address || "").replace(/"/g, "&quot;")}"
           data-maps-url="${(("rawMapsUrl" in b ? b.rawMapsUrl : b.mapsUrl) || "").replace(/"/g, "&quot;")}"
           data-place-id="${(b.googlePlaceId || "").replace(/"/g, "&quot;")}"
+          data-place-shared="${b.googlePlaceId ? (byPlace.get(b.googlePlaceId) || []).filter((n) => n !== b.name).join(", ").replace(/"/g, "&quot;") : ""}"
           data-untappd-id="${b.untappdId ?? ""}"
           data-historical="${b.isHistorical ? "1" : ""}"
           data-highlighted="${b.highlighted ? "1" : ""}"
@@ -1913,7 +1987,7 @@ async function loadBreweriesTable() {
           data-successor="${b.successorId || ""}"
           data-photo-key="${b.photoKey || ""}"
           data-logo-key="${b.logoKey || ""}">
-        <td><a href="/ort/${encodeURIComponent(b.id)}" target="_blank">${b.name}</a></td>
+        <td><a href="/ort/${encodeURIComponent(b.id)}" target="_blank">${b.name}</a>${sharedHint(b)}</td>
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
@@ -1997,6 +2071,10 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-maps-url").value      = rowEl.dataset.mapsUrl || "";
   document.getElementById("edit-place-id").value      = rowEl.dataset.placeId || "";
   document.getElementById("edit-place-results").innerHTML = "";
+  const sharedEl = document.getElementById("edit-place-shared");
+  sharedEl.hidden = !rowEl.dataset.placeShared;
+  sharedEl.textContent = rowEl.dataset.placeShared
+    ? window.t("admin.placeSharedWith").replace("{names}", rowEl.dataset.placeShared) : "";
   document.getElementById("edit-untappd-id").value    = rowEl.dataset.untappdId || "";
   document.getElementById("edit-untappd-result").textContent = "";
   document.getElementById("edit-historical").checked  = rowEl.dataset.historical === "1";
@@ -3343,6 +3421,110 @@ document.getElementById("add-glossary-form").addEventListener("submit", async (e
 });
 
 // ============ Einstellungen Tab ============
+// ============ System: Rheinderby, Digest, Admin-Benutzer ============
+// Muss zu RIVAL_RESET_CONFIRM in src/routes.js passen (der Server prüft es selbst)
+const RIVAL_RESET_WORD = "ZURÜCKSETZEN";
+function sysMsg(el, text, ok) {
+  el.textContent = text;
+  el.style.color = ok ? "#2d7a2d" : "#9b1f1f";
+}
+async function loadSystemTab() {
+  const t = window.t;
+  const stats = document.getElementById("rivals-stats");
+  stats.textContent = t("common.loading");
+  try {
+    const r = await window.AtlasAPI.admin.rivalVotes();
+    const fmt = (ts) => ts ? new Date(ts.replace(" ", "T") + "Z").toLocaleDateString(window.__atlasLang === "en" ? "en-GB" : "de-DE") : "—";
+    stats.innerHTML = `<strong>Alt ${r.alt}</strong> · <strong>Kölsch ${r.kolsch}</strong> · ${t("admin.rivalsNeutral")} ${r.neutral}`
+      + `<div style="color:var(--ink-muted);font-size:12px;margin-top:4px">${fmt(r.first)} – ${fmt(r.last)}</div>`;
+  } catch (e) { stats.textContent = t("admin.errorPrefix") + e.message; }
+  loadUsers();
+}
+async function loadUsers() {
+  const t = window.t;
+  const tbody = document.getElementById("users-tbody");
+  try {
+    const r = await window.AtlasAPI.admin.listUsers();
+    const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    tbody.innerHTML = r.users.map((u) => `<tr>
+      <td>${esc(u.username)}${u.username === r.me ? ` <span style="color:var(--ink-muted)">(${t("admin.usersYou")})</span>` : ""}</td>
+      <td>${esc(u.email || "—")}</td>
+      <td>${u.username === r.me || r.users.length <= 1 ? "" : `<button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-del-user="${esc(u.username)}">${t("admin.actionDelete")}</button>`}</td>
+    </tr>`).join("");
+    tbody.querySelectorAll("button[data-del-user]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const name = btn.dataset.delUser;
+        if (!confirm(t("admin.usersConfirmDelete").replace("{name}", name))) return;
+        try { await window.AtlasAPI.admin.deleteUser(name); loadUsers(); }
+        catch (e) { alert(t("admin.errorPrefix") + (e.detail?.error || e.message)); }
+      });
+    });
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="3">${t("admin.errorPrefix")}${e.message}</td></tr>`; }
+}
+document.getElementById("rivals-reset-confirm").addEventListener("input", (e) => {
+  document.getElementById("rivals-reset-btn").disabled = e.target.value.trim() !== RIVAL_RESET_WORD;
+});
+document.getElementById("rivals-reset-btn").addEventListener("click", async (ev) => {
+  const t = window.t;
+  const input = document.getElementById("rivals-reset-confirm");
+  const msg = document.getElementById("rivals-reset-msg");
+  if (input.value.trim() !== RIVAL_RESET_WORD) return;
+  // Zweite Bestätigung im Browser-Dialog: das Löschen ist endgültig
+  if (!confirm(t("admin.rivalsResetConfirm"))) return;
+  ev.currentTarget.disabled = true;
+  try {
+    const r = await window.AtlasAPI.admin.resetRivalVotes(input.value.trim());
+    sysMsg(msg, t("admin.rivalsResetDone").replace("{n}", r.deleted), true);
+    input.value = "";
+    loadSystemTab();
+  } catch (e) {
+    sysMsg(msg, t("admin.errorPrefix") + (e.detail?.error || e.message), false);
+  }
+});
+document.getElementById("digest-send-btn").addEventListener("click", async (ev) => {
+  const t = window.t;
+  const btn = ev.currentTarget;
+  const msg = document.getElementById("digest-send-msg");
+  btn.disabled = true;
+  sysMsg(msg, t("common.loading"), true);
+  try {
+    const r = await window.AtlasAPI.admin.sendDigest();
+    sysMsg(msg, t("admin.digestSent").replace("{n}", r.count), true);
+  } catch (e) {
+    const code = e.detail?.error || e.message;
+    sysMsg(msg, code === "not-configured" ? t("admin.digestNotConfigured") : t("admin.errorPrefix") + code, false);
+  } finally { btn.disabled = false; }
+});
+document.getElementById("add-user-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = window.t;
+  const fd = new FormData(e.target);
+  const msg = document.getElementById("add-user-msg");
+  try {
+    await window.AtlasAPI.admin.createUser({
+      username: fd.get("username").trim(), email: fd.get("email").trim() || null, password: fd.get("password"),
+    });
+    sysMsg(msg, t("admin.usersAdded"), true);
+    e.target.reset();
+    loadUsers();
+  } catch (err) { sysMsg(msg, t("admin.errorPrefix") + (err.detail?.error || err.message), false); }
+});
+document.getElementById("change-pw-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const t = window.t;
+  const fd = new FormData(e.target);
+  const msg = document.getElementById("change-pw-msg");
+  if (fd.get("password") !== fd.get("repeat")) { sysMsg(msg, t("admin.pwMismatch"), false); return; }
+  try {
+    await window.AtlasAPI.admin.changePassword(fd.get("current"), fd.get("password"));
+    sysMsg(msg, t("admin.pwChanged"), true);
+    e.target.reset();
+  } catch (err) {
+    const code = err.detail?.error || err.message;
+    sysMsg(msg, code === "invalid-credentials" ? t("admin.pwWrongCurrent") : t("admin.errorPrefix") + code, false);
+  }
+});
+
 async function loadSettingsTab() {
   try {
     const r = await window.AtlasAPI.admin.getSettings();
@@ -3411,12 +3593,12 @@ settingsFormHandler("settings-social-form", "settings-social-msg", (fd) => ({
 // ============ Venue-Typen Tab ============
 async function loadVenueTypesTab() {
   const tbody = document.getElementById("vtype-tbody");
-  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" style="color:var(--ink-muted);text-align:center;padding:30px">${window.t("common.loading")}</td></tr>`;
   try {
     const r = await window.AtlasAPI.admin.listVenueTypes();
     const items = r.venueTypes || [];
     if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Typen vorhanden.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Typen vorhanden.</td></tr>`;
       return;
     }
     tbody.innerHTML = items.map((vt) => `
@@ -3424,12 +3606,14 @@ async function loadVenueTypesTab() {
           data-name-de="${(vt.nameDe || "").replace(/"/g, "&quot;")}"
           data-name-en="${(vt.nameEn || "").replace(/"/g, "&quot;")}"
           data-header-de="${(vt.headerDe || "").replace(/"/g, "&quot;")}"
-          data-header-en="${(vt.headerEn || "").replace(/"/g, "&quot;")}">
+          data-header-en="${(vt.headerEn || "").replace(/"/g, "&quot;")}"
+          data-producer="${vt.isProducer ? "1" : ""}">
         <td style="font-family:var(--font-mono);font-size:12px">${vt.id}</td>
         <td>${vt.nameDe}</td>
         <td style="color:var(--ink-muted)">${vt.nameEn || "—"}</td>
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${vt.headerDe || "—"}</td>
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted)">${vt.headerEn || "—"}</td>
+        <td>${vt.isProducer ? "✓" : "—"}</td>
         <td class="actions">
           <button class="btn" data-act="edit-vtype">Bearbeiten</button>
           <button class="btn btn-reject" data-act="delete-vtype">Löschen</button>
@@ -3456,7 +3640,7 @@ async function loadVenueTypesTab() {
       });
     });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="color:#9b1f1f;padding:20px">${e.message}</td></tr>`;
   }
 }
 
@@ -3465,12 +3649,13 @@ function openVtypeEditInline(id, rowEl) {
   if (pendingVtypeEdit) { pendingVtypeEdit.editRow.remove(); pendingVtypeEdit = null; }
   const editRow = document.createElement("tr");
   editRow.innerHTML = `
-    <td colspan="6" style="padding:16px;background:var(--bg-elev)">
+    <td colspan="7" style="padding:16px;background:var(--bg-elev)">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-items:end">
         <div class="field" style="margin:0"><label>Name (DE)</label><input id="vte-name-de" type="text" maxlength="200" value="${rowEl.dataset.nameDe.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0"><label>Name (EN)</label><input id="vte-name-en" type="text" maxlength="200" value="${rowEl.dataset.nameEn.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Header-Text (DE)</label><input id="vte-header-de" type="text" maxlength="1000" value="${rowEl.dataset.headerDe.replace(/"/g, '&quot;')}" /></div>
         <div class="field" style="margin:0;grid-column:1/-1"><label>Header-Text (EN)</label><input id="vte-header-en" type="text" maxlength="1000" value="${rowEl.dataset.headerEn.replace(/"/g, '&quot;')}" /></div>
+        <div class="field" style="margin:0;grid-column:1/-1"><label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input id="vte-producer" type="checkbox" style="width:auto" ${rowEl.dataset.producer === "1" ? "checked" : ""} /><span>${window.t("admin.vtProducer")}</span></label></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-approve" id="vte-save">${window.t("common.save")}</button>
           <button class="btn btn-ghost" id="vte-cancel">${window.t("common.cancel")}</button>
@@ -3492,6 +3677,7 @@ function openVtypeEditInline(id, rowEl) {
       name_en:   editRow.querySelector("#vte-name-en").value.trim() || null,
       header_de: editRow.querySelector("#vte-header-de").value.trim() || null,
       header_en: editRow.querySelector("#vte-header-en").value.trim() || null,
+      is_producer: editRow.querySelector("#vte-producer").checked,
     };
     if (!confirmBothLangs([
       [window.t("admin.langFieldName"), patch.name_de, patch.name_en],
@@ -3507,6 +3693,8 @@ function openVtypeEditInline(id, rowEl) {
       rowEl.cells[2].textContent = patch.name_en || "—";
       rowEl.cells[3].textContent = patch.header_de || "—";
       rowEl.cells[4].textContent = patch.header_en || "—";
+      rowEl.dataset.producer = patch.is_producer ? "1" : "";
+      rowEl.cells[5].textContent = patch.is_producer ? "✓" : "—";
       editRow.remove(); pendingVtypeEdit = null;
       rebuildBreweryTypeSelects();
     } catch (e) {
@@ -3533,6 +3721,7 @@ document.getElementById("add-vtype-form").addEventListener("submit", async (e) =
       name_en:   fd.get("name_en").trim() || null,
       header_de: fd.get("header_de").trim() || null,
       header_en: fd.get("header_en").trim() || null,
+      is_producer: fd.get("is_producer") === "on",
     });
     msg.textContent = window.t("admin.vtAdded");
     msg.style.color = "#2d7a2d";
