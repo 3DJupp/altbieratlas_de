@@ -12,6 +12,11 @@ hier stehen nur technische Lücken.
   nennt geteilte Place IDs inzwischen; im Bearbeiten-Dialog und in der Orte-Tabelle fehlt
   die Kennzeichnung noch.
 
+- **Stille Obergrenzen bei Preisen.** `/api/prices` liefert höchstens 2.000 Meldungen,
+  `loadVenues()` in `src/seo.js` liest höchstens 5.000. Darüber fehlen ältere Meldungen
+  ohne Hinweis in Karte, Ranglisten und SSR. Vorher umbauen: nur die jüngste Meldung je
+  Ort, Größe und Sorte laden statt der ganzen Historie, oder seitenweise.
+
 ## Admin-Panel
 
 Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
