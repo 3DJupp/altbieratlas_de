@@ -7,7 +7,7 @@
 
 import * as R from "./routes.js";
 import * as SEO from "./seo.js";
-import { error, hashPassword, sendAdminDigest, berlinHour } from "./utils.js";
+import { error, hashPassword, sendAdminDigest, digestSchedule } from "./utils.js";
 import { meterEnv } from "./d1meter.js";
 import { refreshRatings } from "./googlePlaces.js";
 
@@ -168,10 +168,12 @@ export default {
       return;
     }
     // Cron läuft stündlich (UTC): jede Stunde IndexNow-Nachmeldung, der
-    // Digest nur in den Läufen, die in Berlin auf 10 bzw. 22 Uhr fallen.
+    // Digest nur in den Berliner Stunden aus SITE_CONFIG.digestHours (Standard
+    // 10 und 22 Uhr), die Erinnerung an liegengebliebene Einreichungen einmal
+    // pro Woche (Standard Montag 10 Uhr).
     ctx.waitUntil(SEO.sweepIndexNow(env));
-    const h = berlinHour(new Date(event.scheduledTime));
-    if (h === 10 || h === 22) ctx.waitUntil(sendAdminDigest(env));
+    const { digest, reminder } = digestSchedule(env, new Date(event.scheduledTime));
+    if (digest || reminder) ctx.waitUntil(sendAdminDigest(env, { reminder }));
   },
 
   async fetch(request, rawEnv, ctx) {

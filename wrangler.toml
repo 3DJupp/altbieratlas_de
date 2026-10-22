@@ -69,9 +69,11 @@ bucket_name = "altbieratlas-logos"
 # --- Cron: IndexNow-Nachmeldung (stündlich) + Admin-Digest ----
 # Jede Stunde meldet der Worker per IndexNow alle seit dem letzten Lauf
 # geänderten Orte/Preise/Termine (auch direkte D1-Einträge).
-# Der Digest (Zusammenfassung aller Beiträge seit dem letzten Digest an
-# ADMIN_EMAIL) geht nur in den Läufen raus, die in Berlin auf 10 bzw. 22 Uhr
-# fallen; Zeitzone des Crons ist UTC, scheduled() prüft die Berliner Stunde.
+# Der Digest (noch offene Beiträge seit dem letzten Digest an ADMIN_EMAIL)
+# geht nur in den Läufen raus, die in Berlin auf SITE_CONFIG.digestHours
+# fallen (Standard 10 und 22 Uhr), die Erinnerung an liegengebliebene Beiträge
+# einmal pro Woche (Standard Montag 10 Uhr); Zeitzone des Crons ist UTC,
+# scheduled() prüft Berliner Stunde und Wochentag.
 #
 # Zweiter Cron: montags 4, 5 und 6 Uhr UTC Google-Bewertungen (Places API New)
 # für die Orte mit google_place_id abrufen und google_places_cache upserten,
@@ -116,7 +118,7 @@ persist = true
 #   UNTAPPD_CLIENT_ID     — Untappd-App-Client-ID.
 #   UNTAPPD_CLIENT_SECRET — Untappd-App-Secret.
 #   RESEND_API_KEY        — API-Key von resend.com (für alle Mails).
-#   ADMIN_EMAIL           — Empfänger des täglichen Beitrags-Digests.
+#   ADMIN_EMAIL           — Empfänger von Sofort-Benachrichtigung und Digest.
 #   MAP_TILE_API_KEY      — API-Key des Kachel-Anbieters (CARTO Basemaps,
 #                           dashboard.basemaps.carto.com). Fehlt er, schaltet
 #                           das Frontend auf schlüssellose OSM-Standardkacheln
@@ -172,6 +174,11 @@ persist = true
 #                     (CARTO dark_all) nicht passt — etwa beim Anbieterwechsel.
 #   mapTileAttribution: Attribution-Zeile zur obigen Kachel-URL. CARTO verlangt,
 #                     dass CARTO- und OSM-Attribution sichtbar bleiben.
+#   digestHours:      Berliner Stunden des Admin-Digests. Standard [10, 22];
+#                     [] schaltet ihn ab.
+#   digestReminderWeekday: Wochentag der Erinnerung an noch offene Beiträge
+#                     (0 = So … 6 = Sa). Standard 1; null schaltet sie ab.
+#   digestReminderHour: Berliner Stunde der Erinnerung. Standard 10.
 #
 # Autor/Social, Impressum und Banner werden ausschließlich im
 # Admin-Panel gepflegt (D1 site_settings) — nicht in SITE_CONFIG.
