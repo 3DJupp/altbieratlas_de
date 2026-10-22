@@ -90,6 +90,9 @@ CREATE TABLE IF NOT EXISTS prices (
   FOREIGN KEY (brewery_id) REFERENCES breweries(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_prices_brewery ON prices(brewery_id);
+-- Preise eines Orts: ohne diesen Index wählt SQLite idx_prices_status und
+-- liest alle freigegebenen Preise statt nur die des Orts
+CREATE INDEX IF NOT EXISTS idx_prices_brewery_status ON prices(brewery_id, status);
 CREATE INDEX IF NOT EXISTS idx_prices_date    ON prices(date DESC);
 CREATE INDEX IF NOT EXISTS idx_prices_status  ON prices(status);
 CREATE INDEX IF NOT EXISTS idx_prices_style   ON prices(style_id);

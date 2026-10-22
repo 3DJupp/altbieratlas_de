@@ -845,6 +845,8 @@ export async function adminLogin(req, env) {
 
   const token = randomToken(32);
   const expires = new Date(Date.now() + 8 * 3600 * 1000); // 8h
+  // Abgelaufene Sessions aufräumen (expires_at ist ein ISO-String wie unten)
+  await env.DB.prepare("DELETE FROM admin_sessions WHERE expires_at < ?").bind(new Date().toISOString()).run();
   await env.DB.prepare(
     "INSERT INTO admin_sessions (token, username, expires_at) VALUES (?, ?, ?)"
   ).bind(token, username, expires.toISOString()).run();
@@ -1672,10 +1674,12 @@ export async function adminListStyles(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare(
-    `SELECT s.*, b.name AS primary_brewery_name,
-            (SELECT GROUP_CONCAT(bs.brewery_id) FROM brewery_styles bs WHERE bs.style_id = s.id) AS brewery_ids
+    `SELECT s.*, b.name AS primary_brewery_name, bs.brewery_ids
      FROM styles s
      LEFT JOIN breweries b ON b.id = s.primary_brewery_id
+     -- Einmal gruppieren statt je Sorte: brewery_styles hat keinen Index auf style_id
+     LEFT JOIN (SELECT style_id, GROUP_CONCAT(brewery_id) AS brewery_ids
+                FROM brewery_styles GROUP BY style_id) bs ON bs.style_id = s.id
      ORDER BY s.name`
   ).all();
   return json({
