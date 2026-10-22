@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS breweries (
   description_en TEXT,
   verified       INTEGER NOT NULL DEFAULT 0,
   is_historical  INTEGER NOT NULL DEFAULT 0,
+  -- Hervorhebung auf der Karte (goldener Pin), z. B. für Sponsoring.
+  -- 0 = normal, > 0 = hervorgehoben; als Zahl angelegt, damit spätere Stufen passen
+  highlighted    INTEGER NOT NULL DEFAULT 0,
   -- Wer Marke/Betrieb heute führt (Übernahme einer historischen Brauerei)
   successor_id   TEXT REFERENCES breweries(id) ON DELETE SET NULL,
   status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),

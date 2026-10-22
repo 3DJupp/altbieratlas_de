@@ -1125,6 +1125,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     if (uid != null && (!Number.isInteger(uid) || uid < 0)) return error(400, "invalid-untappd-id");
     body.untappd_id = uid;
   }
+  if ("highlighted" in body) body.highlighted = body.highlighted ? 1 : 0;
   if ("is_historical" in body) {
     body.is_historical = body.is_historical ? 1 : 0;
     // Historische Orte bekommen keine Place ID (keine Bewertung für geschlossene Betriebe)
@@ -1138,6 +1139,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
     verified: "verified", status: "status", logo_key: "logo_key", is_historical: "is_historical",
+    highlighted: "highlighted",
     successor_id: "successor_id", google_place_id: "google_place_id", untappd_id: "untappd_id",
   };
   for (const [k, col] of Object.entries(allow)) {

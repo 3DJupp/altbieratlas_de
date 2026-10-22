@@ -767,6 +767,7 @@ export function brewRow(r, styles = []) {
     styles,
     verified: !!r.verified,
     isHistorical: !!r.is_historical,
+    highlighted: (r.highlighted || 0) > 0,
     successorId: r.successor_id || null,
     status: r.status,
     photoKey: r.photo_key || null,

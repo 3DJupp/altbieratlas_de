@@ -907,6 +907,13 @@
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHistoricalHint">Historische Orte bekommen keine Google-Bewertung; eine gesetzte Place ID wird beim Speichern entfernt.</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
+          <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+            <input id="edit-highlighted" type="checkbox" style="width:auto" />
+            <span data-i18n="admin.fieldHighlighted">Auf der Karte hervorheben (Sponsoring)</span>
+          </label>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHighlightedHint">Goldener Pin auf der Startseitenkarte.</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldStyles">Stile</label>
           <select id="edit-styles-select" multiple size="6" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px">
           </select>
@@ -1894,6 +1901,7 @@ async function loadBreweriesTable() {
           data-place-id="${(b.googlePlaceId || "").replace(/"/g, "&quot;")}"
           data-untappd-id="${b.untappdId ?? ""}"
           data-historical="${b.isHistorical ? "1" : ""}"
+          data-highlighted="${b.highlighted ? "1" : ""}"
           data-lat="${b.coords?.[0] ?? ""}"
           data-lng="${b.coords?.[1] ?? ""}"
           data-founded="${b.founded ?? ""}"
@@ -1992,6 +2000,7 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-untappd-id").value    = rowEl.dataset.untappdId || "";
   document.getElementById("edit-untappd-result").textContent = "";
   document.getElementById("edit-historical").checked  = rowEl.dataset.historical === "1";
+  document.getElementById("edit-highlighted").checked = rowEl.dataset.highlighted === "1";
   document.getElementById("edit-place-search").disabled = rowEl.dataset.historical === "1";
   document.getElementById("edit-lat").value           = rowEl.dataset.lat || "";
   document.getElementById("edit-lng").value           = rowEl.dataset.lng || "";
@@ -2281,6 +2290,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const styles         = Array.from(selEl.selectedOptions).map((o) => o.value);
   const successorId    = document.getElementById("edit-successor").value || null;
   const historical     = document.getElementById("edit-historical").checked;
+  const highlighted    = document.getElementById("edit-highlighted").checked;
   msg.style.display = "none";
   if (!confirmBothLangs([[t("admin.langFieldDescription"), description, descriptionEn]])) return;
   try {
@@ -2294,6 +2304,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
       website, description_de: description, description_en: descriptionEn, styles,
       successor_id: successorId,
       is_historical: historical,
+      highlighted,
     };
     // Remove undefined values so they aren't sent as null
     Object.keys(patch).forEach((k) => patch[k] === undefined && delete patch[k]);
@@ -2321,6 +2332,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.styles         = styles.join(",");
     row.dataset.successor      = successorId || "";
     row.dataset.historical     = historical ? "1" : "";
+    row.dataset.highlighted    = highlighted ? "1" : "";
     // Der Worker entfernt die Place ID historischer Orte
     if (historical) row.dataset.placeId = "";
     row.querySelector("td:nth-child(1) a").textContent = name;

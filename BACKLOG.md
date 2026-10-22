@@ -23,10 +23,6 @@ Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
 
 ### Wichtig
 
-- **Schema-Drift `breweries.highlighted`.** Die Spalte existiert in der Live-D1, aber nicht in
-  `0001_schema.sql`. `brewRow()` gibt sie nicht aus, die Hervorhebung in `index.html`
-  (`b.highlighted`) greift deshalb nie. Entscheiden: ins Schema + API + Admin-Checkbox
-  aufnehmen oder in der D1 entfernen.
 - **„Produzent“ bei Typen.** `venue_types.is_producer` steuert u. a. Seed/Mock-Regeln und
   Kopfzeilen, die API nimmt das Feld an, das Admin-UI zeigt und setzt es aber nicht.
 
@@ -53,6 +49,12 @@ Abgleich DB-Schema / Admin-API / Admin-UI, Stand 2026-10-18.
     Google und Bing die Zeiten direkt verstehen.
   - **Quelle:** Die vorhandene Google-Places-Anbindung (`src/googlePlaces.js`, Place ID je Ort)
     liefert auch `regularOpeningHours`.
+
+- **Hervorhebung (Sponsoring) ausbauen.** Heute nur ein goldener Pin auf der Startseitenkarte
+  (`breweries.highlighted`). Vor dem ersten bezahlten Einsatz: sichtbare Kennzeichnung als
+  „Anzeige“/„Partner“ in Popup und Ortsseite (Werbung muss erkennbar sein). Ideen danach:
+  Laufzeit mit Enddatum, damit eine Hervorhebung von selbst ausläuft; Stufen über den Zahlenwert;
+  Hervorhebung auch auf Stadtseiten. Nie in Ranglisten oder Preisvergleiche eingreifen.
 
 ## Vorschaubilder und Suchvorschauen
 
