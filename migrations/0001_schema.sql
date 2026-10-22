@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS breweries (
   -- Google Place ID (Places API New). Einzige Google-Angabe, die dauerhaft
   -- gespeichert werden darf; historische Orte bekommen keine.
   google_place_id TEXT,
+  -- Untappd-Brauerei: NULL = Suche nach Name, 0 = keine Untappd-Anzeige,
+  -- > 0 = feste Untappd-ID (wenn die Namenssuche den falschen Treffer liefert)
+  untappd_id     INTEGER,
   lat            REAL NOT NULL,
   lng            REAL NOT NULL,
   founded        INTEGER,
@@ -36,7 +39,7 @@ CREATE TABLE IF NOT EXISTS breweries (
   description_en TEXT,
   verified       INTEGER NOT NULL DEFAULT 0,
   is_historical  INTEGER NOT NULL DEFAULT 0,
-  -- Wer Marke/Betrieb heute führt (z. B. Hannen, Gatzweiler → Bolten)
+  -- Wer Marke/Betrieb heute führt (Übernahme einer historischen Brauerei)
   successor_id   TEXT REFERENCES breweries(id) ON DELETE SET NULL,
   status         TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending','approved','rejected')),
   photo_key      TEXT,

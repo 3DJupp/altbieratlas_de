@@ -9,6 +9,7 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#b57a3a" />
 <title>Admin · Altbieratlas</title>
+<meta name="description" content="Verwaltung des Altbieratlas." />
 <meta name="robots" content="noindex,nofollow" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -257,6 +258,10 @@
           <h2 style="font-family:var(--font-display);font-weight:500;margin:30px 0 10px" data-i18n="admin.pending">Offene Beiträge</h2>
           <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.dashboardPending">Die neuesten offenen Einreichungen im Schnellzugriff:</p>
           <div id="dashboard-pending"></div>
+
+          <h2 style="font-family:var(--font-display);font-weight:500;margin:30px 0 10px" data-i18n="admin.gapsTitle">Fehlende Übersetzungen</h2>
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:16px" data-i18n="admin.gapsSub">Einträge, bei denen ein Text in DE oder EN fehlt.</p>
+          <div id="dashboard-gaps"></div>
         </section>
 
         <!-- Contributions -->
@@ -842,6 +847,15 @@
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldPlaceIdHint">Hat Vorrang vor der Maps-URL. Die Suche nutzt Name, Adresse und Koordinaten wie gespeichert.</span>
           <div id="edit-place-results"></div>
         </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label data-i18n="admin.fieldUntappdId">Untappd-ID</label>
+          <div style="display:flex;gap:8px">
+            <input id="edit-untappd-id" type="number" min="0" step="1" style="flex:1;font-family:var(--font-mono);font-size:13px" />
+            <button class="btn" id="edit-untappd-check" type="button" style="white-space:nowrap" data-i18n="admin.untappdCheck">Prüfen</button>
+          </div>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldUntappdHint">Leer = Suche nach Name, 0 = keine Untappd-Anzeige, sonst die Zahl aus der Untappd-Adresse der Brauerei.</span>
+          <div id="edit-untappd-result" style="font-size:13px;margin-top:6px"></div>
+        </div>
         <div class="field" style="margin:0">
           <label data-i18n="admin.fieldLat">Breitengrad (Lat)</label>
           <input id="edit-lat" type="number" min="-90" max="90" step="any" />
@@ -1310,6 +1324,11 @@ document.getElementById("reset-password-form").addEventListener("submit", async 
 })();
 
 // ============ Tabs ============
+// Promise des letzten Tabellen-Ladens, damit openBreweryEdit() darauf warten kann
+let breweriesLoaded = null;
+function switchTab(name) {
+  document.querySelector(`.admin-tabs button[data-tab="${name}"]`)?.click();
+}
 document.querySelectorAll(".admin-tabs button").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".admin-tabs button").forEach((b) => b.classList.remove("active"));
@@ -1317,7 +1336,7 @@ document.querySelectorAll(".admin-tabs button").forEach((btn) => {
     document.querySelectorAll(".admin-tab-content > section").forEach((s) => s.classList.remove("active"));
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
     if (btn.dataset.tab === "contribs")     loadContributions(currentStatus);
-    if (btn.dataset.tab === "breweries")   loadBreweriesTable();
+    if (btn.dataset.tab === "breweries")   breweriesLoaded = loadBreweriesTable();
     if (btn.dataset.tab === "dashboard")   loadDashboard();
     if (btn.dataset.tab === "venue-types") loadVenueTypesTab();
     if (btn.dataset.tab === "styles")      loadStylesTab();
@@ -1407,6 +1426,41 @@ async function loadDashboard() {
   } catch (e) {
     console.error(e);
   }
+  loadTranslationGaps();
+}
+
+// ============ Übersetzungs-Lücken ============
+// Orte öffnen direkt den Bearbeiten-Dialog, alles andere den passenden Tab.
+const GAP_TAB = { brewery: "breweries", style: "styles", event: "events", eventBeer: "events", glossary: "glossary", venueType: "venue-types" };
+async function loadTranslationGaps() {
+  const host = document.getElementById("dashboard-gaps");
+  const t = window.t;
+  const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  try {
+    const { gaps } = await window.AtlasAPI.admin.translationGaps();
+    if (!gaps.length) {
+      host.innerHTML = `<div class="admin-empty">${t("admin.gapsNone")}</div>`;
+      return;
+    }
+    const missing = { de: t("admin.gapsMissingDe"), en: t("admin.gapsMissingEn"), both: t("admin.gapsMissingBoth") };
+    host.innerHTML = `<table class="brewery-table"><tbody>${gaps.map((g, i) => `
+      <tr>
+        <td>${esc(t("admin.gapKind." + g.kind))}</td>
+        <td>${esc(g.label)}${g.kind === "eventBeer" ? ` <span style="color:var(--ink-muted);font-size:12px">(${esc(g.id)})</span>` : ""}</td>
+        <td>${esc(t("admin.gapField." + g.field))}</td>
+        <td><span class="status-pending">${esc(missing[g.missing])}</span></td>
+        <td class="actions"><button class="btn" data-gap="${i}">${t("admin.gapsOpen")}</button></td>
+      </tr>`).join("")}</tbody></table>`;
+    host.querySelectorAll("button[data-gap]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const g = gaps[Number(btn.dataset.gap)];
+        if (g.kind === "brewery") openBreweryEdit(g.id);
+        else switchTab(GAP_TAB[g.kind]);
+      });
+    });
+  } catch (e) {
+    host.innerHTML = `<div class="admin-error visible">${esc(e.message)}</div>`;
+  }
 }
 
 // ============ Contributions ============
@@ -1438,6 +1492,8 @@ function renderContribCards(items, host, status) {
   host.innerHTML = items.map((c) => {
     const d = window.formatDateTime(c.createdAt);
     const payload = JSON.stringify(c.payload, null, 2);
+    // Preis, Sorte, Korrektur und Event beziehen sich auf einen bestehenden Ort
+    const placeId = c.type !== "brewery" ? c.payload?.breweryId : null;
     const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
     return `
       <div class="contrib-card" data-id="${c.id}">
@@ -1449,11 +1505,18 @@ function renderContribCards(items, host, status) {
             ${c.submitterEmail ? `<span>${c.submitterEmail}</span>` : ""}
             ${c.adminNotes ? `<span>· ${window.t("admin.note")}: ${c.adminNotes}</span>` : ""}
           </div>
-          <div class="payload">${payload}</div>
+          <div class="payload">${esc(payload)}</div>
+          ${placeId ? `
+            <div class="contrib-place" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:13px">
+              <a href="/ort/${encodeURIComponent(placeId)}" target="_blank" rel="noopener">${window.t("admin.contribViewPlace")}: ${esc(c.payload._breweryName || placeId)}</a>
+              <button class="btn" type="button" data-action="edit-place">${window.t("admin.contribEditPlace")}</button>
+            </div>` : ""}
+          ${status === "pending" && c.type === "correction"
+            ? `<div style="font-size:12px;color:var(--ink-muted);margin-top:6px">${window.t("admin.contribDoneHint")}</div>` : ""}
         </div>
         ${status === "pending" ? `
           <div class="contrib-actions">
-            <button class="btn btn-approve" data-action="approve">${window.t("admin.approve")}</button>
+            <button class="btn btn-approve" data-action="approve">${window.t(c.type === "correction" ? "admin.contribDone" : "admin.approve")}</button>
             <button class="btn btn-reject"  data-action="reject">${window.t("admin.reject")}</button>
           </div>` : ""}
       </div>
@@ -1463,6 +1526,11 @@ function renderContribCards(items, host, status) {
   host.querySelectorAll(".contrib-card").forEach((card) => {
     const id = card.dataset.id;
     card.querySelectorAll("button[data-action]").forEach((b) => {
+      if (b.dataset.action === "edit-place") {
+        const item = items.find((c) => String(c.id) === id);
+        b.addEventListener("click", () => openBreweryEdit(item.payload.breweryId));
+        return;
+      }
       b.addEventListener("click", () => handleAction(id, b.dataset.action, card));
     });
   });
@@ -1730,6 +1798,7 @@ async function loadBreweriesTable() {
           data-address="${(b.address || "").replace(/"/g, "&quot;")}"
           data-maps-url="${(("rawMapsUrl" in b ? b.rawMapsUrl : b.mapsUrl) || "").replace(/"/g, "&quot;")}"
           data-place-id="${(b.googlePlaceId || "").replace(/"/g, "&quot;")}"
+          data-untappd-id="${b.untappdId ?? ""}"
           data-historical="${b.isHistorical ? "1" : ""}"
           data-lat="${b.coords?.[0] ?? ""}"
           data-lng="${b.coords?.[1] ?? ""}"
@@ -1800,6 +1869,16 @@ async function handleBreweryAction(id, act, rowEl) {
   }
 }
 
+// Aus Beiträgen oder der Übersetzungs-Liste: Ort-Tab öffnen und dort bearbeiten
+async function openBreweryEdit(id) {
+  switchTab("breweries");
+  await breweriesLoaded;
+  const row = document.querySelector(`#brewery-tbody tr[data-id="${CSS.escape(id)}"]`);
+  if (!row) { alert(window.t("admin.placeNotFound").replace("{id}", id)); return; }
+  row.scrollIntoView({ block: "center" });
+  openEditDialog(id, row);
+}
+
 // Edit-Dialog Brauerei
 const editDialog = document.getElementById("edit-dialog");
 let pendingEdit = null;
@@ -1816,6 +1895,8 @@ async function openEditDialog(id, rowEl) {
   document.getElementById("edit-maps-url").value      = rowEl.dataset.mapsUrl || "";
   document.getElementById("edit-place-id").value      = rowEl.dataset.placeId || "";
   document.getElementById("edit-place-results").innerHTML = "";
+  document.getElementById("edit-untappd-id").value    = rowEl.dataset.untappdId || "";
+  document.getElementById("edit-untappd-result").textContent = "";
   document.getElementById("edit-place-search").disabled = rowEl.dataset.historical === "1";
   document.getElementById("edit-lat").value           = rowEl.dataset.lat || "";
   document.getElementById("edit-lng").value           = rowEl.dataset.lng || "";
@@ -2052,6 +2133,34 @@ editDialog.addEventListener("click", (e) => {
   if (e.target === editDialog) { editDialog.classList.remove("visible"); pendingEdit = null; }
 });
 
+// Untappd prüfen: Cache verwerfen und den öffentlichen Abruf zeigen, wie ihn die Ortsseite bekommt
+document.getElementById("edit-untappd-check").addEventListener("click", async () => {
+  if (!pendingEdit) return;
+  const t = window.t;
+  const out = document.getElementById("edit-untappd-result");
+  const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  if (document.getElementById("edit-untappd-id").value.trim() !== (pendingEdit.rowEl.dataset.untappdId || "")) {
+    out.textContent = t("admin.untappdSaveFirst");
+    return;
+  }
+  out.textContent = t("admin.untappdChecking");
+  try {
+    await window.AtlasAPI.admin.clearUntappdCache(pendingEdit.id);
+    const r = await fetch(`/api/untappd/brewery/${encodeURIComponent(pendingEdit.id)}`);
+    const ut = await r.json();
+    if (!ut.available) out.textContent = t("admin.untappdUnavailable");
+    else if (ut.disabled) out.textContent = t("admin.untappdOff");
+    else if (!ut.found) out.textContent = t("admin.untappdNone");
+    else {
+      const href = ut.slug ? `https://untappd.com/brewery/${encodeURIComponent(ut.slug)}` : `https://untappd.com/brewery/${ut.untappdId}`;
+      out.innerHTML = `${esc(t("admin.untappdMatch").replace("{name}", ut.name))} · <a href="${href}" target="_blank" rel="noopener">untappd.com</a> · ID ${esc(ut.untappdId)}`
+        + (ut.rating != null ? ` · ${esc(Number(ut.rating).toFixed(2))} ★` : "");
+    }
+  } catch (e) {
+    out.textContent = t("admin.errorPrefix") + e.message;
+  }
+});
+
 document.getElementById("edit-save").addEventListener("click", async () => {
   if (!pendingEdit) return;
   const t = window.t;
@@ -2065,6 +2174,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const address        = document.getElementById("edit-address").value.trim() || null;
   const mapsUrl        = document.getElementById("edit-maps-url").value.trim() || null;
   const placeId        = document.getElementById("edit-place-id").value.trim() || null;
+  const untappdRaw     = document.getElementById("edit-untappd-id").value.trim();
   const latRaw         = document.getElementById("edit-lat").value;
   const lngRaw         = document.getElementById("edit-lng").value;
   const foundedRaw     = document.getElementById("edit-founded").value;
@@ -2081,6 +2191,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     const patch = {
       name, short, city, country, type, status, address, maps_url: mapsUrl,
       google_place_id: placeId,
+      untappd_id: untappdRaw === "" ? null : parseInt(untappdRaw, 10),
       lat: latRaw !== "" ? parseFloat(latRaw) : undefined,
       lng: lngRaw !== "" ? parseFloat(lngRaw) : undefined,
       founded: foundedRaw !== "" ? parseInt(foundedRaw, 10) : null,
@@ -2103,6 +2214,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.address        = address || "";
     row.dataset.mapsUrl        = mapsUrl || "";
     row.dataset.placeId        = placeId || "";
+    row.dataset.untappdId      = untappdRaw;
     if (latRaw !== "") row.dataset.lat = latRaw;
     if (lngRaw !== "") row.dataset.lng = lngRaw;
     row.dataset.founded        = foundedRaw || "";
@@ -2162,6 +2274,7 @@ async function loadStylesTab() {
           data-tasting-en="${(s.tasting?.en || "").replace(/"/g, "&quot;")}"
           data-logo-key="${s.logoKey || ""}"
           data-primary-brewery-id="${s.primaryBreweryId || ""}"
+          data-brewery-ids="${(s.breweryIds || []).join(",")}"
           >
         <td style="font-family:var(--font-mono);font-size:12px">${s.id}</td>
         <td>${s.name}</td>
@@ -2217,6 +2330,11 @@ function openStyleEditInline(id, rowEl) {
             <option value="">${window.t("admin.noLocationLinked")}</option>
           </select>
           <span style="font-size:11px;color:var(--ink-muted)">${window.t("admin.styleLinkedLocationHint")}</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
+          <label>${window.t("admin.styleLocations")}</label>
+          <select id="se-locations" multiple size="8" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:var(--radius);color:var(--ink);font-size:13px"></select>
+          <span style="font-size:11px;color:var(--ink-muted)">${window.t("admin.styleLocationsHint")}</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label>${window.t("admin.styleLogo")}</label>
@@ -2293,6 +2411,17 @@ function openStyleEditInline(id, rowEl) {
         primaryBrewerySelect.appendChild(opt);
       });
       primaryBrewerySelect.value = rowEl.dataset.primaryBreweryId || "";
+      // Ausschankorte: dieselbe Liste, alphabetisch, aktuelle Zuordnung vorausgewählt
+      const locSel = editRow.querySelector("#se-locations");
+      const current = new Set((rowEl.dataset.breweryIds || "").split(",").filter(Boolean));
+      [...allBrews].sort((a, b) => a.name.localeCompare(b.name, "de")).forEach((b) => {
+        const opt = document.createElement("option");
+        opt.value = b.id;
+        opt.textContent = `${b.name} (${b.city})`;
+        opt.selected = current.has(b.id);
+        locSel.appendChild(opt);
+      });
+      locSel.dataset.ready = "1";
     } catch { /* ignore */ }
   })();
 
@@ -2403,6 +2532,9 @@ function openStyleEditInline(id, rowEl) {
       tasting_en:         editRow.querySelector("#se-tasting-en").value.trim() || null,
       primary_brewery_id: primaryBrewVal || null,
     };
+    // Nur mitschicken, wenn die Liste geladen ist, sonst würden alle Zuordnungen gelöscht
+    const locSel = editRow.querySelector("#se-locations");
+    if (locSel?.dataset.ready) patch.brewery_ids = Array.from(locSel.selectedOptions).map((o) => o.value);
     if (newId !== currentId) patch.id = newId;
     if (!confirmBothLangs([[window.t("admin.langFieldTasting"), patch.tasting_de, patch.tasting_en]])) return;
     try {
@@ -2418,6 +2550,7 @@ function openStyleEditInline(id, rowEl) {
       rowEl.dataset.tastingDe = patch.tasting_de || "";
       rowEl.dataset.tastingEn = patch.tasting_en || "";
       rowEl.dataset.primaryBreweryId = patch.primary_brewery_id || "";
+      if (patch.brewery_ids) rowEl.dataset.breweryIds = patch.brewery_ids.join(",");
       rowEl.cells[0].textContent = finalId;
       rowEl.cells[1].textContent = patch.name;
       rowEl.cells[2].textContent = patch.abv != null ? patch.abv + " %" : "—";

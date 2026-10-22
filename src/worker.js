@@ -115,6 +115,8 @@ const ROUTES = [
   ["PUT",    "/api/admin/breweries/:id",                   R.adminUpdateBrewery],
   ["DELETE", "/api/admin/breweries/:id",                   R.adminDeleteBrewery],
   ["GET",    "/api/admin/breweries/:id/place-search",      R.adminPlaceSearch],
+  ["DELETE", "/api/admin/breweries/:id/untappd-cache",     R.adminClearUntappdCache],
+  ["GET",    "/api/admin/translation-gaps",                R.adminTranslationGaps],
   ["POST",   "/api/admin/google-ratings/refresh",          R.adminRefreshGoogleRatings],
   ["POST",   "/api/admin/google-places/backfill",          R.adminPlacesBackfill],
   ["POST",   "/api/admin/google-places/apply",             R.adminPlacesApply],

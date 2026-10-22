@@ -221,7 +221,7 @@ function renderEvent() {
   const beers = _evData.beers || [];
 
   const title = pick(ev.title, lang);
-  if (!isSsr || isEn) document.title = (title || "Event") + " · Altbieratlas";
+  if (!isSsr || isEn) document.title = window.atlasTitle(title || "Event");
 
   // SEO: Meta-Tags dynamisch befüllen (nur ohne SSR bzw. für die englische Fassung)
   if (!isSsr || isEn) (function() {

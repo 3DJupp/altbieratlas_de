@@ -1112,6 +1112,12 @@ export async function adminUpdateBrewery(req, env, { id }) {
     if (pid && !/^[A-Za-z0-9_-]{10,300}$/.test(pid)) return error(400, "invalid-place-id");
     body.google_place_id = pid || null;
   }
+  if ("untappd_id" in body) {
+    const raw = body.untappd_id;
+    const uid = raw == null || raw === "" ? null : Number(raw);
+    if (uid != null && (!Number.isInteger(uid) || uid < 0)) return error(400, "invalid-untappd-id");
+    body.untappd_id = uid;
+  }
 
   const fields = [];
   const values = [];
@@ -1120,7 +1126,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     address: "address", maps_url: "maps_url", lat: "lat", lng: "lng", founded: "founded",
     website: "website", description_de: "description_de", description_en: "description_en",
     verified: "verified", status: "status", logo_key: "logo_key",
-    successor_id: "successor_id", google_place_id: "google_place_id",
+    successor_id: "successor_id", google_place_id: "google_place_id", untappd_id: "untappd_id",
   };
   for (const [k, col] of Object.entries(allow)) {
     if (k in body) {
@@ -1154,6 +1160,8 @@ export async function adminUpdateBrewery(req, env, { id }) {
       env.DB.prepare("UPDATE events SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE breweries SET successor_id = ? WHERE successor_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE styles SET primary_brewery_id = ? WHERE primary_brewery_id = ?").bind(newId, id),
+      // Untappd-Cache hängt an der Orts-ID: alten Eintrag verwerfen, der neue entsteht beim nächsten Abruf
+      env.DB.prepare("DELETE FROM untappd_cache WHERE atlas_id = ?").bind(id),
     ];
     if (styleIds !== null) {
       stmts.push(env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(newId));
@@ -1172,6 +1180,10 @@ export async function adminUpdateBrewery(req, env, { id }) {
       `UPDATE breweries SET ${fields.join(", ")} WHERE id = ?`
     ).bind(...values).run();
   }
+  // Geänderte Untappd-Zuordnung sofort wirksam machen statt 24 h Cache abzuwarten
+  if ("untappd_id" in body) {
+    await env.DB.prepare("DELETE FROM untappd_cache WHERE atlas_id = ?").bind(id).run();
+  }
   if ("styles" in body) {
     const styleIds = Array.isArray(body.styles) ? body.styles.filter((s) => s && typeof s === "string") : [];
     await env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(effectiveId).run();
@@ -1182,6 +1194,53 @@ export async function adminUpdateBrewery(req, env, { id }) {
     }
   }
   return json({ ok: true });
+}
+
+// DELETE /api/admin/breweries/:id/untappd-cache
+// Verwirft den gecachten Untappd-Treffer; der nächste Abruf fragt Untappd neu.
+export async function adminClearUntappdCache(req, env, { id }) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  await env.DB.prepare("DELETE FROM untappd_cache WHERE atlas_id = ?").bind(id).run();
+  return json({ ok: true });
+}
+
+// GET /api/admin/translation-gaps
+// Alle Objekte, bei denen ein Sprachfeld in DE oder EN fehlt (NULL oder leer).
+// Abgelehnte Einträge zählen nicht.
+export async function adminTranslationGaps(req, env) {
+  const auth = await requireAdmin(req, env);
+  if (!auth.ok) return auth.res;
+  const blank = (c) => `NULLIF(TRIM(${c}), '') IS NULL`;
+  // [Art, SQL für id/label, Feldpaare]
+  const sources = [
+    ["brewery", "SELECT id, name AS label, %F FROM breweries WHERE status != 'rejected'", [["description", "description_de", "description_en"]]],
+    ["style", "SELECT id, name AS label, %F FROM styles", [["tasting", "tasting_de", "tasting_en"]]],
+    ["event", "SELECT id, COALESCE(title_de, title_en, id) AS label, %F FROM events WHERE status != 'rejected'",
+      [["title", "title_de", "title_en"], ["description", "description_de", "description_en"]]],
+    ["eventBeer", "SELECT event_id AS id, COALESCE(name_de, name_en, '') AS label, %F FROM event_beers", [["name", "name_de", "name_en"]]],
+    ["glossary", "SELECT term AS id, term AS label, %F FROM glossary", [["definition", "definition_de", "definition_en"]]],
+    ["venueType", "SELECT id, COALESCE(name_de, name_en, id) AS label, %F FROM venue_types",
+      [["name", "name_de", "name_en"], ["header", "header_de", "header_en"]]],
+  ];
+  const stmts = sources.map(([, sql, pairs]) => {
+    const cols = pairs.flatMap(([f, de, en]) => [`${blank(de)} AS ${f}_no_de`, `${blank(en)} AS ${f}_no_en`]);
+    const where = pairs.map(([, de, en]) => `${blank(de)} OR ${blank(en)}`).join(" OR ");
+    const q = sql.replace("%F", cols.join(", "));
+    return env.DB.prepare(`${q} ${q.includes(" WHERE ") ? "AND" : "WHERE"} (${where})`);
+  });
+  const results = await env.DB.batch(stmts);
+  const gaps = [];
+  results.forEach((res, i) => {
+    const [kind, , pairs] = sources[i];
+    for (const r of res.results || []) {
+      for (const [f] of pairs) {
+        const noDe = !!r[`${f}_no_de`], noEn = !!r[`${f}_no_en`];
+        if (noDe || noEn) gaps.push({ kind, id: r.id, label: r.label, field: f, missing: noDe && noEn ? "both" : noDe ? "de" : "en" });
+      }
+    }
+  });
+  return json({ gaps });
 }
 
 // GET /api/admin/breweries/:id/place-search
@@ -1570,7 +1629,8 @@ export async function adminListStyles(req, env) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const res = await env.DB.prepare(
-    `SELECT s.*, b.name AS primary_brewery_name
+    `SELECT s.*, b.name AS primary_brewery_name,
+            (SELECT GROUP_CONCAT(bs.brewery_id) FROM brewery_styles bs WHERE bs.style_id = s.id) AS brewery_ids
      FROM styles s
      LEFT JOIN breweries b ON b.id = s.primary_brewery_id
      ORDER BY s.name`
@@ -1583,6 +1643,7 @@ export async function adminListStyles(req, env) {
       logoUrl: s.logo_key ? `/logos/${s.logo_key}` : null,
       primaryBreweryId: s.primary_brewery_id || null,
       primaryBreweryName: s.primary_brewery_name || null,
+      breweryIds: s.brewery_ids ? s.brewery_ids.split(",").filter(Boolean) : [],
     })),
   });
 }
@@ -1649,6 +1710,19 @@ export async function adminUpdateStyle(req, env, { id }) {
     return error(400, "validation-failed", { detail: e.message });
   }
 
+  // Ausschankorte der Sorte ersetzen (brewery_styles), unbekannte IDs ignorieren
+  const locStmts = (sid) => {
+    if (!("brewery_ids" in body)) return [];
+    const ids = Array.isArray(body.brewery_ids)
+      ? [...new Set(body.brewery_ids.filter((b) => b && typeof b === "string"))] : [];
+    return [
+      env.DB.prepare("DELETE FROM brewery_styles WHERE style_id = ?").bind(sid),
+      ...ids.map((bid) => env.DB.prepare(
+        "INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) SELECT id, ? FROM breweries WHERE id = ?"
+      ).bind(sid, bid)),
+    ];
+  };
+
   if (doRename) {
     const stmts = [];
     if (fields.length) {
@@ -1658,15 +1732,23 @@ export async function adminUpdateStyle(req, env, { id }) {
     stmts.push(
       env.DB.prepare("INSERT INTO styles (id,name,abv,ibu,color,tasting_de,tasting_en,logo_key,primary_brewery_id) SELECT ?,name,abv,ibu,color,tasting_de,tasting_en,logo_key,primary_brewery_id FROM styles WHERE id=?").bind(newId, id),
       env.DB.prepare("UPDATE brewery_styles SET style_id=? WHERE style_id=?").bind(newId, id),
+      // Sonst setzt der FK (ON DELETE SET NULL) die Sorte an allen Preisen zurück
+      env.DB.prepare("UPDATE prices SET style_id=? WHERE style_id=?").bind(newId, id),
       env.DB.prepare("DELETE FROM styles WHERE id=?").bind(id),
+      ...locStmts(newId),
     );
     await env.DB.batch(stmts);
     return json({ ok: true, newId });
   }
 
-  if (!fields.length) return error(400, "no-fields");
-  values.push(id);
-  await env.DB.prepare(`UPDATE styles SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  const loc = locStmts(id);
+  if (!fields.length && !loc.length) return error(400, "no-fields");
+  const stmts = [...loc];
+  if (fields.length) {
+    values.push(id);
+    stmts.unshift(env.DB.prepare(`UPDATE styles SET ${fields.join(", ")} WHERE id = ?`).bind(...values));
+  }
+  await env.DB.batch(stmts);
   return json({ ok: true });
 }
 
@@ -2108,29 +2190,34 @@ export async function getUntappdBrewery(req, env, { id }) {
     return json({ available: true, cached: true, ...JSON.parse(cached.data) });
   }
 
-  // Brauereiname aus DB holen
+  // Brauereiname und ggf. feste Untappd-ID aus DB holen
   const brewery = await env.DB.prepare(
-    "SELECT name FROM breweries WHERE id = ? AND status = 'approved'"
+    "SELECT name, untappd_id FROM breweries WHERE id = ? AND status = 'approved'"
   ).bind(id).first();
   if (!brewery) return json({ available: false });
+  // 0 = im Admin bewusst ausgeblendet (kein passender Untappd-Eintrag)
+  if (brewery.untappd_id === 0) return json({ available: true, found: false, disabled: true });
 
   try {
-    const searchUrl = `https://api.untappd.com/v4/search/brewery`
-      + `?q=${encodeURIComponent(brewery.name)}`
-      + `&client_id=${clientId}&client_secret=${clientSecret}&limit=3`;
-    const r = await fetch(searchUrl, {
+    const auth = `client_id=${clientId}&client_secret=${clientSecret}`;
+    // Feste ID → direkt die Brauerei abrufen, sonst erster Treffer der Namenssuche
+    const apiUrl = brewery.untappd_id
+      ? `https://api.untappd.com/v4/brewery/info/${brewery.untappd_id}?compact=true&${auth}`
+      : `https://api.untappd.com/v4/search/brewery?q=${encodeURIComponent(brewery.name)}&${auth}&limit=3`;
+    const r = await fetch(apiUrl, {
       headers: { "User-Agent": "Altbieratlas/1.0" },
       cf: { cacheTtl: 3600 },
     });
     if (!r.ok) return json({ available: false });
 
     const d = await r.json();
-    const items = (d.response?.brewery?.items) || [];
+    const b = brewery.untappd_id
+      ? d.response?.brewery
+      : d.response?.brewery?.items?.[0]?.brewery;
     let data;
-    if (!items.length) {
+    if (!b) {
       data = { found: false };
     } else {
-      const b = items[0].brewery;
       data = {
         found: true,
         untappdId: b.brewery_id,
@@ -2159,13 +2246,13 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-21",
-  "/ranglisten": "2026-10-21",
-  "/wissen":     "2026-10-17",
+  "/":           "2026-10-22",
+  "/ranglisten": "2026-10-22",
+  "/wissen":     "2026-10-22",
   "/sorten":     "2026-10-17",
   "/rivalen":    "2026-10-17",
   "/beitragen":  "2026-10-21",
-  "/staedte":    "2026-10-17",
+  "/staedte":    "2026-10-22",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -2302,6 +2389,17 @@ export function sizeNum(s) {
   const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
   return isNaN(num) ? null : num;
 }
+// Titel ab ~60 Zeichen schneidet Google ab, SEO-Crawler melden sie als zu lang.
+// Kandidaten vom ausführlichsten zum knappsten: der erste, der passt, gewinnt;
+// passt keiner, wird der letzte an einer Wortgrenze gekürzt.
+export const TITLE_MAX = 60;
+export function fitTitle(...candidates) {
+  const list = candidates.filter(Boolean);
+  const fit = list.find((t) => t.length <= TITLE_MAX);
+  if (fit) return fit;
+  const last = list[list.length - 1] || "";
+  return last.slice(0, TITLE_MAX - 1).replace(/\s+\S*$/, "").replace(/[\s,;:.·–-]+$/, "") + "…";
+}
 export function fmtDateDe(d) {
   if (!d) return "";
   const [y, m, day] = String(d).slice(0, 10).split("-");
@@ -2387,9 +2485,13 @@ export async function serveOrt(req, env, params = {}) {
   // Preis in den Titel: Bei Namenssuchen ("kürzer flingern") steht die offizielle
   // Website darüber, der Preis ist das, was nur der Atlas im Snippet bietet.
   // Laut Search Console lag die CTR mit dem reinen Namens-Titel bei Position 9 unter 0,2 %.
-  const title = hero && !row.is_historical
-    ? `${row.name}: Altbier ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} € · ${row.city}`
-    : `${row.name} · Altbier in ${row.city} · Altbieratlas`;
+  const priceTitle = hero && !row.is_historical
+    ? `Altbier ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} €` : "";
+  const title = priceTitle
+    ? fitTitle(`${row.name}: ${priceTitle} · ${row.city}`, `${row.name}: ${priceTitle}`,
+        `${row.name}: Alt ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} €`)
+    : fitTitle(`${row.name} · Altbier in ${row.city} · Altbieratlas`,
+        `${row.name} · Altbier in ${row.city}`, `${row.name} · Altbier`);
 
   // Preis und Adresse vorne in die Meta-Description: Preis ist die Frage, mit der
   // Leute suchen, und Straßensuchen ("kürzer fichtenstraße") werden fett markiert.
@@ -2689,7 +2791,10 @@ export async function serveEvent(req, env) {
       && !titleDe.toLowerCase().includes(row.location.toLowerCase())
     ? ` ${row.location}` : "";
   const when = fmtEventRangeDe(row.date, row.end_date);
-  const title = `${titleDe}${where}${when ? ` – Termin ${when}` : ""} · Altbieratlas`;
+  const title = fitTitle(
+    `${titleDe}${where}${when ? ` – Termin ${when}` : ""} · Altbieratlas`,
+    `${titleDe}${where}${when ? ` – Termin ${when}` : ""}`,
+    `${titleDe}${when ? ` – ${when}` : ""}`);
   const rawDesc = row.description_de || row.description_en || "";
   const metaDesc = rawDesc
     ? (rawDesc.length > 155 ? rawDesc.slice(0, 155).replace(/\s+\S*$/, "") + "…" : rawDesc)
@@ -2870,7 +2975,8 @@ export async function serveCity(req, env) {
   const pageUrl = `https://altbieratlas.de/stadt/${slug}`;
   const current = rows.filter((r) => !r.is_historical);
   const historical = rows.filter((r) => r.is_historical);
-  const title = `Altbier in ${city} — Brauereien, Ausschank & Preise · Altbieratlas`;
+  const title = fitTitle(`Altbier in ${city}: Brauereien, Kneipen & Preise`,
+    `Altbier in ${city}: Kneipen & Preise`, `Altbier in ${city}`);
   // Als Frage formuliert: "was kostet ein altbier in düsseldorf" ist laut
   // Bing/Search Console eine der häufigsten Suchen ohne passende Seite.
   const metaDesc = avgPrice

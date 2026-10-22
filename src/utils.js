@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.13.0";
+export const APP_VERSION = "0.14.0";
 
 import { mapsLink } from "./googlePlaces.js";
 
@@ -734,6 +734,7 @@ export function brewRow(r, styles = []) {
     mapsUrl: mapsLink(r),
     rawMapsUrl: r.maps_url || null, // gepflegtes Freitextfeld (Admin-Formular)
     googlePlaceId: r.google_place_id || null,
+    untappdId: r.untappd_id ?? null,
     coords: [r.lat, r.lng],
     founded: r.founded,
     website: r.website,

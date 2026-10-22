@@ -1,5 +1,5 @@
 -- ============================================================
--- Altbieratlas — Seed data  v0.13.0
+-- Altbieratlas — Seed data  v0.14.0
 -- ============================================================
 -- Venue types, styles, glossary, breweries, prices and events.
 -- Applies to every deployment (dev, staging, production).
@@ -166,7 +166,7 @@ INSERT OR IGNORE INTO glossary (term, definition_de, definition_en) VALUES
     'The marks on your coaster. One per Alt, counted up at the end.');
 
 -- ============================================================
--- Breweries / taprooms / retail
+-- Breweries — nur Produzenten (Brauereien, Hausbrauereien) und ihr Stammausschank
 -- ============================================================
 INSERT OR IGNORE INTO breweries
   (id, name, short_name, type, city, country, address, maps_url, lat, lng, founded, website, description_de, description_en, verified, status, is_historical, photo_key, logo_key)
@@ -229,22 +229,6 @@ VALUES
     'Frankenheim Brauereiausschank is a historic brewery pub in Düsseldorf with a strong Altbier tradition. Even after leaving family ownership, the venue has remained true to its heritage and is known for freshly poured Frankenheim Alt, hearty brewery-style cuisine, a social atmosphere, and a popular beer garden.',
     1, 'approved', 0, NULL, NULL),
 
-  ('im-goldenen-kessel', 'Im Goldenen Kessel', 'Goldener Kessel', 'taproom', 'Düsseldorf', 'DE',
-    'Bolkerstraße 44, 40213 Düsseldorf',
-    'https://maps.app.goo.gl/5iFg99eMRcavJif67',
-    51.226315, 6.775122, NULL, 'https://schumacher-alt.de/gaststaetten/im-goldenen-kessel',
-    'Der Altstadt-Ausschank der Brauerei Schumacher an der Bolkerstraße. Schumacher Alt frisch vom Fass, dazu klassische Brauhausküche wie Haxe und Bratwurst. Neben dem Stammhaus an der Oststraße die zweite Schumacher-Adresse und einer der traditionsreichsten Altbier-Orte der Altstadt.',
-    'Brauerei Schumacher''s old-town tap house on Bolkerstraße. Schumacher Alt fresh from the barrel, with classic brewhouse fare such as pork knuckle and bratwurst. Alongside the main house on Oststraße, Schumacher''s second address and one of the old town''s most traditional Altbier spots.',
-    0, 'pending', 0, NULL, NULL),
-
-  ('kneipe-kneipe', 'Kneipe Kneipe', 'Kneipe Kneipe', 'taproom', 'Düsseldorf', 'DE',
-    'Liefergasse 1, 40213 Düsseldorf',
-    'https://maps.app.goo.gl/tMiWkPMYHpC8PNX59',
-    51.2285, 6.7731, 2026, NULL,
-    'Die älteste Kellerkneipe der Düsseldorfer Altstadt, bis Ende 2024 rund 50 Jahre lang einfach „Kneipe“. Seit Juli 2026 unter neuem Namen von den Altus-Gründern Tim Kasparek und Anthony Boniteau betrieben: erste eigene Ausschankstätte für Altus, Düsseldorfs erstes Bio-Altbier, frisch vom Fass. Dazu gibt es wieder den Kultschnaps „Stress“.',
-    'The oldest cellar bar in Düsseldorf''s old town, known simply as "Kneipe" for around 50 years until it closed at the end of 2024. Reopened in July 2026 under a new name by Altus founders Tim Kasparek and Anthony Boniteau as the first dedicated outlet for Altus, Düsseldorf''s first organic Altbier, on tap. The cult house schnapps "Stress" is back too.',
-    1, 'approved', 0, NULL, NULL),
-
   ('altus', 'Altus bräu', 'Altus', 'brewery', 'Düsseldorf', 'DE',
     'Roßstraße 19, 40476 Düsseldorf',
     'https://maps.app.goo.gl/VyotCHdUoL7ZUNYW7',
@@ -277,78 +261,6 @@ VALUES
     'Brewpub in Niederkassel, part of the Brauhaus Joh. Albrecht group. Besides its own Düsseldorf-style Alt it serves the pale Messing, the dark Kupfer and a craft beer. Coordinates still to be verified.',
     0, 'pending', 0, NULL, NULL),
 
-  -- ========== Düsseldorf — Gastronomie ==========
-  ('schaukelstuehlchen', 'Schaukelstühlchen', 'Schaukelstühlchen', 'pub', 'Düsseldorf', 'DE',
-    'Kurze Straße 18, 40213 Düsseldorf',
-    'https://maps.app.goo.gl/hvvjBRQ6RRSjgqECA',
-    51.22688, 6.77322, NULL, 'https://www.facebook.com/pages/Schaukelst%C3%BChlchen/132168750165699',
-    'Urige Altstadtkneipe an der Kurzen Straße, direkt neben der Brauerei Kürzer und inzwischen wohl von Kürzer selbst betrieben. Kürzer Alt vom Fass.',
-    'Cosy old-town pub on Kurze Straße, right next to Brauerei Kürzer and now apparently run by Kürzer itself. Kürzer Alt on tap.',
-    0, 'pending', 0, NULL, NULL),
-
-  ('dae-spiegel', 'Dä Spiegel', 'Dä Spiegel', 'gastronomie', 'Düsseldorf', 'DE',
-    'Bolkerstraße 22, 40213 Düsseldorf',
-    'https://maps.app.goo.gl/iLq4oso5jLWwWPDb6',
-    51.226225, 6.773531, 1969, 'https://daespiegel.de',
-    'Dä Spiegel ist eine traditionelle Partykneipe in der Düsseldorfer Altstadt. Die Kneipe ist bekannt für ihre ausgelassene Stimmung, Live-Musik, Rock- und Partyklassiker sowie ihre lange Geschichte als beliebter Treffpunkt für Nachtschwärmer.',
-    'Dä Spiegel is a traditional party pub in Düsseldorf’s old town. It is well known for its lively atmosphere, live music, rock and party classics, and its long-standing reputation as a popular nightlife meeting spot.',
-    1, 'approved', 0, NULL, NULL),
-
-  ('mississippi-d-alt', 'Mississippi D-Altstadt', 'Mississippi', 'gastronomie', 'Düsseldorf', 'DE',
-    'Bolkerstraße 32, 40213 Düsseldorf',
-    'https://maps.app.goo.gl/rVTCtk4qafHQ2fvo8',
-    51.226355, 6.774311, NULL, 'https://www.mississippi-bar.de',
-    'Mississippi in der Altstadt ist eine beliebte Partylocation in Düsseldorf. Die Bar ist bekannt für ausgelassene Stimmung, Musik zum Feiern, Drinks und eine lebendige Atmosphäre besonders am Wochenende.',
-    'Mississippi in the Altstadt is a popular party bar in Düsseldorf’s old town. It is known for its lively atmosphere, party music, drinks, and a busy nightlife scene, especially on weekends.',
-    1, 'approved', 0, NULL, NULL),
-
-  ('kasematten-schluessel', 'Kasematten Schlüssel', 'Kasematten (Schlüssel)', 'gastronomie', 'Düsseldorf', 'DE',
-    'Untere Rheinwerft / Rheinuferpromenade, 40213 Düsseldorf',
-    'https://maps.app.goo.gl/19HShAVx4QiYRVn98',
-    51.226098580595234, 6.770250505530696, NULL, 'http://www.kasematten-duesseldorf.de',
-    'Zum Schlüssel an den Kasematten ist ein beliebter Biergarten direkt an der Rheinpromenade in der Düsseldorfer Altstadt. Die Location ist bekannt für frisches Altbier, entspannte Atmosphäre und den Blick auf den Rhein – besonders im Sommer ein beliebter Treffpunkt.',
-    'Zum Schlüssel at the Kasematten is a popular riverside beer garden on Düsseldorf’s Rhine promenade. It is known for fresh Altbier, a relaxed atmosphere, and scenic river views, especially during summer.',
-    1, 'approved', 0, 'kasematten-schluessel.png', NULL),
-
-  ('kasematten-frankenheim', 'Kasematten Frankenheim', 'Kasematten (Frankenheim)', 'gastronomie', 'Düsseldorf', 'DE',
-    'Untere Rheinwerft / Rheinuferpromenade, 40213 Düsseldorf',
-    'https://maps.app.goo.gl/19HShAVx4QiYRVn98',
-    51.22586674755738, 6.770199184672781, NULL, 'http://www.kasematten-duesseldorf.de',
-    'Frankenheim an den Kasematten ist ein beliebter Biergarten direkt an der Rheinpromenade in der Düsseldorfer Altstadt. Die Location ist bekannt für frisch gezapftes Altbier, entspannte Stimmung und den schönen Blick auf den Rhein.',
-    'Frankenheim an den Kasematten is a popular riverside beer garden on Düsseldorf’s Rhine promenade. It is known for freshly served Altbier, a relaxed atmosphere, and scenic views of the Rhine River.',
-    1, 'approved', 0, NULL, NULL),
-
-  ('zum-schiffchen', 'Restaurant Zum Schiffchen', 'Zum Schiffchen', 'restaurant', 'Düsseldorf', 'DE',
-    'Konrad-Adenauer-Platz 14, 40210 Düsseldorf',
-    'https://maps.app.goo.gl/6f8vXdEaZTsEyQPD8',
-    51.220137, 6.792816, NULL, NULL,
-    'Zum Schiffchen ist ein Restaurant und Bistro im Düsseldorfer Hauptbahnhof. Die Location bietet eine gemütliche Atmosphäre sowie deutsche Speisen und Getränke für Reisende und Besucher.',
-    'Zum Schiffchen is a restaurant and bistro located inside Düsseldorf Central Station. It offers a cozy atmosphere along with German food and drinks for travelers and visitors.',
-    1, 'approved', 0, NULL, NULL),
-
-  ('fuchs-benrath', 'Fuchs Benrath', 'Fuchs', 'pub', 'Düsseldorf', 'DE',
-    'Börchemstraße 18, 40597 Düsseldorf',
-    'https://maps.app.goo.gl/rznuTeFTPNQ5zsyz9',
-    51.164322, 6.872441, 2016, 'https://www.fuchs-benrath.de',
-    'Fuchs in Benrath ist eine gemütliche Düsseldorfer Kneipe mit Brauhaus-Charme und beliebtem Füchschen Alt vom Fass. Neben klassischer regionaler Küche und saisonalen Gerichten bietet das Lokal eine lockere, gesellige Atmosphäre mit großer Außenterrasse und Live-Übertragungen von Fußballspielen. Besonders beliebt ist der „Fuchs“ als Treffpunkt für Freunde, Stammtische und entspannte Abende im Düsseldorfer Süden.',
-    'Fuchs Benrath is a cozy pub and brewery-style restaurant in the south of Düsseldorf, known for its traditional atmosphere and fresh Füchschen Alt beer on tap. The venue serves regional German dishes and seasonal specialties in a relaxed, social setting with a spacious outdoor terrace. It is a popular meeting spot for locals, especially for casual evenings, football broadcasts, and gatherings with friends.',
-    1, 'approved', 0, 'fuchs-benrath.png', NULL),
-
-  ('muehlentreff', 'Mühlentreff Benrath', 'Mühlentreff', 'gastronomie', 'Düsseldorf', 'DE',
-    'Paulsmühlenstraße 99, 40597 Düsseldorf',
-    'https://maps.app.goo.gl/TwFkC6DR7mkmqhvb9',
-    51.165322, 6.886514, NULL, 'https://muehlentreff.eatbu.com',
-    'Kleines Restaurant an der Paulsmühlenstraße in Benrath, früher eine Nachbarschaftskneipe. Gutbürgerliche, hausgemachte Küche mit wöchentlich wechselnder Karte, man kann aber auch einfach nur auf ein Alt vorbeikommen. Schumacher Alt vom Fass, laut Gästebewertungen zeitweise auch Frankenheim Alt. Plätze drinnen und draußen, montags Ruhetag (bitte vorab prüfen).',
-    'Small restaurant on Paulsmühlenstraße in Benrath, formerly a neighbourhood pub. Traditional home-made German food with a weekly changing menu, though you are just as welcome to drop in for an Alt. Schumacher Alt on tap, and according to guest reviews sometimes Frankenheim Alt too. Indoor and outdoor seating, closed on Mondays (please check before visiting).',
-    1, 'approved', 0, 'muehlentreff.jpg', NULL),
-
-  ('extratour', 'Extratour Zum Alten Rhein', 'Extratour', 'gastronomie', 'Düsseldorf', 'DE',
-    'Drängenburger Str. 4, 40593 Düsseldorf',
-    'https://maps.app.goo.gl/bfTBadSuJ6QJM1tYA',
-    51.14504, 6.864357, NULL, 'https://extratour-urdenbach.de',
-    'Gaststätte am Ortseingang von Urdenbach, seit 2008 im umgebauten Vereinshaus des Bürgerschützenvereins, das 1983 als „Zum Alten Rhein“ eröffnet wurde. Ausgeschenkt wird Schumacher Alt, an den Latzenbier-Tagen (jeweils dritter Donnerstag im März, September und November) auch das stärkere Schumacher Latzenbier. Gutbürgerliche und saisonale Küche, Wintergarten und großer Biergarten mit Blick in die Urdenbacher Kämpe, beliebt als Einkehr nach Rad- und Wandertouren.',
-    'Restaurant at the entrance to Urdenbach, since 2008 in the converted clubhouse of the local marksmen''s association, which opened in 1983 as "Zum Alten Rhein". Schumacher Alt is on tap, and on Latzenbier days (the third Thursday of March, September and November) also the stronger Schumacher Latzenbier. Traditional and seasonal German food, a conservatory and a large beer garden looking out over the Urdenbacher Kämpe nature reserve, a popular stop after a bike ride or hike.',
-    1, 'approved', 0, NULL, NULL),
 
   -- ========== Düsseldorf — Historisch ==========
   ('schloesser', 'Brauerei Schlösser', 'Schlösser', 'brewery', 'Düsseldorf', 'DE',
@@ -375,22 +287,6 @@ VALUES
     'Kleine Krefelder Brauerei am Preußenring, direkt neben dem Restaurant Nordbahnhof. Gegründet 2018 von Anne und Johannes Furth; der Name ehrt die Dampflok „Schluff“ („Mit Volldampf gebraut“). Das malzig-rustikale Schlüffken Alt mit markanter Hopfennote ist Krefelds jüngstes Altbier, daneben entstehen Pils, Weizen, alkoholfreie Sorten und Saisonbiere wie Summer Ale, Märzen und Festbier. Ausgeschenkt wird im Nordbahnhof nebenan. Koordinaten noch zu prüfen.',
     'Small Krefeld brewery on Preußenring, right next to the Nordbahnhof restaurant. Founded in 2018 by Anne and Johannes Furth; the name honours the steam locomotive "Schluff" ("brewed at full steam"). The malty, rustic Schlüffken Alt with a distinct hop note is Krefeld''s newest Altbier, alongside a Pils, a wheat beer, alcohol-free versions and seasonal beers such as a Summer Ale, Märzen and Festbier. It is served at the Nordbahnhof next door. Coordinates still to be verified.',
     0, 'pending', 0, NULL, NULL),
-
-  ('nordbahnhof-krefeld', 'Schlüffken im Nordbahnhof', 'Nordbahnhof', 'taproom', 'Krefeld', 'DE',
-    'Oranierring 91, 47798 Krefeld',
-    'https://maps.app.goo.gl/sAZRiDKBztcLveL58',
-    51.33924, 6.55253, NULL, 'http://www.nordbahnhof.de',
-    'Restaurant im denkmalgeschützten Krefelder Nordbahnhof am Oranierring und Ausschank der Schlüffken-Biere aus der Brauerei nebenan. Das Alt kommt frisch gezapft im 0,25-l- und 0,5-l-Glas; an der Theke gibt es außerdem Kisten, einzelne Stubbi-Flaschen und 10-l-Fässer für zu Hause. Koordinaten noch zu prüfen.',
-    'Restaurant in Krefeld''s listed Nordbahnhof station building on Oranierring and the tap for the Schlüffken beers from the brewery next door. The Alt is served fresh on draught in 0.25 l and 0.5 l glasses; the bar also sells crates, single Stubbi bottles and 10-litre kegs to take home. Coordinates still to be verified.',
-    0, 'pending', 0, NULL, NULL),
-
-  ('birkeneck', 'Birkeneck', NULL, 'pub', 'Düsseldorf', 'DE',
-    'Ackerstraße 84',
-    'https://maps.app.goo.gl/uuXpuDjojVtvh4Vy5',
-    51.2275508, 6.8010764, NULL, 'https://birkeneck.metro.bar',
-    'Kneipe an der Ackerstraße in Düsseldorf-Flingern. Im Ausschank: Frankenheim Alt.',
-    'Pub on Ackerstraße in Düsseldorf-Flingern. On tap: Frankenheim Alt.',
-    1, 'approved', 0, NULL, NULL),
 
   ('koenigshof', 'Brauerei Königshof', 'Königshof', 'brewery', 'Krefeld', 'DE',
     'Obergath 68-112, 47805 Krefeld',
@@ -442,22 +338,6 @@ VALUES
     'Founded in 1266 and, by its own account, the oldest Altbier brewery in the world. Besides Bolten Alt and the unfiltered Ur-Alt, Bolten has brewed Hannen Alt again since 2023, and Gatz Altbier has also been part of the house since 2022. Its beer is served at Gasthaus Hoff Marie and at the Landwirtschaft directly opposite the brewery.',
     0, 'pending', 0, NULL, NULL),
 
-  ('hoff-marie', 'Gasthaus Hoff Marie', 'Hoff Marie', 'taproom', 'Korschenbroich', 'DE',
-    'Sebastianusstraße 9, 41352 Korschenbroich',
-    'https://maps.app.goo.gl/dANbF5RtnmecMCnc6',
-    51.1900011, 6.512603, 2024, 'https://www.bolten-brauerei.de/de/Gasthaus-Hoff-Marie.htm',
-    'Brauereiausschank der Privatbrauerei Bolten im ältesten Haus Korschenbroichs, einem rund 500 Jahre alten, denkmalgeschützten Steinhaus. Früher die Gaststätte „Zum Anker“, nach Übernahme und Renovierung durch die Bolten Gastronomie im November 2024 als Gasthaus Hoff Marie neu eröffnet. Vom Fass gibt es Bolten Alt, Ur-Alt, Landbier und Hannen Alt, das seit 2023 bei Bolten gebraut wird, dazu das alkoholfreie Oh! in der Flasche und Ur-Alt oder Landbier in der 1-Liter-Bügelflasche.',
-    'Privatbrauerei Bolten''s tap house in Korschenbroich''s oldest building, a listed stone house around 500 years old. Formerly the "Zum Anker" inn, it reopened as Gasthaus Hoff Marie in November 2024 after Bolten''s gastronomy arm took it over and renovated it. Bolten Alt, Ur-Alt, Landbier and Hannen Alt (brewed by Bolten since 2023) on tap, plus the alcohol-free Oh! in bottles and Ur-Alt or Landbier in the 1-litre swing-top bottle.',
-    0, 'pending', 0, NULL, NULL),
-
-  ('bolten-landwirtschaft', 'Bolten Landwirtschaft', 'Landwirtschaft', 'taproom', 'Korschenbroich', 'DE',
-    'Rheydter Straße 145, 41352 Korschenbroich',
-    'https://maps.app.goo.gl/FK42rDXa3NsjdRSJ6',
-    51.18327, 6.499772, NULL, 'https://www.bolten-brauerei.de',
-    'Gaststätte der Privatbrauerei Bolten direkt gegenüber der Brauerei, mit Picknick-Biergarten. Bolten Alt und Ur-Alt frisch vom Fass, Hannen Alt und das alkoholfreie Oh! in der 0,33-l-Flasche, Ur-Alt auch in der 1-Liter-Bügelflasche und im Landwirtschaft-Tonkrug. Im Picknick-Biergarten nebenan gelten dieselben Preise, dort gibt es nur die größeren Größen.',
-    'Privatbrauerei Bolten''s restaurant directly opposite the brewery, with a picnic beer garden. Bolten Alt and Ur-Alt fresh on tap, Hannen Alt and the alcohol-free Oh! in 0.33 l bottles, and Ur-Alt also in the 1-litre swing-top bottle and the Landwirtschaft stoneware mug. The picnic beer garden next door charges the same prices but only serves the larger sizes.',
-    0, 'pending', 0, NULL, NULL),
-
   ('brauerei-im-dom', 'Brauerei Im Dom', 'Im Dom', 'brewpub', 'Neuss', 'DE',
     'Michaelstraße 75-77, 41460 Neuss',
     'https://maps.app.goo.gl/eGvSJmfdcRP7NrW59',
@@ -475,13 +355,6 @@ VALUES
     0, 'pending', 0, NULL, NULL),
 
   -- ========== Ruhrgebiet / Münsterland ==========
-  ('factory-bottrop', 'Factory Bottrop', 'Factory Bottrop', 'gastronomie', 'Bottrop', 'DE',
-    'Gladbecker Str. 78, 46236 Bottrop',
-    'https://maps.app.goo.gl/ehgDRb9jJETgGzWU7',
-    51.528939, 6.929466, 2015, 'https://www.factory-buffet.de/standort-bottrop',
-    'Die Factory Bottrop ist ein modernes amerikanisch-mexikanisches Buffetrestaurant im Industrial-Style. In einem ehemaligen Straßenbahndepot bietet sie große Buffet-Auswahl, BBQ-Spezialitäten und eine lockere Sportsbar-Atmosphäre.',
-    'Factory Bottrop is a modern American-Mexican buffet restaurant with an industrial design. Located in a former tram depot, it offers a large buffet selection, BBQ specialties, and a relaxed sports bar atmosphere.',
-    1, 'approved', 0, NULL, NULL),
 
   ('pinkus-mueller', 'Brauerei Pinkus Müller', 'Pinkus', 'brewpub', 'Münster', 'DE',
     'Kreuzstraße 4-10, 48143 Münster',
@@ -491,23 +364,14 @@ VALUES
     'Seventh-generation family brewery in Münster''s Kuhviertel, founded in 1816 and the last of the city''s once roughly 150 Altbier breweries. An organic pioneer that brews exclusively with organically grown ingredients. Original Pinkus Alt is a pale Münster-style Alt, quite different from the dark Rhineland Alt. Restaurant with Altbier kitchen right at the brewery.',
     1, 'approved', 0, NULL, NULL),
 
-  -- ========== Köln / Hilden ==========
+  -- ========== Köln ==========
   ('hellers', 'Hellers Brauhaus', 'Hellers', 'brewpub', 'Köln', 'DE',
     'Roonstraße 33, 50674 Köln',
     'https://maps.app.goo.gl/JKUZo3D88FwnceN87',
     50.9306759, 6.9382923, 1996, 'https://www.hellers.koeln',
     'Bio-Hausbrauerei im Kwartier Latäng, Köln. Die einzige Kölner Hausbrauerei in Bio-Qualität — braut Kölsch, naturtrübes Wiess und sogar Altbier.',
     'Organic brewpub in Cologne''s Kwartier Latäng. The city''s only brewpub producing its beers — Kölsch, naturally cloudy Wiess and even Altbier — to certified organic standards.',
-    1, 'approved', 0, NULL, NULL),
-
-  ('hemingway-hilden', 'Hemingway Hilden', 'Hemingway', 'gastronomie', 'Hilden', 'DE',
-    'Markt 16, 40721 Hilden',
-    'https://maps.app.goo.gl/wFiw2JPgwmGRGkr17',
-    51.168685, 6.932494, 2023, 'https://hemingway-hilden.de',
-    'Hemingway ist ein kleines Café, Bar und Restaurant im Herzen von Hilden. Die Location ist bekannt für ihre gemütliche Atmosphäre, Cocktails, Kaffee und entspanntes Zusammensitzen.',
-    'Hemingway is a small café, bar, and restaurant in the heart of Hilden. It is known for its cozy atmosphere, cocktails, coffee, and relaxed social setting.',
     1, 'approved', 0, NULL, NULL);
-
 -- Primär-Ort je Stil (nach den Brauereien, wegen FK)
 UPDATE styles SET primary_brewery_id = 'uerige' WHERE id = 'uerige-alt' AND primary_brewery_id IS NULL;
 UPDATE styles SET primary_brewery_id = 'uerige' WHERE id = 'uerige-sticke' AND primary_brewery_id IS NULL;
@@ -553,16 +417,7 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('kuerzer-altstadt', 'kuerzer-alt'),
   ('kuerzer-flingern', 'kuerzer-alt'),
   ('frankenheim-brauereiausschank', 'frankenheim-alt'),
-  ('im-goldenen-kessel', 'schumacher-alt'),
-  ('kneipe-kneipe', 'altus-alt'),
   ('altus', 'altus-alt'),
-  ('kasematten-schluessel', 'schluessel-alt'),
-  ('kasematten-frankenheim', 'frankenheim-alt'),
-  ('zum-schiffchen', 'frankenheim-alt'),
-  ('fuchs-benrath', 'fuechschen-alt'),
-  ('fuchs-benrath', 'fuechschen-alt-af'),
-  ('muehlentreff', 'schumacher-alt'),
-  ('extratour', 'schumacher-alt'),
   ('koenigshof', 'koenigshof-alt'),
   ('gleumes', 'gleumes-alt'),
   ('hensen', 'hensen-alt'),
@@ -572,26 +427,14 @@ INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES
   ('bolten', 'hannen-alt-2023'),
   ('bolten', 'gatz-alt'),
   ('bolten', 'bolten-oh'),
-  ('hoff-marie', 'bolten-alt'),
-  ('hoff-marie', 'bolten-uralt'),
-  ('hoff-marie', 'hannen-alt-2023'),
-  ('hoff-marie', 'bolten-oh'),
-  ('bolten-landwirtschaft', 'bolten-alt'),
-  ('bolten-landwirtschaft', 'bolten-uralt'),
-  ('bolten-landwirtschaft', 'hannen-alt-2023'),
-  ('bolten-landwirtschaft', 'bolten-oh'),
   ('brauerei-im-dom', 'dom-alt'),
   ('diebels', 'diebels-alt'),
   ('pinkus-mueller', 'pinkus-alt'),
   ('hellers', 'hellers-alt'),
-  ('hemingway-hilden', 'schumacher-alt'),
   ('hitchcoq', 'altfred'),
   ('alter-bahnhof-oberkassel', 'belsen-alt'),
-  ('schaukelstuehlchen', 'kuerzer-alt'),
   ('joh-albrecht-duesseldorf', 'albrecht-alt'),
-  ('schlueffken', 'schlueffken-alt'),
-  ('nordbahnhof-krefeld', 'schlueffken-alt'),
-  ('birkeneck', 'frankenheim-alt');
+  ('schlueffken', 'schlueffken-alt');
 
 -- ============================================================
 -- Prices (approved, Stand Live-DB Oktober 2026)
@@ -610,44 +453,19 @@ INSERT OR IGNORE INTO prices (brewery_id, date, size, price, source, notes, stat
   ('kuerzer-altstadt', '2026-03-01', '0.2', 2.7, 'on-site', NULL, 'approved'),
   ('kuerzer-altstadt', '2025-10-09', '0.2', 2.6, 'on-site', NULL, 'approved'),
   ('kuerzer-flingern', '2026-04-20', '0.2', 2.8, 'on-site', NULL, 'approved'),
-  ('fuchs-benrath', '2026-05-14', '0.25', 2.9, 'Beitrag', 'Speisekarte', 'approved'),
-  ('fuchs-benrath', '2024-11-01', '0.25', 2.8, 'Speisekarte', NULL, 'approved'),
   ('koenigshof', '2026-04-02', '0.5l', 3.4, 'retail', NULL, 'approved'),
   ('hannen', '2026-03-15', '0.5l', 2.9, 'retail', NULL, 'approved'),
-  ('hoff-marie', '2026-10-17', '0.2', 2.3, 'Beitrag', NULL, 'approved'),
-  ('hoff-marie', '2026-10-17', '0.4', 4.0, 'Beitrag', NULL, 'approved'),
-  ('hoff-marie', '2026-10-18', '0.33', 3.3, 'Speisekarte', 'Boltens Oh! alkoholfrei, Flasche', 'approved'),
-  ('hoff-marie', '2026-10-18', '1.0', 8.8, 'Speisekarte', 'Ur-Alt oder Landbier, 1-Liter-Bügelflasche', 'approved'),
-  ('bolten-landwirtschaft', '2026-10-17', '0.2', 2.3, 'Beitrag', NULL, 'approved'),
-  ('bolten-landwirtschaft', '2026-10-17', '0.4', 4.0, 'Beitrag', NULL, 'approved'),
-  ('bolten-landwirtschaft', '2026-09-29', '0.33', 3.3, 'Speisekarte', 'Hannen Alt bzw. Boltens Oh! alkoholfrei, Flasche', 'approved'),
-  ('bolten-landwirtschaft', '2026-09-29', '0.5', 4.8, 'Speisekarte', 'Füllung Landwirtschaft-Tonkrug (Krug inkl. Erstfüllung 18,50 €)', 'approved'),
-  ('bolten-landwirtschaft', '2026-09-29', '1.0', 8.8, 'Speisekarte', 'Ur-Alt oder Landbier, 1-Liter-Bügelflasche', 'approved'),
-  ('mississippi-d-alt', '2026-05-17', '0.5', 5.9, 'Speisekarte', NULL, 'approved'),
-  ('kasematten-schluessel', '2026-05-17', '0.25', 3.5, 'Speisekarte', NULL, 'approved'),
-  ('kasematten-schluessel', '2026-05-17', '0.5', 6.8, 'Speisekarte', NULL, 'approved'),
-  ('kasematten-frankenheim', '2026-05-17', '0.3l', 3.9, 'Speisekarte', NULL, 'approved'),
-  ('kasematten-frankenheim', '2026-05-17', '0.5', 6.5, 'Speisekarte', NULL, 'approved'),
-  ('hemingway-hilden', '2026-05-17', '0.25', 3.3, 'Speisekarte', NULL, 'approved'),
-  ('hemingway-hilden', '2026-05-17', '0.5', 5.9, 'Speisekarte', NULL, 'approved'),
-  ('factory-bottrop', '2026-05-16', '0.4', 4.95, 'Speisekarte', NULL, 'approved'),
-  ('extratour', '2026-06-06', '0.25l', 2.8, 'Speisekarte', NULL, 'approved'),
-  ('extratour', '2026-06-06', '0.5', 5.5, 'Speisekarte', NULL, 'approved'),
-  ('muehlentreff', '2026-07-02', '0.2', 2.5, NULL, NULL, 'approved'),
   ('brauerei-im-dom', '2025-12-31', '0.2', 2.4, 'Speisekarte', NULL, 'approved'),
   ('brauerei-im-dom', '2025-12-31', '0.5', 5.5, 'Speisekarte', NULL, 'approved'),
   ('hitchcoq', '2026-10-17', '0.3l', 4.5, 'Beitrag', NULL, 'pending'),
   ('alter-bahnhof-oberkassel', '2026-10-17', '0.25l', 3.1, 'Speisekarte', NULL, 'pending'),
-  ('schaukelstuehlchen', '2026-10-17', '0.2', 2.8, 'Beitrag', NULL, 'pending'),
   ('joh-albrecht-duesseldorf', '2024-09-09', '0.2', 2.5, 'Speisekarte', NULL, 'pending'),
   ('joh-albrecht-duesseldorf', '2024-09-09', '0.4', 4.7, 'Speisekarte', NULL, 'pending'),
-  ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending'),
-  ('nordbahnhof-krefeld', '2026-10-06', '0.25l', 2.8, 'Speisekarte', NULL, 'pending'),
-  ('nordbahnhof-krefeld', '2026-10-06', '0.5l', 5.3, 'Speisekarte', NULL, 'pending'),
-  ('birkeneck', '2026-10-18', '0.2', 1.9, 'Beitrag', 'lt. Google Maps', 'approved');
+  ('joh-albrecht-duesseldorf', '2024-09-09', '1.5', 16.0, 'Speisekarte', 'Pitcher', 'pending');
 
 -- ============================================================
--- Events — bestätigte Veranstaltungen
+-- Events — nur Beispiele (Fest ohne Brauerei, Brauerei-Termin mit Event-Bier);
+-- aktuelle Termine pflegen die Mitwirkenden in der Live-D1
 -- ============================================================
 INSERT OR IGNORE INTO events
   (id, title_de, title_en, brewery_id, date, end_date, time, end_time, location, url, description_de, description_en, status)
@@ -658,50 +476,12 @@ VALUES
     'Vom 20.–22. August 2027 lädt die Benrather Bierbörse in Düsseldorf-Benrath Bierfans aus ganz Deutschland ein. Rund 40 Stände bieten in der Fußgängerzone und auf der Heubesstraße über 500 Biersorten sowie vielfältige Speisen an. Die traditionsreiche Veranstaltung findet seit über 30 Jahren nahe des Benrather Schlosses statt und begeistert mit gemütlichen Biergärten und rheinischer Atmosphäre.',
     'From August 20–22, 2027, the Benrather Bierbörse in Düsseldorf-Benrath welcomes beer lovers from across Germany. Around 40 stands in the pedestrian zone and along Heubesstraße offer more than 500 types of beer and a wide variety of food. Held for more than 30 years near the famous Benrath Palace, the event is known for its cozy beer gardens and authentic Rhineland atmosphere.',
     'approved'),
-  ('rheinkirmes-2026', 'Rheinkirmes 2026', 'Rheinkirmes 2026',
-    NULL, '2026-07-17', '2026-07-26', '11:00', '20:00', NULL,
-    'https://rheinkirmes-duesseldorf.de',
-    'Die Rheinkirmes („Größte Kirmes am Rhein") ist Düsseldorfs großes Sommer-Volksfest, jedes Jahr im Juli auf den Rheinwiesen in Oberkassel gegenüber der Altstadt. Ausgerichtet vom St. Sebastianus Schützenverein, kommen an neun Tagen rund vier Millionen Besucher. Eintritt frei, etwa 300 Fahrgeschäfte und Stände, Altbier-Zelte, Schützenumzug und zum Abschluss Höhenfeuerwerk über dem Rhein.',
-    'The Rheinkirmes ("Größte Kirmes am Rhein") is Düsseldorf''s big summer funfair, held every July on the Rheinwiesen in Oberkassel across from the Altstadt. Organised by the St. Sebastianus Schützenverein, it draws about four million visitors over nine days. Free entry, around 300 rides and stalls, Altbier tents, a Schützen parade, and fireworks over the Rhine to close.',
-    'approved'),
-  ('schluessel-stike-2026-10', 'Stike-Ausschank im Schlüssel', 'Stike tapping at Schlüssel',
-    'schluessel', '2026-10-14', NULL, NULL, NULL, 'Düsseldorf Altstadt',
-    'https://www.zumschluessel.de/events-termine-duesseldorf/stike-ausschank',
-    'Am 14. Oktober 2026 findet wieder unser Original Schlüssel Stike-Abend statt. Es ist ein besonderer Tag für alle Liebhaber handwerklicher Braukunst: Unser kräftiges Stike-Altbier mit seiner einzigartigen Geschichte wird serviert – eine Spezialität, die nur zweimal im Jahr ausgeschenkt wird.
-
-Original Schlüssel Stike ist eine saisonale Spezialität mit besonderer Geschichte. Sein Rezept geht auf eine alte Klostertradition zurück: Während der Fastenzeit brauten Mönche ein besonders kräftiges Altbier, um neue Kraft zu gewinnen – trotz des Verbots ihres Abtes, das sie heimlich umgingen.
-
-Am 19. Oktober 2026 stand die Stike laut Aufsteller vor der Tür noch im Ausschank: 0,25 l für 3,10 € (Starkbier, 6,0 % vol.).',
-    'On 14 October 2026 the Original Schlüssel Stike evening returns. It is a special day for everyone who loves craft brewing: our strong Stike Altbier with its unique history is served, a speciality poured only twice a year.
-
-Original Schlüssel Stike is a seasonal speciality with a special history. Its recipe goes back to an old monastic tradition: during Lent, monks brewed a particularly strong Altbier to regain their strength, secretly getting around their abbot''s ban.
-
-On 19 October 2026 the Stike was still on tap according to the sign outside: 0.25 l for €3.10 (strong beer, 6.0% ABV).',
-    'approved'),
-  ('uerige-sticke-2026-10', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
-    'uerige', '2026-10-20', NULL, NULL, NULL, 'Düsseldorf Altstadt',
-    'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige',
-    'Am dritten Dienstag im Oktober wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird.',
-    'On the third Tuesday of October, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October).',
-    'approved'),
   ('schumacher-latzen-2026-11', 'Latzenbier-Ausschank bei Schumacher', 'Latzenbier tapping at Schumacher',
     'schumacher', '2026-11-19', NULL, NULL, NULL, 'Düsseldorf',
     'https://schumacher-alt.de',
     'Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 19. November 2026.',
     'Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 19 November 2026.',
-    'approved'),
-  ('uerige-sticke-2027-01', 'Sticke-Ausschank im Uerige', 'Sticke tapping at Uerige',
-    'uerige', '2027-01-19', NULL, NULL, NULL, 'Düsseldorf Altstadt',
-    'https://www.altbierwelt.de/altbier-lokale/stickum-im-uerige',
-    'Am dritten Dienstag im Januar wird im Uerige die Sticke angestochen — das stärkere, kräftig gehopfte Alt (ca. 6 % vol.), das nur zweimal im Jahr (Januar und Oktober) ausgeschenkt wird. Termin aus der Regel „dritter Dienstag" abgeleitet, bitte vor Besuch beim Uerige bestätigen.',
-    'On the third Tuesday of January, Uerige taps its Sticke — the stronger, more heavily hopped Alt (about 6% ABV) served only twice a year (January and October). Date derived from the "third Tuesday" rule; please confirm with Uerige before visiting.',
-    'pending'),
-  ('schumacher-latzen-2027-03', 'Latzenbier-Ausschank bei Schumacher', 'Latzenbier tapping at Schumacher',
-    'schumacher', '2027-03-18', NULL, NULL, NULL, 'Düsseldorf',
-    'https://schumacher-alt.de',
-    'Das Schumacher Latzenbier wird am dritten Donnerstag im März, September und November ausgeschenkt. Nächster Termin: 18. März 2027 (aus der Regel „dritter Donnerstag" abgeleitet, bitte bei Schumacher bestätigen).',
-    'Schumacher Latzenbier is tapped on the third Thursday of March, September and November. Next date: 18 March 2027 (derived from the "third Thursday" rule; please confirm with Schumacher).',
-    'pending');
+    'approved');
 
 -- ============================================================
 -- Event beers
@@ -710,12 +490,6 @@ On 19 October 2026 the Stike was still on tap according to the sign outside: 0.2
 INSERT INTO event_beers (event_id, name_de, name_en, size, price)
 -- Biernamen sind Eigennamen: EN = DE
 SELECT v.column1, v.column2, v.column2, v.column3, v.column4 FROM (VALUES
-  ('rheinkirmes-2026', 'Schlüssel', '0.25l', 3.3),
-  ('rheinkirmes-2026', 'Uerige', '0.25l', 3.4),
-  ('rheinkirmes-2026', 'Schumacher', '0.25l', 3.5),
-  ('rheinkirmes-2026', 'Kürzer', '0.2l', 2.9),
-  ('rheinkirmes-2026', 'Schlösser', '0.2l', 3.0),
-  ('schumacher-latzen-2026-11', 'Latzenbier', '1l', NULL),
-  ('schluessel-stike-2026-10', 'Original Schlüssel Stike', '0.25l', 3.1)
+  ('schumacher-latzen-2026-11', 'Latzenbier', '1l', NULL)
 ) AS v
 WHERE NOT EXISTS (SELECT 1 FROM event_beers e WHERE e.event_id = v.column1 AND e.name_de = v.column2 AND e.size = v.column3);
