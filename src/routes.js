@@ -2147,13 +2147,13 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-21",
-  "/ranglisten": "2026-10-21",
-  "/wissen":     "2026-10-17",
+  "/":           "2026-10-22",
+  "/ranglisten": "2026-10-22",
+  "/wissen":     "2026-10-22",
   "/sorten":     "2026-10-17",
   "/rivalen":    "2026-10-17",
   "/beitragen":  "2026-10-21",
-  "/staedte":    "2026-10-17",
+  "/staedte":    "2026-10-22",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -2290,6 +2290,17 @@ export function sizeNum(s) {
   const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
   return isNaN(num) ? null : num;
 }
+// Titel ab ~60 Zeichen schneidet Google ab, SEO-Crawler melden sie als zu lang.
+// Kandidaten vom ausführlichsten zum knappsten: der erste, der passt, gewinnt;
+// passt keiner, wird der letzte an einer Wortgrenze gekürzt.
+export const TITLE_MAX = 60;
+export function fitTitle(...candidates) {
+  const list = candidates.filter(Boolean);
+  const fit = list.find((t) => t.length <= TITLE_MAX);
+  if (fit) return fit;
+  const last = list[list.length - 1] || "";
+  return last.slice(0, TITLE_MAX - 1).replace(/\s+\S*$/, "").replace(/[\s,;:.·–-]+$/, "") + "…";
+}
 export function fmtDateDe(d) {
   if (!d) return "";
   const [y, m, day] = String(d).slice(0, 10).split("-");
@@ -2375,9 +2386,13 @@ export async function serveOrt(req, env, params = {}) {
   // Preis in den Titel: Bei Namenssuchen ("kürzer flingern") steht die offizielle
   // Website darüber, der Preis ist das, was nur der Atlas im Snippet bietet.
   // Laut Search Console lag die CTR mit dem reinen Namens-Titel bei Position 9 unter 0,2 %.
-  const title = hero && !row.is_historical
-    ? `${row.name}: Altbier ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} € · ${row.city}`
-    : `${row.name} · Altbier in ${row.city} · Altbieratlas`;
+  const priceTitle = hero && !row.is_historical
+    ? `Altbier ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} €` : "";
+  const title = priceTitle
+    ? fitTitle(`${row.name}: ${priceTitle} · ${row.city}`, `${row.name}: ${priceTitle}`,
+        `${row.name}: Alt ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} €`)
+    : fitTitle(`${row.name} · Altbier in ${row.city} · Altbieratlas`,
+        `${row.name} · Altbier in ${row.city}`, `${row.name} · Altbier`);
 
   // Preis und Adresse vorne in die Meta-Description: Preis ist die Frage, mit der
   // Leute suchen, und Straßensuchen ("kürzer fichtenstraße") werden fett markiert.
@@ -2677,7 +2692,10 @@ export async function serveEvent(req, env) {
       && !titleDe.toLowerCase().includes(row.location.toLowerCase())
     ? ` ${row.location}` : "";
   const when = fmtEventRangeDe(row.date, row.end_date);
-  const title = `${titleDe}${where}${when ? ` – Termin ${when}` : ""} · Altbieratlas`;
+  const title = fitTitle(
+    `${titleDe}${where}${when ? ` – Termin ${when}` : ""} · Altbieratlas`,
+    `${titleDe}${where}${when ? ` – Termin ${when}` : ""}`,
+    `${titleDe}${when ? ` – ${when}` : ""}`);
   const rawDesc = row.description_de || row.description_en || "";
   const metaDesc = rawDesc
     ? (rawDesc.length > 155 ? rawDesc.slice(0, 155).replace(/\s+\S*$/, "") + "…" : rawDesc)
@@ -2858,7 +2876,8 @@ export async function serveCity(req, env) {
   const pageUrl = `https://altbieratlas.de/stadt/${slug}`;
   const current = rows.filter((r) => !r.is_historical);
   const historical = rows.filter((r) => r.is_historical);
-  const title = `Altbier in ${city} — Brauereien, Ausschank & Preise · Altbieratlas`;
+  const title = fitTitle(`Altbier in ${city}: Brauereien, Kneipen & Preise`,
+    `Altbier in ${city}: Kneipen & Preise`, `Altbier in ${city}`);
   // Als Frage formuliert: "was kostet ein altbier in düsseldorf" ist laut
   // Bing/Search Console eine der häufigsten Suchen ohne passende Seite.
   const metaDesc = avgPrice

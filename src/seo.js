@@ -371,8 +371,8 @@ export async function serveIndex(req, env) {
     const current = venues.filter((v) => !v.is_historical);
     const cityCount = new Set(current.map((v) => v.city)).size;
     html = setMetaDescription(html,
-      `Interaktive Karte des Altbiers: ${current.length} Brauereien, Kneipen und Händler in ${cityCount} Städten, ` +
-      `aktuelle Preise (0,25 l im Schnitt ${fmtPriceDe(avg025)} €), Termine und Wissen. Gemeinschaftlich gepflegt.`);
+      `Altbier-Karte: ${current.length} Brauereien, Kneipen und Händler in ${cityCount} Städten, ` +
+      `aktuelle Preise (0,25 l im Schnitt ${fmtPriceDe(avg025)} €), Termine und Wissen.`);
   }
   return htmlResponse(html, assetRes);
 }
@@ -415,10 +415,11 @@ export async function serveRanglisten(req, env) {
   html = html.replace(/(<div class="val" id="st-pr">)—(<\/div>)/, (m, a, b) => `${a}${priceCount}${b}`);
 
   if (priced.length) {
-    html = setMetaDescription(html,
-      `Wo ist Altbier am günstigsten? ${priced.length} Orte im Preisvergleich: 0,25 l Alt ab ` +
-      `${fmtPriceDe(priced[0].p.price)} € bei ${priced[0].v.name}, im Schnitt ${fmtPriceDe(avg025)} €. ` +
-      `Aktuelle Preise aus Community-Meldungen.`);
+    // Max. ~160 Zeichen: der Schlusssatz fällt weg, wenn der Ortsname lang ist
+    const core = `Wo ist Altbier am günstigsten? ${priced.length} Orte im Preisvergleich: 0,25 l Alt ab ` +
+      `${fmtPriceDe(priced[0].p.price)} € bei ${priced[0].v.name}, im Schnitt ${fmtPriceDe(avg025)} €.`;
+    const full = `${core} Aktuelle Preise aus Community-Meldungen.`;
+    html = setMetaDescription(html, full.length <= 160 ? full : core);
   }
 
   const dates = priced.map((x) => x.p.date).sort();

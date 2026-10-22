@@ -99,7 +99,7 @@ const countLabel = (n) => n === 0 ? window.t("cities.historicalOnly")
 // Der Worker rendert die Liste serverseitig vor; der Client übernimmt sie
 // (Sprache) bzw. baut sie im Mock-Modus aus der Config.
 function paint() {
-  document.title = window.t("cities.h1") + " · Altbieratlas";
+  document.title = window.atlasTitle(window.t("cities.h1"));
   const cities = window.ATLAS_CONFIG.cities || [];
   const el = document.getElementById("cities-list");
   if (!cities.length) {

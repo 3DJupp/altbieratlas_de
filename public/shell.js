@@ -401,6 +401,15 @@ window.atlasTileLayer = function (map) {
   return () => layer;
 };
 
+// Markenzusatz nur, solange der Titel unter ~60 Zeichen bleibt (gleiche
+// Grenze wie fitTitle() in src/routes.js), sonst schneidet Google ab.
+window.atlasTitle = function (base) {
+  const withBrand = base + " · Altbieratlas";
+  if (withBrand.length <= 60) return withBrand;
+  if (base.length <= 60) return base;
+  return base.slice(0, 59).replace(/\s+\S*$/, "").replace(/[\s,;:.·–-]+$/, "") + "…";
+};
+
 window.atlasTrack = function (event, params = {}) {
   if (!window.ATLAS_CONFIG.analyticsEnabled) return;
   if (typeof window.gtag === "function") {
