@@ -1299,10 +1299,12 @@ export async function adminPinCheck(req, env) {
   if (!auth.ok) return auth.res;
   const { results } = await env.DB.prepare(
     `SELECT b.id, b.name, b.city, b.address, b.status, b.lat, b.lng, b.google_place_id,
-            c.lat AS g_lat, c.lng AS g_lng, c.fetched_at,
-            (SELECT COUNT(*) FROM breweries b3 WHERE b3.google_place_id = b.google_place_id) AS shared
+            c.lat AS g_lat, c.lng AS g_lng, c.fetched_at, sh.n AS shared
      FROM breweries b
      LEFT JOIN google_places_cache c ON c.place_id = b.google_place_id
+     JOIN (SELECT google_place_id, COUNT(*) AS n FROM breweries
+           WHERE google_place_id IS NOT NULL GROUP BY google_place_id) sh
+       ON sh.google_place_id = b.google_place_id
      WHERE b.google_place_id IS NOT NULL AND b.google_place_id != '' AND b.is_historical = 0`
   ).all();
   const items = [];
