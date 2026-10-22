@@ -237,7 +237,7 @@ export async function getBrewery(req, env, { id }) {
   const prices = await env.DB.prepare(
     "SELECT date, size, price, source, notes, style_id FROM prices WHERE brewery_id = ? AND status = 'approved' ORDER BY date DESC, price ASC"
   ).bind(id).all();
-  const googleRating = await googleRatingFor(env, row);
+  const google = await googleCacheFor(env, row);
   const offers = await env.DB.prepare(
     `SELECT o.* FROM offers o JOIN breweries b ON b.id = o.brewery_id
      WHERE o.brewery_id = ? AND ${OFFER_PUBLIC_SQL} ORDER BY o.kind DESC, o.id`
@@ -246,9 +246,9 @@ export async function getBrewery(req, env, { id }) {
   return json({
     brewery: {
       ...base,
-      googleRating,
+      googleRating: google.rating,
       // Googles Zeiten nur, wenn keine eigenen gepflegt sind (Anzeige „laut Google“)
-      googleOpeningHours: base.openingHours ? null : await googleHoursFor(env, row),
+      googleOpeningHours: base.openingHours ? null : google.hours,
       successor: successor || null,
       predecessors: predecessors.results,
       // Überschrift über den Sorten aus dem Ortstyp ("Was hier ausgeschenkt wird" …)
@@ -268,10 +268,12 @@ export async function getBrewery(req, env, { id }) {
 //  AKTIONEN UND COUPONS
 // ============================================================
 
-// GET /api/offers → alle laufenden und kommenden Aktionen freigegebener Orte
+// GET /api/offers → alle laufenden und kommenden Aktionen freigegebener Orte.
+// CROSS JOIN legt die Reihenfolge fest: erst offers, dann der Ort per Primärschlüssel;
+// sonst liest SQLite alle Orte, auch wenn es kaum Aktionen gibt.
 export async function listOffers(req, env) {
   const { results } = await env.DB.prepare(
-    `SELECT o.* FROM offers o JOIN breweries b ON b.id = o.brewery_id
+    `SELECT o.* FROM offers o CROSS JOIN breweries b ON b.id = o.brewery_id
      WHERE ${OFFER_PUBLIC_SQL} ORDER BY o.brewery_id, o.id`
   ).all();
   return json({ offers: results.map(offerRow) });
@@ -343,31 +345,25 @@ export async function adminDeleteOffer(req, env, { id }) {
   return json({ ok: true });
 }
 
-// Googles Öffnungszeiten aus dem höchstens 30 Tage alten Cache, sonst null
-async function googleHoursFor(env, row) {
-  if (!row?.google_place_id || row.is_historical) return null;
+// Google-Bewertung und -Öffnungszeiten aus dem Cache, in einer Abfrage, nur wenn
+// höchstens 30 Tage alt (Google-Bedingungen). Kein Eintrag, zu alt oder Tabelle
+// fehlt → beides null, nichts anzeigen.
+async function googleCacheFor(env, row) {
+  const none = { rating: null, hours: null };
+  if (!row?.google_place_id || row.is_historical) return none;
   try {
     const c = await env.DB.prepare(
-      `SELECT opening_hours, fetched_at FROM google_places_cache
+      `SELECT rating, user_rating_count, opening_hours, fetched_at FROM google_places_cache
        WHERE place_id = ? AND fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
     ).bind(row.google_place_id).first();
-    return c?.opening_hours ? { days: JSON.parse(c.opening_hours), fetchedAt: c.fetched_at } : null;
-  } catch { return null; }
-}
-
-// Google-Bewertung aus dem Cache, nur wenn höchstens 30 Tage alt (Google-
-// Bedingungen). Kein Eintrag, zu alt oder Tabelle fehlt → null, nichts anzeigen.
-async function googleRatingFor(env, row) {
-  if (!row?.google_place_id || row.is_historical) return null;
-  try {
-    const c = await env.DB.prepare(
-      `SELECT rating, user_rating_count, fetched_at FROM google_places_cache
-       WHERE place_id = ? AND fetched_at >= datetime('now', '-${CACHE_MAX_AGE_DAYS} days')`
-    ).bind(row.google_place_id).first();
-    if (!c || c.rating == null) return null;
-    return { rating: c.rating, userRatingCount: c.user_rating_count ?? null, fetchedAt: c.fetched_at };
+    if (!c) return none;
+    return {
+      rating: c.rating == null ? null
+        : { rating: c.rating, userRatingCount: c.user_rating_count ?? null, fetchedAt: c.fetched_at },
+      hours: c.opening_hours ? { days: JSON.parse(c.opening_hours), fetchedAt: c.fetched_at } : null,
+    };
   } catch {
-    return null;
+    return none;
   }
 }
 

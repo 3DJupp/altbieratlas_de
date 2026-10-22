@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS breweries (
 CREATE INDEX IF NOT EXISTS idx_breweries_city    ON breweries(city);
 CREATE INDEX IF NOT EXISTS idx_breweries_status  ON breweries(status);
 CREATE INDEX IF NOT EXISTS idx_breweries_country ON breweries(country);
+-- Ortsseite sucht übernommene Marken (WHERE successor_id = ?)
+CREATE INDEX IF NOT EXISTS idx_breweries_successor ON breweries(successor_id);
 
 -- Beer styles
 CREATE TABLE IF NOT EXISTS styles (
