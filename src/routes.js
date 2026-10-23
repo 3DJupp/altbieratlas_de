@@ -2608,14 +2608,14 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-22",
-  "/ranglisten": "2026-10-22",
-  "/wissen":     "2026-10-22",
-  "/sorten":     "2026-10-22",
-  "/rivalen":    "2026-10-22",
-  "/beitragen":  "2026-10-22",
-  "/staedte":    "2026-10-22",
-  "/kooperation": "2026-10-22",
+  "/":           "2026-10-23",
+  "/ranglisten": "2026-10-23",
+  "/wissen":     "2026-10-23",
+  "/sorten":     "2026-10-23",
+  "/rivalen":    "2026-10-23",
+  "/beitragen":  "2026-10-23",
+  "/staedte":    "2026-10-23",
+  "/kooperation": "2026-10-23",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.

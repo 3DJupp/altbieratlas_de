@@ -284,12 +284,10 @@ html[data-theme="dark"] .tag.verified { color: #b8d494; background: #243019; bor
 .tag.pending { color: #7a5a16; background: #f5e7c3; border-color: #d9c491; }
 html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; border-color: #5c4618; }
 
-/* Eyebrow */
+/* Kleines Label über Kennzahlen (keine Kicker über Überschriften) */
 .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--ink-muted);
 }
 
