@@ -898,8 +898,9 @@ function renderRankings(prices) {
 // ============ Events ============
 function renderEvents(events) {
   const grid = document.getElementById("event-grid");
-  const now = new Date();
-  const upcoming = events.filter((e) => new Date(e.date) >= now)
+  // Kalendertag in Berlin; mehrtägige Events bleiben bis zu ihrem letzten Tag sichtbar
+  const today = window.atlasHours.berlinNow().date;
+  const upcoming = events.filter((e) => (e.endDate || e.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date));
 
   function paint() {
@@ -908,7 +909,8 @@ function renderEvents(events) {
     if (btn) btn.href = `/api/events/calendar.ics?lang=${lang}`;
     grid.innerHTML = upcoming.map((ev) => {
       const b = ev.breweryId ? allBreweries.find((x) => x.id === ev.breweryId) : null;
-      const dateText = window.formatDateLong(ev.date);
+      const multiDay = ev.endDate && ev.endDate !== ev.date;
+      const dateText = window.formatDateLong(ev.date) + (multiDay ? ` – ${window.formatDateLong(ev.endDate)}` : "");
       const timeText = ev.time ? ` · ${ev.time} ${window.t("index.clock")}` : "";
       const locText = b ? "@ " + b.name + " · " + b.city : ev.location ? "@ " + ev.location : "";
       const urlBtn = ev.url ? `<a class="event-ics-link" href="${ev.url}" target="_blank" rel="noopener" title="${window.t("event.visitPage")}">🔗</a>` : "";

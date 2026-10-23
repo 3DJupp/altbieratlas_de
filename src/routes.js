@@ -550,7 +550,7 @@ export async function eventsIcs(req, env) {
   const res = await env.DB.prepare(
     `SELECT e.*, b.name AS brewery_name, b.city AS brewery_city
      FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
-     WHERE e.status = 'approved' AND e.date >= date('now')
+     WHERE e.status = 'approved' AND COALESCE(e.end_date, e.date) >= date('now')
      ORDER BY e.date ASC, e.time ASC`
   ).all();
   const base    = `${url.protocol}//${url.host}`;
@@ -585,7 +585,7 @@ export async function eventsAtom(req, env) {
   const res = await env.DB.prepare(
     `SELECT e.*, b.name AS brewery_name
      FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
-     WHERE e.status = 'approved' AND e.date >= date('now', '-7 days')
+     WHERE e.status = 'approved' AND COALESCE(e.end_date, e.date) >= date('now', '-7 days')
      ORDER BY e.date ASC, e.time ASC
      LIMIT 50`
   ).all();
