@@ -2,10 +2,44 @@
 
 Offene Punkte, grob nach Wichtigkeit sortiert. Erledigtes wird gelöscht, nicht abgehakt.
 
+## Design überarbeiten (vor den Vorschaubildern)
+
+Ziel: Die Seite soll eigenständig und nach Altbierkultur aussehen, nicht nach generierter
+Vorlage. Kein Relaunch: Seiten, Struktur und Funktionen bleiben. Leitbild sind Getränkekarte,
+Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-23.
+Erledigt: Kicker-Labels (Mono, Sperrschrift, Versalien) über Überschriften entfernt.
+
+Vorgehen: zuerst Startseite und Ortsseite umbauen, Vorher/Nachher-Screenshots abstimmen,
+dann die übrigen Seiten nachziehen.
+
+- **Schrift.** Newsreader, Inter und JetBrains Mono ersetzen. Eine zeitgemäße Serifenschrift
+  nur für Überschriften (nicht verschnörkelt, nicht nach altem Buchdruck), dazu eine ruhige
+  Grundschrift. Mono entfällt; Zahlen über Tabellenziffern (`font-variant-numeric:
+  tabular-nums`). Muss Umlaute können und sich für Satori in `src/og.js` laden lassen.
+- **Weniger Kästen.** Ranglisten und Preislisten wie eine Getränkekarte: Name, Punktlinie,
+  Preis, Trennlinien statt gleichförmiger Karten mit Rahmen. Pill-Badges („0,25 L“) und
+  Positionsnummern „01 02 03“ ersetzen.
+- **Hero der Startseite.** Kein kursives Effektwort, kein schwebender Glas-Kasten über der
+  Karte. Konkreter Satz mit echten Zahlen (Orte, Preise, Ø-Preis 0,25 l), serverseitig
+  befüllbar. Mobil: Karte zuerst, Hero kompakt darunter.
+- **Icons.** Emojis (Kalender, Pin, Link) durch eine kleine, einheitliche SVG-Icon-Reihe
+  ersetzen. Platzhalter für Orte und Sorten ohne Logo gestalten (heute Kürzel bzw. leeres
+  Quadrat).
+- **Farben.** Warme Palette behalten, mehr Kontrast, weniger Beige auf Beige. Header und
+  Footer z. B. in dunklem Holzton. Dark Mode mitziehen.
+- **Texte.** Footer-Satz („Mit Liebe … KI-unterstützt“) ersetzen; Hero-Überschriften der
+  Inhaltsseiten ohne kursive Akzentwörter.
+- **Fotos.** Echte Fotos (Glas, Schänke) statt Grafik, sofern Rechte vorhanden; Ablage in R2
+  oder `public/images`.
+- **Aufräumen.** Ungenutzte CSS-Regeln und i18n-Schlüssel nach dem Umbau entfernen,
+  `PAGE_DATES` aller Seiten aktualisieren.
+
 ## Vorschaubilder und Suchvorschauen
 
 Ziel: Geteilte Links und Suchtreffer zeigen den echten, aktuellen Inhalt der Seite und sehen
-nach Altbieratlas aus, nicht nach generischer Vorlage. Stand 2026-10-19.
+nach Altbieratlas aus, nicht nach generischer Vorlage. Die Bildpunkte folgen dem neuen Design
+(Schrift, Farben) und kommen deshalb nach der Überarbeitung; der letzte Punkt
+(Suchvorschauen) ist reine SEO-Arbeit und kann unabhängig davon laufen. Stand 2026-10-23.
 
 - **Allgemeines `og-image.png` überarbeiten.** Das statische Bild (dunkler Grund, Pixel-Glas,
   Pixelschrift „Press Start 2P“) passt nicht zum heutigen Auftritt der Seite (heller
