@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 96" role="img" aria-labelledby="title desc">
+<title id="title">altbieratlas</title><desc id="desc">Typografische Wortmarke ohne zusätzliches Symbol</desc>
+<rect width="560" height="96" fill="#f5f2eb"/>
+<text x="4" y="61" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="600" letter-spacing="-4.2" fill="#20231f">altbieratlas</text>
+<line x1="6" y1="74" x2="554" y2="74" stroke="#8c332b" stroke-width="2"/>
+<text x="7" y="90" font-family="monospace" font-size="9" letter-spacing="2.4" fill="#706f66">ORTE · BIERE · PREISE</text>
+</svg>
