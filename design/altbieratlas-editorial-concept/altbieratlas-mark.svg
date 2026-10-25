@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Altbieratlas Signet</title>
+  <path d="M8 19 24 10l16 9 16-9v35l-16 9-16-9-16 9Z" fill="none" stroke="#6f211b" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M24 10v35M40 19v35" fill="none" stroke="#6f211b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M32 17c-7.2 0-12 5-12 11.4 0 8.1 12 19.2 12 19.2s12-11.1 12-19.2C44 22 39.2 17 32 17Z" fill="#6f211b"/>
+  <circle cx="32" cy="28.5" r="4.1" fill="#f5f0e5"/>
+</svg>
