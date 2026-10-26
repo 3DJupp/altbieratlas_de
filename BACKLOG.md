@@ -6,7 +6,7 @@ Offene Punkte, grob nach Wichtigkeit sortiert. Erledigtes wird gelöscht, nicht 
 
 Ziel: Die Seite soll eigenständig und nach Altbierkultur aussehen, nicht nach generierter
 Vorlage. Kein Relaunch: Seiten, Struktur und Funktionen bleiben. Leitbild sind Getränkekarte,
-Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-23.
+Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-26.
 Erledigt: Kicker-Labels (Mono, Sperrschrift, Versalien) über Überschriften entfernt.
 
 Vorgehen: zuerst Startseite und Ortsseite umbauen, Vorher/Nachher-Screenshots abstimmen,
@@ -31,6 +31,19 @@ dann die übrigen Seiten nachziehen.
   Inhaltsseiten ohne kursive Akzentwörter.
 - **Fotos.** Echte Fotos (Glas, Schänke) statt Grafik, sofern Rechte vorhanden; Ablage in R2
   oder `public/images`.
+- **Event-Seite (`/event`).** Wirkt leer und doppelt: Datum und Ort stehen im Kopf und im
+  Details-Kasten noch einmal, darunter viel Leerraum. Biertabelle zeigt leere Spalten
+  (Preis „—“, Hinweis leer); nur Spalten mit Inhalt zeigen oder als Getränkekarte setzen.
+  Mobil hängt der Trennpunkt „•“ allein am Zeilenende. Emojis (Kalender, Pin) und
+  Mono-Labels („Details“, „Biere auf dem Event“) wie überall ersetzen.
+- **Unterseiten angleichen.** Breiten uneinheitlich: `/beitragen` und Impressum in schmaler
+  Mittelspalte, `/kooperation`, `/staedte`, `/stadt/<slug>` linksbündig über die volle Breite
+  mit leerer rechter Hälfte. Eine gemeinsame Inhaltsbreite festlegen.
+  `/rivalen` hat noch Kicker („DUS — CGN · 47 km“), kursives Akzentwort im Hero, eine
+  Vergleichstabelle komplett in Mono und Emojis bei Fußball/Eishockey. 404 hat noch den
+  Kicker „Fehler 404“ und der Footer endet über dem Fensterrand. `/beitragen`: die Tabs
+  brechen auf zwei Zeilen um (ein Tab allein in Zeile zwei), Feldlabels in Mono-Versalien.
+  Stadtseiten: Links zu anderen Städten als Mono-Pills, Typ-Labels der Karten in Mono.
 - **Aufräumen.** Ungenutzte CSS-Regeln und i18n-Schlüssel nach dem Umbau entfernen,
   `PAGE_DATES` aller Seiten aktualisieren.
 
