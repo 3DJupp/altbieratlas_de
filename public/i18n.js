@@ -144,7 +144,7 @@ window.ATLAS_I18N = {
     "cookie.settings": "Einstellungen",
     // Footer
     "footer.madeWith":
-      "Mit Liebe für das rheinische Bier gebaut. Gemeinschaftlich gepflegt, KI-unterstützt.",
+      "Mit Liebe für das rheinische Bier gebaut. Gemeinschaftlich gepflegt.",
     "footer.legal": "Rechtliches",
     "footer.privacy": "Datenschutz",
     "footer.contribute": "Mitmachen",
@@ -1041,7 +1041,7 @@ window.ATLAS_I18N = {
     "cookie.essential": "Essential only",
     "cookie.settings": "Settings",
     "footer.madeWith":
-      "Built with love for Rhenish beer. Community maintained, AI-enhanced.",
+      "Built with love for Rhenish beer. Community maintained.",
     "footer.legal": "Legal",
     "footer.privacy": "Privacy",
     "footer.contribute": "Contribute",

@@ -6,7 +6,7 @@ Offene Punkte, grob nach Wichtigkeit sortiert. Erledigtes wird gelöscht, nicht 
 
 Ziel: Die Seite soll eigenständig und nach Altbierkultur aussehen, nicht nach generierter
 Vorlage. Kein Relaunch: Seiten, Struktur und Funktionen bleiben. Leitbild sind Getränkekarte,
-Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-23.
+Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-26.
 Erledigt: Kicker-Labels (Mono, Sperrschrift, Versalien) über Überschriften entfernt.
 
 Vorgehen: zuerst Startseite und Ortsseite umbauen, Vorher/Nachher-Screenshots abstimmen,
@@ -27,10 +27,23 @@ dann die übrigen Seiten nachziehen.
   Quadrat).
 - **Farben.** Warme Palette behalten, mehr Kontrast, weniger Beige auf Beige. Header und
   Footer z. B. in dunklem Holzton. Dark Mode mitziehen.
-- **Texte.** Footer-Satz („Mit Liebe … KI-unterstützt“) ersetzen; Hero-Überschriften der
+- **Texte.** Footer-Satz („Mit Liebe …“) neu formulieren; Hero-Überschriften der
   Inhaltsseiten ohne kursive Akzentwörter.
 - **Fotos.** Echte Fotos (Glas, Schänke) statt Grafik, sofern Rechte vorhanden; Ablage in R2
   oder `public/images`.
+- **Event-Seite (`/event`).** Wirkt leer und doppelt: Datum und Ort stehen im Kopf und im
+  Details-Kasten noch einmal, darunter viel Leerraum. Biertabelle zeigt leere Spalten
+  (Preis „—“, Hinweis leer); nur Spalten mit Inhalt zeigen oder als Getränkekarte setzen.
+  Mobil hängt der Trennpunkt „•“ allein am Zeilenende. Emojis (Kalender, Pin) und
+  Mono-Labels („Details“, „Biere auf dem Event“) wie überall ersetzen.
+- **Unterseiten angleichen.** Breiten uneinheitlich: `/beitragen` und Impressum in schmaler
+  Mittelspalte, `/kooperation`, `/staedte`, `/stadt/<slug>` linksbündig über die volle Breite
+  mit leerer rechter Hälfte. Eine gemeinsame Inhaltsbreite festlegen.
+  `/rivalen` hat noch Kicker („DUS — CGN · 47 km“), kursives Akzentwort im Hero, eine
+  Vergleichstabelle komplett in Mono und Emojis bei Fußball/Eishockey. 404 hat noch den
+  Kicker „Fehler 404“ und der Footer endet über dem Fensterrand. `/beitragen`: die Tabs
+  brechen auf zwei Zeilen um (ein Tab allein in Zeile zwei), Feldlabels in Mono-Versalien.
+  Stadtseiten: Links zu anderen Städten als Mono-Pills, Typ-Labels der Karten in Mono.
 - **Aufräumen.** Ungenutzte CSS-Regeln und i18n-Schlüssel nach dem Umbau entfernen,
   `PAGE_DATES` aller Seiten aktualisieren.
 
@@ -38,8 +51,7 @@ dann die übrigen Seiten nachziehen.
 
 Ziel: Geteilte Links und Suchtreffer zeigen den echten, aktuellen Inhalt der Seite und sehen
 nach Altbieratlas aus, nicht nach generischer Vorlage. Die Bildpunkte folgen dem neuen Design
-(Schrift, Farben) und kommen deshalb nach der Überarbeitung; der letzte Punkt
-(Suchvorschauen) ist reine SEO-Arbeit und kann unabhängig davon laufen. Stand 2026-10-23.
+(Schrift, Farben) und kommen deshalb nach der Überarbeitung. Stand 2026-10-26.
 
 - **Allgemeines `og-image.png` überarbeiten.** Das statische Bild (dunkler Grund, Pixel-Glas,
   Pixelschrift „Press Start 2P“) passt nicht zum heutigen Auftritt der Seite (heller
@@ -61,9 +73,3 @@ nach Altbieratlas aus, nicht nach generischer Vorlage. Die Bildpunkte folgen dem
   Alt aktuell).
 - **Englische Vorschau.** Mit `?lang=en` bleiben Bildtexte deutsch; Bild-URL um die Sprache
   ergänzen.
-- **Suchvorschauen (Title, Description, JSON-LD) aus aktuellen Daten.** Die Ortsseite setzt
-  Title und Description schon dynamisch (inkl. Preis). Prüfen und angleichen: Startseite und
-  einige statische Seiten haben feste Beschreibungen; Zahlen wie Anzahl der Orte, Ø-Preis oder
-  „zuletzt aktualisiert“ könnten serverseitig einfließen. Bei Orten mit mehreren Sorten die
-  Sorte in Description und `Offer` nennen (Grundlage seit `prices.style_id` vorhanden).
-  Danach mit dem Rich-Results-Test und einer Link-Vorschau (z. B. WhatsApp, Signal) prüfen.
