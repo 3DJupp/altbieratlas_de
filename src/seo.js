@@ -490,6 +490,11 @@ export async function serveWissen(req, env) {
     );
   }
 
+  const wissenDesc = glossary.length
+    ? `Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und ${glossary.length} Begriffe, die du im Brauhaus hörst.`
+    : "Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst.";
+  html = setMetaDescription(html, wissenDesc);
+
   html = injectLd(html, {
     "@context": "https://schema.org",
     "@graph": [
@@ -498,7 +503,7 @@ export async function serveWissen(req, env) {
         "@type": "Article",
         "@id": `${pageUrl}#article`,
         "headline": "Altbier: Geschichte, Köbes-Kultur und Glossar",
-        "description": "Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst.",
+        "description": wissenDesc,
         "url": pageUrl,
         "inLanguage": "de",
         "image": `${SITE}/og-image.png`,
@@ -568,6 +573,10 @@ export async function serveSorten(req, env) {
     );
   }
 
+  const sortenDesc = `${styles.length ? `${styles.length} Altbier-Sorten` : "Alle Altbier-Sorten"} im Atlas ` +
+    "mit Alkoholgehalt, Bittere und Geschmack: von den Düsseldorfer Hausbrauereien bis zu Sticke und Doppelsticke.";
+  html = setMetaDescription(html, sortenDesc);
+
   html = injectLd(html, {
     "@context": "https://schema.org",
     "@graph": [
@@ -576,7 +585,7 @@ export async function serveSorten(req, env) {
         "@type": "CollectionPage",
         "@id": `${pageUrl}#page`,
         "name": "Altbier-Sorten",
-        "description": "Alle Altbier-Sorten im Atlas mit Alkoholgehalt, Bittere und Geschmack.",
+        "description": sortenDesc,
         "url": pageUrl,
         "inLanguage": "de",
         "dateModified": PAGE_DATES["/sorten"],

@@ -550,7 +550,7 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 
 ### Altbier-Wissen
 - Geschichte, drei Köbes-Regeln für den ersten Besuch, Brauhaus-Glossar (aus D1)
-- Glossar serverseitig gerendert; JSON-LD `Article` + `DefinedTermSet`
+- Glossar serverseitig gerendert, Meta-Description mit Zahl der Begriffe; JSON-LD `Article` + `DefinedTermSet`
 - Querverweis auf `/sorten`
 
 ### Altbier-Sorten (`/sorten`)
@@ -559,7 +559,7 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
   Ausschankort) freigegeben ist; Sorten ohne Ort bleiben sichtbar (`STYLE_PUBLIC_SQL`
   in `src/utils.js`, gilt auch für `/api/styles` und `llms-full.txt`)
 - Kurz eingeordnet: obergärig, Hausbrauerei, Alt aus dem Supermarkt
-- Serverseitig gerendert; JSON-LD `CollectionPage` mit `ItemList`
+- Serverseitig gerendert, Meta-Description mit Zahl der Sorten; JSON-LD `CollectionPage` mit `ItemList`
 
 ### Das Rheinderby (`/rivalen`)
 - Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz

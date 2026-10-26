@@ -2608,14 +2608,14 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-23",
-  "/ranglisten": "2026-10-23",
-  "/wissen":     "2026-10-23",
-  "/sorten":     "2026-10-23",
-  "/rivalen":    "2026-10-23",
-  "/beitragen":  "2026-10-23",
-  "/staedte":    "2026-10-23",
-  "/kooperation": "2026-10-23",
+  "/":           "2026-10-26",
+  "/ranglisten": "2026-10-26",
+  "/wissen":     "2026-10-26",
+  "/sorten":     "2026-10-26",
+  "/rivalen":    "2026-10-26",
+  "/beitragen":  "2026-10-26",
+  "/staedte":    "2026-10-26",
+  "/kooperation": "2026-10-26",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -2861,8 +2861,13 @@ export async function serveOrt(req, env, params = {}) {
   // Preis und Adresse vorne in die Meta-Description: Preis ist die Frage, mit der
   // Leute suchen, und Straßensuchen ("kürzer fichtenstraße") werden fett markiert.
   // Gesamtlänge ~160 Zeichen, sonst schneidet Google die Beschreibung ab.
+  // Schenkt der Ort mehrere Sorten aus, steht die Sorte statt „Alt“ im Snippet,
+  // damit der Preis nicht für jede seiner Sorten gelesen wird.
+  const multiStyle = styles.length > 1
+    || new Set(prices.map((p) => p.style_name).filter(Boolean)).size > 1;
+  const heroBeer = multiStyle && hero?.style_name ? hero.style_name : "Alt";
   const priceBit = hero
-    ? `${fmtSizeDe(hero.size)} Alt für ${fmtPriceDe(hero.price)} € (Stand ${fmtDateDe(hero.date)}). `
+    ? `${fmtSizeDe(hero.size)} ${heroBeer} für ${fmtPriceDe(hero.price)} € (Stand ${fmtDateDe(hero.date)}). `
     : "";
   const addrBit = row.address && !row.is_historical ? `${row.address}. ` : "";
   const head = priceBit + addrBit;
@@ -3504,6 +3509,17 @@ export async function serveCities(req, env) {
     );
   }
   const pageUrl = "https://altbieratlas.de/staedte";
+  const withCurrent = entries.filter(([, e]) => e.current > 0);
+  if (withCurrent.length) {
+    const venueCount = withCurrent.reduce((n, [, e]) => n + e.current, 0);
+    const desc = escHtml(`Altbier in ${withCurrent.length} Städten: ${venueCount} Brauereien, ` +
+      "Ausschankorte und Händler im Altbieratlas, nach Stadt sortiert und mit aktuellen Preisen.");
+    for (const re of [/(<meta name="description" content=")[^"]*(")/,
+      /(<meta property="og:description" content=")[^"]*(")/,
+      /(<meta name="twitter:description" content=")[^"]*(")/]) {
+      html = html.replace(re, (m, a, b) => `${a}${desc}${b}`);
+    }
+  }
   const ld = JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [

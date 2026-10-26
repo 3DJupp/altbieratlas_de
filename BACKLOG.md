@@ -27,7 +27,7 @@ dann die übrigen Seiten nachziehen.
   Quadrat).
 - **Farben.** Warme Palette behalten, mehr Kontrast, weniger Beige auf Beige. Header und
   Footer z. B. in dunklem Holzton. Dark Mode mitziehen.
-- **Texte.** Footer-Satz („Mit Liebe … KI-unterstützt“) ersetzen; Hero-Überschriften der
+- **Texte.** Footer-Satz („Mit Liebe …“) neu formulieren; Hero-Überschriften der
   Inhaltsseiten ohne kursive Akzentwörter.
 - **Fotos.** Echte Fotos (Glas, Schänke) statt Grafik, sofern Rechte vorhanden; Ablage in R2
   oder `public/images`.
@@ -38,8 +38,7 @@ dann die übrigen Seiten nachziehen.
 
 Ziel: Geteilte Links und Suchtreffer zeigen den echten, aktuellen Inhalt der Seite und sehen
 nach Altbieratlas aus, nicht nach generischer Vorlage. Die Bildpunkte folgen dem neuen Design
-(Schrift, Farben) und kommen deshalb nach der Überarbeitung; der letzte Punkt
-(Suchvorschauen) ist reine SEO-Arbeit und kann unabhängig davon laufen. Stand 2026-10-23.
+(Schrift, Farben) und kommen deshalb nach der Überarbeitung. Stand 2026-10-26.
 
 - **Allgemeines `og-image.png` überarbeiten.** Das statische Bild (dunkler Grund, Pixel-Glas,
   Pixelschrift „Press Start 2P“) passt nicht zum heutigen Auftritt der Seite (heller
@@ -61,9 +60,3 @@ nach Altbieratlas aus, nicht nach generischer Vorlage. Die Bildpunkte folgen dem
   Alt aktuell).
 - **Englische Vorschau.** Mit `?lang=en` bleiben Bildtexte deutsch; Bild-URL um die Sprache
   ergänzen.
-- **Suchvorschauen (Title, Description, JSON-LD) aus aktuellen Daten.** Die Ortsseite setzt
-  Title und Description schon dynamisch (inkl. Preis). Prüfen und angleichen: Startseite und
-  einige statische Seiten haben feste Beschreibungen; Zahlen wie Anzahl der Orte, Ø-Preis oder
-  „zuletzt aktualisiert“ könnten serverseitig einfließen. Bei Orten mit mehreren Sorten die
-  Sorte in Description und `Offer` nennen (Grundlage seit `prices.style_id` vorhanden).
-  Danach mit dem Rich-Results-Test und einer Link-Vorschau (z. B. WhatsApp, Signal) prüfen.
