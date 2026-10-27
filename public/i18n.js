@@ -327,6 +327,8 @@ window.ATLAS_I18N = {
     "brewery.noPrice": "Noch keine Preismeldung",
     "brewery.historical": "Historisch / nicht mehr in Betrieb",
     "brewery.successor": "Heute bei",
+    "brewery.nearby": "Altbier in der Nähe",
+    "brewery.eventsHere": "Termine hier",
     "brewery.predecessors": "Übernommene Marken",
     // Map popups / geocode
     "popup.details": "Details →",
@@ -1222,6 +1224,8 @@ window.ATLAS_I18N = {
     "brewery.noPrice": "No price report yet",
     "brewery.historical": "Historical / no longer operating",
     "brewery.successor": "Now part of",
+    "brewery.nearby": "Altbier nearby",
+    "brewery.eventsHere": "Events here",
     "brewery.predecessors": "Acquired brands",
     // Map popups
     "popup.details": "Details →",
@@ -1903,8 +1907,8 @@ window.formatSize = function (s) {
 };
 
 (function () {
-  // ?lang=en|de hat Vorrang: die hreflang-Alternates zeigen auf <url>?lang=en,
-  // Crawler und geteilte Links müssen dort die englische Fassung sehen.
+  // ?lang=en|de hat Vorrang: geteilte Links mit ?lang=en sollen die englische
+  // Fassung zeigen (die Variante ist noindex, siehe applyLangVariant in seo.js).
   let fromUrl = null;
   try { fromUrl = new URLSearchParams(location.search).get("lang"); } catch (e) {}
   if (fromUrl !== "de" && fromUrl !== "en") fromUrl = null;

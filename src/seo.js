@@ -3,7 +3,7 @@
 // ============================================================
 // - /llms.txt, /llms-full.txt  → Überblick bzw. Volltext für LLMs/KI-Suche
 // - SSR für /, /ranglisten, /wissen, /sorten → Crawler sehen echte Daten statt „Lade…"
-// - ?lang=en                   → <html lang>, canonical & og:locale passend
+// - ?lang=en                   → noindex, Canonical auf die deutsche URL
 // - IndexNow                   → Bing/Yandex (und damit u. a. ChatGPT-Suche)
 //                                 zeitnah über geänderte Seiten informieren
 // ============================================================
@@ -608,33 +608,49 @@ export async function serveSorten(req, env) {
 }
 
 // ============================================================
-//  ?lang=en: Sprachvariante für Crawler konsistent machen
+//  ?lang=en: Sprachvariante aus dem Index halten
 // ============================================================
-// Die hreflang-Links zeigen auf <url>?lang=en. Damit Google die Variante
-// als eigenständige englische Seite akzeptiert, muss sie auf sich selbst
-// kanonisieren und lang="en" tragen — sonst verwirft Google das hreflang-Paar.
+// Das ausgelieferte HTML ist unter ?lang=en identisch mit der deutschen
+// Seite, übersetzt wird erst per JS (i18n.js). Für Google wäre jede
+// EN-URL ein Duplikat. Deshalb: Canonical und og:url bleiben die deutsche
+// URL, hreflang-Links fallen weg, die Variante trägt noindex. <html lang>
+// bleibt „de“, weil der Server-Text deutsch ist; i18n.js setzt es im
+// Browser auf „en“. Erst mit serverseitig übersetztem Inhalt lohnt sich
+// wieder ein hreflang-Paar.
 export function applyLangVariant(request, res) {
   const url = new URL(request.url);
   if (url.searchParams.get("lang") !== "en") return res;
   if (!(res.headers.get("content-type") || "").includes("text/html")) return res;
-  const withLang = (href) => {
+  const deUrl = (href) => {
     try {
       const u = new URL(href, url.origin);
-      u.searchParams.set("lang", "en");
+      u.searchParams.delete("lang");
       return u.toString();
     } catch { return href; }
   };
-  return new HTMLRewriter()
-    .on("html", { element(el) { el.setAttribute("lang", "en"); } })
+  let hasRobots = false;
+  const out = new HTMLRewriter()
     .on('link[rel="canonical"]', {
-      element(el) { const h = el.getAttribute("href"); if (h) el.setAttribute("href", withLang(h)); },
+      element(el) { const h = el.getAttribute("href"); if (h) el.setAttribute("href", deUrl(h)); },
     })
     .on('meta[property="og:url"]', {
-      element(el) { const c = el.getAttribute("content"); if (c) el.setAttribute("content", withLang(c)); },
+      element(el) { const c = el.getAttribute("content"); if (c) el.setAttribute("content", deUrl(c)); },
     })
-    .on('meta[property="og:locale"]', { element(el) { el.setAttribute("content", "en_US"); } })
-    .on('meta[property="og:locale:alternate"]', { element(el) { el.setAttribute("content", "de_DE"); } })
+    .on("link[hreflang]", { element(el) { el.remove(); } })
+    .on('meta[name="robots"]', {
+      element(el) { hasRobots = true; el.setAttribute("content", "noindex, follow"); },
+    })
+    .on("head", {
+      element(el) {
+        el.onEndTag((end) => {
+          if (!hasRobots) end.before('<meta name="robots" content="noindex, follow" />\n', { html: true });
+        });
+      },
+    })
     .transform(res);
+  const headers = new Headers(out.headers);
+  headers.set("x-robots-tag", "noindex, follow");
+  return new Response(out.body, { status: out.status, statusText: out.statusText, headers });
 }
 
 // ============================================================

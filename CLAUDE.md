@@ -50,7 +50,7 @@ Browser
       └─ everything else     → ASSETS binding (static files from public/)
 ```
 
-Every GET HTML response passes through `SEO.applyLangVariant()`: with `?lang=en` it sets `lang="en"`, a self-referencing canonical and `og:locale` (the hreflang alternates point to `?lang=en`; `i18n.js` reads the same parameter). Successful admin mutations trigger `SEO.pingIndexNow()` (no-op without the `INDEXNOW_KEY` secret). In addition the hourly cron runs `SEO.sweepIndexNow()`, which reports everything changed since its last run (watermark `indexnow_last_until` in `site_settings`), so venues, prices and events written straight into D1 get submitted too.
+Every GET HTML response passes through `SEO.applyLangVariant()`: `?lang=en` serves the same German HTML (translation happens client-side in `i18n.js`), so the variant gets `noindex, follow` (meta + `X-Robots-Tag`), canonical/`og:url` stay on the German URL and hreflang links are stripped. No page emits hreflang alternates; only reintroduce them together with server-side translated EN content. Unknown venue slugs, unknown/missing event IDs and unknown paths return a real 404 via `notFoundPage()` (handlers signal it with a bare 404 response), never an empty shell with 200 (Soft 404). Successful admin mutations trigger `SEO.pingIndexNow()` (no-op without the `INDEXNOW_KEY` secret). In addition the hourly cron runs `SEO.sweepIndexNow()`, which reports everything changed since its last run (watermark `indexnow_last_until` in `site_settings`), so venues, prices and events written straight into D1 get submitted too.
 
 `worker.js` contains a minimal hand-rolled router (`match()`) — there is no routing framework. Routes are registered as `[METHOD, pattern, handler]` tuples in the `ROUTES` array.
 
