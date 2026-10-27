@@ -37,6 +37,7 @@ altbieratlas/
 │   ├── data.js              # Seed-Daten für Mock-Fallback
 │   ├── manifest.webmanifest # PWA-Manifest
 │   ├── robots.txt
+│   ├── _headers             # Charset für robots.txt (Worker setzt es zusätzlich selbst)
 │   └── favicon.svg …
 ├── migrations/
 │   ├── 0001_schema.sql      # Vollständiges Schema (idempotent, Neuinstallation)
@@ -45,7 +46,7 @@ altbieratlas/
 │   ├── backfill-place-ids.mjs # Google Place IDs nachtragen (Dry-Run / --apply)
 │   ├── create-admin.mjs     # Admin-User anlegen
 │   ├── db-setup.sh          # DB-Setup (Schema + Seed + Upgrade)
-│   ├── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen)
+│   ├── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen, danach IndexNow)
 │   └── indexnow.sh          # IndexNow-Submit (Sitemap oder Einzel-URLs)
 ├── wrangler.toml
 ├── BACKLOG.md           # offene Punkte (Admin-Lücken u. a.)
@@ -182,6 +183,7 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**):
 |---|---|---|
 | `database_id` | Secret | UUID aus `npx wrangler d1 create` |
 | `database_name` | Secret | Name der D1-DB, z. B. `altbieratlas` |
+| `INDEXNOW_KEY` | Secret | Optional, derselbe Wert wie das gleichnamige Runtime-Secret. Dann meldet `deploy.sh` nach jedem Production-Deploy alle Sitemap-URLs an IndexNow ([1.5](#15-indexnow-aktivieren-optional-empfohlen)). Fehlt er, gibt das Build-Log nur eine Warnung aus. |
 
 ### 1.4 Worker-Runtime-Variablen setzen
 
@@ -262,14 +264,32 @@ Wert der Schlüssel. Alternativ per CLI:
 npx wrangler secret put INDEXNOW_KEY
 ```
 
-Danach einmal deployen bzw. das automatische Deploy abwarten. Mehr ist nicht
-nötig: der Worker liefert die Schlüsseldatei unter `/<key>.txt` aus
-(`SEO.serveIndexNowKey()`) und meldet nach jeder erfolgreichen Admin-Änderung
-die betroffenen Orte, Stadtseiten und Termine selbst (`SEO.pingIndexNow()`).
-Zusätzlich meldet ein stündlicher Cron-Lauf (`SEO.sweepIndexNow()`) alles,
-was seit dem letzten Lauf neu ist — also auch Orte, Preise und Termine, die
-direkt in der D1-Konsole eingetragen wurden.
-Ohne das Secret passiert nichts — kein Fehler, nur keine Meldung.
+Danach einmal deployen bzw. das automatische Deploy abwarten. Der Worker liefert
+die Schlüsseldatei unter `/<key>.txt` aus (`SEO.serveIndexNowKey()`) und meldet
+nach jeder erfolgreichen Admin-Änderung die betroffenen Orte, deren Stadtseiten
+und Termine selbst (`SEO.pingIndexNow()`). Zusätzlich meldet ein stündlicher
+Cron-Lauf (`SEO.sweepIndexNow()`) alles, was seit dem letzten Lauf neu ist,
+also auch Orte, Preise und Termine, die direkt in der D1-Konsole eingetragen
+wurden. Gibt es überhaupt eine Änderung, gehen in beiden Fällen auch alle
+statischen Seiten der Sitemap mit (`/`, `/ranglisten`, `/wissen`, `/sorten`,
+`/rivalen`, `/beitragen`, `/staedte`, `/kooperation`, Liste = `PAGE_DATES`),
+weil sie Zahlen, Orte oder Termine aus D1 zeigen.
+Ohne das Secret gibt es keine Meldung und kein Fehler, aber das Worker-Log
+warnt einmal pro Isolate: `[indexnow] INDEXNOW_KEY fehlt: keine Meldungen`.
+
+**Schritt 2b — Build-Variable für die Meldung nach dem Deploy.** Ein Deploy
+ändert Seiten, ohne dass sich in D1 etwas tut, Ping und Cron melden ihn also
+nicht. Dafür denselben Schlüssel zusätzlich unter *Settings → Build → Variables
+and secrets* als `INDEXNOW_KEY` anlegen (siehe [1.3](#13-build-variablen-setzen)).
+`scripts/deploy.sh` meldet dann nach jedem Production-Deploy (nicht bei
+Branch-Builds) alle Sitemap-URLs über `scripts/indexnow.sh`, aber erst, wenn
+die neue Version wirklich ausgeliefert wird: die Schlüsseldatei trägt im
+Header `x-worker-version` die ID der laufenden Version (Bindung
+`CF_VERSION_METADATA`), und das Script wartet bis zu drei Minuten, bis dort die
+ID aus der `wrangler deploy`-Ausgabe steht. Fehlt die Build-Variable, ist die
+Version nicht rechtzeitig live oder schlägt die Meldung fehl, steht eine
+Warnung (`⚠ …`) im Build-Log, der Deploy gilt trotzdem als erfolgreich. Den
+Schlüssel selbst gibt das Script nie aus.
 
 **Schritt 3 — Schlüsseldatei prüfen.** Muss den Schlüssel im Klartext liefern,
 sonst antwortet IndexNow mit `403`:
@@ -277,7 +297,8 @@ sonst antwortet IndexNow mit `403`:
 ```bash
 KEY=dein-indexnow-key
 curl -i "https://altbieratlas.de/$KEY.txt"
-# → 200, Body = $KEY, content-type: text/plain; charset=utf-8
+# → 200, Body = $KEY, content-type: text/plain; charset=utf-8,
+#   x-worker-version: <ID der laufenden Worker-Version>
 ```
 
 **Schritt 4 — Erst-Anmeldung aller Seiten.** Einmal nach dem Aktivieren alle
@@ -607,8 +628,10 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
   [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — genannt im
   `license`-Feld des `Dataset` und im Kopf von `llms.txt`/`llms-full.txt`
 - **IndexNow** (optional, Secret `INDEXNOW_KEY`): geänderte Orte, Stadtseiten
-  und Termine werden nach jeder Admin-Änderung sofort (direkte D1-Einträge
-  spätestens nach einer Stunde per Cron) an Bing, Yandex, Seznam,
+  und Termine samt allen statischen Seiten werden nach jeder Admin-Änderung
+  sofort (direkte D1-Einträge spätestens nach einer Stunde per Cron), nach
+  jedem Production-Deploy die ganze Sitemap (Build-Variable `INDEXNOW_KEY`)
+  an Bing, Yandex, Seznam,
   Naver und Yep gemeldet (Bing speist u. a. die ChatGPT-Suche; Google nimmt an
   IndexNow nicht teil). Die Schlüsseldatei liefert der Worker unter
   `/<key>.txt`. Für die Erst-Anmeldung und für Änderungen, die direkt in der

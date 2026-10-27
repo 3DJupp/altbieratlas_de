@@ -8,6 +8,10 @@
 #   database_id    — UUID der D1-Datenbank
 #   database_name  — Name der D1-Datenbank
 #   PRODUCTION_BRANCH (optional) — Branch, der live geht. Standard: main
+#   INDEXNOW_KEY   (optional) — derselbe Schlüssel wie das Worker-Secret.
+#                  Dann meldet das Script nach jedem Production-Deploy alle
+#                  Sitemap-URLs an api.indexnow.org. Fehlt er, nur Warnung.
+#   INDEXNOW_HOST  (optional) — Host für die Meldung. Standard: altbieratlas.de
 #
 # Verwendung:
 #   bash scripts/deploy.sh          # nur Worker deployen (Standard)
@@ -20,6 +24,12 @@
 #   Feature-Branches die Produktion nicht mehr überschreiben, selbst wenn
 #   das Dashboard das Script als Version command für Branch-Builds nutzt.
 #   Lokal (ohne WORKERS_CI_BRANCH) wird wie bisher deployt.
+#
+# IndexNow nach dem Deploy:
+#   Erst wenn https://<host>/<key>.txt im Header x-worker-version die ID der
+#   gerade deployten Version liefert (also die neue Version live ausliefert),
+#   meldet scripts/indexnow.sh alle Sitemap-URLs. Jeder Fehler dabei ist nur
+#   eine Warnung, der Deploy selbst gilt dann trotzdem als erfolgreich.
 #
 # Migrations-Strategie:
 #   Es gibt immer genau zwei kanonische SQL-Dateien:
@@ -63,4 +73,39 @@ if [ "$SEED" = true ]; then
 fi
 
 echo "▶ Worker deployen..."
-exec npx wrangler deploy
+DEPLOY_LOG="$(mktemp)"
+trap 'rm -f "$DEPLOY_LOG"' EXIT
+npx wrangler deploy 2>&1 | tee "$DEPLOY_LOG"
+
+# ── IndexNow: alle Sitemap-URLs melden, sobald die neue Version live ist ──
+indexnow_after_deploy() {
+  local host="${INDEXNOW_HOST:-altbieratlas.de}"
+  if [ -z "${INDEXNOW_KEY:-}" ]; then
+    echo "⚠ INDEXNOW_KEY ist keine Build-Variable: Sitemap wird nicht an IndexNow gemeldet" >&2
+    return 0
+  fi
+  local version
+  version="$(grep -oE 'Current Version ID: [0-9a-f-]+' "$DEPLOY_LOG" | tail -1 | awk '{print $4}')" || true
+  if [ -z "$version" ]; then
+    echo "⚠ Versions-ID nicht in der wrangler-Ausgabe gefunden: IndexNow-Meldung übersprungen" >&2
+    return 0
+  fi
+  echo "▶ Warte, bis Version $version auf $host live ist..."
+  local served="" i
+  for i in $(seq 1 36); do  # max. ~3 min
+    served="$(curl -fsS -o /dev/null -D - --max-time 10 \
+      "https://${host}/${INDEXNOW_KEY}.txt" 2>/dev/null |
+      tr -d '\r' | awk -F': *' 'tolower($1) == "x-worker-version" {print $2}')" || true
+    [ "$served" = "$version" ] && break
+    sleep 5
+  done
+  if [ "$served" != "$version" ]; then
+    echo "⚠ Version $version nach 3 min nicht live (ausgeliefert: ${served:-nichts}): IndexNow-Meldung übersprungen." >&2
+    echo "  Nachholen: INDEXNOW_KEY=<key> npm run seo:indexnow" >&2
+    return 0
+  fi
+  echo "▶ Version live, melde Sitemap an IndexNow..."
+  bash scripts/indexnow.sh --host "$host" ||
+    echo "⚠ IndexNow-Meldung fehlgeschlagen (Deploy ist trotzdem live)" >&2
+}
+indexnow_after_deploy

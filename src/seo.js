@@ -665,17 +665,34 @@ export function indexNowKey(env) {
   return k && /^[A-Za-z0-9-]{8,128}$/.test(k) ? k : null;
 }
 
+// Fehlt der Schlüssel, fiele IndexNow sonst still aus → einmal pro Isolate warnen
+let warnedMissingKey = false;
+function indexNowKeyOrWarn(env) {
+  const key = indexNowKey(env);
+  if (!key && !warnedMissingKey) {
+    warnedMissingKey = true;
+    console.warn(env.INDEXNOW_KEY
+      ? "[indexnow] INDEXNOW_KEY ungültig (8–128 Zeichen a–z, A–Z, 0–9, -): keine Meldungen"
+      : "[indexnow] INDEXNOW_KEY fehlt: keine Meldungen");
+  }
+  return key;
+}
+
+// x-worker-version: ID der ausgelieferten Worker-Version. scripts/deploy.sh
+// wartet darauf, bevor es nach einem Deploy die Sitemap meldet.
 export function serveIndexNowKey(env, pathname) {
   const key = indexNowKey(env);
   if (!key || pathname !== `/${key}.txt`) return null;
-  return new Response(key, { headers: { "content-type": "text/plain; charset=utf-8" } });
+  const headers = { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" };
+  if (env.CF_VERSION_METADATA?.id) headers["x-worker-version"] = env.CF_VERSION_METADATA.id;
+  return new Response(key, { headers });
 }
 
 // Meldet alle Seiten, die sich in den letzten Minuten geändert haben:
 // Orte (Stammdaten oder neue Preise), deren Stadtseiten, neue Termine und die
 // datengetriebenen Übersichtsseiten.
 export async function pingIndexNow(env, request) {
-  const key = indexNowKey(env);
+  const key = indexNowKeyOrWarn(env);
   if (!key) return;
   const host = new URL(request.url).host;
   if (host !== "altbieratlas.de" && host !== "www.altbieratlas.de") return; // keine Vorschau-Hosts melden
@@ -694,7 +711,7 @@ export async function pingIndexNow(env, request) {
 const INDEXNOW_KEY_SETTING = "indexnow_last_until";
 
 export async function sweepIndexNow(env) {
-  const key = indexNowKey(env);
+  const key = indexNowKeyOrWarn(env);
   if (!key) return;
   let host;
   try { host = new URL(siteConfig(env).siteUrl || SITE).host; } catch { host = new URL(SITE).host; }
@@ -733,16 +750,20 @@ async function submitChanged(env, key, host, since, until = null) {
          AND created_at > ${from} AND created_at <= ${to} LIMIT 50`
     ).bind(since, until).all(),
   ]);
+  const breweries = bRes.results || [], events = eRes.results || [];
+  if (!breweries.length && !events.length) return;
   const urls = new Set();
-  for (const b of bRes.results || []) {
+  // Stadtseiten nur, wenn es sie gibt (cityIndex), sonst meldeten wir 404-URLs
+  const cities = breweries.length ? await cityIndex(env) : {};
+  for (const b of breweries) {
     urls.add(`${base}/ort/${encodeURIComponent(b.id)}`);
     const slug = citySlug(b.city);
-    if (slug) urls.add(`${base}/stadt/${slug}`);
+    if (slug && cities[slug]) urls.add(`${base}/stadt/${slug}`);
   }
-  for (const e of eRes.results || []) urls.add(`${base}/event?id=${encodeURIComponent(e.id)}`);
-  if (!urls.size) return;
-  urls.add(`${base}/`);
-  urls.add(`${base}/ranglisten`);
+  for (const e of events) urls.add(`${base}/event?id=${encodeURIComponent(e.id)}`);
+  // Alle statischen Seiten der Sitemap (PAGE_DATES) zeigen Zahlen, Orte oder
+  // Termine aus D1 → bei jeder Änderung mitmelden
+  for (const p of Object.keys(PAGE_DATES)) urls.add(`${base}${p}`);
   const res = await fetch("https://api.indexnow.org/indexnow", {
     method: "POST",
     headers: { "content-type": "application/json; charset=utf-8" },

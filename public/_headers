@@ -1,0 +1,4 @@
+# Wirkt nur, wo Cloudflare Assets ohne Worker ausliefert. Bei
+# run_worker_first = true setzt src/worker.js das Charset zusätzlich selbst.
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
