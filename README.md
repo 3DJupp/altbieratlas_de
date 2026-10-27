@@ -494,7 +494,7 @@ Maps-Link, ohne Review-Texte; fehlt der Cache-Eintrag oder ist er älter als
 - Listet aktive **und historische** Orte einer Stadt inkl. Ø-Preis (nur 0,25 l, damit
   vergleichbar) und Preis je Ort (jüngster Preis der kleinsten gemeldeten Größe, mit
   Größenangabe). Ungeprüfte Orte („In Prüfung“, `verified = 0`) erscheinen hier nicht,
-  mit `CollectionPage`-, `BreadcrumbList`- und `ItemList`-JSON-LD sowie hreflang
+  mit `CollectionPage`-, `BreadcrumbList`- und `ItemList`-JSON-LD
 - Querverlinkung „Weitere Städte" auf jeder Stadtseite; zusätzlich verlinkt der
   Footer site-weit die bis zu fünf größten Städte mit mehr als einem aktiven Ort
   (Daten via `/api/config`), dahinter „Weitere →“ auf die Übersicht `/staedte`
@@ -590,10 +590,12 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
   Google, WhatsApp & Co. die OG-Bilder nicht laden und Linkvorschauen bleiben leer.
   **Achtung:** Hat die Cloudflare-Zone „Block AI bots" oder die verwaltete
   robots.txt aktiviert, überschreibt das diese Datei (Dashboard → Security → Bots)
-- **Sprachvarianten**: Die hreflang-Links zeigen auf `<url>?lang=en`. `i18n.js`
-  übernimmt den Parameter, der Worker setzt dafür `lang="en"`, eine
-  selbstreferenzierende Canonical und `og:locale` — sonst verwirft Google das
-  hreflang-Paar
+- **Sprachvarianten**: `?lang=en` liefert dasselbe HTML wie die deutsche Seite,
+  übersetzt wird erst im Browser (`i18n.js`). Der Worker setzt deshalb
+  `noindex, follow` (Meta-Tag und `X-Robots-Tag`), lässt Canonical und `og:url`
+  auf der deutschen URL und entfernt hreflang-Links; auch die deutschen Seiten
+  tragen keine hreflang-Alternates mehr. Erst mit serverseitig übersetztem
+  Inhalt lohnt sich wieder ein hreflang-Paar
 - **Strukturierte Daten**: `WebSite`/`Organization` (Start), `Brewery`,
   `BarOrPub`, `Restaurant` bzw. Laden-Typen je Ort, `Event` mit Adresse,
   `CollectionPage` je Stadt und auf `/sorten`, `Article` auf `/wissen` und `/rivalen`,
@@ -614,7 +616,15 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
   (→ [1.5 IndexNow aktivieren](#15-indexnow-aktivieren-optional-empfohlen))
 - **Sitemap** ohne `/impressum` (die Seite ist `noindex`)
 - **Eigene 404-Seite** mit Status 404 und `noindex, follow` statt der nackten
-  Default-Antwort
+  Default-Antwort — auch für unbekannte Orts-Slugs (`/ort/<slug>`, `/ort/<slug>.html`,
+  `/ort/a/b`), unbekannte oder fehlende Event-IDs (`/event?id=…`) und unbekannte
+  `*.html`. Keine leere Seiten-Shell mit 200 mehr, die Google als Soft 404 wertet.
+  `/ort` ohne ID leitet auf `/` um
+- **Roh-HTML mit Substanz**: Ortsseiten rendern neben Beschreibung, Sorten und
+  aktuellen Preisen die Preis-Historie, Nachfolger/übernommene Marken, kommende
+  Termine am Ort und „Altbier in der Nähe“ (nächste sechs Orte); Eventseiten
+  rendern Termin, Ort, Beschreibung, Biere und weitere Termine serverseitig
+- **`.ics`-Links** tragen `rel="nofollow"` (`/api/` ist per robots.txt gesperrt)
 - **Leaflet** wird am Seitenende statt im `<head>` geladen; der Textinhalt
   rendert dadurch, bevor die 150 kB Karten-JS über das Netz sind
 

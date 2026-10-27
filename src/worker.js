@@ -64,15 +64,17 @@ function ortUrl(request) {
 }
 
 // Eigene 404-Seite (public/404.html) mit korrektem Status ausliefern.
+// Echter Status statt leerer Seiten-Shell mit 200 — sonst meldet die
+// Search Console jede tote Orts- oder Event-URL als Soft 404.
 async function notFoundPage(env, request) {
-  if (!env.ASSETS) return new Response("Not found", { status: 404 });
+  if (!env.ASSETS) return new Response("Not found", { status: 404, headers: { "x-robots-tag": "noindex" } });
   const assetUrl = new URL(request.url);
   assetUrl.pathname = "/404.html";
   const res = await env.ASSETS.fetch(new Request(assetUrl.toString(), request));
-  if (!res.ok) return new Response("Not found", { status: 404 });
+  if (!res.ok) return new Response("Not found", { status: 404, headers: { "x-robots-tag": "noindex" } });
   return new Response(res.body, {
     status: 404,
-    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" },
   });
 }
 
@@ -331,7 +333,7 @@ async function handle(request, env, ctx) {
 
   // /<page>.html → /<page>  (301, kanonische Clean URLs)
   // /index.html  → /
-  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "impressum", "admin", "ort", "brauerei", "event"];
+  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "impressum", "admin", "ort", "brauerei", "event", "staedte"];
   if (request.method === "GET" && url.pathname.endsWith(".html")) {
     const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
     if (name === "index") {
@@ -348,6 +350,15 @@ async function handle(request, env, ctx) {
       dest.pathname = `/${name}`;
       return Response.redirect(dest.toString(), 301);
     }
+    // stadt.html ist nur die Vorlage der Stadtseiten (Canonical einer festen
+    // Stadt), 404.html nur die Fehlerseite — beide nie direkt mit 200 ausliefern
+    if (name === "stadt") {
+      const dest = new URL(request.url);
+      dest.pathname = "/staedte";
+      dest.search = "";
+      return Response.redirect(dest.toString(), 301);
+    }
+    if (name === "404") return notFoundPage(env, request);
   }
 
   // Startseite: / → index.html (html_handling=none deaktiviert Auto-Index)
@@ -372,6 +383,13 @@ async function handle(request, env, ctx) {
           || (url.pathname === "/ort" && url.searchParams.get("id")))) {
     return Response.redirect(ortUrl(request), 301);
   }
+  // /ort ohne ID hat keinen eigenen Inhalt (ort.html zeigte dann still einen
+  // Beispielort unter Canonical /ort) → zur Karte
+  if (request.method === "GET" && (url.pathname === "/ort" || url.pathname === "/ort/")) {
+    const dest = new URL(request.url);
+    dest.pathname = "/";
+    return Response.redirect(dest.toString(), 301);
+  }
 
   // Trailing Slash auf Ortsseiten vereinheitlichen: /ort/<slug>/ → /ort/<slug>
   if (request.method === "GET" && /^\/ort\/.+\/$/.test(url.pathname)) {
@@ -380,19 +398,19 @@ async function handle(request, env, ctx) {
     return Response.redirect(dest.toString(), 301);
   }
 
-  // /ort/<slug> und /ort — SSR: Meta-Tags, JSON-LD und Seiteninhalt aus D1
-  if (request.method === "GET" && (url.pathname === "/ort" || url.pathname.startsWith("/ort/"))
-      && env.ASSETS && env.DB) {
-    const slug = url.pathname.startsWith("/ort/")
-      ? decodeURIComponent(url.pathname.slice(5)).replace(/\/+$/, "")
-      : "";
-    if (!slug.includes("/")) {
-      try {
-        return await R.serveOrt(request, env, slug ? { id: slug } : {});
-      } catch (e) {
-        console.error("[worker] serveOrt threw:", e?.stack || e);
-        // Fallback: statische Datei ohne SSR ausliefern
-      }
+  // /ort/<slug> — SSR: Meta-Tags, JSON-LD und Seiteninhalt aus D1
+  if (request.method === "GET" && url.pathname.startsWith("/ort/") && env.ASSETS && env.DB) {
+    let slug = null;
+    try { slug = decodeURIComponent(url.pathname.slice(5)); } catch { /* kaputtes %-Escape */ }
+    // Orts-IDs enthalten nie einen Schrägstrich → /ort/a/b gibt es nicht
+    if (!slug || slug.includes("/")) return notFoundPage(env, request);
+    try {
+      const res = await R.serveOrt(request, env, { id: slug });
+      if (res.status === 404) return notFoundPage(env, request);
+      return res;
+    } catch (e) {
+      console.error("[worker] serveOrt threw:", e?.stack || e);
+      // Fallback: statische Datei ohne SSR ausliefern
     }
   }
 
@@ -410,7 +428,9 @@ async function handle(request, env, ctx) {
   // /event?id=... — SSR: title + meta tags mit echten Event-Daten befüllen
   if (url.pathname === "/event" && request.method === "GET" && env.ASSETS && env.DB) {
     try {
-      return await R.serveEvent(request, env);
+      const res = await R.serveEvent(request, env);
+      if (res.status === 404) return notFoundPage(env, request);
+      return res;
     } catch (e) {
       console.error("[worker] serveEvent threw:", e?.stack || e);
       // Fallback: statische Datei ohne SSR ausliefern
@@ -488,7 +508,8 @@ async function handle(request, env, ctx) {
     const res = await env.ASSETS.fetch(request);
     // Eigene 404-Seite statt der nackten Default-Antwort — hält Besucher,
     // die auf einem toten Link landen, statt sie zurückspringen zu lassen.
-    if (res.status === 404 && request.method === "GET" && !url.pathname.includes(".")) {
+    if (res.status === 404 && request.method === "GET"
+        && (!url.pathname.includes(".") || url.pathname.endsWith(".html"))) {
       return notFoundPage(env, request);
     }
     return res;

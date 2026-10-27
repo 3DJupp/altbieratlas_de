@@ -2769,6 +2769,9 @@ export function fmtDateDe(d) {
   return y && m && day ? `${day}.${m}.${y}` : String(d);
 }
 
+// Freitext-Quelle einer Preismeldung → deutsche Anzeige (Seed nutzt „on-site“)
+const SOURCE_DE = { "on-site": "vor Ort", "contribution": "Beitrag" };
+
 // Venue-Typ → schema.org-Typ. Genauere Typen helfen Suchmaschinen und
 // KI-Assistenten, einen Ort richtig einzuordnen („Brauerei“ statt „Kneipe“).
 const SCHEMA_TYPE = {
@@ -2790,11 +2793,11 @@ export async function serveOrt(req, env, params = {}) {
     return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
   };
 
-  // Ohne ID: statische Datei direkt ausliefern (kein SSR nötig)
-  if (!id) return staticFile();
+  // Ohne ID gibt es keine Seite (der Worker leitet /ort auf / um)
+  if (!id) return new Response("Not found", { status: 404 });
 
   // Brauerei + Preise + Stile parallel aus D1 laden
-  let row, prices = [], styles = [];
+  let row, prices = [], styles = [], dbFailed = false;
   try {
     const [bRes, pRes, sRes] = await Promise.all([
       env.DB.prepare(
@@ -2818,10 +2821,50 @@ export async function serveOrt(req, env, params = {}) {
     row = bRes;
     prices = pRes?.results || [];
     styles = sRes?.results || [];
-  } catch { /* D1 nicht verfügbar — Fallback auf statische Datei */ }
+  } catch { dbFailed = true; /* D1 nicht verfügbar — Fallback auf statische Datei */ }
 
-  // Brauerei nicht gefunden oder DB-Fehler: statische Datei ausliefern
-  if (!row) return staticFile();
+  // DB-Fehler: statische Datei ausliefern (clientseitig rendern lassen).
+  // Ort existiert nicht (oder ist nicht freigegeben): echter 404 statt einer
+  // leeren Shell mit 200, die Google als Soft 404 wertet.
+  if (dbFailed) return staticFile();
+  if (!row) return new Response("Not found", { status: 404 });
+
+  // Zusatzinhalt fürs Roh-HTML: Nachfolger/Vorgänger, Orte in der Nähe und
+  // kommende Termine am Ort. Fehler hier kosten nur diese Abschnitte.
+  let successor = null, predecessors = [], nearby = [], venueEvents = [];
+  try {
+    const hasGeo = row.lat != null && row.lng != null && !row.is_historical;
+    const [succRes, predRes, nearRes, evRes] = await Promise.all([
+      row.successor_id
+        ? env.DB.prepare("SELECT id, name FROM breweries WHERE id = ? AND status = 'approved'").bind(row.successor_id).first()
+        : null,
+      env.DB.prepare("SELECT id, name FROM breweries WHERE successor_id = ? AND status = 'approved' ORDER BY name")
+        .bind(row.id).all(),
+      // Grobe Box (~±17 km) per Index-freundlichem BETWEEN, exakt sortiert wird unten
+      hasGeo
+        ? env.DB.prepare(
+          `SELECT b.id, b.name, b.city, b.lat, b.lng, COALESCE(v.name_de, b.type) AS type_label
+           FROM breweries b LEFT JOIN venue_types v ON v.id = b.type
+           WHERE b.status = 'approved' AND b.is_historical = 0 AND b.id != ?
+             AND b.lat BETWEEN ? AND ? AND b.lng BETWEEN ? AND ?`
+        ).bind(row.id, row.lat - 0.15, row.lat + 0.15, row.lng - 0.25, row.lng + 0.25).all()
+        : null,
+      env.DB.prepare(
+        `SELECT id, title_de, title_en, date, end_date, time FROM events
+         WHERE brewery_id = ? AND status = 'approved' AND COALESCE(end_date, date) >= date('now')
+         ORDER BY date LIMIT 5`
+      ).bind(row.id).all(),
+    ]);
+    successor = succRes || null;
+    predecessors = predRes?.results || [];
+    nearby = (nearRes?.results || [])
+      .map((n) => ({ ...n, km: haversine(row.lat, row.lng, n.lat, n.lng) / 1000 }))
+      .sort((a, b) => a.km - b.km)
+      .slice(0, 6);
+    venueEvents = evRes?.results || [];
+  } catch (e) {
+    console.error("[ort] Zusatzinhalt:", e?.message || e);
+  }
 
   const assetRes = await staticFile();
   if (!assetRes.ok) return assetRes;
@@ -2987,6 +3030,9 @@ export async function serveOrt(req, env, params = {}) {
         <h2>Über ${escHtml(row.name)}</h2>
         <p>${escHtml(row.description_de || row.description_en || `${row.name} ist als ${row.type_label || row.type} in ${row.city} im Altbieratlas verzeichnet.`)}</p>
         ${row.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${escHtml(row.address)}</p>` : ""}
+        ${successor ? `<p class="ort-lineage">Heute bei: <a href="/ort/${escHtml(encodeURIComponent(successor.id))}">${escHtml(successor.name)} →</a></p>` : ""}
+        ${predecessors.length ? `<p class="ort-lineage">Übernommene Marken: ${predecessors.map((p) =>
+          `<a href="/ort/${escHtml(encodeURIComponent(p.id))}">${escHtml(p.name)}</a>`).join(", ")}</p>` : ""}
         ${shownHours ? `
         <div class="ort-hours">
           <h3>Öffnungszeiten</h3>
@@ -3019,8 +3065,37 @@ export async function serveOrt(req, env, params = {}) {
           ${latestBySize.map((p) => `<tr><td>${escHtml(fmtSizeDe(p.size))}${p.style_name ? ` · ${escHtml(p.style_name)}` : ""}</td><td>€ ${escHtml(fmtPriceDe(p.price))}</td><td>${escHtml(fmtDateDe(p.date))}</td></tr>`).join("")}
         </tbody>
       </table>` : `<p>Für ${escHtml(row.name)} liegt noch keine Preismeldung vor.</p>`}
+      ${prices.length > latestBySize.length ? `
+      <h3>Preis-Historie</h3>
+      <table class="ssr-price-table">
+        <thead><tr><th>gemeldet am</th><th>Größe</th><th>Preis</th><th>Quelle</th></tr></thead>
+        <tbody>
+          ${prices.map((p) => `<tr><td>${escHtml(fmtDateDe(p.date))}</td><td>${escHtml(fmtSizeDe(p.size))}${p.style_name ? ` · ${escHtml(p.style_name)}` : ""}</td><td>€ ${escHtml(fmtPriceDe(p.price))}</td><td>${escHtml(SOURCE_DE[String(p.source || "").toLowerCase()] || p.source || "")}</td></tr>`).join("")}
+        </tbody>
+      </table>` : ""}
       <p><a class="btn btn-primary" href="/beitragen?typ=preis&brauerei=${escHtml(encodeURIComponent(row.id))}">Preis melden</a></p>
     </section>`;
+
+  // Steht außerhalb von <main id="brewery-root">: das Client-Script ersetzt
+  // nur dessen Inhalt, Termine und Umgebung bleiben so auch nach dem Rendern.
+  const fmtKm = (km) => km < 1 ? `${Math.round(km * 1000 / 50) * 50} m` : `${km.toFixed(1).replace(".", ",")} km`;
+  const extraHtml = venueEvents.length || nearby.length ? `
+  <div id="ort-ssr-extra">
+    ${venueEvents.length ? `
+    <section class="container" style="padding-bottom:24px">
+      <h2 data-i18n="brewery.eventsHere">Termine hier</h2>
+      <ul>
+        ${venueEvents.map((e) => `<li><a href="/event?id=${escHtml(encodeURIComponent(e.id))}">${escHtml(e.title_de || e.title_en || "Termin")}</a> · ${escHtml(fmtEventRangeDe(e.date, e.end_date))}${e.time ? `, ${escHtml(String(e.time).slice(0, 5))} Uhr` : ""}</li>`).join("")}
+      </ul>
+    </section>` : ""}
+    ${nearby.length ? `
+    <section class="container" style="padding-bottom:40px">
+      <h2 data-i18n="brewery.nearby">Altbier in der Nähe</h2>
+      <ul>
+        ${nearby.map((n) => `<li><a href="/ort/${escHtml(encodeURIComponent(n.id))}">${escHtml(n.name)}</a> · ${escHtml(n.type_label || "")}${n.city !== row.city ? ` in ${escHtml(n.city)}` : ""} · ${escHtml(fmtKm(n.km))}</li>`).join("")}
+      </ul>
+    </section>` : ""}
+  </div>` : "";
 
   let html = await assetRes.text();
 
@@ -3047,17 +3122,14 @@ export async function serveOrt(req, env, params = {}) {
   // Inhalt in <main id="brewery-root"> rendern
   html = html.replace(
     /<main id="brewery-root"[^>]*>[\s\S]*?<\/main>/,
-    () => `<main id="brewery-root" data-ssr="1">${bodyHtml}</main>`,
+    () => `<main id="brewery-root" data-ssr="1">${bodyHtml}</main>${extraHtml}`,
   );
 
-  // JSON-LD + hreflang-Alternates vor </head> einfügen
-  const hreflang =
-    `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
-    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "?lang=en")}" />\n` +
-    `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
+  // JSON-LD vor </head> einfügen. Keine hreflang-Alternates: ?lang=en ist
+  // dasselbe HTML und deshalb noindex (siehe applyLangVariant in seo.js).
   html = html.replace(
     "</head>",
-    `${hreflang}<script type="application/ld+json">${ld}</script>\n</head>`,
+    `<script type="application/ld+json">${ld}</script>\n</head>`,
   );
 
   const headers = new Headers(assetRes.headers);
@@ -3137,17 +3209,23 @@ export function fmtEventRangeDe(start, end) {
   return `${ad}.–${b}`;
 }
 
+// "2026-10-20" → "20. Oktober 2026" (wie toLocaleDateString("de-DE") in event.html)
+const MONTHS_DE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
+  "August", "September", "Oktober", "November", "Dezember"];
+function fmtDateLongDe(d) {
+  const [y, m, day] = String(d || "").slice(0, 10).split("-").map(Number);
+  return y && m && day ? `${day}. ${MONTHS_DE[m - 1]} ${y}` : String(d || "");
+}
+
 export async function serveEvent(req, env) {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
 
-  if (!id) {
-    const assetUrl = new URL(req.url);
-    assetUrl.pathname = "/event.html";
-    return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
-  }
+  // Ohne ID oder mit unbekannter ID gibt es keinen Inhalt → 404 (der Worker
+  // liefert die Fehlerseite), statt einer „Event nicht gefunden“-Shell mit 200.
+  if (!id) return new Response("Not found", { status: 404 });
 
-  let row;
+  let row, dbFailed = false;
   try {
     row = await env.DB.prepare(
       `SELECT e.id, e.title_de, e.title_en, e.date, e.time, e.end_date, e.end_time,
@@ -3157,12 +3235,32 @@ export async function serveEvent(req, env) {
        FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
        WHERE e.id = ? AND e.status = 'approved'`
     ).bind(id).first();
-  } catch { /* D1 nicht verfügbar */ }
+  } catch { dbFailed = true; /* D1 nicht verfügbar */ }
 
-  if (!row) {
+  if (dbFailed) {
     const assetUrl = new URL(req.url);
     assetUrl.pathname = "/event.html";
     return env.ASSETS.fetch(new Request(assetUrl.toString(), req));
+  }
+  if (!row) return new Response("Not found", { status: 404 });
+
+  // Biere und weitere Termine fürs Roh-HTML; Fehler kosten nur diese Abschnitte
+  let beers = [], moreEvents = [];
+  try {
+    const [bRes, mRes] = await Promise.all([
+      env.DB.prepare("SELECT name_de, name_en, size, price, notes FROM event_beers WHERE event_id = ? ORDER BY id")
+        .bind(row.id).all(),
+      env.DB.prepare(
+        `SELECT e.id, e.title_de, e.title_en, e.date, e.end_date, e.location, b.name AS brewery_name
+         FROM events e LEFT JOIN breweries b ON b.id = e.brewery_id
+         WHERE e.status = 'approved' AND e.id != ? AND COALESCE(e.end_date, e.date) >= date('now')
+         ORDER BY e.date LIMIT 5`
+      ).bind(row.id).all(),
+    ]);
+    beers = bRes?.results || [];
+    moreEvents = mRes?.results || [];
+  } catch (e) {
+    console.error("[event] Zusatzinhalt:", e?.message || e);
   }
 
   const assetUrl = new URL(req.url);
@@ -3251,14 +3349,76 @@ export async function serveEvent(req, env) {
     /(<meta name="twitter:description" content=")[^"]*(" id="meta-tw-desc")/,
     `$1${escHtml(metaDesc)}$2`,
   );
-  const hreflang =
-    `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
-    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "&lang=en")}" />\n` +
-    `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
   html = html.replace(
     "</head>",
-    `${hreflang}<script type="application/ld+json">${JSON.stringify(ld)}</script>\n</head>`,
+    `<script type="application/ld+json">${JSON.stringify(ld)}</script>\n</head>`,
   );
+
+  // ---- Server-gerenderter Seiteninhalt -------------------------------
+  // Füllt dieselben Elemente, die event.html clientseitig befüllt — Crawler
+  // sehen so Termin, Ort, Beschreibung und Biere statt „…“.
+  const fmtTime = (t) => t ? `${String(t).slice(0, 5)} Uhr` : "";
+  let dateStr = fmtDateLongDe(row.date);
+  if (row.end_date && row.end_date !== row.date) dateStr += " – " + fmtDateLongDe(row.end_date);
+  const timeStr = row.time ? fmtTime(row.time) + (row.end_time ? " – " + fmtTime(row.end_time) : "") : "";
+  const venueHref = row.brewery_id ? `/ort/${encodeURIComponent(row.brewery_id)}` : null;
+  const locHtml = locName
+    ? (venueHref ? `<a href="${escHtml(venueHref)}">${escHtml(locName)}</a>` : escHtml(locName))
+    : "";
+  const metaRow = (icon, text) =>
+    `<div class="meta-row"><span class="meta-icon">${icon}</span><span class="meta-text">${text}</span></div>`;
+  const heroMeta = [`<span>📅 ${escHtml(dateStr)}</span>`];
+  if (timeStr) heroMeta.push(`<span class="dot"></span><span>🕐 ${escHtml(timeStr)}</span>`);
+  if (locName) heroMeta.push(`<span class="dot"></span><span>📍 ${escHtml(locName)}</span>`);
+
+  const intro = `${titleDe} ${row.end_date && row.end_date !== row.date ? "läuft" : "findet"} am ${dateStr}`
+    + (timeStr ? ` (${timeStr})` : "")
+    + (locName ? ` ${row.brewery_id ? "bei" : "in"} ${locName}` : "")
+    + (row.end_date && row.end_date !== row.date ? "." : " statt.");
+  const introHtml = `
+      <div id="ev-ssr-intro" class="event-desc">
+        <p>${escHtml(intro)}</p>
+        ${venueHref ? `<p>Veranstaltungsort: ${locHtml}${row.brewery_address ? `, ${escHtml(row.brewery_address)}` : ""}. Preise, Sorten und Öffnungszeiten stehen auf der Seite des Orts.</p>` : ""}
+      </div>`;
+
+  const actions = [
+    `<a href="/api/events/${escHtml(encodeURIComponent(row.id))}/calendar.ics?lang=de" class="ics-btn" rel="nofollow">Kalender (.ics)</a>`,
+    ...(row.url ? [`<a href="${escHtml(row.url)}" target="_blank" rel="noopener" class="ics-btn">Website</a>`] : []),
+  ];
+
+  const sub = (re, fn) => { html = html.replace(re, fn); };
+  sub(/(<h1 class="event-title" id="ev-title">)[\s\S]*?(<\/h1>)/, (m, a, b) => `${a}${escHtml(titleDe)}${b}`);
+  sub(/(<div class="event-hero-meta" id="ev-hero-meta">)(<\/div>)/, (m, a, b) => `${a}${heroMeta.join("")}${b}`);
+  sub(/<div id="ev-desc" class="event-desc" style="display:none"><\/div>/, () =>
+    introHtml + (rawDesc
+      ? `<div id="ev-desc" class="event-desc">${escHtml(rawDesc)}</div>`
+      : `<div id="ev-desc" class="event-desc" style="display:none"></div>`));
+  if (beers.length) {
+    sub(/<div id="ev-beers-wrap" class="beer-wrap" style="display:none">/, () => `<div id="ev-beers-wrap" class="beer-wrap">`);
+    sub(/(<tbody id="beers-tbody">)(<\/tbody>)/, (m, a, b) => a + beers.map((bb) =>
+      `<tr><td>${escHtml(bb.name_de || bb.name_en || "—")}</td><td class="beer-size">${escHtml(fmtSizeDe(bb.size))}</td>`
+      + `<td class="beer-price">${bb.price != null ? `€ ${escHtml(fmtPriceDe(bb.price))}` : "—"}</td>`
+      + `<td style="font-size:13px;color:var(--ink-muted)">${escHtml(bb.notes || "")}</td></tr>`).join("") + b);
+  }
+  sub(/<aside class="event-sidebar" id="ev-sidebar" style="display:none">/, () => `<aside class="event-sidebar" id="ev-sidebar">`);
+  sub(/(<div id="ev-sidebar-meta">)(<\/div>)/, (m, a, b) => a
+    + metaRow("📅", escHtml(dateStr))
+    + (timeStr ? metaRow("🕐", escHtml(timeStr)) : "")
+    + (locName ? metaRow("📍", locHtml) : "") + b);
+  sub(/(<div class="event-actions" id="ev-actions">)(<\/div>)/, (m, a, b) => a + actions.join("") + b);
+  if (moreEvents.length) {
+    const list = moreEvents.map((e) => {
+      const where = e.brewery_name || e.location;
+      return `<li><a href="/event?id=${escHtml(encodeURIComponent(e.id))}">${escHtml(e.title_de || e.title_en || "Termin")}</a>`
+        + ` · ${escHtml(fmtEventRangeDe(e.date, e.end_date))}${where ? ` · ${escHtml(where)}` : ""}</li>`;
+    }).join("");
+    sub(/<div id="shell-footer"><\/div>/, () => `<section class="container" id="ev-more" style="padding:8px 24px 40px">
+    <h2>Weitere Altbier-Termine</h2>
+    <ul>${list}</ul>
+    <p><a href="/#event-grid">Alle Termine auf der Startseite</a></p>
+  </section>
+<div id="shell-footer"></div>`);
+  }
 
   const headers = new Headers(assetRes.headers);
   headers.set("content-type", "text/html; charset=utf-8");
@@ -3475,11 +3635,7 @@ export async function serveCity(req, env) {
     () => `<body data-city="${escHtml(city)}" data-city-slug="${escHtml(slug)}">`,
   );
 
-  const hreflang =
-    `<link rel="alternate" hreflang="de" href="${escHtml(pageUrl)}" />\n` +
-    `<link rel="alternate" hreflang="en" href="${escHtml(pageUrl + "?lang=en")}" />\n` +
-    `<link rel="alternate" hreflang="x-default" href="${escHtml(pageUrl)}" />\n`;
-  html = html.replace("</head>", `${hreflang}<script type="application/ld+json">${ld}</script>\n</head>`);
+  html = html.replace("</head>", `<script type="application/ld+json">${ld}</script>\n</head>`);
 
   const headers = new Headers(assetRes.headers);
   headers.set("content-type", "text/html; charset=utf-8");
@@ -3541,11 +3697,7 @@ export async function serveCities(req, env) {
       },
     ],
   });
-  const hreflang =
-    `<link rel="alternate" hreflang="de" href="${pageUrl}" />\n` +
-    `<link rel="alternate" hreflang="en" href="${pageUrl}?lang=en" />\n` +
-    `<link rel="alternate" hreflang="x-default" href="${pageUrl}" />\n`;
-  html = html.replace("</head>", `${hreflang}<script type="application/ld+json">${ld}</script>\n</head>`);
+  html = html.replace("</head>", `<script type="application/ld+json">${ld}</script>\n</head>`);
 
   const headers = new Headers(assetRes.headers);
   headers.set("content-type", "text/html; charset=utf-8");

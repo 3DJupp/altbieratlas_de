@@ -11,10 +11,7 @@
 <title>Altbieratlas – Altbier-Karte: Brauereien, Kneipen &amp; Preise</title>
 <meta name="description" content="Der Altbieratlas: Preise, Orte und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt." />
 <link rel="canonical" href="https://altbieratlas.de/" />
-<link rel="alternate" hreflang="de" href="https://altbieratlas.de/" />
-<link rel="alternate" hreflang="en" href="https://altbieratlas.de/?lang=en" />
 <link rel="alternate" type="application/atom+xml" title="Altbieratlas – Termine" href="/api/events/feed.xml" />
-<link rel="alternate" hreflang="x-default" href="https://altbieratlas.de/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Altbieratlas" />
 <meta property="og:title" content="Altbieratlas — Die interaktive Karte des Altbiers" />
@@ -135,7 +132,7 @@
         <h2 data-i18n="index.upcomingEvents">Kommende Termine</h2>
       </div>
       <div class="section-head-actions">
-        <a id="ics-all-btn" class="btn btn-ghost" href="/api/events/calendar.ics" download="altbieratlas-termine.ics" data-i18n="index.downloadIcs" title="Kalender herunterladen (.ics)">📅 .ics</a>
+        <a id="ics-all-btn" class="btn btn-ghost" href="/api/events/calendar.ics" rel="nofollow" download="altbieratlas-termine.ics" data-i18n="index.downloadIcs" title="Kalender herunterladen (.ics)">📅 .ics</a>
         <a class="btn btn-ghost" href="/beitragen?typ=event" data-i18n="index.reportEventLink">Event melden →</a>
       </div>
     </div>
@@ -923,7 +920,7 @@ function renderEvents(events) {
             <span class="event-loc">${locText}</span>
             <div style="display:flex;gap:6px;flex-shrink:0">
               ${urlBtn}
-              <a class="event-ics-link" href="/api/events/${ev.id}/calendar.ics?lang=${lang}" download="altbieratlas-termin.ics" title="${window.t("index.addToCalendar")}">📅 .ics</a>
+              <a class="event-ics-link" href="/api/events/${ev.id}/calendar.ics?lang=${lang}" rel="nofollow" download="altbieratlas-termin.ics" title="${window.t("index.addToCalendar")}">📅 .ics</a>
             </div>
           </div>
         </article>`;
