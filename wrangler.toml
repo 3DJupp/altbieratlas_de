@@ -48,6 +48,13 @@ run_worker_first = true
 # Mit "none" serviert ASSETS exakt den angeforderten Pfad ohne Manipulation.
 html_handling = "none"
 
+# --- Versions-Metadaten -----------------------------------------
+# env.CF_VERSION_METADATA.id = ID der laufenden Worker-Version. Die
+# IndexNow-Schlüsseldatei schickt sie als Header x-worker-version mit;
+# scripts/deploy.sh meldet die Sitemap erst, wenn die neue ID live ist.
+[version_metadata]
+binding = "CF_VERSION_METADATA"
+
 # --- D1-Datenbank ---------------------------------------------
 # Platzhalter werden von scripts/deploy.sh via sed ersetzt.
 # Deploy-Command im CF-Dashboard: bash scripts/deploy.sh
@@ -127,8 +134,12 @@ persist = true
 #
 #   INDEXNOW_KEY          — optional: IndexNow-Schlüssel (8–128 Zeichen a–z,
 #                           A–Z, 0–9, -). Wird unter /<key>.txt ausgeliefert;
-#                           nach Admin-Änderungen meldet der Worker geänderte
-#                           Seiten an api.indexnow.org (Bing, Yandex …).
+#                           nach Admin-Änderungen und stündlich meldet der
+#                           Worker geänderte Seiten an api.indexnow.org (Bing,
+#                           Yandex …). Fehlt er, warnt das Log einmal pro Isolate.
+#                           Zusätzlich als BUILD-Variable gleichen Namens setzen,
+#                           dann meldet scripts/deploy.sh nach jedem Production-
+#                           Deploy alle Sitemap-URLs (fehlt sie: nur Warnung).
 #
 #   GOOGLE_PLACES_KEY     — optional: API-Key für die Google „Places API (New)"
 #                           (in der Google Cloud Console auf genau diese API

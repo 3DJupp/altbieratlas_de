@@ -303,7 +303,7 @@ async function handle(request, env, ctx) {
   }
 
   // Dynamische Sitemap (außerhalb /api, damit Crawler sie unter /sitemap.xml finden)
-  if (url.pathname === "/sitemap.xml" && request.method === "GET") {
+  if (url.pathname === "/sitemap.xml" && (request.method === "GET" || request.method === "HEAD")) {
     try {
       return await R.sitemap(request, env, {});
     } catch (e) {
@@ -511,6 +511,15 @@ async function handle(request, env, ctx) {
     if (res.status === 404 && request.method === "GET"
         && (!url.pathname.includes(".") || url.pathname.endsWith(".html"))) {
       return notFoundPage(env, request);
+    }
+    // robots.txt & Co. kommen vom ASSETS-Binding als „text/plain“ ohne
+    // Charset; public/_headers greift bei run_worker_first nicht zuverlässig
+    // (Cloudflare wendet es nicht auf Worker-Antworten an) → hier ergänzen
+    const type = res.headers.get("content-type") || "";
+    if (/^text\/plain\s*$/i.test(type)) {
+      const out = new Response(res.body, res);
+      out.headers.set("content-type", "text/plain; charset=utf-8");
+      return out;
     }
     return res;
   }

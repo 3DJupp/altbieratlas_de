@@ -4,6 +4,8 @@
 # ============================================================
 # Der Worker meldet geänderte Seiten nach jeder Admin-Änderung automatisch
 # (src/seo.js → pingIndexNow). Dieses Script ist für die Fälle daneben:
+#   • nach jedem Production-Deploy (ruft scripts/deploy.sh auf, wenn
+#     INDEXNOW_KEY als Build-Variable gesetzt ist)
 #   • Erst-Anmeldung aller Seiten nach dem Aktivieren des Keys
 #   • Nachmeldung nach Direkt-Änderungen in der D1-Console (dort läuft kein
 #     Worker-Request, also auch kein automatischer Ping)
@@ -53,17 +55,19 @@ fi
 
 BASE="https://${HOST}"
 KEY_URL="${BASE}/${KEY}.txt"
+# Für Ausgaben (Build-Logs): Schlüssel nie im Klartext ausgeben
+KEY_URL_SHOWN="${BASE}/<key>.txt"
 
 # 1) Schlüsseldatei muss den Schlüssel im Klartext ausliefern, sonst lehnen
 #    die Suchmaschinen die Meldung mit 403 ab.
 if [ "$VERIFY" = 1 ]; then
   served="$(curl -fsS --max-time 15 "$KEY_URL" || true)"
   if [ "$served" != "$KEY" ]; then
-    echo "Schlüsseldatei $KEY_URL liefert nicht den Schlüssel." >&2
+    echo "Schlüsseldatei $KEY_URL_SHOWN liefert nicht den Schlüssel." >&2
     echo "Secret INDEXNOW_KEY im Cloudflare-Dashboard gesetzt und Worker deployed?" >&2
     exit 1
   fi
-  echo "✓ Schlüsseldatei bestätigt: $KEY_URL"
+  echo "✓ Schlüsseldatei bestätigt: $KEY_URL_SHOWN"
 fi
 
 # 2) URL-Liste: entweder die übergebenen Ziele (Pfad oder volle URL) oder
@@ -80,8 +84,8 @@ if [ "${#TARGETS[@]}" -gt 0 ]; then
 else
   mapfile -t urls < <(
     curl -fsS --max-time 30 "${BASE}/sitemap.xml" |
-      tr '>' '>\n' |
-      sed -n 's/.*<loc>\([^<]*\)<\/loc.*/\1/p' |
+      grep -o '<loc>[^<]*</loc>' |
+      sed -e 's/<[^>]*>//g' |
       sed -e 's/&amp;/\&/g' -e 's/&apos;/'"'"'/g' -e 's/&quot;/"/g' |
       awk 'NF && !seen[$0]++'
   )
