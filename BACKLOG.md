@@ -9,7 +9,9 @@ Vorlage. Kein Relaunch: Seiten, Struktur und Funktionen bleiben. Leitbild sind G
 Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-30.
 Erledigt: Kicker-Labels (Mono, Sperrschrift, Versalien) über Überschriften entfernt. Schrift
 ersetzt durch Bitter (Überschriften) und Public Sans (Grundschrift), Mono entfällt, Zahlen
-mit Tabellenziffern.
+mit Tabellenziffern. Kursive Akzentwörter in den Heros entfernt, 404 und `/rivalen` ohne
+Kicker, Footer kurzer Seiten am Fensterrand, Tabs auf `/beitragen` im Raster, Event-Seite
+ohne doppelte Angaben und leere Tabellenspalten. Der Footer-Satz bleibt.
 
 Vorgehen: zuerst Startseite und Ortsseite umbauen, Vorher/Nachher-Screenshots abstimmen,
 dann die übrigen Seiten nachziehen.
@@ -17,31 +19,23 @@ dann die übrigen Seiten nachziehen.
 - **Weniger Kästen.** Ranglisten und Preislisten wie eine Getränkekarte: Name, Punktlinie,
   Preis, Trennlinien statt gleichförmiger Karten mit Rahmen. Pill-Badges („0,25 L“) und
   Positionsnummern „01 02 03“ ersetzen.
-- **Hero der Startseite.** Kein kursives Effektwort, kein schwebender Glas-Kasten über der
-  Karte. Konkreter Satz mit echten Zahlen (Orte, Preise, Ø-Preis 0,25 l), serverseitig
+- **Hero der Startseite.** Kein schwebender Glas-Kasten über der Karte. Konkreter Satz mit echten Zahlen (Orte, Preise, Ø-Preis 0,25 l), serverseitig
   befüllbar. Mobil: Karte zuerst, Hero kompakt darunter.
-- **Icons.** Emojis (Kalender, Pin, Link) durch eine kleine, einheitliche SVG-Icon-Reihe
+- **Icons.** Emojis (Kalender, Pin, Link; Startseite, Admin) durch eine kleine, einheitliche SVG-Icon-Reihe
   ersetzen. Platzhalter für Orte und Sorten ohne Logo gestalten (heute Kürzel bzw. leeres
   Quadrat).
 - **Farben.** Warme Palette behalten, mehr Kontrast, weniger Beige auf Beige. Header und
   Footer z. B. in dunklem Holzton. Dark Mode mitziehen.
-- **Texte.** Footer-Satz („Mit Liebe …“) neu formulieren; Hero-Überschriften der
-  Inhaltsseiten ohne kursive Akzentwörter.
 - **Fotos.** Echte Fotos (Glas, Schänke) statt Grafik, sofern Rechte vorhanden; Ablage in R2
   oder `public/images`.
-- **Event-Seite (`/event`).** Wirkt leer und doppelt: Datum und Ort stehen im Kopf und im
-  Details-Kasten noch einmal, darunter viel Leerraum. Biertabelle zeigt leere Spalten
-  (Preis „—“, Hinweis leer); nur Spalten mit Inhalt zeigen oder als Getränkekarte setzen.
-  Mobil hängt der Trennpunkt „•“ allein am Zeilenende. Emojis (Kalender, Pin) und
-  Mono-Labels („Details“, „Biere auf dem Event“) wie überall ersetzen.
+- **Event-Seite (`/event`).** Biertabelle als Getränkekarte setzen; Abschnittslabel („Biere
+  auf dem Event“) noch in Versalien mit Sperrschrift.
 - **Unterseiten angleichen.** Breiten uneinheitlich: `/beitragen` und Impressum in schmaler
   Mittelspalte, `/kooperation`, `/staedte`, `/stadt/<slug>` linksbündig über die volle Breite
   mit leerer rechter Hälfte. Eine gemeinsame Inhaltsbreite festlegen.
-  `/rivalen` hat noch Kicker („DUS — CGN · 47 km“), kursives Akzentwort im Hero, eine
-  Vergleichstabelle komplett in Mono und Emojis bei Fußball/Eishockey. 404 hat noch den
-  Kicker „Fehler 404“ und der Footer endet über dem Fensterrand. `/beitragen`: die Tabs
-  brechen auf zwei Zeilen um (ein Tab allein in Zeile zwei), Feldlabels in Mono-Versalien.
-  Stadtseiten: Links zu anderen Städten als Mono-Pills, Typ-Labels der Karten in Mono.
+  Kleine Labels in Versalien mit Sperrschrift (früher Mono) gibt es noch auf vielen Seiten,
+  z. B. Feldlabels auf `/beitragen`, Untertitel der Vergleichstabelle auf `/rivalen`,
+  Links zu anderen Städten als Pills und Typ-Labels der Karten auf den Stadtseiten.
 - **Aufräumen.** Ungenutzte CSS-Regeln und i18n-Schlüssel nach dem Umbau entfernen,
   `PAGE_DATES` aller Seiten aktualisieren.
 

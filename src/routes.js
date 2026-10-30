@@ -3365,11 +3365,9 @@ export async function serveEvent(req, env) {
   const locHtml = locName
     ? (venueHref ? `<a href="${escHtml(venueHref)}">${escHtml(locName)}</a>` : escHtml(locName))
     : "";
-  const metaRow = (icon, text) =>
-    `<div class="meta-row"><span class="meta-icon">${icon}</span><span class="meta-text">${text}</span></div>`;
-  const heroMeta = [`<span>📅 ${escHtml(dateStr)}</span>`];
-  if (timeStr) heroMeta.push(`<span class="dot"></span><span>🕐 ${escHtml(timeStr)}</span>`);
-  if (locName) heroMeta.push(`<span class="dot"></span><span>📍 ${escHtml(locName)}</span>`);
+  const heroMeta = [`<span>${escHtml(dateStr)}</span>`];
+  if (timeStr) heroMeta.push(`<span>${escHtml(timeStr)}</span>`);
+  if (locName) heroMeta.push(venueHref ? locHtml : `<span>${locHtml}</span>`);
 
   const intro = `${titleDe} ${row.end_date && row.end_date !== row.date ? "läuft" : "findet"} am ${dateStr}`
     + (timeStr ? ` (${timeStr})` : "")
@@ -3394,17 +3392,25 @@ export async function serveEvent(req, env) {
       ? `<div id="ev-desc" class="event-desc">${escHtml(rawDesc)}</div>`
       : `<div id="ev-desc" class="event-desc" style="display:none"></div>`));
   if (beers.length) {
+    // Spalten ohne einen einzigen Wert ausblenden (wie event.html clientseitig).
+    const has = {
+      size:  beers.some((bb) => bb.size),
+      price: beers.some((bb) => bb.price != null),
+      notes: beers.some((bb) => bb.notes),
+    };
+    for (const k of ["size", "price", "notes"]) {
+      if (!has[k]) sub(new RegExp(`<th id="th-${k}">`), () => `<th id="th-${k}" hidden>`);
+    }
+    if (!has.price) sub(/ id="ev-prices-note">/, () => ` id="ev-prices-note" hidden>`);
     sub(/<div id="ev-beers-wrap" class="beer-wrap" style="display:none">/, () => `<div id="ev-beers-wrap" class="beer-wrap">`);
     sub(/(<tbody id="beers-tbody">)(<\/tbody>)/, (m, a, b) => a + beers.map((bb) =>
-      `<tr><td>${escHtml(bb.name_de || bb.name_en || "—")}</td><td class="beer-size">${escHtml(fmtSizeDe(bb.size))}</td>`
-      + `<td class="beer-price">${bb.price != null ? `€ ${escHtml(fmtPriceDe(bb.price))}` : "—"}</td>`
-      + `<td style="font-size:13px;color:var(--ink-muted)">${escHtml(bb.notes || "")}</td></tr>`).join("") + b);
+      `<tr><td>${escHtml(bb.name_de || bb.name_en || "—")}</td>`
+      + (has.size ? `<td class="beer-size">${escHtml(fmtSizeDe(bb.size))}</td>` : "")
+      + (has.price ? `<td class="beer-price">${bb.price != null ? `€ ${escHtml(fmtPriceDe(bb.price))}` : "—"}</td>` : "")
+      + (has.notes ? `<td style="font-size:13px;color:var(--ink-muted)">${escHtml(bb.notes || "")}</td>` : "")
+      + `</tr>`).join("") + b);
   }
   sub(/<aside class="event-sidebar" id="ev-sidebar" style="display:none">/, () => `<aside class="event-sidebar" id="ev-sidebar">`);
-  sub(/(<div id="ev-sidebar-meta">)(<\/div>)/, (m, a, b) => a
-    + metaRow("📅", escHtml(dateStr))
-    + (timeStr ? metaRow("🕐", escHtml(timeStr)) : "")
-    + (locName ? metaRow("📍", locHtml) : "") + b);
   sub(/(<div class="event-actions" id="ev-actions">)(<\/div>)/, (m, a, b) => a + actions.join("") + b);
   if (moreEvents.length) {
     const list = moreEvents.map((e) => {

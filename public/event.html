@@ -46,11 +46,9 @@
 .breadcrumb a:hover { color: var(--copper); }
 .event-title { font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 500; margin-bottom: 16px; }
 .event-hero-meta {
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 4px 24px; flex-wrap: wrap;
   color: var(--ink-soft); font-size: 14px;
 }
-.event-hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
-.event-hero-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-muted); }
 
 .event-layout {
   display: grid;
@@ -83,7 +81,7 @@
   background: var(--bg-card); border: 1px solid var(--rule);
   border-radius: var(--radius-lg); padding: 20px;
 }
-.event-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.event-actions { display: flex; flex-direction: column; gap: 10px; }
 .ics-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 9px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
@@ -96,13 +94,6 @@
   font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px;
 }
-.meta-row {
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 14px;
-}
-.meta-row:last-child { border-bottom: none; padding-bottom: 0; }
-.meta-icon { flex-shrink: 0; width: 20px; text-align: center; }
-.meta-text { color: var(--ink-soft); line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -150,8 +141,6 @@
 
     <aside class="event-sidebar" id="ev-sidebar" style="display:none">
       <div class="card">
-        <div class="section-label" id="ev-sidebar-label">Details</div>
-        <div id="ev-sidebar-meta"></div>
         <div class="event-actions" id="ev-actions"></div>
       </div>
     </aside>
@@ -199,6 +188,10 @@ function formatSize(s, lang) {
   if (isNaN(n)) return s;
   const dec = n % 1 === 0 ? 0 : 2;
   return (lang === "en" ? n.toFixed(dec) : n.toFixed(dec).replace(".", ",")) + " l";
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, function(c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; });
 }
 
 function formatPrice(p, lang) {
@@ -268,23 +261,24 @@ function renderEvent() {
   document.getElementById("ev-prices-note").textContent = isEn
     ? "Event prices are not included in the rankings."
     : "Event-Preise fließen nicht in die Ranglisten ein.";
-  document.getElementById("ev-sidebar-label").textContent = isEn ? "Details" : "Details";
 
   // Datum
   let dateStr = formatDate(ev.date, lang);
   if (ev.endDate && ev.endDate !== ev.date) dateStr += " – " + formatDate(ev.endDate, lang);
 
   // Hero-Meta
-  const heroParts = ["<span>📅 " + dateStr + "</span>"];
+  const heroParts = ["<span>" + esc(dateStr) + "</span>"];
   if (ev.time) {
     let timeStr = formatTime(ev.time, lang);
     if (ev.endTime) timeStr += " – " + formatTime(ev.endTime, lang);
-    heroParts.push('<span class="dot"></span><span>🕐 ' + timeStr + "</span>");
+    heroParts.push("<span>" + esc(timeStr) + "</span>");
   }
   const locStr = ev.breweryName
     ? ev.breweryName + (ev.breweryCity ? ", " + ev.breweryCity : "")
     : (ev.location || "");
-  if (locStr) heroParts.push('<span class="dot"></span><span>📍 ' + locStr + "</span>");
+  if (locStr) heroParts.push(ev.breweryId
+    ? '<a href="/ort/' + encodeURIComponent(ev.breweryId) + '">' + esc(locStr) + "</a>"
+    : "<span>" + esc(locStr) + "</span>");
   document.getElementById("ev-hero-meta").innerHTML = heroParts.join("");
 
   // Beschreibung
@@ -295,32 +289,28 @@ function renderEvent() {
 
   // Biere
   if (beers.length > 0) {
+    // Spalten ohne einen einzigen Wert ausblenden (Server-Rendering macht es genauso).
+    const has = {
+      size:  beers.some(function(b) { return b.size; }),
+      price: beers.some(function(b) { return b.price != null; }),
+      notes: beers.some(function(b) { return b.notes; }),
+    };
+    ["size", "price", "notes"].forEach(function(k) { document.getElementById("th-" + k).hidden = !has[k]; });
+    document.getElementById("ev-prices-note").hidden = !has.price;
     document.getElementById("ev-beers-wrap").style.display = "";
     document.getElementById("beers-tbody").innerHTML = beers.map(function(b) {
       const name = pick(b.name, lang) || "—";
       return "<tr>" +
-        "<td>" + name + "</td>" +
-        '<td class="beer-size">' + formatSize(b.size, lang) + "</td>" +
-        '<td class="beer-price">' + formatPrice(b.price, lang) + "</td>" +
-        '<td style="font-size:13px;color:var(--ink-muted)">' + (b.notes || "") + "</td>" +
+        "<td>" + esc(name) + "</td>" +
+        (has.size ? '<td class="beer-size">' + esc(formatSize(b.size, lang)) + "</td>" : "") +
+        (has.price ? '<td class="beer-price">' + formatPrice(b.price, lang) + "</td>" : "") +
+        (has.notes ? '<td style="font-size:13px;color:var(--ink-muted)">' + esc(b.notes || "") + "</td>" : "") +
         "</tr>";
     }).join("");
   }
 
   // Sidebar
   document.getElementById("ev-sidebar").style.display = "";
-  const metaRows = [
-    '<div class="meta-row"><span class="meta-icon">📅</span><span class="meta-text">' + dateStr + "</span></div>"
-  ];
-  if (ev.time) {
-    let ts = formatTime(ev.time, lang);
-    if (ev.endTime) ts += " – " + formatTime(ev.endTime, lang);
-    metaRows.push('<div class="meta-row"><span class="meta-icon">🕐</span><span class="meta-text">' + ts + "</span></div>");
-  }
-  if (locStr) {
-    metaRows.push('<div class="meta-row"><span class="meta-icon">📍</span><span class="meta-text">' + locStr + "</span></div>");
-  }
-  document.getElementById("ev-sidebar-meta").innerHTML = metaRows.join("");
 
   const calLabel = isEn ? "Add to calendar (.ics)" : "Kalender (.ics)";
   const calSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v4M11 1v4M2 7h12"/></svg>';
