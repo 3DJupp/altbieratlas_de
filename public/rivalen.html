@@ -31,7 +31,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css" />
 <style>
@@ -42,7 +42,7 @@
 .rivals-hero .lede em { font-style: italic; color: var(--copper); }
 .rivals-hero .distance-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px; letter-spacing: 0.06em;
   color: var(--ink-muted); margin-bottom: 20px;
   padding: 5px 10px; border: 1px solid var(--rule); border-radius: 4px;
 }
@@ -125,7 +125,7 @@
 .vs-head-cell.vs-alt .vs-beer-name { color: var(--copper); }
 .vs-head-cell.vs-kolsch .vs-beer-name { color: #c89800; }
 .vs-city-name {
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--ink-muted);
 }
 .versus-row {
@@ -139,7 +139,7 @@
 .versus-row.vs-match .vs-val { color: var(--ink-muted); }
 .vs-val {
   padding: 14px 20px;
-  font-family: var(--font-mono); font-size: 13px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 13px;
   display: flex; align-items: center;
 }
 .vs-val.vs-alt {
@@ -151,7 +151,7 @@
 }
 .vs-row-label {
   padding: 14px 8px;
-  font-family: var(--font-mono); font-size: 10px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 10px;
   letter-spacing: 0.07em; text-transform: uppercase;
   color: var(--ink-muted);
   display: flex; align-items: center; justify-content: center; text-align: center;
@@ -171,7 +171,7 @@
   border-radius: var(--radius-lg);
 }
 .shared-facts h3 {
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.07em;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--ink-muted); margin-bottom: 14px;
 }
 .shared-list {
@@ -227,11 +227,11 @@
 .vote-btn.vote-alt:hover { border-color: var(--copper); background: color-mix(in srgb, var(--copper) 6%, var(--bg-card)); }
 .vote-btn.vote-kolsch { color: #c89800; }
 .vote-btn.vote-kolsch:hover { border-color: #c89800; background: color-mix(in srgb, #c89800 6%, var(--bg-card)); }
-.vote-btn .vote-btn-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-muted); }
+.vote-btn .vote-btn-sub { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-muted); }
 .vote-abstain {
   grid-column: 1 / -1; justify-self: center;
   background: none; border: none; cursor: pointer; padding: 4px 8px;
-  font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-muted);
   text-decoration: underline dotted; text-underline-offset: 3px;
 }
 .vote-abstain:hover { color: var(--ink); }
@@ -242,19 +242,19 @@
 .vote-result .vr-verdict.vr-kolsch { color: #c89800; }
 .vote-result .vr-verdict.vr-neutral { color: var(--ink); }
 .vote-result .vr-body { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
-.vote-again { margin: 12px 0 0; font-size: 12px; font-family: var(--font-mono); color: var(--ink-muted); }
+.vote-again { margin: 12px 0 0; font-size: 12px; font-family: var(--font-ui); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 
 /* ---- Vote Bar ---- */
 .vote-bar-wrap { margin-top: 24px; }
 .vote-bar-header {
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.07em;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px;
 }
 .vote-bar-labels {
   display: flex; justify-content: space-between; align-items: baseline;
   margin-bottom: 6px;
 }
-.vote-bar-label { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.vote-bar-label { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 500; }
 .vote-bar-label.vbl-alt { color: var(--copper); }
 .vote-bar-label.vbl-kolsch { color: #c89800; }
 .vote-bar-track {
@@ -269,11 +269,11 @@
 }
 .vote-bar-sub {
   display: flex; justify-content: space-between;
-  font-family: var(--font-mono); font-size: 11px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px;
   color: var(--ink-muted); margin-top: 6px;
 }
 .vote-bar-total {
-  font-family: var(--font-mono); font-size: 11px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px;
   color: var(--ink-muted); margin-top: 8px;
   padding-top: 8px; border-top: 1px solid var(--rule);
 }
@@ -292,7 +292,7 @@
   margin-bottom: 4px;
 }
 .sport-card .sport-match {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: 0.08em;
   color: var(--copper); text-transform: uppercase; margin-bottom: 10px;
 }
 .sport-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }

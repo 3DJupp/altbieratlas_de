@@ -31,7 +31,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css" />
 <style>
@@ -39,7 +39,7 @@
 .styles-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; }
 .styles-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
 .styles-hero .lede em { font-style: italic; color: var(--copper); }
-.styles-hero .legend { color: var(--ink-muted); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; margin-top: 14px; }
+.styles-hero .legend { color: var(--ink-muted); font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px; letter-spacing: 0.02em; margin-top: 14px; }
 
 .styles-section { padding: 48px 0 60px; border-bottom: 1px solid var(--rule); }
 .styles-section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 500; max-width: 20ch; margin-bottom: 26px; }
@@ -71,7 +71,7 @@
   display: flex; justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px solid var(--rule);
-  font-family: var(--font-mono); font-size: 12px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px;
 }
 .spec-row:last-child { border: none; }
 .spec-row .k { color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; }
@@ -80,7 +80,7 @@
 .spec-tasting { font-size: 13px; color: var(--ink-soft); padding-top: 12px; line-height: 1.55; margin: 0; }
 .spec-link {
   align-self: flex-start; margin-top: auto; padding-top: 10px;
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.04em;
   color: var(--copper); text-decoration: none; border: none;
 }
 .spec-link:hover { text-decoration: underline; }
@@ -118,7 +118,7 @@
       <div class="style-spec-grid" id="style-grid">
         <p style="color:var(--ink-muted);grid-column:1/-1" data-i18n="common.loading">Lade…</p>
       </div>
-      <p id="style-legal-notice" style="font-size:11px;color:var(--ink-muted);margin-top:14px;font-family:var(--font-mono);letter-spacing:0.02em"></p>
+      <p id="style-legal-notice" style="font-size:11px;color:var(--ink-muted);margin-top:14px;font-family:var(--font-ui);font-variant-numeric:tabular-nums;letter-spacing:0.02em"></p>
     </div>
   </section>
 

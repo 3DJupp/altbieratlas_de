@@ -6,16 +6,14 @@ Offene Punkte, grob nach Wichtigkeit sortiert. Erledigtes wird gelöscht, nicht 
 
 Ziel: Die Seite soll eigenständig und nach Altbierkultur aussehen, nicht nach generierter
 Vorlage. Kein Relaunch: Seiten, Struktur und Funktionen bleiben. Leitbild sind Getränkekarte,
-Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-26.
-Erledigt: Kicker-Labels (Mono, Sperrschrift, Versalien) über Überschriften entfernt.
+Bierdeckel und Schänke, umgesetzt modern und zurückhaltend, nicht nostalgisch. Stand 2026-10-30.
+Erledigt: Kicker-Labels (Mono, Sperrschrift, Versalien) über Überschriften entfernt. Schrift
+ersetzt durch Bitter (Überschriften) und Public Sans (Grundschrift), Mono entfällt, Zahlen
+mit Tabellenziffern.
 
 Vorgehen: zuerst Startseite und Ortsseite umbauen, Vorher/Nachher-Screenshots abstimmen,
 dann die übrigen Seiten nachziehen.
 
-- **Schrift.** Newsreader, Inter und JetBrains Mono ersetzen. Eine zeitgemäße Serifenschrift
-  nur für Überschriften (nicht verschnörkelt, nicht nach altem Buchdruck), dazu eine ruhige
-  Grundschrift. Mono entfällt; Zahlen über Tabellenziffern (`font-variant-numeric:
-  tabular-nums`). Muss Umlaute können und sich für Satori in `src/og.js` laden lassen.
 - **Weniger Kästen.** Ranglisten und Preislisten wie eine Getränkekarte: Name, Punktlinie,
   Preis, Trennlinien statt gleichförmiger Karten mit Rahmen. Pill-Badges („0,25 L“) und
   Positionsnummern „01 02 03“ ersetzen.
@@ -47,6 +45,22 @@ dann die übrigen Seiten nachziehen.
 - **Aufräumen.** Ungenutzte CSS-Regeln und i18n-Schlüssel nach dem Umbau entfernen,
   `PAGE_DATES` aller Seiten aktualisieren.
 
+## Euro-Zeichen vor oder nach dem Preis
+
+Die Position des Euro-Zeichens soll konfigurierbar sein („€ 2,90“ oder „2,90 €“). Heute ist sie
+uneinheitlich: Das Frontend setzt „€ “ von Hand vor `formatPrice()` (Startseite, Ortsseite,
+Stadtseite, Ranglisten, Beitragen, Event, Admin), Server-Texte (`src/seo.js`, Mails in
+`src/utils.js`, SSR in `src/routes.js`) schreiben „ €“ dahinter.
+
+- Ein Helfer für Betrag mit Zeichen, z. B. `window.formatEuro()` in `i18n.js` und ein
+  Gegenstück im Worker; alle handgeschriebenen „€ “ darauf umstellen.
+- Einstellung in `SITE_CONFIG` (z. B. `currencyPosition: "before" | "after"`), per
+  `/api/config` ans Frontend. Klären, ob sie je Sprache gelten soll (DE üblich „2,90 €“,
+  EN „€2.90“).
+- Geschütztes Leerzeichen zwischen Betrag und Zeichen, damit es nicht umbricht.
+- Gilt auch für `llms.txt` und später die OG-Bilder. Strukturierte Daten (JSON-LD) bleiben
+  davon unberührt.
+
 ## Vorschaubilder und Suchvorschauen
 
 Ziel: Geteilte Links und Suchtreffer zeigen den echten, aktuellen Inhalt der Seite und sehen
@@ -60,7 +74,8 @@ nach Altbieratlas aus, nicht nach generischer Vorlage. Die Bildpunkte folgen dem
   Altbierglas als Foto statt Pixelgrafik. Bewusst ohne KI-typische Stilmittel (Verläufe,
   Glow, generische Icons).
 - **Dynamisches OG-Bild der Ortsseite (`src/og.js`) im neuen Stil.** Gleiche Schrift und Farben
-  wie die Seite. Die Pixelschrift kann keine Umlaute, deshalb werden Namen heute umschrieben
+  wie die Seite (Bitter und Public Sans als statische TTF unter `src/assets`, laden in Satori
+  mit Umlauten). Die Pixelschrift kann keine Umlaute, deshalb werden Namen heute umschrieben
   („ue“ statt „ü“); mit einer passenden Schrift entfällt `deUmlaut()`.
 - **Logos ins OG-Bild.** Hat der Ort ein Logo (`breweries.logo_key`, R2), erscheint es im Bild;
   sonst das Logo der wichtigsten Sorte (`styles.logo_key`), sonst ein neutraler Platzhalter.
