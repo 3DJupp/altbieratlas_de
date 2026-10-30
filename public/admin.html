@@ -14,14 +14,14 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css" />
 <style>
 .field { margin-bottom: 14px; }
 .field label {
   display: block;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--ink-muted);
   margin-bottom: 6px;
@@ -40,7 +40,7 @@
   margin-bottom: 4px; gap: 10px; flex-wrap: wrap;
 }
 .admin-header .who {
-  font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-muted);
 }
 .admin-header .who strong { color: var(--copper); }
 
@@ -57,7 +57,7 @@
   font-size: 13px; text-align: left;
 }
 .brewery-table th {
-  font-family: var(--font-mono); font-size: 11px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px;
   letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--ink-muted);
   background: var(--bg-elev);
@@ -73,7 +73,7 @@
 
 .subtab-bar {
   display: flex; gap: 10px; margin: 16px 0 20px;
-  font-family: var(--font-mono); font-size: 12px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px;
 }
 .subtab-bar button {
   background: transparent;
@@ -135,7 +135,7 @@
   padding: 8px 10px; border: 1px solid var(--rule); border-radius: var(--radius); font-size: 13px;
 }
 .place-cand .pc-addr { color: var(--ink-muted); font-size: 12px; }
-.place-cand .pc-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); }
+.place-cand .pc-meta { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; color: var(--ink-muted); }
 .place-cand .pc-status-sicher { color: #2d7a2d; }
 .place-cand .pc-status-prüfen { color: #a07a20; }
 .place-cand .btn { grid-row: 1 / span 3; grid-column: 2; font-size: 12px; padding: 6px 12px; }
@@ -283,7 +283,7 @@
             <form id="add-brewery-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
                 <label>ID (Slug) *</label>
-                <input name="id" type="text" maxlength="80" required placeholder="uerige" style="font-family:var(--font-mono);font-size:13px" />
+                <input name="id" type="text" maxlength="80" required placeholder="uerige" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
               </div>
               <div class="field" style="margin:0">
                 <label data-i18n="admin.editName">Name *</label>
@@ -397,7 +397,7 @@
             <form id="add-vtype-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
                 <label>ID (Slug) *</label>
-                <input name="id" type="text" maxlength="50" required placeholder="hausbrauerei" style="font-family:var(--font-mono);font-size:13px" />
+                <input name="id" type="text" maxlength="50" required placeholder="hausbrauerei" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
               </div>
               <div class="field" style="margin:0">
                 <label>Name (DE) *</label>
@@ -506,7 +506,7 @@
             <form id="add-event-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;align-items:end">
               <div class="field" style="margin:0">
                 <label>Event-ID *</label>
-                <input name="id" type="text" maxlength="100" required placeholder="altbierfest-2025" style="font-family:var(--font-mono);font-size:13px" />
+                <input name="id" type="text" maxlength="100" required placeholder="altbierfest-2025" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
                 <label>Titel (DE) *</label>
@@ -826,7 +826,7 @@
               <div class="field" style="margin:0"><label data-i18n="admin.offerTimeTo">Bis (Uhrzeit)</label><input name="time_to" type="time" /></div>
               <div class="field" style="margin:0"><label data-i18n="admin.offerValidFrom">Gültig ab</label><input name="valid_from" type="date" /></div>
               <div class="field" style="margin:0"><label data-i18n="admin.offerValidUntil">Gültig bis</label><input name="valid_until" type="date" /></div>
-              <div class="field" style="margin:0" id="offer-code-field" hidden><label data-i18n="admin.offerCode">Coupon-Code</label><input name="code" type="text" maxlength="40" style="font-family:var(--font-mono)" /></div>
+              <div class="field" style="margin:0" id="offer-code-field" hidden><label data-i18n="admin.offerCode">Coupon-Code</label><input name="code" type="text" maxlength="40" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums" /></div>
               <div style="grid-column:1/-1;display:flex;gap:8px">
                 <button class="btn btn-approve" type="submit" id="offer-submit" data-i18n="admin.offerAdd">Aktion anlegen</button>
                 <button class="btn btn-ghost" type="button" id="offer-cancel" hidden data-i18n="common.cancel">Abbrechen</button>
@@ -851,7 +851,7 @@
               <summary style="cursor:pointer;font-size:13px;color:#9b1f1f" data-i18n="admin.rivalsResetOpen">Stimmen zurücksetzen …</summary>
               <p style="font-size:13px;color:var(--ink-muted);margin:10px 0" data-i18n="admin.rivalsResetHint">Löscht alle Stimmen endgültig. Zur Bestätigung ZURÜCKSETZEN eintippen.</p>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <input id="rivals-reset-confirm" type="text" autocomplete="off" placeholder="ZURÜCKSETZEN" style="max-width:220px;font-family:var(--font-mono)" />
+                <input id="rivals-reset-confirm" type="text" autocomplete="off" placeholder="ZURÜCKSETZEN" style="max-width:220px;font-family:var(--font-ui);font-variant-numeric:tabular-nums" />
                 <button class="btn btn-reject" id="rivals-reset-btn" type="button" disabled data-i18n="admin.rivalsResetBtn">Endgültig zurücksetzen</button>
               </div>
               <div id="rivals-reset-msg" style="font-size:13px;margin-top:8px"></div>
@@ -956,7 +956,7 @@
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldSlugEdit">Brauerei-ID (URL-Slug)</label>
-          <input id="edit-new-id" type="text" maxlength="80" placeholder="z.B. uerige" style="font-family:var(--font-mono);font-size:13px" />
+          <input id="edit-new-id" type="text" maxlength="80" placeholder="z.B. uerige" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldSlugHint">Nur a–z, 0–9, Bindestriche. Ändert die Seiten-URL.</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
@@ -971,7 +971,7 @@
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldPlaceId">Google Place ID</label>
           <div style="display:flex;gap:8px">
-            <input id="edit-place-id" type="text" maxlength="300" placeholder="ChIJ…" style="flex:1;font-family:var(--font-mono);font-size:13px" />
+            <input id="edit-place-id" type="text" maxlength="300" placeholder="ChIJ…" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
             <button class="btn" id="edit-place-search" type="button" style="white-space:nowrap" data-i18n="admin.placeSearch">Bei Google suchen</button>
           </div>
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldPlaceIdHint">Hat Vorrang vor der Maps-URL. Die Suche nutzt Name, Adresse und Koordinaten wie gespeichert.</span>
@@ -981,7 +981,7 @@
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldUntappdId">Untappd-ID</label>
           <div style="display:flex;gap:8px">
-            <input id="edit-untappd-id" type="number" min="0" step="1" style="flex:1;font-family:var(--font-mono);font-size:13px" />
+            <input id="edit-untappd-id" type="number" min="0" step="1" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
             <button class="btn" id="edit-untappd-check" type="button" style="white-space:nowrap" data-i18n="admin.untappdCheck">Prüfen</button>
           </div>
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldUntappdHint">Leer = Suche nach Name, 0 = keine Untappd-Anzeige, sonst die Zahl aus der Untappd-Adresse der Brauerei.</span>
@@ -1035,13 +1035,13 @@
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldHours">Öffnungszeiten</label>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px 14px">
-            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.mo">Mo</span><input data-hours-day="mo" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
-            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.tu">Di</span><input data-hours-day="tu" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
-            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.we">Mi</span><input data-hours-day="we" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
-            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.th">Do</span><input data-hours-day="th" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
-            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.fr">Fr</span><input data-hours-day="fr" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
-            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.sa">Sa</span><input data-hours-day="sa" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
-            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.su">So</span><input data-hours-day="su" type="text" maxlength="60" style="flex:1;font-family:var(--font-mono);font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.mo">Mo</span><input data-hours-day="mo" type="text" maxlength="60" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.tu">Di</span><input data-hours-day="tu" type="text" maxlength="60" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.we">Mi</span><input data-hours-day="we" type="text" maxlength="60" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.th">Do</span><input data-hours-day="th" type="text" maxlength="60" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.fr">Fr</span><input data-hours-day="fr" type="text" maxlength="60" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.sa">Sa</span><input data-hours-day="sa" type="text" maxlength="60" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" /></label>
+            <label style="display:flex;gap:8px;align-items:center;margin:0"><span style="width:28px;font-size:12px;color:var(--ink-muted)" data-i18n="day.su">So</span><input data-hours-day="su" type="text" maxlength="60" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" /></label>
           </div>
           <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldHoursHint">Z. B. „11-23“ oder „11:30–14, 17–1“ (über Mitternacht erlaubt). Leer = unbekannt, „zu“ = Ruhetag. Ohne eigene Angaben zeigt die Ortsseite Googles Zeiten.</span>
           <div id="edit-hours-error" style="font-size:12px;color:#9b1f1f" hidden></div>
@@ -1121,7 +1121,7 @@
         <input id="pin-check-all" type="checkbox" style="width:auto" />
         <span data-i18n="admin.pinCheckShowAll">Auch unauffällige Orte zeigen</span>
       </label>
-      <div id="pin-check-progress" style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted);margin-bottom:10px"></div>
+      <div id="pin-check-progress" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted);margin-bottom:10px"></div>
       <div style="overflow:auto"><table class="brewery-table" id="pin-check-table" style="display:none;font-size:12px">
         <thead><tr><th data-i18n="admin.colName">Name</th><th data-i18n="admin.colCity">Stadt</th><th data-i18n="admin.pbDistance">Entfernung</th><th>Status</th><th data-i18n="admin.pinCheckLinks">Vergleich</th><th></th></tr></thead>
         <tbody></tbody>
@@ -1137,7 +1137,7 @@
     <div class="box" style="max-width:1100px;width:96vw;max-height:90vh;overflow-y:auto">
       <h3 data-i18n="admin.placesBackfillTitle">Google Place IDs nachtragen</h3>
       <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px" data-i18n="admin.placesBackfillIntro">Probelauf für alle aktuellen Orte ohne Place ID. Gespeichert werden nur die angehakten sicheren Treffer, und erst nach Bestätigung.</p>
-      <div id="places-backfill-progress" style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted);margin-bottom:10px"></div>
+      <div id="places-backfill-progress" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted);margin-bottom:10px"></div>
       <div style="overflow:auto"><table class="brewery-table" id="places-backfill-table" style="display:none;font-size:12px">
         <thead><tr><th></th><th>id</th><th data-i18n="admin.pbDbName">Name (DB)</th><th data-i18n="admin.pbGoogleName">Name (Google)</th><th data-i18n="admin.pbGoogleAddress">Adresse (Google)</th><th data-i18n="admin.pbDistance">Entfernung</th><th>Status</th></tr></thead>
         <tbody></tbody>
@@ -1168,7 +1168,7 @@
       <div class="edit-grid">
         <div class="field" style="margin:0;grid-column:1/-1">
           <label>Event-ID</label>
-          <input id="ev-new-id" type="text" maxlength="100" style="font-family:var(--font-mono);font-size:13px" />
+          <input id="ev-new-id" type="text" maxlength="100" style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
           <span style="font-size:11px;color:var(--ink-muted)">ID ändern wirkt sich auf alle Links aus.</span>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
@@ -1229,7 +1229,7 @@
 
       <!-- Biere am Event -->
       <div style="margin-top:20px;border-top:1px solid var(--rule);padding-top:16px">
-        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px" data-i18n="admin.evBeersLabel">
+        <div style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px" data-i18n="admin.evBeersLabel">
           Biere (vom Ranking ausgenommen)
         </div>
         <div id="ev-beers-list" style="margin-bottom:12px;font-size:13px"></div>
@@ -1863,7 +1863,7 @@ function pcRender() {
     <tr>
       <td><a href="/ort/${encodeURIComponent(r.id)}" target="_blank">${pbEsc(r.name)}</a>${r.shared > 1 ? ` <span style="color:var(--ink-muted)">(${t("admin.pinCheckShared").replace("{n}", r.shared)})</span>` : ""}<div style="color:var(--ink-muted)">${pbEsc(r.address)}</div></td>
       <td>${pbEsc(r.city)}</td>
-      <td style="font-family:var(--font-mono);white-space:nowrap" class="${far ? "status-rejected" : ""}">${r.distance} m</td>
+      <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap" class="${far ? "status-rejected" : ""}">${r.distance} m</td>
       <td class="status-${pbEsc(r.status)}">${pbEsc(r.status)}</td>
       <td style="white-space:nowrap"><a href="${osm}" target="_blank" rel="noopener">${t("admin.pinCheckDbPin")}</a> · <a href="${google}" target="_blank" rel="noopener">Google</a></td>
       <td><button class="btn" type="button" style="font-size:11px;padding:3px 8px" data-pc-edit="${pbEsc(r.id)}">${t("admin.actionEdit")}</button></td>
@@ -1906,11 +1906,11 @@ function pbRender() {
   table.querySelector("tbody").innerHTML = pbResults.map((r, i) => `
     <tr>
       <td>${r.status === "sicher" ? `<input type="checkbox" data-pb="${i}" checked>` : ""}</td>
-      <td style="font-family:var(--font-mono)"><a href="/ort/${encodeURIComponent(r.id)}" target="_blank">${pbEsc(r.id)}</a></td>
+      <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums"><a href="/ort/${encodeURIComponent(r.id)}" target="_blank">${pbEsc(r.id)}</a></td>
       <td>${pbEsc(r.dbName)}</td>
       <td>${pbEsc(r.googleName)}</td>
       <td>${pbEsc(r.googleAddress)}</td>
-      <td style="font-family:var(--font-mono);white-space:nowrap">${r.distance != null ? `${r.distance} m` : ""}</td>
+      <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap">${r.distance != null ? `${r.distance} m` : ""}</td>
       <td class="${r.status === "sicher" ? "status-approved" : r.status === "prüfen" ? "status-pending" : "status-rejected"}">${pbEsc(r.status)}${r.status === "prüfen" && !r.houseNumberMatch ? ` (${t("admin.placeNoHouseNo")})` : ""}${r.error ? ` (${pbEsc(r.error)})` : ""}</td>
     </tr>`).join("");
   const n = (st) => pbResults.filter((r) => r.status === st).length;
@@ -2608,7 +2608,7 @@ async function loadStylesTab() {
           data-primary-brewery-id="${s.primaryBreweryId || ""}"
           data-brewery-ids="${(s.breweryIds || []).join(",")}"
           >
-        <td style="font-family:var(--font-mono);font-size:12px">${s.id}</td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:12px">${s.id}</td>
         <td>${s.name}</td>
         <td>${s.abv != null ? s.abv + " %" : "—"}</td>
         <td>${s.ibu != null ? s.ibu : "—"}</td>
@@ -2978,7 +2978,7 @@ async function loadEventsTab() {
           data-status="${ev.status || ""}"
           data-desc-de="${(ev.descriptionDe || "").replace(/"/g, "&quot;")}"
           data-desc-en="${(ev.descriptionEn || "").replace(/"/g, "&quot;")}">
-        <td style="font-family:var(--font-mono);font-size:11px">${ev.id}</td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:11px">${ev.id}</td>
         <td>${ev.titleDe}${ev.titleEn && ev.titleEn !== ev.titleDe ? `<br><span style="font-size:11px;color:var(--ink-muted)">${ev.titleEn}</span>` : ""}</td>
         <td>${ev.breweryName || "—"}</td>
         <td>${window.formatDate ? window.formatDate(ev.date) : ev.date}${ev.time ? " " + ev.time : ""}</td>
@@ -3169,8 +3169,8 @@ async function loadEventBeers(eventId) {
       const size = b.size || "";
       return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--rule)">
         <span style="flex:1">${name}</span>
-        <span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-muted)">${size}</span>
-        <span style="font-family:var(--font-mono);font-size:13px;color:var(--copper)">${price}</span>
+        <span style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted)">${size}</span>
+        <span style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px;color:var(--copper)">${price}</span>
         <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-edit-beer-id="${b.id}" title="${window.t("admin.evEditBeer")}">✎</button>
         <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}" title="${window.t("admin.evDeleteBeer")}">✕</button>
       </div>`;
@@ -3286,7 +3286,7 @@ async function loadPricesTab() {
         <td>${window.formatDate ? window.formatDate(p.date) : p.date}</td>
         <td>${window.formatSize ? window.formatSize(String(p.size)) : p.size}</td>
         <td>${p.styleName || "—"}</td>
-        <td style="font-family:var(--font-mono);color:var(--copper)">€ ${window.formatPrice ? window.formatPrice(p.price) : p.price.toFixed(2)}</td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;color:var(--copper)">€ ${window.formatPrice ? window.formatPrice(p.price) : p.price.toFixed(2)}</td>
         <td>${p.source || "—"}</td>
         <td><span class="status-${p.status}">${p.status}</span></td>
         <td class="actions">
@@ -3462,7 +3462,7 @@ async function loadGlossaryTab() {
       <tr data-term="${g.term.replace(/"/g, "&quot;")}"
           data-def-de="${(g.definition?.de || "").replace(/"/g, "&quot;")}"
           data-def-en="${(g.definition?.en || "").replace(/"/g, "&quot;")}">
-        <td style="font-family:var(--font-mono);font-size:12px;white-space:nowrap">${g.term}</td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap">${g.term}</td>
         <td style="font-size:13px;max-width:300px">${g.definition?.de || "—"}</td>
         <td style="font-size:13px;max-width:300px;color:var(--ink-muted)">${g.definition?.en || "—"}</td>
         <td class="actions">
@@ -3882,7 +3882,7 @@ async function loadVenueTypesTab() {
           data-header-de="${(vt.headerDe || "").replace(/"/g, "&quot;")}"
           data-header-en="${(vt.headerEn || "").replace(/"/g, "&quot;")}"
           data-producer="${vt.isProducer ? "1" : ""}">
-        <td style="font-family:var(--font-mono);font-size:12px">${vt.id}</td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:12px">${vt.id}</td>
         <td>${vt.nameDe}</td>
         <td style="color:var(--ink-muted)">${vt.nameEn || "—"}</td>
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${vt.headerDe || "—"}</td>

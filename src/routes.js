@@ -2608,14 +2608,14 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-26",
-  "/ranglisten": "2026-10-26",
-  "/wissen":     "2026-10-26",
-  "/sorten":     "2026-10-26",
-  "/rivalen":    "2026-10-26",
-  "/beitragen":  "2026-10-26",
-  "/staedte":    "2026-10-26",
-  "/kooperation": "2026-10-26",
+  "/":           "2026-10-30",
+  "/ranglisten": "2026-10-30",
+  "/wissen":     "2026-10-30",
+  "/sorten":     "2026-10-30",
+  "/rivalen":    "2026-10-30",
+  "/beitragen":  "2026-10-30",
+  "/staedte":    "2026-10-30",
+  "/kooperation": "2026-10-30",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -3029,7 +3029,7 @@ export async function serveOrt(req, env, params = {}) {
         ${photoUrl ? `<img class="ort-photo" src="${escHtml(photoUrl)}" alt="${escHtml(row.name)}" loading="lazy" decoding="async">` : ""}
         <h2>Über ${escHtml(row.name)}</h2>
         <p>${escHtml(row.description_de || row.description_en || `${row.name} ist als ${row.type_label || row.type} in ${row.city} im Altbieratlas verzeichnet.`)}</p>
-        ${row.address ? `<p style="font-family:var(--font-mono);font-size:13px;color:var(--ink-muted)">${escHtml(row.address)}</p>` : ""}
+        ${row.address ? `<p style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-muted)">${escHtml(row.address)}</p>` : ""}
         ${successor ? `<p class="ort-lineage">Heute bei: <a href="/ort/${escHtml(encodeURIComponent(successor.id))}">${escHtml(successor.name)} →</a></p>` : ""}
         ${predecessors.length ? `<p class="ort-lineage">Übernommene Marken: ${predecessors.map((p) =>
           `<a href="/ort/${escHtml(encodeURIComponent(p.id))}">${escHtml(p.name)}</a>`).join(", ")}</p>` : ""}

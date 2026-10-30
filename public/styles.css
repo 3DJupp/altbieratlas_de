@@ -21,9 +21,8 @@
   --head: #f2e0b8;          /* Schaumkrone */
   --ruby: #9b1f1f;          /* Warnrot / Sticke */
 
-  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
-  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-display: "Bitter", Georgia, "Times New Roman", serif;
+  --font-ui: "Public Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   --radius: 6px;
   --radius-lg: 14px;
@@ -83,7 +82,7 @@ h1 { font-size: clamp(2rem, 4.5vw, 3.75rem); line-height: 1.05; }
 h2 { font-size: clamp(1.5rem, 2.8vw, 2.2rem); line-height: 1.15; }
 h3 { font-size: 1.15rem; line-height: 1.3; letter-spacing: 0; }
 
-.mono { font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
+.mono { font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
 .display { font-family: var(--font-display); }
 
 /* Layout */
@@ -215,7 +214,7 @@ h3 { font-size: 1.15rem; line-height: 1.3; letter-spacing: 0; }
   border: 1px solid var(--rule-strong);
   background: transparent;
   color: var(--ink);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 12px;
   padding: 6px 10px;
   border-radius: var(--radius);
@@ -269,7 +268,7 @@ h3 { font-size: 1.15rem; line-height: 1.3; letter-spacing: 0; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -324,7 +323,7 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   padding-top: 16px;
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -406,7 +405,7 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   margin-bottom: 14px;
 }
 .field label {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -443,7 +442,7 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   border-radius: var(--radius);
   font-size: 13px;
   color: var(--ink-soft);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
 }
 .turnstile-box .cf-mark {
   width: 22px; height: 22px; border-radius: 50%;
@@ -540,18 +539,18 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   font-weight: 500;
 }
 .leaflet-popup-content .pop-price {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   color: var(--copper-glow);
   font-size: 18px;
   margin-top: 8px;
 }
 .leaflet-popup-content .pop-liter {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   opacity: .55;
 }
 .leaflet-popup-content .pop-google {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 12px;
   margin-top: 6px;
 }
@@ -591,7 +590,7 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   border-bottom: 1px solid var(--rule);
 }
 .table th {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -599,7 +598,7 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   font-weight: 500;
 }
 .table tr:hover td { background: var(--bg-elev); }
-.table .num { font-family: var(--font-mono); text-align: right; }
+.table .num { font-family: var(--font-ui); font-variant-numeric: tabular-nums; text-align: right; }
 
 /* Utility */
 .sr-only {
@@ -625,14 +624,14 @@ html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; bord
   flex-wrap: wrap;
 }
 .social-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-muted);
 }
 .social-name {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -690,7 +689,7 @@ html[data-theme="dark"] #atlas-mode.mode-mock { color: #e8cc85; }
 }
 .map-search-suggest.visible { display: block; }
 .map-search-suggest .group-head {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -719,7 +718,7 @@ html[data-theme="dark"] #atlas-mode.mode-mock { color: #e8cc85; }
 }
 .map-search-suggest .sugg-row .dot.geo { background: #3a8bc4; }
 .map-search-suggest .sugg-row .meta {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   color: var(--ink-muted);
 }
@@ -824,7 +823,7 @@ html[data-theme="dark"] #atlas-mode.mode-mock { color: #e8cc85; }
   line-height: 1.1;
 }
 .admin-stat .lbl {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -850,7 +849,7 @@ html[data-theme="dark"] #atlas-mode.mode-mock { color: #e8cc85; }
   font-size: 12px;
   color: var(--ink-muted);
   margin-bottom: 8px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
 }
 .contrib-card .meta .type-tag {
   color: var(--copper);
@@ -858,7 +857,7 @@ html[data-theme="dark"] #atlas-mode.mode-mock { color: #e8cc85; }
   text-transform: uppercase;
 }
 .contrib-card .payload {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 12px;
   background: var(--bg);
   padding: 10px 12px;
@@ -1086,7 +1085,7 @@ html { scroll-behavior: smooth; }
 /* Preistabelle auf /ort/<slug>, bevor das Client-Script übernimmt.   */
 .ssr-price-table {
   width: 100%; border-collapse: collapse; margin: 16px 0 20px;
-  font-family: var(--font-mono); font-size: 14px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 14px;
 }
 .ssr-price-table th {
   text-align: left; font-size: 11px; letter-spacing: 0.08em;
@@ -1103,7 +1102,7 @@ html { scroll-behavior: smooth; }
   display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;
 }
 .city-links a {
-  font-family: var(--font-mono); font-size: 12px;
+  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px;
   padding: 7px 12px; border: 1px solid var(--rule); border-radius: 999px;
   color: var(--ink-soft); text-decoration: none;
 }
