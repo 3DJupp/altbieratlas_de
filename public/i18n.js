@@ -837,7 +837,7 @@ window.ATLAS_I18N = {
     // Rivalen-Seite
     "nav.rivals": "Rivalen",
     "title.rivals": "Altbier vs. Kölsch: Das Rheinderby · Altbieratlas",
-    "rivals.heroTitleHtml": "Zwei Städte. Zwei Biere. Ein <em>Streit seit Generationen.</em>",
+    "rivals.heroTitleHtml": "Zwei Städte. Zwei Biere. Ein Streit seit Generationen.",
     "rivals.heroLede": "Altbier gegen Kölsch: 47 Kilometer Autobahn, weltanschauliche Abgründe in Bierfragen — aber mehr Gemeinsamkeiten, als beide Seiten zugeben wollen. Gut recherchiert, gerne provokant.",
     "rivals.nav.compare": "Vergleich",
     "rivals.nav.rivalry": "Rivalität",
@@ -1734,7 +1734,7 @@ window.ATLAS_I18N = {
     // Rivals page
     "nav.rivals": "Rivals",
     "title.rivals": "Altbier vs. Kölsch: The Rhine Derby · Altbieratlas",
-    "rivals.heroTitleHtml": "Two cities. Two beers. A <em>feud for generations.</em>",
+    "rivals.heroTitleHtml": "Two cities. Two beers. A feud for generations.",
     "rivals.heroLede": "Altbier versus Kölsch: 47 kilometres of motorway, deep ideological rifts over beer — but more in common than either side will admit. Well researched, happily provocative.",
     "rivals.nav.compare": "Comparison",
     "rivals.nav.rivalry": "Rivalry",
