@@ -306,9 +306,7 @@ let sizeOptions = "";
 let breweryOptions = "";
 let venueTypes = [];
 let remoteCfg = null;
-let turnstileToken = null;
-let turnstileWidgetId = null;
-let turnstileSiteKeyCache = null;
+let ts = window.atlasTurnstile(null, null);
 
 const DEFAULT_VENUE_TYPES = [
   { id: "brewery",        nameDe: "Brauerei",     nameEn: "Brewery" },
@@ -353,7 +351,7 @@ function buildVenueTypeOptions() {
 
   initTurnstile();
   renderForm(currentTyp);
-  renderRecent();
+  refreshRecentStatus();
 })();
 
 // Größen-Optionen: Quelle remoteCfg > ATLAS_CONFIG, je als Dezimalzahl ohne Einheit
@@ -408,51 +406,11 @@ function pushSubsCookie(entry) {
 }
 
 // ============ Turnstile ============
-function turnstileTheme() {
-  const t = document.documentElement.getAttribute("data-theme") || "light";
-  return t === "dark" ? "dark" : "light";
-}
-
-function renderTurnstileWidget() {
-  const host = document.getElementById("turnstile-widget");
-  if (!host || !turnstileSiteKeyCache || !window.turnstile) return;
-  if (turnstileWidgetId !== null) {
-    try { window.turnstile.remove(turnstileWidgetId); } catch {}
-    turnstileWidgetId = null;
-    turnstileToken = null;
-  }
-  turnstileWidgetId = window.turnstile.render(host, {
-    sitekey: turnstileSiteKeyCache,
-    theme: turnstileTheme(),
-    callback: (token) => { turnstileToken = token; },
-    "expired-callback": () => { turnstileToken = null; },
-    "error-callback": (code) => {
-      console.error("[turnstile] Widget-Fehler:", code,
-        "— Site-Key/Domain prüfen (110200 = Domain nicht erlaubt).");
-      turnstileToken = null;
-    },
-  });
-}
-
 function initTurnstile() {
   const siteKey = (remoteCfg && remoteCfg.turnstileSiteKey)
                || window.ATLAS_CONFIG.turnstileSiteKey;
-  const enabled = !!siteKey && !String(siteKey).includes("PLACEHOLDER");
-
-  if (!enabled) {
-    document.getElementById("turnstile-placeholder").style.display = "flex";
-    return;
-  }
-
-  turnstileSiteKeyCache = siteKey;
-
-  window.onTurnstileLoad = renderTurnstileWidget;
-  document.addEventListener("atlas:theme-changed", renderTurnstileWidget);
-
-  const s = document.createElement("script");
-  s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
-  s.async = true; s.defer = true;
-  document.head.appendChild(s);
+  ts = window.atlasTurnstile("#turnstile-widget", siteKey);
+  if (!ts.enabled) document.getElementById("turnstile-placeholder").style.display = "flex";
 }
 
 // ============ Form templates ============
@@ -753,13 +711,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
   errBox.classList.remove("visible");
   const btn = document.getElementById("submit-btn");
 
-  // Token-Guard: wenn Turnstile aktiv aber noch kein Token, kurz warten lassen
-  if (turnstileSiteKeyCache && !turnstileToken) {
-    errBox.textContent = "Bitte kurz warten — Bot-Prüfung läuft noch.";
-    errBox.classList.add("visible");
-    return;
-  }
-
+  if (btn.disabled) return; // läuft schon — dasselbe Token nie zweimal senden
   btn.disabled = true;
 
   const fd = new FormData(e.target);
@@ -806,14 +758,16 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
 
   try {
     const apiType = TYP_TO_API[currentTyp];
-    await window.AtlasAPI.submitContribution({
+    // ts.send() holt ein unverbrauchtes Token (wartet notfalls auf die Prüfung)
+    // und wiederholt bei timeout-or-duplicate einmal mit frischem Token
+    const res = await ts.send((turnstileToken) => window.AtlasAPI.submitContribution({
       type: apiType,
       data,
       email,
       submitterName,
       lang: window.__atlasLang || "de",
       turnstileToken,
-    });
+    }));
     atlasTrack("contribution_submit", { type: apiType });
 
     // Kompakten Eintrag in Cookie schreiben
@@ -831,17 +785,13 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     const cookieExtra = apiType === "correction" ? { tg: data.target || "" }
                       : apiType === "event"      ? { ed: data.eventDate || "" }
                       : {};
-    pushSubsCookie({ tp: apiType, sm: summary.trim(), dt: new Date().toISOString().slice(0, 10), ...cookieExtra });
-
-    // Turnstile nach Erfolg zurücksetzen (Token ist einmalig)
-    if (window.turnstile && turnstileWidgetId !== null) {
-      try { window.turnstile.reset(turnstileWidgetId); } catch {}
-      turnstileToken = null;
-    }
+    // id: für den Status-Abgleich in „Deine Beiträge“ (GET /api/contributions/status)
+    pushSubsCookie({ ...(res && res.id ? { id: res.id } : {}), tp: apiType, sm: summary.trim(), dt: new Date().toISOString().slice(0, 10), ...cookieExtra });
 
     document.getElementById("contrib-form").style.display = "none";
     document.getElementById("thanks").classList.add("visible");
     window.scrollTo({ top: document.getElementById("thanks").offsetTop - 90, behavior: "smooth" });
+    if (res && res.id) recentStatus[res.id] = res.status || "pending";
     renderRecent();
   } catch (err) {
     const tsCodes = err.detail?.reason?.["error-codes"];
@@ -852,7 +802,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     const msg = err.status === 429 ? "Zu viele Einreichungen. Bitte später erneut versuchen."
              : err.status === 403 ? ("Bot-Prüfung fehlgeschlagen"
                  + (Array.isArray(tsCodes) && tsCodes.length ? " (" + tsCodes.join(", ") + ")" : "")
-                 + ". Bitte Seite neu laden.")
+                 + ". Bitte noch einmal absenden.")
              : err.status === 400 ? "Bitte Eingaben prüfen (" + (err.detail?.detail || "Validierung") + ")."
              : (window.t("contrib.error") || "Fehler.");
     errBox.textContent = msg;
@@ -867,7 +817,18 @@ document.getElementById("another").addEventListener("click", () => {
   renderForm(currentTyp);
 });
 
-// ============ Recent (Cookie-basiert) ============
+// ============ Recent (Cookie-basiert, Status live aus der API) ============
+// Das Cookie kennt nur, was eingereicht wurde; ob es freigegeben oder abgelehnt
+// wurde, steht allein in der D1. Einträge ohne ID (vor dem Status-Abgleich
+// eingereicht) oder ohne Treffer in der DB zeigen „Status unbekannt“.
+const RECENT_TAG = {
+  pending:  { cls: "pending",  key: "common.pending" },
+  approved: { cls: "verified", key: "admin.statusApproved" },
+  rejected: { cls: "rejected", key: "admin.statusRejected" },
+};
+let recentStatus = {}; // id → Status aus der API; fehlt = lädt noch, null = unbekannt
+const escHtml = (v) => String(v).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
 function renderRecent() {
   const t = window.t;
   const list = getSubsCookie();
@@ -878,18 +839,39 @@ function renderRecent() {
   }
   el.innerHTML = list.map((c) => {
     const typeLabel = t("contrib.recent.typeLabel." + c.tp) || c.tp;
-    let summary = c.sm || "—";
+    let summary = escHtml(c.sm || "—");
     if (c.tg) summary += ` → ${t("contrib.form.target." + c.tg) || c.tg}`;
     else if (c.ed) summary += ` · ${window.formatDate(c.ed)}`;
+    const st = c.id ? recentStatus[c.id] : null;
+    const tag = st === undefined
+      ? `<span class="tag">${t("common.loading")}</span>`
+      : RECENT_TAG[st]
+      ? `<span class="tag ${RECENT_TAG[st].cls}">${t(RECENT_TAG[st].key)}</span>`
+      : `<span class="tag">${t("contrib.recent.statusUnknown")}</span>`;
     return `
       <div class="contrib-row">
         <span class="date">${window.formatDate(c.dt) || "—"}</span>
         <span class="typ">${typeLabel}</span>
         <span class="summary">${summary}</span>
-        <span class="tag pending">${t("common.pending")}</span>
+        ${tag}
       </div>
     `;
   }).join("");
+}
+
+async function refreshRecentStatus() {
+  const list = getSubsCookie();
+  const ids = list.map((c) => c.id).filter(Boolean);
+  renderRecent(); // Einträge ohne ID sofort „unbekannt“, die anderen „lädt“
+  if (!ids.length) return;
+  try {
+    const { items } = await window.AtlasAPI.contributionStatus(ids);
+    const found = Object.fromEntries((items || []).map((i) => [i.id, i.status]));
+    ids.forEach((id) => { recentStatus[id] = found[id] || null; });
+  } catch {
+    ids.forEach((id) => { if (recentStatus[id] === undefined) recentStatus[id] = null; });
+  }
+  renderRecent();
 }
 </script>
 </body>

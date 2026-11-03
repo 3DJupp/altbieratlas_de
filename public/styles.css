@@ -284,6 +284,8 @@ h3 { font-size: 1.15rem; line-height: 1.3; letter-spacing: 0; }
 html[data-theme="dark"] .tag.verified { color: #b8d494; background: #243019; border-color: #3a4e26; }
 .tag.pending { color: #7a5a16; background: #f5e7c3; border-color: #d9c491; }
 html[data-theme="dark"] .tag.pending { color: #e8cc85; background: #33290f; border-color: #5c4618; }
+.tag.rejected { color: #8a2a1f; background: #f6dcd6; border-color: #e0b0a6; }
+html[data-theme="dark"] .tag.rejected { color: #f0a597; background: #3a1d18; border-color: #63322a; }
 
 /* Kleines Label über Kennzahlen (keine Kicker über Überschriften) */
 .eyebrow {

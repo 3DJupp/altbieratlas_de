@@ -862,6 +862,24 @@ export async function postContribution(req, env, _params, ctx) {
   return json({ ok: true, id, status: "pending" }, { status: 201 });
 }
 
+// GET /api/contributions/status?ids=<uuid>,<uuid>,…
+// Status der eigenen Einreichungen für „Deine Beiträge“ (die IDs stehen im
+// Browser-Cookie atlas_subs). Gibt nur id/status/Zeitpunkt zurück, nie Payload,
+// Absender oder admin_notes; die IDs sind zufällige UUIDs, also nicht erratbar.
+const CONTRIB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export async function contributionStatus(req, env) {
+  const raw = new URL(req.url).searchParams.get("ids") || "";
+  const ids = [...new Set(raw.split(",").map((s) => s.trim()).filter((s) => CONTRIB_ID_RE.test(s)))].slice(0, 20);
+  if (!ids.length) return json({ items: [] }, { headers: { "cache-control": "no-store" } });
+  const { results } = await env.DB.prepare(
+    `SELECT id, status, created_at, reviewed_at FROM contributions WHERE id IN (${ids.map(() => "?").join(",")})`
+  ).bind(...ids).all();
+  const items = (results || []).map((r) => ({
+    id: r.id, status: r.status, createdAt: r.created_at, reviewedAt: r.reviewed_at || null,
+  }));
+  return json({ items }, { headers: { "cache-control": "no-store" } });
+}
+
 // ---- IP-Hash für Vote-Deduplication (SHA-256, keine rohen IPs gespeichert) ----
 // Der Tag (UTC) fließt in den Hash ein: pro IP und Tag genau ein Hash, also eine Stimme.
 // Stimmen verschiedener Tage lassen sich so auch nicht derselben IP zuordnen.
@@ -919,7 +937,8 @@ export async function postContact(req, env) {
   if (!body) return error(400, "invalid-json");
   const tsActive = turnstileActive(env);
   const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req));
-  if (!ts.success) return error(403, "turnstile-failed");
+  // reason: nur die Fehlercodes, damit der Client bei timeout-or-duplicate neu versucht
+  if (!ts.success) return error(403, "turnstile-failed", { reason: { "error-codes": ts["error-codes"] || [ts.error || "unknown"] } });
   let topic, name, email, organisation, message;
   try {
     topic        = oneOf(body.topic, Object.keys(CONTACT_TOPICS), { required: true, name: "topic" });
@@ -2613,7 +2632,7 @@ export const PAGE_DATES = {
   "/wissen":     "2026-10-30",
   "/sorten":     "2026-10-30",
   "/rivalen":    "2026-10-30",
-  "/beitragen":  "2026-10-30",
+  "/beitragen":  "2026-11-03",
   "/staedte":    "2026-10-30",
   "/kooperation": "2026-10-30",
 };

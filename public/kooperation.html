@@ -192,8 +192,7 @@ renderShell({});
 })();
 
 // ---- Live-Zahlen und Unterstützen-Links ----
-let turnstileToken = null;
-let turnstileWidgetId = null;
+let ts = window.atlasTurnstile(null, null);
 (async () => {
   const [stats, cfg] = await Promise.all([
     window.AtlasAPI.getStats().catch(() => null),
@@ -213,21 +212,7 @@ let turnstileWidgetId = null;
   if (author.beer) links.insertAdjacentHTML("afterbegin", `<a class="btn btn-primary" href="${author.beer}" target="_blank" rel="noopener" data-i18n="footer.beer">${window.t("footer.beer")}</a>`);
 
   // Turnstile nur, wenn ein Site-Key gesetzt ist (sonst prüft der Worker auch nicht)
-  const siteKey = cfg?.turnstileSiteKey || window.ATLAS_CONFIG.turnstileSiteKey;
-  if (siteKey && !String(siteKey).includes("PLACEHOLDER")) {
-    window.onTurnstileLoad = () => {
-      turnstileWidgetId = window.turnstile.render("#turnstile-widget", {
-        sitekey: siteKey,
-        theme: document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light",
-        callback: (token) => { turnstileToken = token; },
-        "expired-callback": () => { turnstileToken = null; },
-      });
-    };
-    const s = document.createElement("script");
-    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
-    s.async = true; s.defer = true;
-    document.head.appendChild(s);
-  }
+  ts = window.atlasTurnstile("#turnstile-widget", cfg?.turnstileSiteKey || window.ATLAS_CONFIG.turnstileSiteKey);
 })();
 
 // ---- Kontaktformular ----
@@ -241,7 +226,7 @@ document.getElementById("contact-form").addEventListener("submit", async (e) => 
   msg.className = "contact-msg";
   msg.textContent = t("common.loading");
   try {
-    await window.AtlasAPI.sendContact({
+    await ts.send((turnstileToken) => window.AtlasAPI.sendContact({
       topic: fd.get("topic"),
       name: fd.get("name").trim(),
       email: fd.get("email").trim(),
@@ -249,7 +234,7 @@ document.getElementById("contact-form").addEventListener("submit", async (e) => 
       message: fd.get("message").trim(),
       lang: window.__atlasLang || "de",
       turnstileToken,
-    });
+    }));
     msg.className = "contact-msg ok";
     msg.textContent = t("coop.sent");
     e.target.reset();
@@ -263,10 +248,6 @@ document.getElementById("contact-form").addEventListener("submit", async (e) => 
       : t("coop.errGeneric");
   } finally {
     btn.disabled = false;
-    if (window.turnstile && turnstileWidgetId !== null) {
-      try { window.turnstile.reset(turnstileWidgetId); } catch {}
-      turnstileToken = null;
-    }
   }
 });
 </script>
