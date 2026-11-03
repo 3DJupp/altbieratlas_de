@@ -175,7 +175,7 @@ const ROUTES = [
   ["PUT",    "/api/admin/settings",                        R.adminUpdateSettings],
 ];
 
-export default {
+const worker = {
   async scheduled(event, env, ctx) {
     // Wöchentlich (Mo 4, 5 und 6 Uhr UTC, je max. 40 Orte wegen des Subrequest-Limits):
     // Google-Bewertungen auffrischen, die älter als 6 Tage sind; Cache > 30 Tage löschen
@@ -196,6 +196,12 @@ export default {
   },
 
   async fetch(request, rawEnv, ctx) {
+    // HEAD = GET ohne Body (RFC 9110). Die Handler prüfen auf GET; ohne diese
+    // Weiche bekamen Link-Checker und Crawler für jede Seite eine 404.
+    if (request.method === "HEAD") {
+      const res = await worker.fetch(new Request(request, { method: "GET" }), rawEnv, ctx);
+      return new Response(null, { status: res.status, statusText: res.statusText, headers: res.headers });
+    }
     const { env, stats } = meterEnv(rawEnv);
     const url = new URL(request.url);
     const path = url.pathname;
@@ -226,6 +232,7 @@ export default {
     return res;
   },
 };
+export default worker;
 
 async function handle(request, env, ctx) {
   const url = new URL(request.url);
