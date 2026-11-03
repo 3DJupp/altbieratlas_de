@@ -864,7 +864,8 @@ export async function postContribution(req, env, _params, ctx) {
 
 // GET /api/contributions/status?ids=<uuid>,<uuid>,…
 // Status der eigenen Einreichungen für „Deine Beiträge“ (die IDs stehen im
-// Browser-Cookie atlas_subs). Gibt nur id/status/Zeitpunkt zurück, nie Payload,
+// Browser-Cookie atlas_subs): pending | approved | rejected | removed (freigegeben,
+// Datensatz inzwischen gelöscht/ausgeblendet). Gibt nur id/status/Zeitpunkt zurück, nie Payload,
 // Absender oder admin_notes; die IDs sind zufällige UUIDs, also nicht erratbar.
 const CONTRIB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function contributionStatus(req, env) {
@@ -872,10 +873,16 @@ export async function contributionStatus(req, env) {
   const ids = [...new Set(raw.split(",").map((s) => s.trim()).filter((s) => CONTRIB_ID_RE.test(s)))].slice(0, 20);
   if (!ids.length) return json({ items: [] }, { headers: { "cache-control": "no-store" } });
   const { results } = await env.DB.prepare(
-    `SELECT id, status, created_at, reviewed_at FROM contributions WHERE id IN (${ids.map(() => "?").join(",")})`
+    `SELECT id, status, created_at, reviewed_at, result_ref FROM contributions WHERE id IN (${ids.map(() => "?").join(",")})`
   ).bind(...ids).all();
-  const items = (results || []).map((r) => ({
-    id: r.id, status: r.status, createdAt: r.created_at, reviewedAt: r.reviewed_at || null,
+  // Freigegeben, aber der angelegte Datensatz ist weg oder ausgeblendet → „removed“.
+  // Ohne result_ref (Freigaben vor dieser Spalte, Korrekturen) bleibt es „approved“.
+  const rows = results || [];
+  const live = await liveResultRefs(env, rows.filter((r) => r.status === "approved" && r.result_ref).map((r) => r.result_ref));
+  const items = rows.map((r) => ({
+    id: r.id,
+    status: r.status === "approved" && r.result_ref && !live.has(r.result_ref) ? "removed" : r.status,
+    createdAt: r.created_at, reviewedAt: r.reviewed_at || null,
   }));
   return json({ items }, { headers: { "cache-control": "no-store" } });
 }
@@ -1240,6 +1247,8 @@ export async function adminListContributions(req, env) {
   const res = await env.DB.prepare(
     "SELECT * FROM contributions WHERE status = ? ORDER BY created_at DESC LIMIT 200"
   ).bind(status).all();
+  const live = status === "approved"
+    ? await liveResultRefs(env, res.results.map((c) => c.result_ref).filter(Boolean)) : null;
   return json({
     contributions: res.results.map((c) => ({
       id: c.id,
@@ -1252,6 +1261,9 @@ export async function adminListContributions(req, env) {
       createdAt: c.created_at,
       reviewedAt: c.reviewed_at,
       reviewedBy: c.reviewed_by,
+      resultRef: c.result_ref || null,
+      // null = unbekannt (kein Verweis), sonst ob der Datensatz noch öffentlich ist
+      resultLive: live && c.result_ref ? live.has(c.result_ref) : null,
     })),
   });
 }
@@ -1273,11 +1285,13 @@ export async function adminApprove(req, env, { id }) {
   const nowIso = new Date().toISOString();
   // Neu angelegter Ort → das Admin-Panel stößt damit die Place-ID-Suche an
   let createdBreweryId = null;
+  // Verweis auf den angelegten Datensatz (contributions.result_ref)
+  let resultRef = null;
 
   // Apply-Logik je Typ
   try {
     if (c.type === "price") {
-      await env.DB.prepare(
+      const ins = await env.DB.prepare(
         "INSERT INTO prices (brewery_id, date, size, price, source, notes, style_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'approved')"
       ).bind(
         payload.breweryId,
@@ -1288,6 +1302,7 @@ export async function adminApprove(req, env, { id }) {
         payload.notes || null,
         await existingStyleId(env, payload.styleId),
       ).run();
+      if (ins.meta?.last_row_id) resultRef = "prices:" + ins.meta.last_row_id;
     } else if (c.type === "brewery") {
       const newId = payload.id || (payload.name || "brew").toLowerCase()
         .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) + "-" + Math.random().toString(36).slice(2, 6);
@@ -1304,12 +1319,14 @@ export async function adminApprove(req, env, { id }) {
         payload.website || null, payload.description || null, payload.description_en || null,
       ).run();
       createdBreweryId = newId;
+      resultRef = "breweries:" + newId;
     } else if (c.type === "event") {
+      const eventId = "ev_" + Math.random().toString(36).slice(2, 10);
       await env.DB.prepare(
         `INSERT INTO events (id, title_de, title_en, brewery_id, date, time, location, url, description_de, description_en, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')`
       ).bind(
-        "ev_" + Math.random().toString(36).slice(2, 10),
+        eventId,
         payload.eventName, payload.eventName, // en fallback
         payload.breweryId || null, payload.eventDate,
         payload.eventTime || null,
@@ -1317,6 +1334,7 @@ export async function adminApprove(req, env, { id }) {
         payload.eventUrl || null,
         payload.description || null, payload.description || null,
       ).run();
+      resultRef = "events:" + eventId;
     } else if (c.type === "offer") {
       // Community-Text kommt in einer Sprache; EN bis zur Übersetzung gleich DE
       // (fehlende Übersetzungen zeigt das Dashboard)
@@ -1327,7 +1345,8 @@ export async function adminApprove(req, env, { id }) {
         weekdays: payload.weekdays, time_from: payload.timeFrom, time_to: payload.timeTo,
         valid_until: payload.validUntil, status: "approved",
       });
-      await insertOffer(env, o);
+      const offerId = await insertOffer(env, o);
+      if (offerId) resultRef = "offers:" + offerId;
     } else if (c.type === "style") {
       const sid = "usr-" + (payload.styleName || "stil").toLowerCase()
         .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) + "-" + Math.random().toString(36).slice(2, 6);
@@ -1344,13 +1363,16 @@ export async function adminApprove(req, env, { id }) {
         await env.DB.prepare(
           "INSERT OR IGNORE INTO brewery_styles (brewery_id, style_id) VALUES (?, ?)"
         ).bind(payload.breweryId, sid).run();
+        resultRef = `brewery_styles:${payload.breweryId}/${sid}`;
+      } else {
+        resultRef = "styles:" + sid;
       }
     }
     // Korrektur: wird nur als Hinweis angelegt — der Admin muss die Änderung manuell übernehmen.
 
     await env.DB.prepare(
-      "UPDATE contributions SET status = 'approved', reviewed_at = ?, reviewed_by = ? WHERE id = ?"
-    ).bind(nowIso, auth.username, id).run();
+      "UPDATE contributions SET status = 'approved', reviewed_at = ?, reviewed_by = ?, result_ref = ? WHERE id = ?"
+    ).bind(nowIso, auth.username, resultRef, id).run();
 
     return json({ ok: true, ...(createdBreweryId ? { breweryId: createdBreweryId } : {}) });
   } catch (e) {
@@ -1359,17 +1381,80 @@ export async function adminApprove(req, env, { id }) {
 }
 
 // POST /api/admin/contributions/:id/reject  { notes? }
+// Offener Beitrag → abgelehnt. Schon freigegebener Beitrag → Freigabe
+// widerrufen: Status „rejected“ und der angelegte Datensatz wird ausgeblendet
+// (status = 'rejected'); nur eine vom Beitrag angelegte, sonst unbenutzte Sorte
+// wird gelöscht (Sorten haben keinen Status, siehe hideResultStmts).
 export async function adminReject(req, env, { id }) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
   const body = await req.json().catch(() => ({}));
   const notes = str(body.notes, { max: 2000, name: "notes" });
 
-  const res = await env.DB.prepare(
-    "UPDATE contributions SET status = 'rejected', reviewed_at = ?, reviewed_by = ?, admin_notes = ? WHERE id = ? AND status = 'pending'"
-  ).bind(new Date().toISOString(), auth.username, notes, id).run();
-  if (!res.meta.changes) return error(404, "not-found-or-already-reviewed");
-  return json({ ok: true });
+  const c = await env.DB.prepare(
+    "SELECT status, result_ref FROM contributions WHERE id = ? AND status IN ('pending','approved')"
+  ).bind(id).first();
+  if (!c) return error(404, "not-found-or-already-reviewed");
+
+  const stmts = [env.DB.prepare(
+    "UPDATE contributions SET status = 'rejected', reviewed_at = ?, reviewed_by = ?, admin_notes = ? WHERE id = ? AND status = ?"
+  ).bind(new Date().toISOString(), auth.username, notes, id, c.status)];
+  const hide = c.status === "approved" ? hideResultStmts(env, c.result_ref) : [];
+  const [res] = await env.DB.batch([...stmts, ...hide]);
+  if (!res.meta.changes) return error(409, "status-changed");
+  return json({ ok: true, revoked: c.status === "approved", hidden: hide.length > 0 });
+}
+
+// ---- contributions.result_ref: angelegten Datensatz prüfen / ausblenden ----
+const RESULT_TABLES = {
+  prices:    { sql: "SELECT id AS k FROM prices WHERE status = 'approved' AND id IN",    num: true },
+  breweries: { sql: "SELECT id AS k FROM breweries WHERE status = 'approved' AND id IN" },
+  events:    { sql: "SELECT id AS k FROM events WHERE status = 'approved' AND id IN" },
+  offers:    { sql: "SELECT id AS k FROM offers WHERE status = 'approved' AND id IN",    num: true },
+  styles:    { sql: "SELECT id AS k FROM styles WHERE id IN" },
+  brewery_styles: { sql: "SELECT brewery_id || '/' || style_id AS k FROM brewery_styles WHERE brewery_id || '/' || style_id IN" },
+};
+function parseResultRef(ref) {
+  const m = /^([a-z_]+):(.+)$/.exec(ref || "");
+  return m && RESULT_TABLES[m[1]] ? { table: m[1], key: m[2] } : null;
+}
+// refs → Set der Verweise, deren Datensatz noch öffentlich ist
+async function liveResultRefs(env, refs) {
+  const byTable = {};
+  for (const ref of refs) {
+    const r = parseResultRef(ref);
+    if (r) (byTable[r.table] ||= []).push(r.key);
+  }
+  const live = new Set();
+  for (const [table, keys] of Object.entries(byTable)) {
+    const t = RESULT_TABLES[table];
+    const { results } = await env.DB.prepare(`${t.sql} (${keys.map(() => "?").join(",")})`)
+      .bind(...keys.map((k) => (t.num ? Number(k) : k))).all();
+    (results || []).forEach((row) => live.add(`${table}:${row.k}`));
+  }
+  return live;
+}
+// Statements, die den angelegten Datensatz aus der Öffentlichkeit nehmen
+function hideResultStmts(env, ref) {
+  const r = parseResultRef(ref);
+  if (!r) return [];
+  if (r.table === "brewery_styles" || r.table === "styles") {
+    const [breweryId, styleId] = r.table === "styles" ? [null, r.key] : r.key.split("/");
+    // Eine Sorte ganz ohne Ort gilt laut STYLE_PUBLIC_SQL als öffentlich. Die vom
+    // Beitrag angelegte Sorte wird deshalb gelöscht, solange nichts anderes an ihr
+    // hängt; sonst bleibt sie und nur diese Zuordnung fällt weg.
+    return [
+      ...(breweryId ? [env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ? AND style_id = ?").bind(breweryId, styleId)] : []),
+      env.DB.prepare(
+        `DELETE FROM styles WHERE id = ? AND primary_brewery_id IS NULL
+           AND id NOT IN (SELECT style_id FROM brewery_styles)
+           AND id NOT IN (SELECT style_id FROM prices WHERE style_id IS NOT NULL)`
+      ).bind(styleId),
+    ];
+  }
+  const touch = r.table === "breweries" || r.table === "offers" ? ", updated_at = datetime('now')" : "";
+  const key = RESULT_TABLES[r.table].num ? Number(r.key) : r.key;
+  return [env.DB.prepare(`UPDATE ${r.table} SET status = 'rejected'${touch} WHERE id = ?`).bind(key)];
 }
 
 // GET /api/admin/breweries  (inkl. pending)

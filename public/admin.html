@@ -900,14 +900,15 @@
   <!-- Reject-Dialog -->
   <div class="reject-dialog" id="reject-dialog">
     <div class="box">
-      <h3 data-i18n="admin.rejectTitle">Beitrag ablehnen</h3>
+      <h3 id="reject-title" data-i18n="admin.rejectTitle">Beitrag ablehnen</h3>
+      <p id="reject-revoke-hint" style="display:none;font-size:13px;color:var(--ink-muted);margin:0 0 10px" data-i18n="admin.revokeHint">Der Beitrag gilt danach als abgelehnt. Was die Freigabe angelegt hat, wird ausgeblendet (nicht gelöscht).</p>
       <div class="field">
         <label data-i18n="admin.rejectReason">Grund (optional)</label>
         <textarea id="reject-notes" rows="3" data-i18n-placeholder="admin.rejectReasonPh" placeholder="Kurzer Grund — wird intern gespeichert."></textarea>
       </div>
       <div class="actions">
         <button class="btn btn-ghost" id="reject-cancel" data-i18n="common.cancel">Abbrechen</button>
-        <button class="btn btn-reject" id="reject-confirm" data-i18n="admin.reject">Ablehnen</button>
+        <button class="btn btn-reject" id="reject-confirm">Ablehnen</button>
       </div>
     </div>
   </div>
@@ -1661,7 +1662,8 @@ function renderContribCards(items, host, status) {
             <span>${d}</span>
             ${c.submitterName ? `<span>${esc(c.submitterName)}</span>` : ""}
             ${c.submitterEmail ? `<span>${c.submitterEmail}</span>` : ""}
-            ${c.adminNotes ? `<span>· ${window.t("admin.note")}: ${c.adminNotes}</span>` : ""}
+            ${c.adminNotes ? `<span>· ${window.t("admin.note")}: ${esc(c.adminNotes)}</span>` : ""}
+            ${status === "approved" && c.resultLive === false ? `<span class="tag">${window.t("admin.resultGone")}</span>` : ""}
           </div>
           <div class="payload">${esc(payload)}</div>
           ${placeId ? `
@@ -1676,6 +1678,9 @@ function renderContribCards(items, host, status) {
           <div class="contrib-actions">
             <button class="btn btn-approve" data-action="approve">${window.t(c.type === "correction" ? "admin.contribDone" : "admin.approve")}</button>
             <button class="btn btn-reject"  data-action="reject">${window.t("admin.reject")}</button>
+          </div>` : status === "approved" ? `
+          <div class="contrib-actions">
+            <button class="btn btn-reject" data-action="revoke">${window.t("admin.revoke")}</button>
           </div>` : ""}
       </div>
     `;
@@ -1705,8 +1710,8 @@ async function handleAction(id, action, cardEl) {
     } catch (e) {
       alert(window.t("admin.approveError") + (e.detail?.detail || e.message));
     }
-  } else if (action === "reject") {
-    openReject(id, cardEl);
+  } else if (action === "reject" || action === "revoke") {
+    openReject(id, cardEl, action === "revoke");
   }
 }
 
@@ -1942,8 +1947,11 @@ document.getElementById("places-backfill-apply").addEventListener("click", async
 // Reject-Dialog
 const rejectDialog = document.getElementById("reject-dialog");
 let pendingReject = null;
-function openReject(id, cardEl) {
+function openReject(id, cardEl, revoke = false) {
   pendingReject = { id, cardEl };
+  document.getElementById("reject-title").textContent = window.t(revoke ? "admin.revokeTitle" : "admin.rejectTitle");
+  document.getElementById("reject-revoke-hint").style.display = revoke ? "" : "none";
+  document.getElementById("reject-confirm").textContent = window.t(revoke ? "admin.revoke" : "admin.reject");
   document.getElementById("reject-notes").value = "";
   rejectDialog.classList.add("visible");
 }
