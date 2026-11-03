@@ -537,6 +537,15 @@ das Formular einmal nach, weil dann weder Freischalt-Benachrichtigung noch Rück
 möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filtert
 `cf-turnstile-response` & Co. zusätzlich heraus).
 
+„Deine Beiträge“ merkt sich die letzten acht Einreichungen im Browser-Cookie `atlas_subs`
+(mit Beitrags-ID) und holt den aktuellen Stand (in Prüfung, freigegeben, abgelehnt) über
+`GET /api/contributions/status`. Der Endpunkt liefert nur ID, Status und Zeitpunkte,
+nie Inhalt, Absender oder Admin-Notizen.
+
+Alle Formulare mit Bot-Prüfung (Beitragen, Kontakt, Admin-Login) laufen über
+`window.atlasTurnstile()` in `shell.js`: jedes Token wird genau einmal gesendet, bei
+`timeout-or-duplicate` einmal automatisch mit frischem Token wiederholt.
+
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken, neueste offene Beiträge und **fehlende Übersetzungen** (alle Orte, Sorten, Events, Event-Biere, Glossar-Einträge und Typen mit leerem DE- oder EN-Text; Orte öffnen direkt den Bearbeiten-Dialog)
 - **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick). Beiträge zu einem bestehenden Ort (Preis, Sorte, Korrektur, Event) verlinken den Ort und springen per „Ort bearbeiten“ in dessen Dialog; Korrekturen werden danach als „Erledigt“ markiert, sie ändern selbst nichts
@@ -724,6 +733,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/glossary` | Glossar |
 | GET | `/api/geocode?q=…` | Nominatim-Proxy |
 | POST | `/api/contributions` | Beitrag einreichen |
+| GET | `/api/contributions/status?ids=` | Status eigener Beiträge (max. 20 IDs, nur ID/Status/Zeitpunkte) |
 | GET | `/api/rivals/votes` | Stimmen Alt / Kölsch / Enthaltung |
 | POST | `/api/rivals/vote` | Stimme abgeben (`alt`, `kolsch`, `neutral`), einmal pro IP und Tag |
 | GET | `/api/untappd/brewery/:id` | Untappd-Bewertung (24h Cache) |

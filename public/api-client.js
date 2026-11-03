@@ -178,6 +178,10 @@
       this._pushUserContrib({ type: body.type, data: body.data });
       return { ok: true, status: "pending", mock: true };
     },
+    // Mock kennt keine Moderation: alles bleibt „in Prüfung“
+    async contributionStatus(ids) {
+      return { items: ids.map((id) => ({ id, status: "pending" })), mock: true };
+    },
     // Ohne Backend kann keine Mail raus: ehrlich scheitern statt Erfolg vorspielen
     async sendContact() {
       const e = new Error("mock-mode");
@@ -241,6 +245,7 @@
     listOffers:       () => req("/offers"),
     geocode:          async (q) => { try { return await req(`/geocode?q=${encodeURIComponent(q)}`); } catch { return { results: [] }; } },
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
+    contributionStatus: (ids) => req(`/contributions/status?ids=${encodeURIComponent(ids.join(","))}`),
     sendContact:        (body) => req("/contact", { method: "POST", body }),
     getRivalVotes:    () => req("/rivals/votes"),
     postRivalVote:    (choice) => req("/rivals/vote", { method: "POST", body: { choice } }),
@@ -341,6 +346,7 @@
     listOffers:         () => call("listOffers"),
     geocode:            (q) => call("geocode", q),
     submitContribution: (body) => call("submitContribution", body),
+    contributionStatus: (ids) => call("contributionStatus", ids),
     sendContact:        (body) => call("sendContact", body),
     getRivalVotes:      () => call("getRivalVotes"),
     postRivalVote:      (choice) => call("postRivalVote", choice),

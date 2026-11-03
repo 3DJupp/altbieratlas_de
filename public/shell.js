@@ -535,3 +535,76 @@ window.atlasTrack = function (event, params = {}) {
     window.gtag("event", event, params);
   }
 };
+
+// ---- Turnstile (Bot-Prüfung) für alle Formulare ----
+// Jedes Token gilt bei siteverify genau einmal; ein zweites Mal (Doppel-Submit,
+// Seite aus dem Back-Forward-Cache, abgelaufenes Token) endet in
+// „timeout-or-duplicate“. take() gibt deshalb jedes Token nur einmal heraus und
+// setzt das Widget sofort zurück, damit für den nächsten Versuch ein neues
+// entsteht; send() wiederholt bei timeout-or-duplicate einmal mit frischem Token.
+// Ohne gültigen Site-Key ist alles ein No-op (Token null, der Worker prüft dann auch nicht).
+window.atlasTurnstile = function (host, siteKey) {
+  const enabled = !!siteKey && !String(siteKey).includes("PLACEHOLDER");
+  let id = null, token = null, waiters = [];
+  const theme = () => document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  const setToken = (t) => {
+    token = t || null;
+    if (token && waiters.length) { const w = waiters; waiters = []; w.forEach((f) => f()); }
+  };
+  function reset() {
+    token = null;
+    if (window.turnstile && id !== null) { try { window.turnstile.reset(id); } catch {} }
+  }
+  function render() {
+    const el = typeof host === "string" ? document.querySelector(host) : host;
+    if (!el || !window.turnstile) return;
+    if (id !== null) { try { window.turnstile.remove(id); } catch {} id = null; token = null; }
+    id = window.turnstile.render(el, {
+      sitekey: siteKey,
+      theme: theme(),
+      callback: setToken,
+      "expired-callback": () => { token = null; },
+      "error-callback": (code) => {
+        console.error("[turnstile] Widget-Fehler:", code,
+          "— Site-Key/Domain prüfen (110200 = Domain nicht erlaubt).");
+        token = null;
+      },
+    });
+  }
+  function take({ fresh = false, timeoutMs = 20000 } = {}) {
+    if (!enabled) return Promise.resolve(null);
+    if (fresh) reset();
+    else if (token) { const t = token; reset(); return Promise.resolve(t); }
+    return new Promise((resolve) => {
+      const w = () => { clearTimeout(timer); const t = token; reset(); resolve(t); };
+      const timer = setTimeout(() => { waiters = waiters.filter((f) => f !== w); resolve(null); }, timeoutMs);
+      waiters.push(w);
+    });
+  }
+  const isDuplicate = (err) => {
+    const codes = err && err.detail && err.detail.reason && err.detail.reason["error-codes"];
+    return err && err.status === 403 && Array.isArray(codes) && codes.includes("timeout-or-duplicate");
+  };
+  async function send(fn) {
+    try { return await fn(await take()); }
+    catch (err) {
+      if (!isDuplicate(err)) throw err;
+      return await fn(await take({ fresh: true }));
+    }
+  }
+  if (enabled) {
+    const prev = window.onTurnstileLoad;
+    window.onTurnstileLoad = () => { if (prev) prev(); render(); };
+    document.addEventListener("atlas:theme-changed", render);
+    // Aus dem Back-Forward-Cache zurück: Token im Speicher ist evtl. schon verbraucht
+    window.addEventListener("pageshow", (e) => { if (e.persisted) reset(); });
+    if (window.turnstile) render();
+    else if (!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
+      const s = document.createElement("script");
+      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
+      s.async = true; s.defer = true;
+      document.head.appendChild(s);
+    }
+  }
+  return { enabled, take, send, reset };
+};
