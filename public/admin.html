@@ -1361,6 +1361,35 @@ let me = null;
 let turnstileToken = null;
 let turnstileWidgetId = null;
 let turnstileSiteKeyCache = null;
+// Wartende auf das nächste Token (nach reset() kommt es asynchron)
+let turnstileWaiters = [];
+
+function setTurnstileToken(token) {
+  turnstileToken = token;
+  if (token) { turnstileWaiters.forEach((w) => w(token)); turnstileWaiters = []; }
+}
+
+// Liefert ein unverbrauchtes Token und markiert es sofort als verbraucht —
+// siteverify akzeptiert jedes Token nur einmal (sonst „timeout-or-duplicate“).
+// Ist keins da, wird das Widget zurückgesetzt und auf das neue gewartet.
+function takeTurnstileToken({ fresh = false, timeoutMs = 20000 } = {}) {
+  if (!turnstileSiteKeyCache) return Promise.resolve(null); // Turnstile aus
+  if (!fresh && turnstileToken) {
+    const t = turnstileToken; turnstileToken = null; return Promise.resolve(t);
+  }
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      turnstileWaiters = turnstileWaiters.filter((w) => w !== done);
+      resolve(null);
+    }, timeoutMs);
+    const done = (t) => { clearTimeout(timer); turnstileToken = null; resolve(t); };
+    turnstileWaiters.push(done);
+    turnstileToken = null;
+    if (window.turnstile && turnstileWidgetId !== null) {
+      try { window.turnstile.reset(turnstileWidgetId); } catch {}
+    }
+  });
+}
 
 function turnstileTheme() {
   return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
@@ -1377,7 +1406,7 @@ function renderTurnstileWidget() {
   turnstileWidgetId = window.turnstile.render(host, {
     sitekey: turnstileSiteKeyCache,
     theme: turnstileTheme(),
-    callback: (token) => { turnstileToken = token; },
+    callback: (token) => setTurnstileToken(token),
     "expired-callback": () => { turnstileToken = null; },
     "error-callback": (code) => {
       console.error("[turnstile] Widget-Fehler:", code,
@@ -1386,6 +1415,15 @@ function renderTurnstileWidget() {
     },
   });
 }
+
+// Aus dem Back-Forward-Cache wiederhergestellt: das Token im Speicher ist
+// womöglich schon verbraucht oder abgelaufen → frisch holen.
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted && window.turnstile && turnstileWidgetId !== null) {
+    turnstileToken = null;
+    try { window.turnstile.reset(turnstileWidgetId); } catch {}
+  }
+});
 
 function initTurnstile() {
   const cfg = window.ATLAS_CONFIG;
@@ -1408,13 +1446,27 @@ function initTurnstile() {
 }
 
 // ============ Login ============
+let loginBusy = false;
 document.getElementById("login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (loginBusy) return; // Doppel-Submit würde dasselbe Token zweimal senden
+  loginBusy = true;
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) btn.disabled = true;
   loginErr.classList.remove("visible");
   const fd = new FormData(e.target);
+  const login = async (fresh) => window.AtlasAPI.admin.login(
+    fd.get("username"), fd.get("password"), await takeTurnstileToken({ fresh }));
   try {
-    const r = await window.AtlasAPI.admin.login(fd.get("username"), fd.get("password"), turnstileToken);
-    me = r;
+    try {
+      me = await login(false);
+    } catch (err) {
+      // Token verbraucht/abgelaufen → einmal mit frischem Token wiederholen
+      const codes = err.detail?.reason?.["error-codes"];
+      if (err.status === 403 && Array.isArray(codes) && codes.includes("timeout-or-duplicate")) {
+        me = await login(true);
+      } else throw err;
+    }
     showAdmin();
   } catch (err) {
     const tsCodes = err.detail?.reason?.["error-codes"];
@@ -1429,11 +1481,14 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
           + (Array.isArray(tsCodes) && tsCodes.length ? " (" + tsCodes.join(", ") + ")" : ""))
       : window.t("admin.loginFailed");
     loginErr.classList.add("visible");
-    // Turnstile-Token ist einmalig → zurücksetzen
+    // Turnstile-Token ist einmalig → für den nächsten Versuch neu holen
     if (window.turnstile && turnstileWidgetId !== null) {
-      try { window.turnstile.reset(turnstileWidgetId); } catch {}
       turnstileToken = null;
+      try { window.turnstile.reset(turnstileWidgetId); } catch {}
     }
+  } finally {
+    loginBusy = false;
+    if (btn) btn.disabled = false;
   }
 });
 
