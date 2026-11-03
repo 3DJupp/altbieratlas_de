@@ -825,6 +825,8 @@ const RECENT_TAG = {
   pending:  { cls: "pending",  key: "common.pending" },
   approved: { cls: "verified", key: "admin.statusApproved" },
   rejected: { cls: "rejected", key: "admin.statusRejected" },
+  // freigegeben, der angelegte Eintrag wurde später gelöscht oder ausgeblendet
+  removed:  { cls: "",         key: "contrib.recent.statusRemoved" },
 };
 let recentStatus = {}; // id → Status aus der API; fehlt = lädt noch, null = unbekannt
 const escHtml = (v) => String(v).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));

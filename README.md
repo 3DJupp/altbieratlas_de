@@ -540,7 +540,9 @@ möglich sind. Das Turnstile-Token wird nie im Payload gespeichert (Server filte
 „Deine Beiträge“ merkt sich die letzten acht Einreichungen im Browser-Cookie `atlas_subs`
 (mit Beitrags-ID) und holt den aktuellen Stand (in Prüfung, freigegeben, abgelehnt) über
 `GET /api/contributions/status`. Der Endpunkt liefert nur ID, Status und Zeitpunkte,
-nie Inhalt, Absender oder Admin-Notizen.
+nie Inhalt, Absender oder Admin-Notizen. Ist der aus einer Freigabe angelegte Datensatz
+später gelöscht oder ausgeblendet worden (oder die Freigabe widerrufen), meldet er
+`removed` bzw. `rejected`, und die Liste zeigt „Nicht mehr online“ bzw. „Abgelehnt“.
 
 Alle Formulare mit Bot-Prüfung (Beitragen, Kontakt, Admin-Login) laufen über
 `window.atlasTurnstile()` in `shell.js`: jedes Token wird genau einmal gesendet, bei
@@ -548,7 +550,7 @@ Alle Formulare mit Bot-Prüfung (Beitragen, Kontakt, Admin-Login) laufen über
 
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken, neueste offene Beiträge und **fehlende Übersetzungen** (alle Orte, Sorten, Events, Event-Biere, Glossar-Einträge und Typen mit leerem DE- oder EN-Text; Orte öffnen direkt den Bearbeiten-Dialog)
-- **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick). Beiträge zu einem bestehenden Ort (Preis, Sorte, Korrektur, Event) verlinken den Ort und springen per „Ort bearbeiten“ in dessen Dialog; Korrekturen werden danach als „Erledigt“ markiert, sie ändern selbst nichts
+- **Beiträge** — Approve / Reject mit optionaler Notiz; beim Freigeben eines neuen Orts sucht das Panel automatisch die Google Place ID und zeigt sie als Vorschlag (gespeichert wird nur per Klick). Beiträge zu einem bestehenden Ort (Preis, Sorte, Korrektur, Event) verlinken den Ort und springen per „Ort bearbeiten“ in dessen Dialog; Korrekturen werden danach als „Erledigt“ markiert, sie ändern selbst nichts. Freigegebene Beiträge lassen sich per „Freigabe widerrufen“ nachträglich ablehnen: Der Beitrag wird `rejected`, und was die Freigabe angelegt hat (`contributions.result_ref`), wird ausgeblendet (`status = 'rejected'`, nie gelöscht; nur eine vom Beitrag angelegte, sonst unbenutzte Sorte wird entfernt). In der Liste „Freigegeben“ zeigt „nicht mehr online“, dass der angelegte Datensatz inzwischen gelöscht oder ausgeblendet ist
 - **Brauereien** — Alle Einträge bearbeiten (inkl. Google-Maps-URL und Google Place ID mit „Bei Google suchen": Treffer mit Adresse, Entfernung und Status, Übernahme erst nach Bestätigung), Place IDs per Probelauf für alle Orte nachtragen, Google-Bewertungen manuell abrufen, schiefe Pins per „Pins prüfen" finden, offene (`pending`) Einträge per „Freigeben" öffentlich schalten (setzt `status = approved` und `verified`), verifizieren, löschen; neue Brauereien direkt anlegen; Nachfolger („Heute bei …“) und „Historisch“ im Bearbeiten-Dialog und schon beim Anlegen setzen (historisch entfernt die Place ID); Orte per „Auf der Karte hervorheben“ mit goldenem Pin zeigen (`breweries.highlighted`, für Sponsoring); Untappd-Zuordnung korrigieren (`untappd_id`: leer = Namenssuche, 0 = ausblenden, sonst feste Untappd-ID; „Prüfen“ verwirft den Cache und zeigt den Treffer)
 - **Events** — Alle Events einsehen, bearbeiten (inkl. ID-Umbenennung, Enddatum/Endzeit für mehrtägige Events), löschen; neue Events direkt anlegen; Biere pro Event anlegen, bearbeiten und löschen
 - **Preise** — Alle Preise einsehen, bearbeiten (inkl. Sorte), löschen; neue Preise direkt eintragen
@@ -733,7 +735,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/glossary` | Glossar |
 | GET | `/api/geocode?q=…` | Nominatim-Proxy |
 | POST | `/api/contributions` | Beitrag einreichen |
-| GET | `/api/contributions/status?ids=` | Status eigener Beiträge (max. 20 IDs, nur ID/Status/Zeitpunkte) |
+| GET | `/api/contributions/status?ids=` | Status eigener Beiträge (max. 20 IDs, nur ID/Status/Zeitpunkte; `pending`, `approved`, `rejected`, `removed`) |
 | GET | `/api/rivals/votes` | Stimmen Alt / Kölsch / Enthaltung |
 | POST | `/api/rivals/vote` | Stimme abgeben (`alt`, `kolsch`, `neutral`), einmal pro IP und Tag |
 | GET | `/api/untappd/brewery/:id` | Untappd-Bewertung (24h Cache) |
@@ -754,7 +756,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/admin/stats` | Admin-Statistiken |
 | GET | `/api/admin/contributions?status=` | Contributions-Queue |
 | POST | `/api/admin/contributions/:id/approve` | Freigabe |
-| POST | `/api/admin/contributions/:id/reject` | Ablehnen |
+| POST | `/api/admin/contributions/:id/reject` | Ablehnen; bei freigegebenen Beiträgen Freigabe widerrufen (blendet den angelegten Datensatz aus) |
 | GET | `/api/admin/breweries` | Alle Brauereien |
 | POST | `/api/admin/breweries` | Neue Brauerei anlegen |
 | PUT | `/api/admin/breweries/:id` | Brauerei bearbeiten (inkl. `google_place_id`, `untappd_id`) |

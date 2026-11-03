@@ -186,7 +186,12 @@ CREATE TABLE IF NOT EXISTS contributions (
   admin_notes     TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
   reviewed_at     TEXT,
-  reviewed_by     TEXT
+  reviewed_by     TEXT,
+  -- Was die Freigabe angelegt hat: prices:<id>, breweries:<id>, events:<id>,
+  -- offers:<id>, styles:<id> oder brewery_styles:<brewery_id>/<style_id>.
+  -- Fehlt der Datensatz später oder ist er nicht mehr approved, zeigt
+  -- /api/contributions/status „removed“; der Widerruf blendet ihn aus.
+  result_ref      TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_contributions_status  ON contributions(status);
 CREATE INDEX IF NOT EXISTS idx_contributions_created ON contributions(created_at DESC);
