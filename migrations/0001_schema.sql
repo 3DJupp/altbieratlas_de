@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS breweries (
   -- Untappd-Brauerei: NULL = Suche nach Name, 0 = keine Untappd-Anzeige,
   -- > 0 = feste Untappd-ID (wenn die Namenssuche den falschen Treffer liefert)
   untappd_id     INTEGER,
+  -- 1 = Google-Bewertung nicht zeigen (z. B. bei auffällig vielen entfernten
+  -- Rezensionen); Maps-Link und Öffnungszeiten bleiben, der Ort fällt aus der Google-Rangliste
+  google_rating_hidden INTEGER NOT NULL DEFAULT 0,
   lat            REAL NOT NULL,
   lng            REAL NOT NULL,
   founded        INTEGER,
