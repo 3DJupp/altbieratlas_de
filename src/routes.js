@@ -3,7 +3,7 @@
 // ============================================================
 import { generateOgImage } from "./og.js";
 import {
-  searchPlace, mapsLink, refreshRatings, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
+  searchPlace, mapsLink, refreshRatings, refreshPlace, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
 } from "./googlePlaces.js";
 import { normalizeHours, schemaOrgHours, hoursLinesDe } from "./hours.js";
 import { normalizeOffer, offerRow, OFFER_PUBLIC_SQL } from "./offers.js";
@@ -1268,6 +1268,23 @@ export async function adminListContributions(req, env) {
   });
 }
 
+// Lesbare Orts-ID für einen freigegebenen Community-Ort: zuerst der Name
+// („<lokal>“), ist der vergeben „<stadt>-<lokal>“, danach mit Zähler.
+// Nie eine Zufallsendung: die ID ist zugleich der öffentliche Slug.
+export async function freeBreweryId(env, name, city) {
+  const base = citySlug(name).slice(0, 50).replace(/-+$/, "") || "ort";
+  const cityPart = citySlug(city).slice(0, 30).replace(/-+$/, "");
+  const candidates = [base];
+  if (cityPart && !base.startsWith(cityPart + "-") && base !== cityPart) candidates.push(`${cityPart}-${base}`);
+  const last = candidates[candidates.length - 1];
+  for (let n = 2; n <= 20; n++) candidates.push(`${last}-${n}`);
+  for (const c of candidates) {
+    const hit = await env.DB.prepare("SELECT 1 FROM breweries WHERE id = ?").bind(c).first();
+    if (!hit) return c;
+  }
+  return `${last}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
 // POST /api/admin/contributions/:id/approve
 export async function adminApprove(req, env, { id }) {
   const auth = await requireAdmin(req, env);
@@ -1304,8 +1321,7 @@ export async function adminApprove(req, env, { id }) {
       ).run();
       if (ins.meta?.last_row_id) resultRef = "prices:" + ins.meta.last_row_id;
     } else if (c.type === "brewery") {
-      const newId = payload.id || (payload.name || "brew").toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) + "-" + Math.random().toString(36).slice(2, 6);
+      const newId = await freeBreweryId(env, payload.name, payload.city);
       const lat = payload.lat != null ? parseFloat(payload.lat) : (payload.coords?.[0] ?? null);
       const lng = payload.lng != null ? parseFloat(payload.lng) : (payload.coords?.[1] ?? null);
       if (lat == null || lng == null) return error(400, "brewery-missing-coords");
@@ -1476,6 +1492,15 @@ export async function adminListBreweries(req, env) {
   });
 }
 
+// Neu gesetzte Place ID: Bewertung, Koordinaten und Öffnungszeiten gleich
+// holen statt bis zum Montags-Cron zu warten (ein Google-Request). Fehler
+// bleiben folgenlos, der Cron holt den Ort dann nach.
+async function fetchNewPlaceRating(env, body) {
+  if (!body.google_place_id || body.is_historical) return;
+  try { await refreshPlace(env, body.google_place_id); }
+  catch (e) { console.warn("Places-Abruf nach Zuordnung fehlgeschlagen:", e?.message || e); }
+}
+
 // PUT /api/admin/breweries/:id
 export async function adminUpdateBrewery(req, env, { id }) {
   const auth = await requireAdmin(req, env);
@@ -1582,6 +1607,12 @@ export async function adminUpdateBrewery(req, env, { id }) {
       env.DB.prepare("UPDATE events SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE breweries SET successor_id = ? WHERE successor_id = ?").bind(newId, id),
       env.DB.prepare("UPDATE styles SET primary_brewery_id = ? WHERE primary_brewery_id = ?").bind(newId, id),
+      env.DB.prepare("UPDATE offers SET brewery_id = ? WHERE brewery_id = ?").bind(newId, id),
+      // Beiträge: Verweis auf den angelegten Ort und offene Beiträge zu diesem Ort mitziehen
+      env.DB.prepare("UPDATE contributions SET result_ref = ? WHERE result_ref = ?").bind("breweries:" + newId, "breweries:" + id),
+      env.DB.prepare(
+        "UPDATE contributions SET payload = json_set(payload, '$.breweryId', ?) WHERE status = 'pending' AND json_valid(payload) AND json_extract(payload, '$.breweryId') = ?"
+      ).bind(newId, id),
       // Untappd-Cache hängt an der Orts-ID: alten Eintrag verwerfen, der neue entsteht beim nächsten Abruf
       env.DB.prepare("DELETE FROM untappd_cache WHERE atlas_id = ?").bind(id),
     ];
@@ -1592,6 +1623,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
       }
     }
     await env.DB.batch(stmts);
+    await fetchNewPlaceRating(env, body);
     return json({ ok: true, new_id: newId });
   }
 
@@ -1602,6 +1634,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
       `UPDATE breweries SET ${fields.join(", ")} WHERE id = ?`
     ).bind(...values).run();
   }
+  await fetchNewPlaceRating(env, body);
   // Geänderte Untappd-Zuordnung sofort wirksam machen statt 24 h Cache abzuwarten
   if ("untappd_id" in body) {
     await env.DB.prepare("DELETE FROM untappd_cache WHERE atlas_id = ?").bind(id).run();
