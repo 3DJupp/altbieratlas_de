@@ -137,6 +137,25 @@ export function mapsLink(b) {
   return null;
 }
 
+function cacheStmt(env, placeId, r) {
+  return env.DB.prepare(
+    `INSERT INTO google_places_cache (place_id, rating, user_rating_count, lat, lng, opening_hours, fetched_at)
+     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(place_id) DO UPDATE SET rating = excluded.rating,
+       user_rating_count = excluded.user_rating_count, lat = excluded.lat, lng = excluded.lng,
+       opening_hours = excluded.opening_hours, fetched_at = excluded.fetched_at`
+  ).bind(placeId, r.rating, r.userRatingCount, r.lat, r.lng,
+         r.openingHours ? JSON.stringify(r.openingHours) : null);
+}
+
+// Einen einzelnen Ort sofort in den Cache holen (z. B. direkt nach der
+// Zuordnung einer Place ID). Ohne Schlüssel passiert nichts; HTTP-Fehler werfen.
+export async function refreshPlace(env, placeId) {
+  if (!env.GOOGLE_PLACES_KEY || !placeId) return false;
+  await cacheStmt(env, placeId, await fetchRating(env.GOOGLE_PLACES_KEY, placeId)).run();
+  return true;
+}
+
 // Obergrenze je Worker-Aufruf: Der Free-Plan erlaubt 50 Subrequests pro
 // Aufruf, jeder Google-Request zählt. Die D1-Schreibzugriffe laufen
 // gesammelt in einem batch().
@@ -168,15 +187,7 @@ export async function refreshRatings(env, { limit = MAX_PER_RUN, minAgeHours = 1
   const writes = [];
   for (const [i, { place_id }] of results.entries()) {
     try {
-      const r = await fetchRating(apiKey, place_id);
-      writes.push(env.DB.prepare(
-        `INSERT INTO google_places_cache (place_id, rating, user_rating_count, lat, lng, opening_hours, fetched_at)
-         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-         ON CONFLICT(place_id) DO UPDATE SET rating = excluded.rating,
-           user_rating_count = excluded.user_rating_count, lat = excluded.lat, lng = excluded.lng,
-           opening_hours = excluded.opening_hours, fetched_at = excluded.fetched_at`
-      ).bind(place_id, r.rating, r.userRatingCount, r.lat, r.lng,
-             r.openingHours ? JSON.stringify(r.openingHours) : null));
+      writes.push(cacheStmt(env, place_id, await fetchRating(apiKey, place_id)));
     } catch (e) {
       summary.failed++;
       if (summary.errors.length < 10) summary.errors.push({ placeId: place_id, error: String(e?.message || e) });

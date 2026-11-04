@@ -430,6 +430,8 @@ Google-Bedingungen darf nur die Place ID dauerhaft gespeichert werden, alles
 andere höchstens 30 Tage. Manuell auslösen: Admin-Panel → *Brauereien* →
 „Google-Bewertungen abrufen" (wiederholt den Endpunkt, bis alle Orte durch sind)
 bzw. `POST /api/admin/google-ratings/refresh` (eine Portion je Aufruf, Antwort mit `remaining`).
+Wird einem Ort eine Place ID zugeordnet (Bearbeiten-Dialog oder Vorschlag nach der
+Freigabe eines Community-Orts), holt der Worker dessen Bewertung sofort, ohne auf den Cron zu warten.
 Derselbe Abruf holt Googles Koordinaten (`location`, ohne Mehrkosten) in den Cache;
 Einträge noch ohne Koordinaten gelten sofort als fällig.
 

@@ -124,6 +124,13 @@
 
 .style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
 .style-card { padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
+/* Logo, Name, Werte und Text stehen über alle Karten einer Reihe auf einer
+   Linie, auch wenn ein Sortenname zweizeilig umbricht */
+@supports (grid-template-rows: subgrid) {
+  .style-card { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 8px; align-content: start; }
+  .style-card > .style-logo, .style-card > .swatch { align-self: end; }
+  .style-card > .nums { align-self: start; }
+}
 .swatch { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--rule); }
 .style-logo { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; }
 .style-card h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
