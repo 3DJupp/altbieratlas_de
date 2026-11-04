@@ -194,7 +194,7 @@ export async function listBreweries(req, env) {
   return json({
     breweries: breweriesRes.results.map((r) => ({
       ...brewRow(r, stylesByBrewery[r.id] || []),
-      googleRating: r.is_historical ? null : ratings.get(r.google_place_id) || null,
+      googleRating: r.is_historical || r.google_rating_hidden ? null : ratings.get(r.google_place_id) || null,
     })),
   });
 }
@@ -246,7 +246,7 @@ export async function getBrewery(req, env, { id }) {
   return json({
     brewery: {
       ...base,
-      googleRating: google.rating,
+      googleRating: row.google_rating_hidden ? null : google.rating,
       // Googles Zeiten nur, wenn keine eigenen gepflegt sind (Anzeige „laut Google“)
       googleOpeningHours: base.openingHours ? null : google.hours,
       successor: successor || null,
@@ -1487,7 +1487,8 @@ export async function adminListBreweries(req, env) {
   return json({
     breweries: res.results.map((r) => {
       const styles = r.style_ids ? r.style_ids.split(",").filter(Boolean) : [];
-      return brewRow(r, styles);
+      // Nur im Admin: Schalter „Google-Bewertung ausblenden“
+      return { ...brewRow(r, styles), googleRatingHidden: !!r.google_rating_hidden };
     }),
   });
 }
@@ -1531,6 +1532,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     if (uid != null && (!Number.isInteger(uid) || uid < 0)) return error(400, "invalid-untappd-id");
     body.untappd_id = uid;
   }
+  if ("google_rating_hidden" in body) body.google_rating_hidden = body.google_rating_hidden ? 1 : 0;
   if ("highlighted" in body) {
     // true/false aus der Checkbox oder eine Stufe als Zahl
     const lvl = typeof body.highlighted === "number" ? Math.max(0, Math.min(9, Math.trunc(body.highlighted))) : (body.highlighted ? 1 : 0);
@@ -1574,6 +1576,7 @@ export async function adminUpdateBrewery(req, env, { id }) {
     opening_hours: "opening_hours", opening_hours_note_de: "opening_hours_note_de",
     opening_hours_note_en: "opening_hours_note_en", opening_hours_checked: "opening_hours_checked",
     successor_id: "successor_id", google_place_id: "google_place_id", untappd_id: "untappd_id",
+    google_rating_hidden: "google_rating_hidden",
   };
   for (const [k, col] of Object.entries(allow)) {
     if (k in body) {

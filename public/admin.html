@@ -980,6 +980,13 @@
           <div id="edit-place-results"></div>
         </div>
         <div class="field" style="margin:0;grid-column:1/-1">
+          <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+            <input id="edit-google-rating-hidden" type="checkbox" style="width:auto" />
+            <span data-i18n="admin.fieldGoogleRatingHidden">Google-Bewertung ausblenden</span>
+          </label>
+          <span style="font-size:11px;color:var(--ink-muted)" data-i18n="admin.fieldGoogleRatingHiddenHint">Für Orte mit unzuverlässiger Bewertung, z. B. viele von Google entfernte Rezensionen. Keine Sterne auf Karte und Ortsseite, nicht in der Google-Rangliste. Maps-Link und Öffnungszeiten bleiben.</span>
+        </div>
+        <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.fieldUntappdId">Untappd-ID</label>
           <div style="display:flex;gap:8px">
             <input id="edit-untappd-id" type="number" min="0" step="1" style="flex:1;font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px" />
@@ -2030,6 +2037,7 @@ async function loadBreweriesTable() {
           data-place-id="${(b.googlePlaceId || "").replace(/"/g, "&quot;")}"
           data-place-shared="${b.googlePlaceId ? (byPlace.get(b.googlePlaceId) || []).filter((n) => n !== b.name).join(", ").replace(/"/g, "&quot;") : ""}"
           data-untappd-id="${b.untappdId ?? ""}"
+          data-google-rating-hidden="${b.googleRatingHidden ? "1" : ""}"
           data-historical="${b.isHistorical ? "1" : ""}"
           data-highlighted="${b.highlightLevel > 0 ? "1" : ""}"
           data-highlighted-until="${b.highlightedUntil || ""}"
@@ -2138,6 +2146,7 @@ async function openEditDialog(id, rowEl) {
     ? window.t("admin.placeSharedWith").replace("{names}", rowEl.dataset.placeShared) : "";
   document.getElementById("edit-untappd-id").value    = rowEl.dataset.untappdId || "";
   document.getElementById("edit-untappd-result").textContent = "";
+  document.getElementById("edit-google-rating-hidden").checked = rowEl.dataset.googleRatingHidden === "1";
   document.getElementById("edit-historical").checked  = rowEl.dataset.historical === "1";
   document.getElementById("edit-highlighted").checked = rowEl.dataset.highlighted === "1";
   document.getElementById("edit-highlighted-until").value = rowEl.dataset.highlightedUntil || "";
@@ -2441,6 +2450,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
   const styles         = Array.from(selEl.selectedOptions).map((o) => o.value);
   const successorId    = document.getElementById("edit-successor").value || null;
   const historical     = document.getElementById("edit-historical").checked;
+  const googleRatingHidden = document.getElementById("edit-google-rating-hidden").checked;
   const highlighted    = document.getElementById("edit-highlighted").checked;
   const highlightedUntil = document.getElementById("edit-highlighted-until").value || null;
   // Öffnungszeiten einlesen; unlesbare Angaben blockieren das Speichern
@@ -2479,6 +2489,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
       name, short, city, country, type, status, address, maps_url: mapsUrl,
       google_place_id: placeId,
       untappd_id: untappdRaw === "" ? null : parseInt(untappdRaw, 10),
+      google_rating_hidden: googleRatingHidden,
       lat: latRaw !== "" ? parseFloat(latRaw) : undefined,
       lng: lngRaw !== "" ? parseFloat(lngRaw) : undefined,
       founded: foundedRaw !== "" ? parseInt(foundedRaw, 10) : null,
@@ -2509,6 +2520,7 @@ document.getElementById("edit-save").addEventListener("click", async () => {
     row.dataset.mapsUrl        = mapsUrl || "";
     row.dataset.placeId        = placeId || "";
     row.dataset.untappdId      = untappdRaw;
+    row.dataset.googleRatingHidden = googleRatingHidden ? "1" : "";
     if (latRaw !== "") row.dataset.lat = latRaw;
     if (lngRaw !== "") row.dataset.lng = lngRaw;
     row.dataset.founded        = foundedRaw || "";
