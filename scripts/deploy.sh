@@ -19,8 +19,8 @@
 #
 # Schutz vor Branch-Deploys:
 #   Workers Builds setzt WORKERS_CI_BRANCH. Ist das nicht der Production-
-#   Branch, lädt das Script nur eine Version hoch (wrangler versions upload)
-#   und schaltet nichts live, auch kein Seed. So kann ein Build eines
+#   Branch, erstellt das Script nur eine Preview (wrangler preview; versions
+#   upload scheitert in Preview-Builds am Worker-Namen) und schaltet nichts live, auch kein Seed. So kann ein Build eines
 #   Feature-Branches die Produktion nicht mehr überschreiben, selbst wenn
 #   das Dashboard das Script als Version command für Branch-Builds nutzt.
 #   Lokal (ohne WORKERS_CI_BRANCH) wird wie bisher deployt.
@@ -61,8 +61,8 @@ sed -i \
 
 PRODUCTION_BRANCH="${PRODUCTION_BRANCH:-main}"
 if [ -n "${WORKERS_CI_BRANCH:-}" ] && [ "$WORKERS_CI_BRANCH" != "$PRODUCTION_BRANCH" ]; then
-  echo "▶ Branch '${WORKERS_CI_BRANCH}' ist nicht '${PRODUCTION_BRANCH}': nur Version hochladen, nicht live schalten"
-  exec npx wrangler versions upload
+  echo "▶ Branch '${WORKERS_CI_BRANCH}' ist nicht '${PRODUCTION_BRANCH}': nur Preview erstellen, nicht live schalten"
+  exec npx wrangler preview
 fi
 
 if [ "$SEED" = true ]; then
