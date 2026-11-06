@@ -416,14 +416,14 @@ const isSsr = root.dataset.ssr === "1";
                 <span class="dot"></span>
                 <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
                 ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
-                ${b.website ? `<span class="dot"></span><a href="${b.website}" target="_blank" rel="noopener">Website →</a>` : ''}
+                ${window.atlasSafeHref(b.website) ? `<span class="dot"></span><a href="${window.atlasSafeHref(b.website)}" target="_blank" rel="noopener">Website →</a>` : ''}
               </div>
             </div>
           </div>
           ${latest ? `
             <div class="price-hero">
               <div class="label" id="b-price-label">${window.t("brewery.current")}${window.formatSize(latest.size)}${styleName(latest.styleId) ? ` · ${styleName(latest.styleId)}` : ""}</div>
-              <div class="big" id="b-price-val">€ ${window.formatPrice(latest.price)}</div>
+              <div class="big" id="b-price-val">${window.formatEuro(latest.price)}</div>
               <div class="small" id="b-price-date">${window.t("brewery.reported")}${window.formatDate(latest.date)}</div>
             </div>
           ` : ''}
@@ -490,7 +490,7 @@ const isSsr = root.dataset.ssr === "1";
             <span class="date">${window.formatDate(p.date)}</span>
             <span class="src">${translateSource(p.source)}</span>
             <span class="sz">${window.formatSize(p.size)}${styleName(p.styleId) ? ` · ${styleName(p.styleId)}` : ""}</span>
-            <span class="p">€ ${window.formatPrice(p.price)}</span>
+            <span class="p">${window.formatEuro(p.price)}</span>
           </div>
         `).join('') || `<p style="color:var(--ink-muted);padding:20px">${window.t("brewery.noPriceReports")}</p>`}
       </div>
@@ -581,7 +581,7 @@ const isSsr = root.dataset.ssr === "1";
     for (let i = 0; i <= steps; i++) {
       const v = yMin + (yMax - yMin) * (i / steps);
       gridLines.push(`<line class="grid-line" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}" />`);
-      gridLines.push(`<text class="axis-label" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">€ ${window.formatPrice(v)}</text>`);
+      gridLines.push(`<text class="axis-label" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${window.formatEuro(v)}</text>`);
     }
 
     const xTicks = series.filter((_, i) => i === 0 || i === series.length - 1 || i === Math.floor(series.length / 2));
@@ -625,7 +625,7 @@ const isSsr = root.dataset.ssr === "1";
       if (elLabel) elLabel.textContent = window.t('brewery.current') + window.formatSize(latest.size)
         + (styleName(latest.styleId) ? ' · ' + styleName(latest.styleId) : '');
       const elVal = document.getElementById('b-price-val');
-      if (elVal) elVal.textContent = '€ ' + window.formatPrice(latest.price);
+      if (elVal) elVal.textContent = window.formatEuro(latest.price);
       const elDate = document.getElementById('b-price-date');
       if (elDate) elDate.textContent = window.t('brewery.reported') + window.formatDate(latest.date);
     }
@@ -646,7 +646,7 @@ const isSsr = root.dataset.ssr === "1";
           <span class="date">${window.formatDate(p.date)}</span>
           <span class="src">${translateSource(p.source)}</span>
           <span class="sz">${window.formatSize(p.size)}</span>
-          <span class="p">€ ${window.formatPrice(p.price)}</span>
+          <span class="p">${window.formatEuro(p.price)}</span>
         </div>
       `).join('') || `<p style="color:var(--ink-muted);padding:20px">${window.t('brewery.noPriceReports')}</p>`;
     }

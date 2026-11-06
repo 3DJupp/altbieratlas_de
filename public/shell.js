@@ -471,13 +471,27 @@ window.atlasOffers = (() => {
 // Maps-Link eines Orts. Live liefert die API ihn fertig (mapsLink() in
 // src/googlePlaces.js); im Mock-Modus wird er hier nach denselben Regeln
 // gebaut: Place ID → gepflegter Link → Koordinaten.
+// Link aus Daten (Website, Event-Seite) für href: nur http(s), HTML-escaped.
+// Alles andere (javascript:, data: …) ergibt "" → kein Link. Gegenstück zu
+// safeHref() in src/utils.js.
+// atlasSafeUrl() liefert dieselbe URL unescaped (für a.href = … per DOM).
+window.atlasSafeUrl = function (v) {
+  if (!v) return "";
+  let u;
+  try { u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(v) ? v : "https://" + v); } catch { return ""; }
+  return u.protocol === "http:" || u.protocol === "https:" ? u.href : "";
+};
+window.atlasSafeHref = function (v) {
+  return window.atlasSafeUrl(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+};
+
 window.atlasMapsLink = function (b) {
   if (!b) return null;
   if (b.googlePlaceId) {
     const q = [b.name, b.address].filter(Boolean).join(", ");
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}&query_place_id=${encodeURIComponent(b.googlePlaceId)}`;
   }
-  if (b.mapsUrl) return b.mapsUrl;
+  if (b.mapsUrl && window.atlasSafeUrl(b.mapsUrl)) return window.atlasSafeUrl(b.mapsUrl);
   return b.coords ? `https://www.google.com/maps/search/?api=1&query=${b.coords[0]},${b.coords[1]}` : null;
 };
 

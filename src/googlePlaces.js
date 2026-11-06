@@ -13,6 +13,7 @@
 // 30 Tage in google_places_cache; nie in breweries übernehmen.
 
 import { fromGooglePeriods } from "./hours.js";
+import { safeHref } from "./utils.js"; // zirkulär, aber nur zur Laufzeit genutzt
 
 const API = "https://places.googleapis.com/v1";
 
@@ -131,7 +132,7 @@ export function mapsLink(b) {
     const q = [b.name, b.address].filter(Boolean).join(", ");
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}&query_place_id=${encodeURIComponent(placeId)}`;
   }
-  const raw = b.maps_url ?? b.rawMapsUrl;
+  const raw = safeHref(b.maps_url ?? b.rawMapsUrl);
   if (raw) return raw;
   if (lat != null && lng != null) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   return null;

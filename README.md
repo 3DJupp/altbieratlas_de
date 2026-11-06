@@ -1,4 +1,4 @@
-# Altbieratlas · v0.16.0
+# Altbieratlas · v0.17.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -207,6 +207,7 @@ Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vo
 | Feld | Beschreibung |
 |---|---|
 | `highlightedSizes` | Größen, die in Ranglisten hervorgehoben werden und beim Laden vorausgewählt sind. Empfehlung: `[0.25]` |
+| `currencyPosition` | Optional. Position des Euro-Zeichens: `"before"` („€ 2,90“), `"after"` („2,90 €“) oder je Sprache `{ "de": "after", "en": "before" }`. Standard: deutsch dahinter, englisch davor. Gilt für Seiten, Server-HTML, `llms.txt`, Mails und das OG-Bild; JSON-LD bleibt eine reine Zahl |
 | `requireModeration` | `true` = alle Beiträge landen in der Queue. Standard: `true` |
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
 | `resendFrom` | Absenderadresse für Mails via Resend |
@@ -548,7 +549,16 @@ später gelöscht oder ausgeblendet worden (oder die Freigabe widerrufen), melde
 
 Alle Formulare mit Bot-Prüfung (Beitragen, Kontakt, Admin-Login) laufen über
 `window.atlasTurnstile()` in `shell.js`: jedes Token wird genau einmal gesendet, bei
-`timeout-or-duplicate` einmal automatisch mit frischem Token wiederholt.
+`timeout-or-duplicate` einmal automatisch mit frischem Token wiederholt. Serverseitig prüft
+`checkTurnstile()` (`src/routes.js`) jedes Token bei Cloudflare. Ist nur einer der beiden
+Schlüssel gesetzt oder fehlen beide außerhalb von `localhost`, lehnt der Server mit
+`turnstile-not-configured` ab, statt die Prüfung still abzuschalten.
+
+Community-Beiträge dürfen kein HTML enthalten (ein `<` vor Buchstabe, `/`, `!` oder `?`
+wird abgelehnt), die E-Mail muss wie eine Adresse aussehen, und Links (Website,
+Event-Seite, Maps-Link) werden nur als `http(s)` angenommen; ohne Schema wird `https://`
+ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgabe
+(`safeHref()` im Worker, `window.atlasSafeHref()` im Browser).
 
 ### Moderations-Dashboard (`/admin`)
 - **Übersicht** — Statistiken, neueste offene Beiträge und **fehlende Übersetzungen** (alle Orte, Sorten, Events, Event-Biere, Glossar-Einträge und Typen mit leerem DE- oder EN-Text; Orte öffnen direkt den Bearbeiten-Dialog)
@@ -709,7 +719,7 @@ npm run db:setup        # Schema + Seed-Daten lokal
 npm run dev
 ```
 
-Die Site läuft auf `http://localhost:8787`. Turnstile-Verifikation wird ohne konfiguriertes Secret übersprungen.
+Die Site läuft auf `http://localhost:8787`. Turnstile-Verifikation wird übersprungen, solange lokal weder Site-Key noch Secret gesetzt sind (Cloudflares Test-Schlüssel in `.dev.vars` schalten sie lokal ein).
 
 Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser öffnen — `api-client.js` erkennt das fehlende Backend und fällt auf den **Mock-Modus** zurück.
 
@@ -721,7 +731,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 
 | Methode | Pfad | Zweck |
 |---|---|---|
-| GET | `/api/config` | Turnstile-Key, GA4-ID, priceSizes, highlightedSizes, `cities` … |
+| GET | `/api/config` | Turnstile-Key, GA4-ID, priceSizes, highlightedSizes, `currencyPosition`, `cities` … |
 | GET | `/api/stats` | Kennzahlen |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien (inkl. `googleRating` aus dem Cache ≤ 30 Tage) |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |

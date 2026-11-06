@@ -7,7 +7,7 @@
 
 import * as R from "./routes.js";
 import * as SEO from "./seo.js";
-import { error, hashPassword, sendAdminDigest, digestSchedule } from "./utils.js";
+import { error, hashPassword, sendAdminDigest, digestSchedule, configureCurrency } from "./utils.js";
 import { meterEnv } from "./d1meter.js";
 import { refreshRatings } from "./googlePlaces.js";
 
@@ -177,6 +177,7 @@ const ROUTES = [
 
 const worker = {
   async scheduled(event, env, ctx) {
+    configureCurrency(env);
     // Wöchentlich (Mo 4, 5 und 6 Uhr UTC, je max. 40 Orte wegen des Subrequest-Limits):
     // Google-Bewertungen auffrischen, die älter als 6 Tage sind; Cache > 30 Tage löschen
     if (event.cron === GOOGLE_RATINGS_CRON) {
@@ -203,6 +204,7 @@ const worker = {
       return new Response(null, { status: res.status, statusText: res.statusText, headers: res.headers });
     }
     const { env, stats } = meterEnv(rawEnv);
+    configureCurrency(env);
     const url = new URL(request.url);
     const path = url.pathname;
     const render = async () => {
@@ -229,10 +231,31 @@ const worker = {
     if (request.method === "POST" && path === "/api/rivals/vote" && res.ok) {
       ctx.waitUntil(purge(`${url.origin}/api/rivals/votes`, ctx));
     }
-    return res;
+    return withSecurityHeaders(res, path);
   },
 };
 export default worker;
+
+// Sicherheits-Header für jede Antwort (Assets, SSR, API). Kein Skript-CSP, weil
+// die Seiten Inline-Skripte nutzen; frame-ancestors verhindert Clickjacking.
+// Hochgeladene Bilder (/photos, /logos) laufen in einer Sandbox, damit ein SVG
+// mit Skript auf dieser Origin nichts ausführen kann.
+const SECURITY_HEADERS = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "x-frame-options": "SAMEORIGIN",
+};
+function withSecurityHeaders(res, path) {
+  if (res.status === 101 || res.webSocket) return res;
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  if (path.startsWith("/photos/") || path.startsWith("/logos/")) {
+    out.headers.set("content-security-policy", "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+  } else if (!out.headers.has("content-security-policy")) {
+    out.headers.set("content-security-policy", "frame-ancestors 'self'");
+  }
+  return out;
+}
 
 async function handle(request, env, ctx) {
   const url = new URL(request.url);
@@ -242,14 +265,19 @@ async function handle(request, env, ctx) {
 
   // API-Routen
   if (url.pathname.startsWith("/api/")) {
+    // Preflight nur für die eigene Origin: die API wird nur von den eigenen
+    // Seiten aufgerufen. Fremde Origins bekommen keine CORS-Freigabe.
     if (request.method === "OPTIONS") {
+      const origin = request.headers.get("origin");
+      if (origin !== url.origin) return new Response(null, { status: 204 });
       return new Response(null, {
         status: 204,
         headers: {
-          "access-control-allow-origin": request.headers.get("origin") || "*",
+          "access-control-allow-origin": origin,
           "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
           "access-control-allow-headers": "content-type",
           "access-control-allow-credentials": "true",
+          "vary": "origin",
         },
       });
     }

@@ -184,7 +184,7 @@ function paint() {
   if (prices.length) {
     const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
     priceWrap.hidden = false;
-    document.getElementById("stat-price").textContent = "€ " + window.formatPrice(avg);
+    document.getElementById("stat-price").textContent = window.formatEuro(avg);
     document.getElementById("stat-price-lbl").textContent = window.t("city.stat.price");
     statsEl.style.setProperty("--stat-cols", "2");
   } else {
@@ -199,7 +199,7 @@ function paint() {
       ${hl ? `<span class="cc-partner">${window.t("offer.partnerShort")}</span>` : ""}
       <span class="cc-name">${b.name}</span>
       <span class="cc-type">${typeLabel(b.type)}</span>
-      ${p ? `<span class="cc-price">€ ${window.formatPrice(p.price)} <span style="opacity:.55;font-size:11px">/ ${String(p.size).replace(".", ",")} l</span></span>` : ""}
+      ${p ? `<span class="cc-price">${window.formatEuro(p.price)} <span style="opacity:.55;font-size:11px">/ ${String(p.size).replace(".", ",")} l</span></span>` : ""}
     </a>`;
   };
 

@@ -774,7 +774,7 @@ document.getElementById("contrib-form").addEventListener("submit", async (e) => 
     const br = breweries.find((b) => b.id === data.breweryId);
     const brLabel = br ? `${br.name} · ${br.city}` : (data.breweryId || "");
     const summary =
-        apiType === "price"      ? `${brLabel} · € ${window.formatPrice(data.price)} ${window.formatSize(data.size)}`
+        apiType === "price"      ? `${brLabel} · ${window.formatEuro(data.price)} ${window.formatSize(data.size)}`
       : apiType === "brewery"    ? `${data.name || ""} · ${data.city || ""}`
       : apiType === "style"      ? `${data.styleName || ""} · ${brLabel}`
       : apiType === "correction" ? brLabel
