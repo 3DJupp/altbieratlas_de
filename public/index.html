@@ -915,7 +915,7 @@ function renderEvents(events) {
       const dateText = window.formatDateLong(ev.date) + (multiDay ? ` – ${window.formatDateLong(ev.endDate)}` : "");
       const timeText = ev.time ? ` · ${ev.time} ${window.t("index.clock")}` : "";
       const locText = b ? "@ " + b.name + " · " + b.city : ev.location ? "@ " + ev.location : "";
-      const urlBtn = ev.url ? `<a class="event-ics-link" href="${ev.url}" target="_blank" rel="noopener" title="${window.t("event.visitPage")}">🔗</a>` : "";
+      const urlBtn = window.atlasSafeHref(ev.url) ? `<a class="event-ics-link" href="${window.atlasSafeHref(ev.url)}" target="_blank" rel="noopener" title="${window.t("event.visitPage")}">🔗</a>` : "";
       return `
         <article class="card event-card">
           <div class="event-date">${dateText}${timeText}</div>

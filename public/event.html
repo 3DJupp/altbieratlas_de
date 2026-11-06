@@ -320,9 +320,10 @@ function renderEvent() {
     '<a href="/api/events/' + encodeURIComponent(eventId) + '/calendar.ics?lang=' + lang + '" class="ics-btn" rel="nofollow">' +
     calSvg + " " + calLabel + "</a>"
   ];
-  if (ev.url) {
+  const evHref = window.atlasSafeHref(ev.url);
+  if (evHref) {
     actionBtns.push(
-      '<a href="' + ev.url + '" target="_blank" rel="noopener" class="ics-btn">' +
+      '<a href="' + evHref + '" target="_blank" rel="noopener" class="ics-btn">' +
       extSvg + " Website</a>"
     );
   }

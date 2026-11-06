@@ -132,7 +132,9 @@ Jedes Objekt mit Sprachfeldern wird **immer in beiden Sprachen** gepflegt: `brew
 - Passwords: PBKDF2-SHA256, 100,000 iterations, 16-byte salt
 - Rate limits are D1-backed and IP-bound (`rate_limits` table): contributions 20/h, contact form 5/h, login 5/5min, password-reset 3/15min
 - Destructive admin actions confirm on the server too (e.g. resetting the Rhine-derby votes needs `confirm: "ZURÜCKSETZEN"`); admins can't delete themselves or the last admin
-- Turnstile verification is skipped when `TURNSTILE_SECRET_KEY` is absent (safe for local dev)
+- Turnstile goes through `checkTurnstile()` (`src/routes.js`) for every form. It is skipped only when **neither** key is set **and** the host is local (`wrangler dev`); a half or missing configuration on a real host fails closed with `turnstile-not-configured`. Never reintroduce a silent skip
+- Community text must not contain HTML (`assertNoMarkup()`), links are http(s) only: `httpUrl()` on write (contributions and admin), `safeHref()` / `window.atlasSafeHref()` on output. Render data in `innerHTML` only escaped; JSON-LD in SSR goes through `ldSafe()`
+- The worker adds `nosniff`, `Referrer-Policy`, `X-Frame-Options` and `frame-ancestors 'self'` to every response (`withSecurityHeaders()` in `worker.js`); `/photos` and `/logos` get a sandbox CSP so an uploaded SVG can't run script. CORS preflights are answered only for the site's own origin
 
 ### Versioning
 

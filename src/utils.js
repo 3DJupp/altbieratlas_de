@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.16.0";
+export const APP_VERSION = "0.16.1";
 
 import { mapsLink } from "./googlePlaces.js";
 
@@ -223,6 +223,35 @@ export function oneOf(v, options, { required = false, name = "field" } = {}) {
   if (!options.includes(v)) throw new Error(`${name}: invalid value`);
   return v;
 }
+
+// Link-Feld (Website, Event-Seite, Maps-Link): nur http(s). Ohne Schema wird
+// https:// ergänzt („www.beispiel.de“). javascript:, data: usw. werfen, damit
+// ein Link nie Skript ausführt. Rückgabe ist die normalisierte URL (Anführungs-
+// zeichen prozentkodiert) oder null bei leerem Wert.
+export function httpUrl(v, { max = 1000, name = "url" } = {}) {
+  const s = str(v, { max, name });
+  if (!s) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(s) ? s : "https://" + s.replace(/^\/+/, "");
+  let u;
+  try { u = new URL(withScheme); } catch { throw new Error(`${name}: invalid url`); }
+  if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error(`${name}: only http(s) allowed`);
+  return u.href;
+}
+// Für die Ausgabe: gespeicherte URL nur als http(s)-Link verwenden, sonst null
+export function safeHref(v) {
+  try { return httpUrl(v, { max: 2000 }); } catch { return null; }
+}
+
+// Community-Texte dürfen kein HTML enthalten. Ein „<“ vor Buchstabe, „/“, „!“
+// oder „?“ ist ein Tag; „<3“ oder „a < b“ bleiben erlaubt.
+const MARKUP_RE = /<[a-z!/?]/i;
+export function assertNoMarkup(obj, name = "data") {
+  for (const [k, v] of Object.entries(obj || {})) {
+    if (typeof v === "string" && MARKUP_RE.test(v)) throw new Error(`${name}.${k}: html not allowed`);
+  }
+}
+
+export const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
 // ---- Client-IP ----
 export function clientIp(req) {

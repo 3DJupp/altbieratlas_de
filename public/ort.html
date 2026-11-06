@@ -416,7 +416,7 @@ const isSsr = root.dataset.ssr === "1";
                 <span class="dot"></span>
                 <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
                 ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
-                ${b.website ? `<span class="dot"></span><a href="${b.website}" target="_blank" rel="noopener">Website →</a>` : ''}
+                ${window.atlasSafeHref(b.website) ? `<span class="dot"></span><a href="${window.atlasSafeHref(b.website)}" target="_blank" rel="noopener">Website →</a>` : ''}
               </div>
             </div>
           </div>

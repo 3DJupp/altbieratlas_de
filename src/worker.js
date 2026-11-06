@@ -229,10 +229,31 @@ const worker = {
     if (request.method === "POST" && path === "/api/rivals/vote" && res.ok) {
       ctx.waitUntil(purge(`${url.origin}/api/rivals/votes`, ctx));
     }
-    return res;
+    return withSecurityHeaders(res, path);
   },
 };
 export default worker;
+
+// Sicherheits-Header für jede Antwort (Assets, SSR, API). Kein Skript-CSP, weil
+// die Seiten Inline-Skripte nutzen; frame-ancestors verhindert Clickjacking.
+// Hochgeladene Bilder (/photos, /logos) laufen in einer Sandbox, damit ein SVG
+// mit Skript auf dieser Origin nichts ausführen kann.
+const SECURITY_HEADERS = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "x-frame-options": "SAMEORIGIN",
+};
+function withSecurityHeaders(res, path) {
+  if (res.status === 101 || res.webSocket) return res;
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  if (path.startsWith("/photos/") || path.startsWith("/logos/")) {
+    out.headers.set("content-security-policy", "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+  } else if (!out.headers.has("content-security-policy")) {
+    out.headers.set("content-security-policy", "frame-ancestors 'self'");
+  }
+  return out;
+}
 
 async function handle(request, env, ctx) {
   const url = new URL(request.url);
@@ -242,14 +263,19 @@ async function handle(request, env, ctx) {
 
   // API-Routen
   if (url.pathname.startsWith("/api/")) {
+    // Preflight nur für die eigene Origin: die API wird nur von den eigenen
+    // Seiten aufgerufen. Fremde Origins bekommen keine CORS-Freigabe.
     if (request.method === "OPTIONS") {
+      const origin = request.headers.get("origin");
+      if (origin !== url.origin) return new Response(null, { status: 204 });
       return new Response(null, {
         status: 204,
         headers: {
-          "access-control-allow-origin": request.headers.get("origin") || "*",
+          "access-control-allow-origin": origin,
           "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
           "access-control-allow-headers": "content-type",
           "access-control-allow-credentials": "true",
+          "vary": "origin",
         },
       });
     }

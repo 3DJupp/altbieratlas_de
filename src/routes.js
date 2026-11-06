@@ -11,7 +11,7 @@ import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
-  verifyTurnstile, rateLimit, str, num, oneOf,
+  verifyTurnstile, rateLimit, str, num, oneOf, httpUrl, safeHref, assertNoMarkup, EMAIL_RE,
   clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification, sendAdminDigest,
   sendContactEmail, CONTACT_TOPICS,
   siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons, isHighlighted,
@@ -32,6 +32,30 @@ function turnstileSiteKey(env) {
 function turnstileActive(env) {
   const k = turnstileSiteKey(env);
   return !!k && !k.includes("PLACEHOLDER");
+}
+function turnstileSecret(env) {
+  const s = env.TURNSTILE_SECRET_KEY ? String(env.TURNSTILE_SECRET_KEY).trim() : "";
+  return s && !s.includes("PLACEHOLDER") && s !== "TURNSTILE_SECRET_UNSET" ? s : null;
+}
+const LOCAL_HOST_RE = /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/;
+
+// Einzige Turnstile-Prüfung für alle Formulare (Beitrag, Kontakt, Login).
+// Beide Schlüssel gesetzt → Token bei Cloudflare prüfen. Keiner gesetzt →
+// nur lokal überspringen (wrangler dev). Alles andere ist eine Fehlkonfiguration
+// und schlägt fehl, statt den Schutz unbemerkt abzuschalten: fehlt etwa nur das
+// Secret, zeigte das Formular sonst ein Widget, dessen Token niemand prüft.
+// Rückgabe { success, "error-codes" } ohne weitere Felder der Cloudflare-Antwort.
+async function checkTurnstile(req, env, token) {
+  const siteKey = turnstileActive(env);
+  const secret = turnstileSecret(env);
+  if (siteKey && secret) {
+    const r = await verifyTurnstile(token, secret, clientIp(req));
+    return { success: !!r.success, "error-codes": r.success ? [] : (r["error-codes"]?.length ? r["error-codes"] : [r.error || "unknown"]) };
+  }
+  const host = new URL(req.url).hostname;
+  if (!siteKey && !secret && LOCAL_HOST_RE.test(host)) return { success: true, "error-codes": [], dev: true };
+  console.error(`[turnstile] Fehlkonfiguration: TURNSTILE_SITE_KEY ${siteKey ? "gesetzt" : "fehlt"}, TURNSTILE_SECRET_KEY ${secret ? "gesetzt" : "fehlt"} — Anfrage abgelehnt.`);
+  return { success: false, "error-codes": ["turnstile-not-configured"] };
 }
 
 // ---- Auth-Middleware ----
@@ -736,13 +760,8 @@ export async function postContribution(req, env, _params, ctx) {
   try { body = await req.json(); }
   catch { return error(400, "invalid-json"); }
 
-  // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
-  // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
-  const tsActive = turnstileActive(env);
-  const tsResult = await verifyTurnstile(
-    body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req)
-  );
-  if (!tsResult.success) return error(403, "turnstile-failed", { reason: tsResult });
+  const tsResult = await checkTurnstile(req, env, body.turnstileToken);
+  if (!tsResult.success) return error(403, "turnstile-failed", { reason: { "error-codes": tsResult["error-codes"] } });
 
   // Rate-Limit: 20 Einreichungen pro IP pro Stunde
   const ip = clientIp(req);
@@ -761,6 +780,14 @@ export async function postContribution(req, env, _params, ctx) {
     if (!body.data || typeof body.data !== "object") throw new Error("data: required");
     // Turnstile-/Captcha-Felder, die das Formular mitschickt, nie in den Payload
     data = Object.fromEntries(Object.entries(body.data).filter(([k]) => !CAPTCHA_FIELD.test(k)));
+    if (email && !EMAIL_RE.test(email)) throw new Error("email: invalid");
+    // Kein HTML in Community-Texten (landen nach Freigabe in Seiten und im Admin)
+    assertNoMarkup(data);
+    if (submitterName && /<[a-z!/?]/i.test(submitterName)) throw new Error("submitterName: html not allowed");
+    // Links nur als http(s), sonst könnte eine Website-Angabe Skript ausführen
+    for (const k of ["website", "eventUrl", "url", "mapsUrl"]) {
+      if (data[k] != null && data[k] !== "") data[k] = httpUrl(data[k], { max: 500, name: k });
+    }
 
     // Typ-spezifische Mindestvalidierung
     if (type === "price") {
@@ -942,10 +969,9 @@ export async function postRivalVote(req, env) {
 export async function postContact(req, env) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
-  const tsActive = turnstileActive(env);
-  const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, clientIp(req));
+  const ts = await checkTurnstile(req, env, body.turnstileToken);
   // reason: nur die Fehlercodes, damit der Client bei timeout-or-duplicate neu versucht
-  if (!ts.success) return error(403, "turnstile-failed", { reason: { "error-codes": ts["error-codes"] || [ts.error || "unknown"] } });
+  if (!ts.success) return error(403, "turnstile-failed", { reason: { "error-codes": ts["error-codes"] } });
   let topic, name, email, organisation, message;
   try {
     topic        = oneOf(body.topic, Object.keys(CONTACT_TOPICS), { required: true, name: "topic" });
@@ -1115,12 +1141,8 @@ export async function adminLogin(req, env) {
 
   const ip = clientIp(req);
 
-  // Turnstile: nur erzwingen wenn BEIDE Seiten konfiguriert sind —
-  // Secret (Server) UND Site-Key (Frontend, rendert das Widget).
-  // Fehlt der Site-Key, wird kein Widget angezeigt und kein Token gesendet.
-  const tsActive = turnstileActive(env);
-  const ts = await verifyTurnstile(body.turnstileToken, tsActive ? env.TURNSTILE_SECRET_KEY : null, ip);
-  if (!ts.success) return error(403, "turnstile-failed", { reason: ts });
+  const ts = await checkTurnstile(req, env, body.turnstileToken);
+  if (!ts.success) return error(403, "turnstile-failed", { reason: { "error-codes": ts["error-codes"] } });
 
   // Rate-Limit Login (5 pro 5 min pro IP)
   const rl = await rateLimit(env.DB, `login:${ip}:${Math.floor(Date.now() / 300000)}`, 5, 300);
@@ -1332,7 +1354,7 @@ export async function adminApprove(req, env, { id }) {
         newId, payload.name, payload.short || null, payload.type || "brewery",
         payload.city, payload.country || "DE", payload.address || null,
         lat, lng, payload.founded ? parseInt(payload.founded, 10) : null,
-        payload.website || null, payload.description || null, payload.description_en || null,
+        safeHref(payload.website), payload.description || null, payload.description_en || null,
       ).run();
       createdBreweryId = newId;
       resultRef = "breweries:" + newId;
@@ -1347,7 +1369,7 @@ export async function adminApprove(req, env, { id }) {
         payload.breweryId || null, payload.eventDate,
         payload.eventTime || null,
         payload.eventLocation || null,
-        payload.eventUrl || null,
+        safeHref(payload.eventUrl),
         payload.description || null, payload.description || null,
       ).run();
       resultRef = "events:" + eventId;
@@ -1558,6 +1580,12 @@ export async function adminUpdateBrewery(req, env, { id }) {
   }
   for (const k of ["opening_hours_note_de", "opening_hours_note_en"]) {
     if (k in body) body[k] = body[k] ? String(body[k]).trim().slice(0, 500) || null : null;
+  }
+  for (const k of ["website", "maps_url"]) {
+    if (k in body) {
+      try { body[k] = httpUrl(body[k], { max: k === "website" ? 500 : 1000, name: k }); }
+      catch (e) { return error(400, "validation-failed", { detail: e.message }); }
+    }
   }
   if ("is_historical" in body) {
     body.is_historical = body.is_historical ? 1 : 0;
@@ -1987,6 +2015,10 @@ export async function adminUpdateEvent(req, env, { id }) {
     }
   }
 
+  if ("url" in body) {
+    try { body.url = httpUrl(body.url, { max: 500, name: "url" }); }
+    catch (e) { return error(400, "validation-failed", { detail: e.message }); }
+  }
   const fields = [];
   const values = [];
   const allow = {
@@ -2490,11 +2522,11 @@ export async function adminCreateBrewery(req, env) {
     city      = str(body.city,           { required: true, max: 100,  name: "city" });
     country   = str(body.country,        { max: 5,    name: "country" }) || "DE";
     address   = str(body.address,        { max: 300,  name: "address" });
-    mapsUrl   = str(body.maps_url,       { max: 1000, name: "maps_url" });
+    mapsUrl   = httpUrl(body.maps_url,   { max: 1000, name: "maps_url" });
     lat       = num(body.lat,            { required: true, min: -90,  max: 90,  name: "lat" });
     lng       = num(body.lng,            { required: true, min: -180, max: 180, name: "lng" });
     founded   = body.founded != null && body.founded !== "" ? parseInt(body.founded, 10) : null;
-    website   = str(body.website,        { max: 500,  name: "website" });
+    website   = httpUrl(body.website,    { max: 500,  name: "website" });
     descDe    = str(body.description_de, { max: 2000, name: "description_de" });
     descEn    = str(body.description_en, { max: 2000, name: "description_en" });
     successorId = str(body.successor_id, { max: 80,  name: "successor_id" });
@@ -2544,7 +2576,7 @@ export async function adminCreateEvent(req, env) {
     endDate   = str(body.end_date,       { max: 20,   name: "end_date" });
     endTime   = str(body.end_time,       { max: 10,   name: "end_time" });
     location  = str(body.location,       { max: 300,  name: "location" });
-    url       = str(body.url,            { max: 500,  name: "url" });
+    url       = httpUrl(body.url,        { max: 500,  name: "url" });
     descDe    = str(body.description_de, { max: 2000, name: "description_de" });
     descEn    = str(body.description_en, { max: 2000, name: "description_en" });
     status    = oneOf(body.status, ["pending", "approved", "rejected"]) || "approved";
@@ -3081,7 +3113,7 @@ export async function serveOrt(req, env, params = {}) {
         "description": metaDesc,
         ...(row.address ? { "address": { "@type": "PostalAddress", "streetAddress": row.address, "addressLocality": row.city, "addressCountry": row.country || "DE" } } : {}),
         ...(row.lat && row.lng ? { "geo": { "@type": "GeoCoordinates", "latitude": row.lat, "longitude": row.lng } } : {}),
-        ...(row.website ? { "sameAs": [row.website] } : {}),
+        ...(safeHref(row.website) ? { "sameAs": [safeHref(row.website)] } : {}),
         ...(!row.is_historical && mapsLink(row) ? { "hasMap": mapsLink(row) } : {}),
         ...(row.founded ? { "foundingDate": String(row.founded) } : {}),
         ...(latestBySize.length ? {
@@ -3150,7 +3182,7 @@ export async function serveOrt(req, env, params = {}) {
                 <span class="dot"></span>
                 <span>${escHtml(row.city)}${row.country && row.country !== "DE" ? " · " + escHtml(row.country) : ""}</span>
                 ${row.founded ? `<span class="dot"></span><span>seit ${escHtml(row.founded)}</span>` : ""}
-                ${row.website ? `<span class="dot"></span><a href="${escHtml(row.website)}" target="_blank" rel="noopener">Website →</a>` : ""}
+                ${safeHref(row.website) ? `<span class="dot"></span><a href="${escHtml(safeHref(row.website))}" target="_blank" rel="noopener">Website →</a>` : ""}
               </div>
             </div>
           </div>
@@ -3269,7 +3301,7 @@ export async function serveOrt(req, env, params = {}) {
   // dasselbe HTML und deshalb noindex (siehe applyLangVariant in seo.js).
   html = html.replace(
     "</head>",
-    `<script type="application/ld+json">${ld}</script>\n</head>`,
+    `<script type="application/ld+json">${ldSafe(ld)}</script>\n</head>`,
   );
 
   const headers = new Headers(assetRes.headers);
@@ -3278,6 +3310,11 @@ export async function serveOrt(req, env, params = {}) {
 
   return new Response(html, { status: 200, headers });
 }
+// JSON in <script>: „<“ als \u003c, damit ein Name mit „</script>“ den Block nicht beendet
+function ldSafe(json) {
+  return String(json).replace(/</g, "\\u003c");
+}
+
 export function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -3491,7 +3528,7 @@ export async function serveEvent(req, env) {
   );
   html = html.replace(
     "</head>",
-    `<script type="application/ld+json">${JSON.stringify(ld)}</script>\n</head>`,
+    `<script type="application/ld+json">${ldSafe(JSON.stringify(ld))}</script>\n</head>`,
   );
 
   // ---- Server-gerenderter Seiteninhalt -------------------------------
@@ -3521,7 +3558,7 @@ export async function serveEvent(req, env) {
 
   const actions = [
     `<a href="/api/events/${escHtml(encodeURIComponent(row.id))}/calendar.ics?lang=de" class="ics-btn" rel="nofollow">Kalender (.ics)</a>`,
-    ...(row.url ? [`<a href="${escHtml(row.url)}" target="_blank" rel="noopener" class="ics-btn">Website</a>`] : []),
+    ...(safeHref(row.url) ? [`<a href="${escHtml(safeHref(row.url))}" target="_blank" rel="noopener" class="ics-btn">Website</a>`] : []),
   ];
 
   const sub = (re, fn) => { html = html.replace(re, fn); };
@@ -3781,7 +3818,7 @@ export async function serveCity(req, env) {
     () => `<body data-city="${escHtml(city)}" data-city-slug="${escHtml(slug)}">`,
   );
 
-  html = html.replace("</head>", `<script type="application/ld+json">${ld}</script>\n</head>`);
+  html = html.replace("</head>", `<script type="application/ld+json">${ldSafe(ld)}</script>\n</head>`);
 
   const headers = new Headers(assetRes.headers);
   headers.set("content-type", "text/html; charset=utf-8");
@@ -3843,7 +3880,7 @@ export async function serveCities(req, env) {
       },
     ],
   });
-  html = html.replace("</head>", `<script type="application/ld+json">${ld}</script>\n</head>`);
+  html = html.replace("</head>", `<script type="application/ld+json">${ldSafe(ld)}</script>\n</head>`);
 
   const headers = new Headers(assetRes.headers);
   headers.set("content-type", "text/html; charset=utf-8");

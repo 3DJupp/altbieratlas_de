@@ -1665,10 +1665,10 @@ function renderContribCards(items, host, status) {
       <div class="contrib-card" data-id="${c.id}">
         <div>
           <div class="meta">
-            <span class="type-tag">${c.type}</span>
+            <span class="type-tag">${esc(c.type)}</span>
             <span>${d}</span>
             ${c.submitterName ? `<span>${esc(c.submitterName)}</span>` : ""}
-            ${c.submitterEmail ? `<span>${c.submitterEmail}</span>` : ""}
+            ${c.submitterEmail ? `<span>${esc(c.submitterEmail)}</span>` : ""}
             ${c.adminNotes ? `<span>· ${window.t("admin.note")}: ${esc(c.adminNotes)}</span>` : ""}
             ${status === "approved" && c.resultLive === false ? `<span class="tag">${window.t("admin.resultGone")}</span>` : ""}
           </div>
