@@ -157,6 +157,7 @@ Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
 | Git repository | dein GitHub-Repo |
 | Build command | `npm install` |
 | **Deploy command** | `bash scripts/deploy.sh` |
+| **Preview command** | `bash scripts/deploy.sh` (nicht der Standard `npx wrangler preview`) |
 | Root directory | `/` |
 | Production branch | `main` |
 
@@ -168,12 +169,27 @@ bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
 ```
 
 Live geht nur der Production-Branch. Läuft das Script in einem Build eines
-anderen Branches (Workers Builds setzt `WORKERS_CI_BRANCH`), lädt es nur eine
-Version hoch (`wrangler versions upload`), ohne sie live zu schalten. Das
-schützt die Produktion, falls „Builds for non-production branches“ aktiv ist
-und das Dashboard `deploy.sh` auch als Version command verwendet. Ein anderer
-Production-Branch als `main` wird über die Build-Variable `PRODUCTION_BRANCH`
-gesetzt.
+anderen Branches (Workers Builds setzt `WORKERS_CI_BRANCH`), erstellt oder
+aktualisiert es nur eine [Worker Preview](https://developers.cloudflare.com/workers/previews/)
+(`wrangler preview`) und schaltet nichts live. Ein anderer Production-Branch
+als `main` wird über die Build-Variable `PRODUCTION_BRANCH` gesetzt.
+
+**Previews:** Unter *Settings → Build* „Previews“ bzw. Builds für
+Nicht-Production-Branches einschalten und als Preview command ebenfalls
+`bash scripts/deploy.sh` eintragen, sonst bleiben die D1-Platzhalter in
+`wrangler.toml` stehen. Previews erben keine Produktionseinstellungen:
+
+- Bindings stehen im `[previews]`-Block der `wrangler.toml` (D1, R2, Versions-Metadaten).
+- Die Build-Variablen aus [1.3](#13-build-variablen-setzen) auch in den Preview-Einstellungen des Builds setzen.
+- Ohne `preview_database_id`/`preview_database_name` nutzt eine Preview die
+  Produktions-D1: Sie zeigt echte Daten, Meldungen und Admin-Änderungen dort
+  landen aber live. Für Tests mit Schreibzugriffen eine eigene D1 anlegen
+  (`npx wrangler d1 create altbieratlas-preview`, Schema und Seed einspielen)
+  und die beiden Variablen setzen.
+- Runtime-Secrets und `SITE_CONFIG` im Dashboard unter *Settings → Previews Base*
+  setzen (oder `npx wrangler preview secret put <NAME>`). Ohne Turnstile-Keys
+  lehnen die Formulare in der Preview ab (fail closed), ohne `MAP_TILE_API_KEY`
+  zeigt die Karte abgedunkelte OSM-Kacheln.
 
 ### 1.3 Build-Variablen setzen
 
@@ -183,6 +199,8 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**):
 |---|---|---|
 | `database_id` | Secret | UUID aus `npx wrangler d1 create` |
 | `database_name` | Secret | Name der D1-DB, z. B. `altbieratlas` |
+| `preview_database_id` | Secret | Optional, nur für Previews: UUID einer eigenen Preview-D1 |
+| `preview_database_name` | Secret | Optional, nur für Previews: Name der Preview-D1 |
 | `INDEXNOW_KEY` | Secret | Optional, derselbe Wert wie das gleichnamige Runtime-Secret. Dann meldet `deploy.sh` nach jedem Production-Deploy alle Sitemap-URLs an IndexNow ([1.5](#15-indexnow-aktivieren-optional-empfohlen)). Fehlt er, gibt das Build-Log nur eine Warnung aus. |
 
 ### 1.4 Worker-Runtime-Variablen setzen
