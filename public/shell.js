@@ -1,6 +1,63 @@
 // Altbieratlas — Shared layout (header, footer, cookie banner)
 // Jede Seite ruft renderShell() auf.
 
+// ---- Icons (Design System „Altbieratlas“) --------------------------
+// 20er-Raster, Strich 1,5 px, eine Farbe über currentColor. Ersetzen alle
+// Emojis. atlasIcon(name, { size: 16, label }) liefert Inline-SVG.
+const ATLAS_ICON_PATHS = {
+  calendar: '<rect x="3" y="4.5" width="14" height="12.5" rx="1.5"/><path d="M3 8.5h14M7 2.5v4M13 2.5v4"/>',
+  pin: '<path d="M10 17.5s-5.5-4.9-5.5-9.3a5.5 5.5 0 0 1 11 0c0 4.4-5.5 9.3-5.5 9.3z"/><circle cx="10" cy="8.2" r="2"/>',
+  link: '<path d="M8.6 11.4a3 3 0 0 0 4.2 0l2.7-2.7a3 3 0 0 0-4.2-4.2l-1.1 1.1"/><path d="M11.4 8.6a3 3 0 0 0-4.2 0l-2.7 2.7a3 3 0 0 0 4.2 4.2l1.1-1.1"/>',
+  star: '<path class="fill" d="M10 2.8l2.2 4.5 5 .7-3.6 3.5.9 4.9L10 14.1l-4.5 2.3.9-4.9L2.8 8l5-.7z"/>',
+  "star-half": '<path class="fill" d="M10 2.8v11.3l-4.5 2.3.9-4.9L2.8 8l5-.7z"/><path d="M10 2.8l2.2 4.5 5 .7-3.6 3.5.9 4.9L10 14.1l-4.5 2.3.9-4.9L2.8 8l5-.7z"/>',
+  "star-empty": '<path d="M10 2.8l2.2 4.5 5 .7-3.6 3.5.9 4.9L10 14.1l-4.5 2.3.9-4.9L2.8 8l5-.7z"/>',
+  pencil: '<path d="M12.8 4.2l3 3-8.6 8.6-3.7.7.7-3.7z"/><path d="M11 6l3 3"/>',
+  check: '<path d="M4 10.5l3.6 3.6L16 5.8"/>',
+  cross: '<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>',
+  sun: '<circle cx="10" cy="10" r="3.2"/><path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3L6 14M14 6l1.3-1.3"/>',
+  moon: '<path d="M15.8 12.6A6.5 6.5 0 0 1 7.4 4.2a6.5 6.5 0 1 0 8.4 8.4z"/>',
+  external: '<path d="M11.5 3.5h5v5M16.5 3.5L9.5 10.5"/><path d="M14.5 11.5v4a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h4"/>',
+  search: '<circle cx="9" cy="9" r="5"/><path d="M12.7 12.7l3.8 3.8"/>',
+  menu: '<path d="M3.5 6h13M3.5 10h13M3.5 14h13"/>',
+  locate: '<circle cx="10" cy="10" r="5.5"/><circle class="fill" cx="10" cy="10" r="1.6"/><path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/>',
+};
+window.atlasIcon = function (name, opts = {}) {
+  const body = ATLAS_ICON_PATHS[name] || "";
+  const cls = "icon" + (opts.size === 16 ? " icon-16" : "") + (opts.cls ? " " + opts.cls : "");
+  const a11y = opts.label
+    ? `role="img" aria-label="${String(opts.label).replace(/"/g, "&quot;")}"`
+    : 'aria-hidden="true"';
+  return `<svg class="${cls}" viewBox="0 0 20 20" ${a11y}>${body}</svg>`;
+};
+// Sterne für eine Bewertung von 0–5 (halbe Sterne gerundet)
+window.atlasStars = function (rating) {
+  const r = Math.round(Number(rating) * 2) / 2;
+  let out = "";
+  for (let i = 1; i <= 5; i++) {
+    out += window.atlasIcon(r >= i ? "star" : r >= i - 0.5 ? "star-half" : "star-empty", { size: 16 });
+  }
+  return `<span class="stars" role="img" aria-label="${String(rating)} / 5">${out}</span>`;
+};
+// Marke: Bierdeckel-Ring mit Altbierglas
+window.atlasBrandMark = function () {
+  return '<svg class="mark" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="14" r="9.75" fill="none" stroke="currentColor" stroke-width="0.75" stroke-dasharray="1 2"/><path d="M11 8h6l-.6 11.2a1 1 0 0 1-1 .8h-2.8a1 1 0 0 1-1-.8z" fill="currentColor"/></svg>';
+};
+// Platzhalter für Orte ohne Logo: Bierdeckel mit Initialen
+window.atlasInitials = function (str) {
+  const words = String(str || "").match(/\p{L}+/gu) || [];
+  if (!words.length) return "?";
+  return (words.length >= 2 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
+};
+window.atlasMat = function (name, size = 64) {
+  const ini = window.atlasInitials(name).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const rim = size >= 40 ? '<circle class="rim" cx="32" cy="32" r="26"/>' : "";
+  return `<svg class="mat" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><circle class="disc" cx="32" cy="32" r="30.5"/>${rim}<text x="32" y="39" text-anchor="middle" font-size="20">${ini}</text></svg>`;
+};
+// Platzhalter für Sorten ohne Logo: schlankes Altbierglas ohne Henkel
+window.atlasGlass = function (size = 48) {
+  return `<svg class="glass" width="${size}" height="${size}" viewBox="0 0 48 48" aria-hidden="true"><path class="beer" d="M17.2 13h13.6l-1 28.1a2 2 0 0 1-2 1.9h-7.6a2 2 0 0 1-2-1.9z"/><path class="foam" d="M17 6h14l-.25 7H17.25z"/><path class="outline" d="M17 5h14l-1.2 36.1a2 2 0 0 1-2 1.9h-7.6a2 2 0 0 1-2-1.9z"/></svg>`;
+};
+
 window.renderShell = function ({ activeNav }) {
   const cfg = window.ATLAS_CONFIG;
   const consent = localStorage.getItem("atlas-consent");
@@ -10,7 +67,7 @@ window.renderShell = function ({ activeNav }) {
     <header class="atlas-header">
       <div class="container inner">
         <a class="brand" href="/">
-          <span class="mark" aria-hidden="true">A</span>
+          ${window.atlasBrandMark()}
           <span class="wordmark">Altbieratlas</span>
         </a>
         <nav class="nav" aria-label="primary">
@@ -23,7 +80,7 @@ window.renderShell = function ({ activeNav }) {
         </nav>
         <div class="header-controls">
           <button class="lang-toggle" id="lang-toggle" title="Sprache / Language">DE</button>
-          <button class="theme-toggle" id="theme-toggle" aria-label="Theme">☾</button>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Theme">${window.atlasIcon("moon", { size: 16 })}</button>
           <button class="hamburger" id="hamburger" aria-label="Menü öffnen" aria-expanded="false">
             <span></span><span></span><span></span>
           </button>
@@ -119,7 +176,7 @@ window.renderShell = function ({ activeNav }) {
         <div class="grid">
           <div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <span class="brand"><span class="mark">A</span><span class="wordmark">Altbieratlas</span></span>
+              <span class="brand">${window.atlasBrandMark()}<span class="wordmark">Altbieratlas</span></span>
             </div>
             <p data-i18n="footer.madeWith">Mit Liebe für das rheinische Bier gebaut. Gemeinschaftlich gepflegt.</p>
             <div id="shell-social"></div>
@@ -235,7 +292,8 @@ window.renderShell = function ({ activeNav }) {
   const themeBtn = document.getElementById("theme-toggle");
   function paintTheme() {
     const t = document.documentElement.getAttribute("data-theme") || "light";
-    themeBtn.textContent = t === "dark" ? "☀" : "☾";
+    themeBtn.innerHTML = window.atlasIcon(t === "dark" ? "sun" : "moon", { size: 16 });
+    themeBtn.setAttribute("aria-label", t === "dark" ? "Helles Theme" : "Dunkles Theme");
   }
   themeBtn.addEventListener("click", () => {
     const cur = document.documentElement.getAttribute("data-theme") || "light";

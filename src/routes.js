@@ -2783,12 +2783,12 @@ export async function getUntappdBrewery(req, env, { id }) {
 export const PAGE_DATES = {
   "/":           "2026-11-06",
   "/ranglisten": "2026-11-06",
-  "/wissen":     "2026-10-30",
-  "/sorten":     "2026-10-30",
-  "/rivalen":    "2026-10-30",
+  "/wissen":     "2026-11-06",
+  "/sorten":     "2026-11-06",
+  "/rivalen":    "2026-11-06",
   "/beitragen":  "2026-11-06",
   "/staedte":    "2026-11-06",
-  "/kooperation": "2026-10-30",
+  "/kooperation": "2026-11-06",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.

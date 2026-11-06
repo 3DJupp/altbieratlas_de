@@ -344,32 +344,32 @@ export async function serveIndex(req, env) {
   const priced = pricedAt(venues);
   const avg025 = avg(priced.map((x) => x.p.price));
 
+  // Getränkekarten-Zeile wie fill() in public/index.html
   const li = ({ v, p }, i) => `
-      <li>
-        <span class="pos">${String(i + 1).padStart(2, "0")}</span>
-        <span class="name">
-          <a href="/ort/${escHtml(encodeURIComponent(v.id))}">${escHtml(v.short_name || v.name)}</a>
-          <span class="city">${escHtml(v.city)}</span>
-        </span>
-        <span class="price">${escHtml(formatEuro(p.price))}</span>
+      <li class="menu-row">
+        <span class="menu-rank">${i + 1}</span>
+        <a class="menu-name" href="/ort/${escHtml(encodeURIComponent(v.id))}">${escHtml(v.short_name || v.name)}</a>
+        <span class="menu-sub">${escHtml(v.city)}</span>
+        <span class="menu-leader"></span>
+        <span class="menu-price">${escHtml(formatEuro(p.price))}</span>
       </li>`;
 
   let html = await assetRes.text();
   const fill = (id, items) => {
     html = html.replace(
-      new RegExp(`<ol id="${id}" class="rank-list"></ol>`),
-      () => `<ol id="${id}" class="rank-list">${items.map(li).join("")}</ol>`,
+      new RegExp(`<ol id="${id}" class="menu rank-list"></ol>`),
+      () => `<ol id="${id}" class="menu rank-list">${items.map(li).join("")}</ol>`,
     );
   };
   fill("rank-cheapest", priced.slice(0, 5));
   fill("rank-priciest", [...priced].reverse().slice(0, 5));
 
   if (avg025) {
-    html = html.replace(/(<div class="ticker-value mono" id="avg-price">)—(<\/div>)/,
+    html = html.replace(/(<b id="avg-price">)—(<\/b>)/,
       (m, a, b) => `${a}${escHtml(formatEuro(avg025))}${b}`);
   }
-  html = html.replace(/(<span id="data-points">)—(<\/span>)/, (m, a, b) => `${a}${priceCount}${b}`);
-  html = html.replace(/(<span id="brewery-count">)—(<\/span>)/, (m, a, b) => `${a}${venues.length}${b}`);
+  html = html.replace(/(<b id="data-points">)—(<\/b>)/, (m, a, b) => `${a}${priceCount}${b}`);
+  html = html.replace(/(<b id="brewery-count">)—(<\/b>)/, (m, a, b) => `${a}${venues.length}${b}`);
 
   if (avg025) {
     const current = venues.filter((v) => !v.is_historical);

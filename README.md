@@ -617,6 +617,15 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
 - Dark Mode, PWA-Manifest, Cookie-Banner (DSGVO)
 - Mock-Modus: ohne Backend läuft das UI auf Seed-Daten aus `data.js`
 
+### Gestaltung (Design System „Altbieratlas“)
+
+- Leitbild Getränkekarte, Bierdeckel, Schänke: Header und Footer im dunklen Holzton (`--wood`), hellere Inhaltsfläche, alle Textfarben in beiden Themes mindestens 4,5 : 1.
+- Preis- und Ranglisten als Getränkekarte (`.menu`, `.menu-row`: Name, Punktlinie, Preis in Tabellenziffern), Kennzahlen als Satz (`.stats`) statt Kacheln.
+- Eigene Icon-Reihe statt Emojis: `window.atlasIcon(name)` und `window.atlasStars(rating)` in `shell.js` (Strich 1,5 px, `currentColor`).
+- Platzhalter: `window.atlasMat(name)` (Bierdeckel mit Initialen) für Orte, `window.atlasGlass()` (Altbierglas) für Sorten ohne Logo.
+- Pins: ein Kupferton; Partner größer, gold, mit Stern; historische Orte als hohler Ring.
+- Zwei Inhaltsbreiten: `--width-wide` 1200 px (Listen, Karte), `--width-text` 760 px (Text).
+
 ### SEO & Auffindbarkeit
 - **Kanonische URLs**: `/ort/<slug>` und `/stadt/<slug>`; alle Altformen leiten
   mit genau einem 301 weiter (keine Redirect-Ketten)

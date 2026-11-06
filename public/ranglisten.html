@@ -36,7 +36,7 @@
 <link rel="stylesheet" href="styles.css" />
 <style>
 .rank-hero { padding: 50px 0 20px; border-bottom: 1px solid var(--rule); }
-.rank-hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 500; }
+.rank-hero h1 { font-size: clamp(2rem, 4.5vw, 2.25rem); font-weight: 600; }
 .rank-hero p { color: var(--ink-soft); max-width: 60ch; margin-top: 14px; }
 
 .tab-bar {
@@ -52,75 +52,76 @@
   cursor: pointer; border-bottom: 2px solid transparent;
   white-space: nowrap;
 }
-.tab-bar button.active { color: var(--ink); border-bottom-color: var(--copper); }
+.tab-bar button.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
 
 .pill-toggle {
-  display: inline-flex; gap: 4px; padding: 4px;
-  background: var(--bg-card); border: 1px solid var(--rule);
-  border-radius: 999px;
+  display: inline-flex; gap: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius); overflow: hidden;
 }
 .pill-toggle button {
   background: transparent; border: none;
-  padding: 6px 12px; font-family: var(--font-ui); font-variant-numeric: tabular-nums;
-  font-size: 12px; color: var(--ink-soft);
-  cursor: pointer; border-radius: 999px;
+  min-height: 40px; padding: 0 14px; font-family: var(--font-ui); font-variant-numeric: tabular-nums;
+  font-size: 14px; color: var(--ink-soft);
+  cursor: pointer;
 }
+.pill-toggle button + button { border-left: 1px solid var(--rule-strong); }
 .pill-toggle button.active { background: var(--accent); color: var(--accent-ink); }
 .style-filter {
-  background: var(--bg-card); border: 1px solid var(--rule);
-  border-radius: 999px; padding: 8px 14px;
-  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-soft);
+  background: var(--bg-card); border: 1px solid var(--rule-strong);
+  border-radius: var(--radius); min-height: 40px; padding: 0 12px;
+  font-family: var(--font-ui); font-size: 14px; color: var(--ink);
   max-width: 100%;
 }
 
+/* Getränkekarte: Zeilen mit Haarlinie, Preis rechts in Tabellenziffern */
 .rank-row {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 8px 16px; padding: 12px 18px;
+  gap: 8px 16px; padding: 12px 0;
   align-items: center;
   border-bottom: 1px solid var(--rule);
 }
 .rank-row.head {
-  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
-  font-size: 11px; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--ink-muted);
+  font-size: 13px; font-weight: 600; color: var(--ink-muted);
+  border-bottom-color: var(--rule-strong);
 }
 .rank-row .nm { font-weight: 500; }
-.rank-row .nm a { border: none; }
-.rank-row .nm .sub { font-size: 12px; color: var(--ink-muted); font-weight: 400; margin-top: 2px; }
+.rank-row .nm a { border: none; color: var(--ink); }
+.rank-row .nm .sub { font-size: 14px; color: var(--ink-muted); font-weight: 400; margin-top: 2px; }
 .pr-cell { text-align: right; }
-.pr-cell .pr { font-family: var(--font-ui); font-variant-numeric: tabular-nums; color: var(--copper); font-weight: 500; font-size: 16px; display: block; }
-.pr-cell .dt { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; color: var(--ink-muted); display: block; margin-top: 2px; }
+.pr-cell .pr { font-family: var(--font-ui); font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; font-size: 16px; display: block; }
+.pr-cell .dt { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-muted); display: block; margin-top: 2px; }
 
 .rank-table { padding: 30px 0 80px; }
-.rank-foot { font-size: 12px; color: var(--ink-muted); margin-top: 12px; }
+.rank-foot { font-size: 14px; color: var(--ink-muted); margin-top: 12px; }
 .wanted-link { font-size: 13px; white-space: nowrap; }
-.rank-card-full { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); overflow: hidden; }
+.rank-card-full { border-top: 1px solid var(--rule-strong); }
 .rank-head-full {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 18px 22px;
-  background: var(--bg-elev);
-  border-bottom: 1px solid var(--rule);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule-strong);
   flex-wrap: wrap; gap: 12px;
 }
-.rank-head-full h2 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; }
+.rank-head-full h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
 
+/* Kennzahl-Leiste: Werte durch Haarlinien getrennt, ohne Kacheln */
 .stats-strip {
   display: grid; grid-template-columns: repeat(var(--stat-cols, 4), 1fr);
-  gap: 20px; margin: 28px 0 10px;
+  gap: 0; margin: 28px 0 10px;
+  border-top: 1px solid var(--rule-strong); border-bottom: 1px solid var(--rule);
 }
-.stat {
-  background: var(--bg-card);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
-}
-.stat .label { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); }
-.stat .val { font-family: var(--font-display); font-size: 32px; color: var(--copper); font-weight: 500; margin-top: 4px; letter-spacing: -0.02em; }
-.stat .meta { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+.stat { padding: 12px 16px; }
+.stat + .stat { border-left: 1px solid var(--rule); }
+.stat:first-child { padding-left: 0; }
+.stat .label { font-size: 13px; font-weight: 600; color: var(--ink-muted); }
+.stat .val { font-family: var(--font-display); font-size: 26px; color: var(--ink); font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.stat .meta { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
 
 @media (max-width: 800px) {
   .stats-strip { grid-template-columns: 1fr 1fr; }
+  .stat:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .stat:nth-child(n+3) { border-top: 1px solid var(--rule); }
 }
 </style>
 </head>
@@ -468,7 +469,7 @@ function render() {
           <div class="sub">${sub}</div>
         </span>
         <span class="pr-cell">
-          <span class="pr">${r} ★</span>
+          <span class="pr">${window.atlasStars(r)} ${r}</span>
           <span class="dt">${n} ${t("brewery.googleRatingCount")}</span>
         </span>
       </div>`;
