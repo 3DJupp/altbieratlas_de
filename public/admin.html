@@ -3148,7 +3148,7 @@ async function loadEventBeers(eventId) {
     }
     list.innerHTML = beers.map((b) => {
       const name = b.name?.de || b.name?.en || "—";
-      const price = b.price != null ? "€ " + Number(b.price).toFixed(2) : "—";
+      const price = b.price != null ? window.formatEuro(b.price) : "—";
       const size = b.size || "";
       return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--rule)">
         <span style="flex:1">${name}</span>
@@ -3269,7 +3269,7 @@ async function loadPricesTab() {
         <td>${window.formatDate ? window.formatDate(p.date) : p.date}</td>
         <td>${window.formatSize ? window.formatSize(String(p.size)) : p.size}</td>
         <td>${p.styleName || "—"}</td>
-        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;color:var(--copper)">€ ${window.formatPrice ? window.formatPrice(p.price) : p.price.toFixed(2)}</td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;color:var(--copper)">${window.formatEuro(p.price)}</td>
         <td>${p.source || "—"}</td>
         <td><span class="status-${p.status}">${p.status}</span></td>
         <td class="actions">
@@ -3381,7 +3381,7 @@ document.getElementById("price-edit-save").addEventListener("click", async () =>
     row.cells[1].textContent = window.formatDate ? window.formatDate(patch.date) : patch.date;
     row.cells[2].textContent = window.formatSize ? window.formatSize(String(patch.size)) : patch.size;
     row.cells[3].textContent = patch.style_id ? styleSel.options[styleSel.selectedIndex].textContent : "—";
-    row.cells[4].textContent = "€ " + (window.formatPrice ? window.formatPrice(patch.price) : patch.price.toFixed(2));
+    row.cells[4].textContent = window.formatEuro(patch.price);
     row.cells[5].textContent = patch.source || "—";
     const sp = row.cells[6].querySelector("span");
     sp.className = "status-" + patch.status;

@@ -9,10 +9,10 @@
 // ============================================================
 
 import {
-  escHtml, fmtPriceDe, fmtSizeDe, fmtDateDe, sizeNum, sameSlot,
+  escHtml, fmtSizeDe, fmtDateDe, sizeNum, sameSlot,
   citySlug, cityIndex, PAGE_DATES,
 } from "./routes.js";
-import { siteConfig, STYLE_PUBLIC_SQL, inComparisons } from "./utils.js";
+import { siteConfig, STYLE_PUBLIC_SQL, inComparisons, formatEuro } from "./utils.js";
 
 const SITE = "https://altbieratlas.de";
 // Datenlizenz der Preismeldungen — als URL, wie Google sie im Dataset-Feld
@@ -158,7 +158,7 @@ export async function llmsTxt(req, env) {
 
 Altbier ist ein obergäriges, bernsteinfarbenes bis dunkles Bier aus dem Rheinland. „Alt“ bezieht sich auf die alte, obergärige Brauweise, nicht auf das Alter des Bieres. Klassisch wird es in 0,25-l-Gläsern vom Köbes (Kellner) in Hausbrauereien ausgeschenkt.
 
-Stand ${today}${venues.length ? ` · ${current.length} aktive Orte in ${Object.keys(cities).length} Städten · ${priceCount} Preismeldungen` : ""}${avg025 ? ` · 0,25 l Alt kostet im Schnitt ${fmtPriceDe(avg025)} €` : ""}.
+Stand ${today}${venues.length ? ` · ${current.length} aktive Orte in ${Object.keys(cities).length} Städten · ${priceCount} Preismeldungen` : ""}${avg025 ? ` · 0,25 l Alt kostet im Schnitt ${formatEuro(avg025)}` : ""}.
 
 Preise sind Meldungen der Community mit Datum und können veralten. Beim Zitieren bitte „Altbieratlas (altbieratlas.de)“ und das Meldedatum nennen. Die Daten stehen unter ${LICENSE_NAME} (${LICENSE_URL}): Weiterverwendung mit Namensnennung, Bearbeitungen unter derselben Lizenz.
 
@@ -246,9 +246,9 @@ Ausgeschenkt wird Altbier traditionell in 0,25-l-Gläsern vom Köbes, dem Kellne
 - Aktive Orte: ${current.length}
 - Historische (geschlossene) Orte: ${venues.length - current.length}
 - Preismeldungen gesamt: ${priceCount}
-${avg025 ? `- Durchschnittspreis 0,25 l (jüngste Meldung je Ort): ${fmtPriceDe(avg025)} €` : ""}
-${priced.length ? `- Günstigstes 0,25 l: ${priced[0].v.name} (${priced[0].v.city}), ${fmtPriceDe(priced[0].p.price)} €, gemeldet ${fmtDateDe(priced[0].p.date)}` : ""}
-${priced.length ? `- Teuerstes 0,25 l: ${priced.at(-1).v.name} (${priced.at(-1).v.city}), ${fmtPriceDe(priced.at(-1).p.price)} €, gemeldet ${fmtDateDe(priced.at(-1).p.date)}` : ""}`
+${avg025 ? `- Durchschnittspreis 0,25 l (jüngste Meldung je Ort): ${formatEuro(avg025)}` : ""}
+${priced.length ? `- Günstigstes 0,25 l: ${priced[0].v.name} (${priced[0].v.city}), ${formatEuro(priced[0].p.price)}, gemeldet ${fmtDateDe(priced[0].p.date)}` : ""}
+${priced.length ? `- Teuerstes 0,25 l: ${priced.at(-1).v.name} (${priced.at(-1).v.city}), ${formatEuro(priced.at(-1).p.price)}, gemeldet ${fmtDateDe(priced.at(-1).p.date)}` : ""}`
     .replace(/\n{3,}/g, "\n\n").replace(/\n+$/, ""));
 
   // ---- Orte nach Stadt ----
@@ -266,7 +266,7 @@ ${priced.length ? `- Teuerstes 0,25 l: ${priced.at(-1).v.name} (${priced.at(-1).
     const slug = citySlug(city);
     out.push(`### ${city}\n\n` +
       (slug ? `Übersicht: ${base}/stadt/${slug}` : "") +
-      (cAvg ? `\nDurchschnitt 0,25 l: ${fmtPriceDe(cAvg)} €` : ""));
+      (cAvg ? `\nDurchschnitt 0,25 l: ${formatEuro(cAvg)}` : ""));
     for (const v of list) {
       const lines = [`#### ${v.name}${v.is_historical ? " (historisch, nicht mehr in Betrieb)" : ""}`, ""];
       lines.push(`- Art: ${v.type_label}`);
@@ -281,7 +281,7 @@ ${priced.length ? `- Teuerstes 0,25 l: ${priced.at(-1).v.name} (${priced.at(-1).
       }
       if (v.latest.length) {
         lines.push(`- Jüngste Preise: ${v.latest.map((p) =>
-          `${fmtSizeDe(p.size)}${p.style ? ` ${p.style}` : ""} ${fmtPriceDe(p.price)} € (${fmtDateDe(p.date)})`).join("; ")}`);
+          `${fmtSizeDe(p.size)}${p.style ? ` ${p.style}` : ""} ${formatEuro(p.price)} (${fmtDateDe(p.date)})`).join("; ")}`);
       }
       if (v.description_de) lines.push("", oneLine(v.description_de));
       out.push(lines.join("\n"));
@@ -351,7 +351,7 @@ export async function serveIndex(req, env) {
           <a href="/ort/${escHtml(encodeURIComponent(v.id))}">${escHtml(v.short_name || v.name)}</a>
           <span class="city">${escHtml(v.city)}</span>
         </span>
-        <span class="price">€ ${escHtml(fmtPriceDe(p.price))}</span>
+        <span class="price">${escHtml(formatEuro(p.price))}</span>
       </li>`;
 
   let html = await assetRes.text();
@@ -366,7 +366,7 @@ export async function serveIndex(req, env) {
 
   if (avg025) {
     html = html.replace(/(<div class="ticker-value mono" id="avg-price">)—(<\/div>)/,
-      (m, a, b) => `${a}€ ${escHtml(fmtPriceDe(avg025))}${b}`);
+      (m, a, b) => `${a}${escHtml(formatEuro(avg025))}${b}`);
   }
   html = html.replace(/(<span id="data-points">)—(<\/span>)/, (m, a, b) => `${a}${priceCount}${b}`);
   html = html.replace(/(<span id="brewery-count">)—(<\/span>)/, (m, a, b) => `${a}${venues.length}${b}`);
@@ -376,7 +376,7 @@ export async function serveIndex(req, env) {
     const cityCount = new Set(current.map((v) => v.city)).size;
     html = setMetaDescription(html,
       `Altbier-Karte: ${current.length} Brauereien, Kneipen und Händler in ${cityCount} Städten, ` +
-      `aktuelle Preise (0,25 l im Schnitt ${fmtPriceDe(avg025)} €), Termine und Wissen.`);
+      `aktuelle Preise (0,25 l im Schnitt ${formatEuro(avg025)}), Termine und Wissen.`);
   }
   return htmlResponse(html, assetRes);
 }
@@ -405,7 +405,7 @@ export async function serveRanglisten(req, env) {
           <div class="sub">${escHtml([v.type_label, v.city].filter(Boolean).join(" · "))}</div>
         </span>
         <span class="pr-cell">
-          <span class="pr">€ ${escHtml(fmtPriceDe(p.price))}</span>
+          <span class="pr">${escHtml(formatEuro(p.price))}</span>
           ${my ? `<span class="dt">${my}</span>` : ""}
         </span>
       </div>`;
@@ -421,7 +421,7 @@ export async function serveRanglisten(req, env) {
   if (priced.length) {
     // Max. ~160 Zeichen: der Schlusssatz fällt weg, wenn der Ortsname lang ist
     const core = `Wo ist Altbier am günstigsten? ${priced.length} Orte im Preisvergleich: 0,25 l Alt ab ` +
-      `${fmtPriceDe(priced[0].p.price)} € bei ${priced[0].v.name}, im Schnitt ${fmtPriceDe(avg025)} €.`;
+      `${formatEuro(priced[0].p.price)} bei ${priced[0].v.name}, im Schnitt ${formatEuro(avg025)}.`;
     const full = `${core} Aktuelle Preise aus Community-Meldungen.`;
     html = setMetaDescription(html, full.length <= 160 ? full : core);
   }

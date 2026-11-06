@@ -7,7 +7,7 @@
 
 import * as R from "./routes.js";
 import * as SEO from "./seo.js";
-import { error, hashPassword, sendAdminDigest, digestSchedule } from "./utils.js";
+import { error, hashPassword, sendAdminDigest, digestSchedule, configureCurrency } from "./utils.js";
 import { meterEnv } from "./d1meter.js";
 import { refreshRatings } from "./googlePlaces.js";
 
@@ -177,6 +177,7 @@ const ROUTES = [
 
 const worker = {
   async scheduled(event, env, ctx) {
+    configureCurrency(env);
     // Wöchentlich (Mo 4, 5 und 6 Uhr UTC, je max. 40 Orte wegen des Subrequest-Limits):
     // Google-Bewertungen auffrischen, die älter als 6 Tage sind; Cache > 30 Tage löschen
     if (event.cron === GOOGLE_RATINGS_CRON) {
@@ -203,6 +204,7 @@ const worker = {
       return new Response(null, { status: res.status, statusText: res.statusText, headers: res.headers });
     }
     const { env, stats } = meterEnv(rawEnv);
+    configureCurrency(env);
     const url = new URL(request.url);
     const path = url.pathname;
     const render = async () => {

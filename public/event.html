@@ -196,7 +196,7 @@ function esc(s) {
 
 function formatPrice(p, lang) {
   if (p == null) return "—";
-  return "€ " + Number(p).toFixed(2).replace(".", lang === "en" ? "." : ",");
+  return window.formatEuro(p);
 }
 
 const params = new URLSearchParams(location.search);

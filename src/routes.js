@@ -11,7 +11,7 @@ import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
   hashPassword, verifyPassword, uuid, randomToken,
-  verifyTurnstile, rateLimit, str, num, oneOf, httpUrl, safeHref, assertNoMarkup, EMAIL_RE,
+  verifyTurnstile, rateLimit, str, num, oneOf, formatEuro, currencyPosition, httpUrl, safeHref, assertNoMarkup, EMAIL_RE,
   clientIp, brewRow, sendConfirmationEmail, sendPasswordResetEmail, sendAdminNotification, sendAdminDigest,
   sendContactEmail, CONTACT_TOPICS,
   siteConfig, STYLE_PUBLIC_SQL, NON_SERVING_TYPES, inComparisons, isHighlighted,
@@ -150,6 +150,7 @@ export async function getPublicConfig(req, env) {
     version: APP_VERSION,
     priceSizes,
     highlightedSizes,
+    currencyPosition: currencyPosition(env),
     cities,
     map,
     turnstileSiteKey: siteKey,
@@ -2780,13 +2781,13 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-10-30",
-  "/ranglisten": "2026-10-30",
+  "/":           "2026-11-06",
+  "/ranglisten": "2026-11-06",
   "/wissen":     "2026-10-30",
   "/sorten":     "2026-10-30",
   "/rivalen":    "2026-10-30",
-  "/beitragen":  "2026-11-03",
-  "/staedte":    "2026-10-30",
+  "/beitragen":  "2026-11-06",
+  "/staedte":    "2026-11-06",
   "/kooperation": "2026-10-30",
 };
 
@@ -2912,9 +2913,6 @@ export async function adminUpdateSettings(req, env) {
 }
 
 // Preis/Größe/Datum serverseitig deutsch formatieren (Client nutzt i18n.js).
-export function fmtPriceDe(n) {
-  return Number(n).toFixed(2).replace(".", ",");
-}
 export function fmtSizeDe(s) {
   const num = parseFloat(String(s ?? "").replace(",", ".").replace(/\s*l$/i, ""));
   if (isNaN(num)) return String(s ?? "");
@@ -3066,10 +3064,10 @@ export async function serveOrt(req, env, params = {}) {
   // Website darüber, der Preis ist das, was nur der Atlas im Snippet bietet.
   // Laut Search Console lag die CTR mit dem reinen Namens-Titel bei Position 9 unter 0,2 %.
   const priceTitle = hero && !row.is_historical
-    ? `Altbier ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} €` : "";
+    ? `Altbier ${fmtSizeDe(hero.size)} für ${formatEuro(hero.price)}` : "";
   const title = priceTitle
     ? fitTitle(`${row.name}: ${priceTitle} · ${row.city}`, `${row.name}: ${priceTitle}`,
-        `${row.name}: Alt ${fmtSizeDe(hero.size)} für ${fmtPriceDe(hero.price)} €`)
+        `${row.name}: Alt ${fmtSizeDe(hero.size)} für ${formatEuro(hero.price)}`)
     : fitTitle(`${row.name} · Altbier in ${row.city} · Altbieratlas`,
         `${row.name} · Altbier in ${row.city}`, `${row.name} · Altbier`);
 
@@ -3082,7 +3080,7 @@ export async function serveOrt(req, env, params = {}) {
     || new Set(prices.map((p) => p.style_name).filter(Boolean)).size > 1;
   const heroBeer = multiStyle && hero?.style_name ? hero.style_name : "Alt";
   const priceBit = hero
-    ? `${fmtSizeDe(hero.size)} ${heroBeer} für ${fmtPriceDe(hero.price)} € (Stand ${fmtDateDe(hero.date)}). `
+    ? `${fmtSizeDe(hero.size)} ${heroBeer} für ${formatEuro(hero.price)} (Stand ${fmtDateDe(hero.date)}). `
     : "";
   const addrBit = row.address && !row.is_historical ? `${row.address}. ` : "";
   const head = priceBit + addrBit;
@@ -3189,7 +3187,7 @@ export async function serveOrt(req, env, params = {}) {
           ${hero ? `
             <div class="price-hero">
               <div class="label">Aktuell ${escHtml(fmtSizeDe(hero.size))}</div>
-              <div class="big">€ ${escHtml(fmtPriceDe(hero.price))}</div>
+              <div class="big">${escHtml(formatEuro(hero.price))}</div>
               <div class="small">gemeldet ${escHtml(fmtDateDe(hero.date))}</div>
             </div>` : ""}
         </div>
@@ -3234,7 +3232,7 @@ export async function serveOrt(req, env, params = {}) {
       <table class="ssr-price-table">
         <thead><tr><th>Größe</th><th>Preis</th><th>gemeldet am</th></tr></thead>
         <tbody>
-          ${latestBySize.map((p) => `<tr><td>${escHtml(fmtSizeDe(p.size))}${p.style_name ? ` · ${escHtml(p.style_name)}` : ""}</td><td>€ ${escHtml(fmtPriceDe(p.price))}</td><td>${escHtml(fmtDateDe(p.date))}</td></tr>`).join("")}
+          ${latestBySize.map((p) => `<tr><td>${escHtml(fmtSizeDe(p.size))}${p.style_name ? ` · ${escHtml(p.style_name)}` : ""}</td><td>${escHtml(formatEuro(p.price))}</td><td>${escHtml(fmtDateDe(p.date))}</td></tr>`).join("")}
         </tbody>
       </table>` : `<p>Für ${escHtml(row.name)} liegt noch keine Preismeldung vor.</p>`}
       ${prices.length > latestBySize.length ? `
@@ -3242,7 +3240,7 @@ export async function serveOrt(req, env, params = {}) {
       <table class="ssr-price-table">
         <thead><tr><th>gemeldet am</th><th>Größe</th><th>Preis</th><th>Quelle</th></tr></thead>
         <tbody>
-          ${prices.map((p) => `<tr><td>${escHtml(fmtDateDe(p.date))}</td><td>${escHtml(fmtSizeDe(p.size))}${p.style_name ? ` · ${escHtml(p.style_name)}` : ""}</td><td>€ ${escHtml(fmtPriceDe(p.price))}</td><td>${escHtml(SOURCE_DE[String(p.source || "").toLowerCase()] || p.source || "")}</td></tr>`).join("")}
+          ${prices.map((p) => `<tr><td>${escHtml(fmtDateDe(p.date))}</td><td>${escHtml(fmtSizeDe(p.size))}${p.style_name ? ` · ${escHtml(p.style_name)}` : ""}</td><td>${escHtml(formatEuro(p.price))}</td><td>${escHtml(SOURCE_DE[String(p.source || "").toLowerCase()] || p.source || "")}</td></tr>`).join("")}
         </tbody>
       </table>` : ""}
       <p><a class="btn btn-primary" href="/beitragen?typ=preis&brauerei=${escHtml(encodeURIComponent(row.id))}">Preis melden</a></p>
@@ -3583,7 +3581,7 @@ export async function serveEvent(req, env) {
     sub(/(<tbody id="beers-tbody">)(<\/tbody>)/, (m, a, b) => a + beers.map((bb) =>
       `<tr><td>${escHtml(bb.name_de || bb.name_en || "—")}</td>`
       + (has.size ? `<td class="beer-size">${escHtml(fmtSizeDe(bb.size))}</td>` : "")
-      + (has.price ? `<td class="beer-price">${bb.price != null ? `€ ${escHtml(fmtPriceDe(bb.price))}` : "—"}</td>` : "")
+      + (has.price ? `<td class="beer-price">${bb.price != null ? `${escHtml(formatEuro(bb.price))}` : "—"}</td>` : "")
       + (has.notes ? `<td style="font-size:13px;color:var(--ink-muted)">${escHtml(bb.notes || "")}</td>` : "")
       + `</tr>`).join("") + b);
   }
@@ -3713,7 +3711,7 @@ export async function serveCity(req, env) {
   // Als Frage formuliert: "was kostet ein altbier in düsseldorf" ist laut
   // Bing/Search Console eine der häufigsten Suchen ohne passende Seite.
   const metaDesc = avgPrice
-    ? `Was kostet ein Altbier in ${city}? 0,25 l im Schnitt ${fmtPriceDe(avgPrice)} € (${priceVals.length} Orte). Alle ${current.length} Brauereien, Kneipen und Händler mit aktuellen Preisen.`
+    ? `Was kostet ein Altbier in ${city}? 0,25 l im Schnitt ${formatEuro(avgPrice)} (${priceVals.length} Orte). Alle ${current.length} Brauereien, Kneipen und Händler mit aktuellen Preisen.`
     : `Altbier in ${city}: ${rows.length} Brauereien, Ausschankorte und Händler mit aktuellen Preisen im Altbieratlas.`;
 
   const TYPE_DE = {
@@ -3728,7 +3726,7 @@ export async function serveCity(req, env) {
       (hl ? `<span class="cc-partner">Partner</span>` : "") +
       `<span class="cc-name">${escHtml(r.name)}</span>` +
       `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
-      (p ? `<span class="cc-price">€ ${escHtml(fmtPriceDe(p.price))} <span style="opacity:.55;font-size:11px">/ ${escHtml(fmtSizeDe(p.size))}</span></span>` : "") +
+      (p ? `<span class="cc-price">${escHtml(formatEuro(p.price))} <span style="opacity:.55;font-size:11px">/ ${escHtml(fmtSizeDe(p.size))}</span></span>` : "") +
       `</a>`;
   };
   // Hervorgehobene (gekennzeichnete) Partner zuerst, sonst alphabetisch wie gehabt
@@ -3745,7 +3743,7 @@ export async function serveCity(req, env) {
 
   const lede = `Alle Brauereien, Ausschankorte und Händler mit Altbier in ${city}` +
     (avgPrice
-      ? ` — im Schnitt kostet ein 0,25 l Alt hier ${fmtPriceDe(avgPrice)} €.`
+      ? ` — im Schnitt kostet ein 0,25 l Alt hier ${formatEuro(avgPrice)}.`
       : ".") +
     ` Die Preise stammen aus Meldungen der Community und werden laufend aktualisiert.`;
 

@@ -2,7 +2,7 @@
 // Altbieratlas — Worker-Utilities
 // ============================================================
 
-export const APP_VERSION = "0.16.1";
+export const APP_VERSION = "0.17.0";
 
 import { mapsLink } from "./googlePlaces.js";
 
@@ -253,6 +253,39 @@ export function assertNoMarkup(obj, name = "data") {
 
 export const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
+// ---- Euro-Betrag mit Zeichen ----
+// Position des Euro-Zeichens je Sprache aus SITE_CONFIG.currencyPosition:
+// "before" | "after" für beide Sprachen oder { de, en }. Standard ist die
+// übliche Schreibweise: deutsch „2,90 €“, englisch „€ 2.90“. Zwischen Betrag
+// und Zeichen steht ein geschütztes Leerzeichen. Der Worker setzt die Einstellung
+// einmal pro Anfrage (configureCurrency), weil env je Deployment gleich ist;
+// /api/config gibt sie ans Frontend (window.formatEuro in i18n.js).
+// JSON-LD bleibt davon unberührt (dort Zahl + priceCurrency).
+export const CURRENCY_DEFAULT = { de: "after", en: "before" };
+const CURRENCY_POSITIONS = ["before", "after"];
+let currencyPos = CURRENCY_DEFAULT;
+export function currencyPosition(env) {
+  const v = siteConfig(env).currencyPosition;
+  if (CURRENCY_POSITIONS.includes(v)) return { de: v, en: v };
+  if (v && typeof v === "object") return {
+    de: CURRENCY_POSITIONS.includes(v.de) ? v.de : CURRENCY_DEFAULT.de,
+    en: CURRENCY_POSITIONS.includes(v.en) ? v.en : CURRENCY_DEFAULT.en,
+  };
+  return CURRENCY_DEFAULT;
+}
+export function configureCurrency(env) {
+  currencyPos = currencyPosition(env);
+}
+// formatEuro(2.9) → "2,90 €"; lang "en" → "€ 2.90". nbsp: false für Schriften
+// ohne geschütztes Leerzeichen (Pixelschrift im OG-Bild).
+export function formatEuro(n, lang = "de", { nbsp = true } = {}) {
+  const en = lang === "en";
+  const num = Number(n).toFixed(2);
+  const amount = en ? num : num.replace(".", ",");
+  const sp = nbsp ? "\u00a0" : " ";
+  return currencyPos[en ? "en" : "de"] === "before" ? `€${sp}${amount}` : `${amount}${sp}€`;
+}
+
 // ---- Client-IP ----
 export function clientIp(req) {
   return req.headers.get("cf-connecting-ip")
@@ -373,7 +406,7 @@ function _emailDataRows(type, data, de) {
   const f = (k, v) => (v != null && v !== "" && v !== null) ? [[k, v]] : [];
   if (type === "price") return [
     ...f(de ? "Brauerei" : "Brewery", data._breweryName || data.breweryId),
-    ...f(de ? "Preis" : "Price", data.price != null ? `${Number(data.price).toFixed(2)} €` : null),
+    ...f(de ? "Preis" : "Price", data.price != null ? formatEuro(data.price, de ? "de" : "en") : null),
     ...f(de ? "Größe" : "Size", data.size),
     ...f(de ? "Sorte" : "Beer", data._styleName || data.styleId),
     ...f(de ? "Datum" : "Date", data.date),

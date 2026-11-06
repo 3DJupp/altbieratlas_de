@@ -1,4 +1,4 @@
-# Altbieratlas · v0.16.1
+# Altbieratlas · v0.17.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -207,6 +207,7 @@ Als **JSON-String** in der Plaintext-Variable `SITE_CONFIG` hinterlegen. Eine vo
 | Feld | Beschreibung |
 |---|---|
 | `highlightedSizes` | Größen, die in Ranglisten hervorgehoben werden und beim Laden vorausgewählt sind. Empfehlung: `[0.25]` |
+| `currencyPosition` | Optional. Position des Euro-Zeichens: `"before"` („€ 2,90“), `"after"` („2,90 €“) oder je Sprache `{ "de": "after", "en": "before" }`. Standard: deutsch dahinter, englisch davor. Gilt für Seiten, Server-HTML, `llms.txt`, Mails und das OG-Bild; JSON-LD bleibt eine reine Zahl |
 | `requireModeration` | `true` = alle Beiträge landen in der Queue. Standard: `true` |
 | `siteUrl` | Öffentliche URL — wird in E-Mail-Links verwendet |
 | `resendFrom` | Absenderadresse für Mails via Resend |
@@ -730,7 +731,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 
 | Methode | Pfad | Zweck |
 |---|---|---|
-| GET | `/api/config` | Turnstile-Key, GA4-ID, priceSizes, highlightedSizes, `cities` … |
+| GET | `/api/config` | Turnstile-Key, GA4-ID, priceSizes, highlightedSizes, `currencyPosition`, `cities` … |
 | GET | `/api/stats` | Kennzahlen |
 | GET | `/api/breweries` | Alle freigegebenen Brauereien (inkl. `googleRating` aus dem Cache ≤ 30 Tage) |
 | GET | `/api/breweries/:id` | Detail + Preisverlauf |

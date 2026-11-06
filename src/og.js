@@ -7,6 +7,7 @@ import yogaWasm from "satori/yoga.wasm";
 import { Resvg, initWasm as resvgInitWasm } from "@resvg/resvg-wasm";
 import resvgWasm from "@resvg/resvg-wasm/index_bg.wasm";
 import fontData from "./assets/PressStart2P.ttf";
+import { formatEuro } from "./utils.js";
 
 // Initialisierung einmalig pro Worker-Instanz (Promise-Singleton verhindert Race Conditions)
 let initPromise = null;
@@ -68,7 +69,7 @@ function formatSize(size) {
 }
 
 function formatPrice(p) {
-  return p.toFixed(2).replace(".", ",") + " €";
+  return formatEuro(p, "de", { nbsp: false });
 }
 
 // Kürzt Text auf maxLen Zeichen (Wortgrenze), hängt … an

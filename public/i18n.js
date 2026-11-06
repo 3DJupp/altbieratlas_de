@@ -1904,6 +1904,18 @@ window.formatPrice = function (n) {
   return window.__atlasLang === "en" ? s : s.replace(".", ",");
 };
 
+// Betrag mit Euro-Zeichen: „2,90 €“ (de) / „€ 2.90“ (en), Position aus
+// ATLAS_CONFIG.currencyPosition (SITE_CONFIG.currencyPosition), geschütztes
+// Leerzeichen dazwischen. Gegenstück zu formatEuro() in src/utils.js.
+// Alle Preisanzeigen gehen hierüber, nie "€ " + formatPrice() von Hand.
+window.formatEuro = function (n) {
+  const en = window.__atlasLang === "en";
+  const pos = (window.ATLAS_CONFIG && window.ATLAS_CONFIG.currencyPosition) || {};
+  const before = (en ? pos.en || "before" : pos.de || "after") === "before";
+  const amount = window.formatPrice(n);
+  return before ? "€\u00a0" + amount : amount + "\u00a0€";
+};
+
 // Alkoholgehalt: 4,8 % (de) / 4.8 % (en)
 window.formatABV = function (n) {
   if (n == null) return null;

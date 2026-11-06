@@ -415,9 +415,9 @@ function renderMarkers(filter = "all", search = "") {
     }).addTo(map);
     const latest = priceByBrewery.get(b.id);
     const priceText = latest
-      ? `<div class="pop-price">€ ${window.formatPrice(latest.price)} <span style="font-size:11px;opacity:.6">/ ${window.formatSize(latest.size)}</span></div>`
+      ? `<div class="pop-price">${window.formatEuro(latest.price)} <span style="font-size:11px;opacity:.6">/ ${window.formatSize(latest.size)}</span></div>`
         // Literpreis nur als Zusatzinfo, nie zum Sortieren: größere Gläser sind pro Liter günstiger
-        + (normSize(latest.size) > 0 ? `<div class="pop-liter">≈ € ${window.formatPrice(latest.price / normSize(latest.size))} / l</div>` : "")
+        + (normSize(latest.size) > 0 ? `<div class="pop-liter">≈ ${window.formatEuro(latest.price / normSize(latest.size))} / l</div>` : "")
       : `<div style="font-size:12px;opacity:.6;margin-top:6px">${window.t("brewery.noPrice")}</div>`;
     // Google-Bewertung (Cache ≤ 30 Tage, kommt mit /api/breweries); „Google" bleibt sichtbar
     const g = !b.isHistorical && b.googleRating;
@@ -781,7 +781,7 @@ let cachedPrices = [];
     // Ticker
     updateTickerLabel();
     document.getElementById("avg-price").textContent = cachedHlAvg
-      ? "€ " + window.formatPrice(cachedHlAvg) : "—";
+      ? window.formatEuro(cachedHlAvg) : "—";
     document.getElementById("data-points").textContent = stats.priceCount ?? "—";
     document.getElementById("brewery-count").textContent = stats.breweryCount ?? "—";
     updateRankSizeTags();
@@ -817,7 +817,7 @@ document.addEventListener("atlas:lang-changed", () => {
   updateTickerLabel();
   updateRankSizeTags();
   if (cachedHlAvg != null)
-    document.getElementById("avg-price").textContent = "€ " + window.formatPrice(cachedHlAvg);
+    document.getElementById("avg-price").textContent = window.formatEuro(cachedHlAvg);
   if (cachedPrices.length) { renderMarkers(); renderRankings(cachedPrices); }
 });
 
@@ -854,12 +854,12 @@ function renderRankings(prices) {
   fill("rank-cheapest",
     [...uniq].sort((a, b) => a.price - b.price).slice(0, 5).map((b) => ({
       id: b.id, name: b.name, short: b.short, city: b.city,
-      priceText: "€ " + window.formatPrice(b.price),
+      priceText: window.formatEuro(b.price),
     })));
   fill("rank-priciest",
     [...uniq].sort((a, b) => b.price - a.price).slice(0, 5).map((b) => ({
       id: b.id, name: b.name, short: b.short, city: b.city,
-      priceText: "€ " + window.formatPrice(b.price),
+      priceText: window.formatEuro(b.price),
     })));
 
   // "Neu auf dem Atlas" = zuletzt eingetragen (created_at), nicht jüngstes Preisdatum.
