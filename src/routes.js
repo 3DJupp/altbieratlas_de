@@ -3722,11 +3722,13 @@ export async function serveCity(req, env) {
   const cardHtml = (r) => {
     const p = priceByBrewery.get(r.id);
     const hl = !r.is_historical && isHighlighted(r);
-    return `<a class="city-card${r.is_historical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
-      (hl ? `<span class="cc-partner">Partner</span>` : "") +
-      `<span class="cc-name">${escHtml(r.name)}</span>` +
-      `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
-      (p ? `<span class="cc-price">${escHtml(formatEuro(p.price))} <span style="opacity:.55;font-size:11px">/ ${escHtml(fmtSizeDe(p.size))}</span></span>` : "") +
+    // Getränkekarten-Zeile wie card() in public/stadt.html
+    return `<a class="city-card menu-row${r.is_historical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
+      `<span class="cc-name menu-name">${escHtml(r.name)}</span>` +
+      (hl ? `<span class="tag partner">Partner</span>` : "") +
+      `<span class="cc-type menu-sub">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
+      `<span class="menu-leader"></span>` +
+      (p ? `<span class="menu-size">${escHtml(fmtSizeDe(p.size))}</span><span class="menu-price">${escHtml(formatEuro(p.price))}</span>` : `<span class="menu-size">kein Preis</span>`) +
       `</a>`;
   };
   // Hervorgehobene (gekennzeichnete) Partner zuerst, sonst alphabetisch wie gehabt

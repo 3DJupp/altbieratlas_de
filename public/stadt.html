@@ -35,43 +35,38 @@
 
 <link rel="stylesheet" href="/styles.css" />
 <style>
-/* Hero — identische Werte wie know-hero (Wissen-Seite) */
-.city-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); }
-.city-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; margin: 8px 0 0; }
-.city-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
+/* Stadtseite: Kennzahl-Leiste und Orte als Getränkekarte (Design System „Altbieratlas“) */
+.city-hero { padding: 48px 0 32px; border-bottom: 1px solid var(--rule-strong); }
+.city-hero h1 { font-size: clamp(2rem, 4.5vw, 2.25rem); font-weight: 600; max-width: 24ch; margin: 0; }
+.city-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 14px; line-height: 1.55; }
 
-/* Stat-Boxen — gleiche Optik wie auf den Ranglisten */
+/* Kennzahl-Leiste: Werte durch Haarlinien getrennt, ohne Kacheln */
 .stats-strip {
-  display: grid; grid-template-columns: repeat(var(--stat-cols, 2), 1fr);
-  gap: 16px; margin: 28px 0 6px; max-width: 520px;
+  display: grid; grid-template-columns: repeat(var(--stat-cols, 2), minmax(0, 1fr));
+  margin: 24px 0 4px; max-width: 520px;
+  border-top: 1px solid var(--rule-strong); border-bottom: 1px solid var(--rule);
 }
-.stat { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 18px 20px; }
-.stat .label { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.1em; color: var(--ink-muted); }
-.stat .val { font-family: var(--font-display); font-size: 32px; color: var(--accent); font-weight: 500; margin-top: 4px; letter-spacing: -0.02em; }
-.city-back { display: inline-block; margin-top: 22px; font-size: 13px; color: var(--ink-muted); }
+.stat { padding: 12px 16px; }
+.stat:first-child { padding-left: 0; }
+.stat + .stat { border-left: 1px solid var(--rule); }
+.stat .label { font-size: 13px; font-weight: 600; color: var(--ink-muted); }
+.stat .val { font-family: var(--font-display); font-size: 26px; color: var(--ink); font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.city-back { display: inline-block; margin-top: 20px; font-size: 14px; }
 
-/* Sektionen — identische Werte wie know-section */
-.city-section { padding: 60px 0; border-bottom: 1px solid var(--rule); }
-.city-section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 500; max-width: 20ch; margin-bottom: 26px; }
+.city-section { padding: 48px 0; }
+.city-section + .city-section { padding-top: 0; }
+.city-section h2 { font-size: 1.625rem; font-weight: 600; margin-bottom: 16px; }
 
-/* Venue-Karten — wie spec-/koebes-card auf der Wissen-Seite */
-.city-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-.city-card {
-  display: flex; flex-direction: column; gap: 6px;
-  background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg);
-  padding: 24px; text-decoration: none; color: inherit;
-  transition: border-color .15s, transform .1s, box-shadow .15s;
-}
-.city-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
-.city-card .cc-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; color: var(--ink); line-height: 1.2; }
-.city-card .cc-type { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.06em; color: var(--ink-muted); }
-.city-card .cc-price { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--accent); margin-top: 4px; }
-.city-card.historical { opacity: .8; }
-.city-card.highlighted { border-color: #d9a35b; box-shadow: 0 0 0 2px rgba(217, 163, 91, 0.25); }
-.cc-partner { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: .08em; color: var(--ink-muted); }
+/* Orte als Zeilen: Name links, Punktlinie, Preis mit Größe rechts */
+.city-grid { display: block; border-top: 1px solid var(--rule-strong); }
+.city-card.menu-row { color: inherit; border-left: 0; border-right: 0; border-top: 0; }
+.city-card.menu-row:hover .menu-name { text-decoration: underline; text-underline-offset: 3px; }
+.city-card.historical .menu-name { color: var(--ink-soft); }
 .city-empty { color: var(--ink-muted); padding: 16px 0; }
 
-@media (max-width: 800px) { .stats-strip { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) {
+  .city-card .menu-sub { display: none; }
+}
 </style>
 </head>
 <body>
@@ -195,11 +190,14 @@ function paint() {
   const card = (b) => {
     const p = pricesByBrewery.get(b.id);
     const hl = b.highlighted && !b.isHistorical;
-    return `<a class="city-card${b.isHistorical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${encodeURIComponent(b.id)}">
-      ${hl ? `<span class="cc-partner">${window.t("offer.partnerShort")}</span>` : ""}
-      <span class="cc-name">${b.name}</span>
-      <span class="cc-type">${typeLabel(b.type)}</span>
-      ${p ? `<span class="cc-price">${window.formatEuro(p.price)} <span style="opacity:.55;font-size:11px">/ ${String(p.size).replace(".", ",")} l</span></span>` : ""}
+    // Getränkekarten-Zeile: Name, Partner-Tag, Typ, Punktlinie, Größe, Preis
+    return `<a class="city-card menu-row${b.isHistorical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${encodeURIComponent(b.id)}">
+      <span class="cc-name menu-name">${b.name}</span>
+      ${hl ? `<span class="tag partner">${window.t("offer.partnerShort")}</span>` : ""}
+      <span class="cc-type menu-sub">${typeLabel(b.type)}</span>
+      <span class="menu-leader"></span>
+      ${p ? `<span class="menu-size">${window.formatSize(p.size)}</span><span class="menu-price">${window.formatEuro(p.price)}</span>`
+          : `<span class="menu-size">${window.t("city.noPrice")}</span>`}
     </a>`;
   };
 

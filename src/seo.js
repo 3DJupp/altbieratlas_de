@@ -549,23 +549,21 @@ export async function serveSorten(req, env) {
   const pageUrl = `${SITE}/sorten`;
   // Farbe landet in einem style-Attribut → nur Hex-Werte zulassen
   const color = (c) => (/^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "#8b4513");
-  // Gleicher Kartenaufbau wie im Client: fehlende Werte als „—“ statt fehlender Zeile
-  const specRow = (k, v) => `<div class="spec-row"><span class="k">${k}</span>${v != null && v !== "" ? `<span class="v">${escHtml(v)}</span>` : `<span class="v na">—</span>`}</div>`;
+  // Gleicher Zeilenaufbau wie paintStyles() in public/sorten.html: Logo oder
+  // Altbierglas in der Farbe der Sorte, Name, Geschmack, Werte rechts
+  const glass = (c) => `<svg class="glass" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><path class="beer" style="fill:${color(c)}" d="M17.2 13h13.6l-1 28.1a2 2 0 0 1-2 1.9h-7.6a2 2 0 0 1-2-1.9z"/><path class="foam" d="M17 6h14l-.25 7H17.25z"/><path class="outline" d="M17 5h14l-1.2 36.1a2 2 0 0 1-2 1.9h-7.6a2 2 0 0 1-2-1.9z"/></svg>`;
 
   let html = await assetRes.text();
   if (styles.length) {
     const cards = styles.map((s) => `
-    <article class="spec-card">
-      <div class="spec-head" style="background: linear-gradient(135deg, ${color(s.color)}, ${color(s.color)}cc)">
+    <article class="sort" id="${escHtml(s.id)}">
+      ${s.logo_key ? `<img src="/logos/${escHtml(s.logo_key)}" alt="" class="spec-logo">` : glass(s.color)}
+      <div>
         <h3>${escHtml(s.name)}</h3>
-        ${s.logo_key ? `<img src="/logos/${escHtml(s.logo_key)}" alt="" class="spec-logo">` : ""}
-      </div>
-      <div class="spec-body">
-        ${specRow("ABV", s.abv != null ? `${Number(s.abv).toFixed(1).replace(".", ",")} %` : null)}
-        ${specRow("IBU", s.ibu)}
         <p class="spec-tasting">${escHtml(s.tasting_de || "")}</p>
-        ${s.bid ? `<a class="spec-link" href="/ort/${escHtml(encodeURIComponent(s.bid))}">→ ${escHtml(s.bname)}</a>` : ""}
+        ${s.bid ? `<a class="spec-link" href="/ort/${escHtml(encodeURIComponent(s.bid))}">${escHtml(s.bname)} →</a>` : ""}
       </div>
+      <div class="nums">${[s.abv != null ? `${Number(s.abv).toFixed(1).replace(".", ",")} %` : "", s.ibu != null ? `${escHtml(s.ibu)} IBU` : ""].filter(Boolean).join(" · ") || "—"}</div>
     </article>`).join("");
     html = html.replace(
       /(<div class="style-spec-grid" id="style-grid">)[\s\S]*?(<\/div>)/,
