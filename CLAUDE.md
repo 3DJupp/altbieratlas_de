@@ -82,7 +82,7 @@ Prices with a euro sign always go through `formatEuro()` (`src/utils.js`, worker
 
 Admin-configurable content (banner, social links/author, impressum) is stored **solely** in the `site_settings` D1 table and edited via the admin panel — there is no `SITE_CONFIG` fallback for these (single source).
 
-The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_D1_ID`, `REPLACE_WITH_YOUR_D1_NAME`). `scripts/deploy.sh` replaces these via `sed` at deploy time using `database_id` and `database_name` build environment variables set in the dashboard. In a Workers Builds run for any branch other than `main` (`WORKERS_CI_BRANCH`, overridable via `PRODUCTION_BRANCH`) it only runs `wrangler versions upload` and never goes live — a branch build once overwrote production this way. Keep that guard.
+The `wrangler.toml` contains **placeholder** D1 credentials (`REPLACE_WITH_YOUR_D1_ID`, `REPLACE_WITH_YOUR_D1_NAME`). `scripts/deploy.sh` replaces these via `sed` at deploy time using `database_id` and `database_name` build environment variables set in the dashboard. In a Workers Builds run for any branch other than `main` (`WORKERS_CI_BRANCH`, overridable via `PRODUCTION_BRANCH`) it only runs `wrangler preview` (`versions upload` fails in Preview builds with a Worker-name mismatch; Worker Previews, bindings from the `[previews]` block, whose D1 placeholders `REPLACE_WITH_PREVIEW_D1_*` take `preview_database_id/_name` or fall back to the production DB) and never goes live — a branch build once overwrote production this way. Keep that guard. The dashboard's Preview command must therefore also be `bash scripts/deploy.sh`, and every binding the worker reads must also be listed under `[previews]`; Wrangler needs ≥ 4.135 for that block.
 
 ### Database Schema
 
@@ -140,12 +140,13 @@ Jedes Objekt mit Sprachfeldern wird **immer in beiden Sprachen** gepflegt: `brew
 
 ### Versioning
 
-Bei jedem Versions-Bump **alle vier Stellen** gleichzeitig anpassen:
+Bei jedem Versions-Bump **alle fünf Stellen** gleichzeitig anpassen:
 
 | Datei | Was ändern |
 |---|---|
 | `src/utils.js` | `APP_VERSION = "x.y.z"` |
 | `package.json` | `"version": "x.y.z"` |
+| `package-lock.json` | `npm install --package-lock-only` (setzt beide `"version"`-Felder) |
 | `README.md` | Heading `# Altbieratlas · vx.y.z` |
 | `migrations/0002_seed.sql` | Versions-Kommentar in der Kopfzeile |
 

@@ -101,7 +101,6 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
   font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-muted);
   margin-bottom: 6px;
 }
@@ -116,7 +115,7 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
   font-size: 14px;
 }
 .field input:focus, .field select:focus, .field textarea:focus {
-  outline: none; border-color: var(--copper);
+  outline: none; border-color: var(--accent);
 }
 .field textarea { min-height: 80px; resize: vertical; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -172,9 +171,8 @@ html[data-theme="dark"] .submit-error { color: #f0a0a0; background: #3a1414; }
 .contrib-row .summary { overflow-wrap: break-word; min-width: 0; }
 .contrib-row .tag { justify-self: start; white-space: nowrap; }
 .contrib-row .typ {
-  text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--copper);
+  color: var(--accent);
   font-size: 11px;
 }
 @media (max-width: 600px) {

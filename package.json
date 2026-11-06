@@ -1,6 +1,6 @@
 {
   "name": "altbieratlas",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Die interaktive Karte des Altbiers — Cloudflare Workers + D1",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "places:backfill": "node scripts/backfill-place-ids.mjs"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "wrangler": "^4.152.0"
   },
   "dependencies": {
     "@resvg/resvg-wasm": "^2.6.2",

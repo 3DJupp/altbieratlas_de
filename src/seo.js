@@ -344,32 +344,32 @@ export async function serveIndex(req, env) {
   const priced = pricedAt(venues);
   const avg025 = avg(priced.map((x) => x.p.price));
 
+  // Getränkekarten-Zeile wie fill() in public/index.html
   const li = ({ v, p }, i) => `
-      <li>
-        <span class="pos">${String(i + 1).padStart(2, "0")}</span>
-        <span class="name">
-          <a href="/ort/${escHtml(encodeURIComponent(v.id))}">${escHtml(v.short_name || v.name)}</a>
-          <span class="city">${escHtml(v.city)}</span>
-        </span>
-        <span class="price">${escHtml(formatEuro(p.price))}</span>
+      <li class="menu-row">
+        <span class="menu-rank">${i + 1}</span>
+        <a class="menu-name" href="/ort/${escHtml(encodeURIComponent(v.id))}">${escHtml(v.short_name || v.name)}</a>
+        <span class="menu-sub">${escHtml(v.city)}</span>
+        <span class="menu-leader"></span>
+        <span class="menu-price">${escHtml(formatEuro(p.price))}</span>
       </li>`;
 
   let html = await assetRes.text();
   const fill = (id, items) => {
     html = html.replace(
-      new RegExp(`<ol id="${id}" class="rank-list"></ol>`),
-      () => `<ol id="${id}" class="rank-list">${items.map(li).join("")}</ol>`,
+      new RegExp(`<ol id="${id}" class="menu rank-list"></ol>`),
+      () => `<ol id="${id}" class="menu rank-list">${items.map(li).join("")}</ol>`,
     );
   };
   fill("rank-cheapest", priced.slice(0, 5));
   fill("rank-priciest", [...priced].reverse().slice(0, 5));
 
   if (avg025) {
-    html = html.replace(/(<div class="ticker-value mono" id="avg-price">)—(<\/div>)/,
+    html = html.replace(/(<b id="avg-price">)—(<\/b>)/,
       (m, a, b) => `${a}${escHtml(formatEuro(avg025))}${b}`);
   }
-  html = html.replace(/(<span id="data-points">)—(<\/span>)/, (m, a, b) => `${a}${priceCount}${b}`);
-  html = html.replace(/(<span id="brewery-count">)—(<\/span>)/, (m, a, b) => `${a}${venues.length}${b}`);
+  html = html.replace(/(<b id="data-points">)—(<\/b>)/, (m, a, b) => `${a}${priceCount}${b}`);
+  html = html.replace(/(<b id="brewery-count">)—(<\/b>)/, (m, a, b) => `${a}${venues.length}${b}`);
 
   if (avg025) {
     const current = venues.filter((v) => !v.is_historical);
@@ -549,23 +549,21 @@ export async function serveSorten(req, env) {
   const pageUrl = `${SITE}/sorten`;
   // Farbe landet in einem style-Attribut → nur Hex-Werte zulassen
   const color = (c) => (/^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "#8b4513");
-  // Gleicher Kartenaufbau wie im Client: fehlende Werte als „—“ statt fehlender Zeile
-  const specRow = (k, v) => `<div class="spec-row"><span class="k">${k}</span>${v != null && v !== "" ? `<span class="v">${escHtml(v)}</span>` : `<span class="v na">—</span>`}</div>`;
+  // Gleicher Zeilenaufbau wie paintStyles() in public/sorten.html: Logo oder
+  // Altbierglas in der Farbe der Sorte, Name, Geschmack, Werte rechts
+  const glass = (c) => `<svg class="glass" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><path class="beer" style="fill:${color(c)}" d="M17.2 13h13.6l-1 28.1a2 2 0 0 1-2 1.9h-7.6a2 2 0 0 1-2-1.9z"/><path class="foam" d="M17 6h14l-.25 7H17.25z"/><path class="outline" d="M17 5h14l-1.2 36.1a2 2 0 0 1-2 1.9h-7.6a2 2 0 0 1-2-1.9z"/></svg>`;
 
   let html = await assetRes.text();
   if (styles.length) {
     const cards = styles.map((s) => `
-    <article class="spec-card">
-      <div class="spec-head" style="background: linear-gradient(135deg, ${color(s.color)}, ${color(s.color)}cc)">
+    <article class="sort" id="${escHtml(s.id)}">
+      ${s.logo_key ? `<img src="/logos/${escHtml(s.logo_key)}" alt="" class="spec-logo">` : glass(s.color)}
+      <div>
         <h3>${escHtml(s.name)}</h3>
-        ${s.logo_key ? `<img src="/logos/${escHtml(s.logo_key)}" alt="" class="spec-logo">` : ""}
-      </div>
-      <div class="spec-body">
-        ${specRow("ABV", s.abv != null ? `${Number(s.abv).toFixed(1).replace(".", ",")} %` : null)}
-        ${specRow("IBU", s.ibu)}
         <p class="spec-tasting">${escHtml(s.tasting_de || "")}</p>
-        ${s.bid ? `<a class="spec-link" href="/ort/${escHtml(encodeURIComponent(s.bid))}">→ ${escHtml(s.bname)}</a>` : ""}
+        ${s.bid ? `<a class="spec-link" href="/ort/${escHtml(encodeURIComponent(s.bid))}">${escHtml(s.bname)} →</a>` : ""}
       </div>
+      <div class="nums">${[s.abv != null ? `${Number(s.abv).toFixed(1).replace(".", ",")} %` : "", s.ibu != null ? `${escHtml(s.ibu)} IBU` : ""].filter(Boolean).join(" · ") || "—"}</div>
     </article>`).join("");
     html = html.replace(
       /(<div class="style-spec-grid" id="style-grid">)[\s\S]*?(<\/div>)/,

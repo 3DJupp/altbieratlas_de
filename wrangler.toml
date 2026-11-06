@@ -65,6 +65,26 @@ binding       = "DB"
 database_name = "REPLACE_WITH_YOUR_D1_NAME"
 database_id   = "REPLACE_WITH_YOUR_D1_ID"
 
+# --- Previews (Branch-Vorschauen) -----------------------------
+# Previews erben keine Produktions-Bindings: alles, was der Worker aus env
+# liest, muss hier noch einmal stehen. Preview-Builds laufen ebenfalls über
+# scripts/deploy.sh (Preview command im Dashboard), das die Platzhalter mit
+# preview_database_id/-name ersetzt, sonst mit database_id/-name. Ohne eigene
+# Preview-DB liest und SCHREIBT eine Preview also in die Produktions-D1.
+# Secrets (Turnstile, Kacheln, Resend …) und SITE_CONFIG erben Previews nicht:
+# im Dashboard unter „Previews Base“ setzen oder `wrangler preview secret put`.
+[[previews.d1_databases]]
+binding       = "DB"
+database_name = "REPLACE_WITH_PREVIEW_D1_NAME"
+database_id   = "REPLACE_WITH_PREVIEW_D1_ID"
+
+[[previews.r2_buckets]]
+binding     = "LOGOS"
+bucket_name = "altbieratlas-logos"
+
+[previews.version_metadata]
+binding = "CF_VERSION_METADATA"
+
 # --- R2: Stil-Logos -----------------------------------------
 # Bucket für hochgeladene Stil-Logos (PNG/WebP/SVG, max 2 MB).
 # Ersteinrichtung: `npx wrangler r2 bucket create altbieratlas-logos`

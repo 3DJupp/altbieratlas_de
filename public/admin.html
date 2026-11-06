@@ -21,18 +21,17 @@
 .field { margin-bottom: 14px; }
 .field label {
   display: block;
-  font-family: var(--font-ui); font-variant-numeric: tabular-nums;
-  font-size: 11px; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--ink-muted);
+  font-family: var(--font-ui);
+  font-size: 14px; font-weight: 600; color: var(--ink-soft);
   margin-bottom: 6px;
 }
 .field input, .field select, .field textarea {
-  width: 100%; padding: 11px 14px;
-  background: var(--bg); border: 1px solid var(--rule-strong);
+  width: 100%; min-height: 44px; padding: 10px 12px;
+  background: var(--bg-card); border: 1px solid var(--rule-strong);
   border-radius: var(--radius); color: var(--ink);
   font-family: var(--font-ui); font-size: 14px;
 }
-.field input:focus { outline: none; border-color: var(--copper); }
+.field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
 
 .admin-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -42,14 +41,11 @@
 .admin-header .who {
   font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-muted);
 }
-.admin-header .who strong { color: var(--copper); }
+.admin-header .who strong { color: var(--ink); }
 
 .brewery-table {
   width: 100%; border-collapse: collapse;
-  background: var(--bg-card);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  border-top: 1px solid var(--rule-strong);
 }
 .brewery-table th, .brewery-table td {
   padding: 12px 14px;
@@ -57,32 +53,31 @@
   font-size: 13px; text-align: left;
 }
 .brewery-table th {
-  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px;
-  letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 13px; font-weight: 600;
   color: var(--ink-muted);
-  background: var(--bg-elev);
+  border-bottom-color: var(--rule-strong);
 }
 .brewery-table tr:last-child td { border-bottom: none; }
-.brewery-table .status-approved { color: #2d7a2d; }
-.brewery-table .status-pending  { color: #a07a20; }
-.brewery-table .status-rejected { color: #9b1f1f; }
+.brewery-table .status-approved { color: var(--ok); }
+.brewery-table .status-pending  { color: var(--ink-soft); }
+.brewery-table .status-rejected { color: var(--ruby); }
 .brewery-table .actions { display: flex; gap: 6px; }
 .brewery-table .actions button {
-  font-size: 11px; padding: 5px 10px;
+  font-size: 13px; min-height: 32px; padding: 0 10px;
 }
 
 .subtab-bar {
   display: flex; gap: 10px; margin: 16px 0 20px;
-  font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px;
+  font-family: var(--font-ui); font-size: 14px;
 }
 .subtab-bar button {
   background: transparent;
   border: 1px solid var(--rule-strong);
   color: var(--ink-soft);
-  padding: 6px 14px; border-radius: 999px;
+  min-height: 36px; padding: 0 14px; border-radius: var(--radius);
   cursor: pointer;
 }
-.subtab-bar button.active { background: var(--copper); color: var(--accent-ink); border-color: var(--copper); }
+.subtab-bar button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
 .reject-dialog {
   display: none;
@@ -166,7 +161,7 @@
       <div class="turnstile-box" id="turnstile-placeholder" style="display:none">
         <span class="cf-mark">CF</span>
         <span data-i18n="contrib.turnstilePlaceholder">Cloudflare Turnstile · Bot-Prüfung (Platzhalter, Site-Key nicht gesetzt)</span>
-        <span style="margin-left:auto;font-size:11px;color:var(--ink-muted)">verifiziert ✓</span>
+        <span class="tag verified" style="margin-left:auto"><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.8"/></svg>verifiziert</span>
       </div>
 
       <div class="admin-error" id="login-error" data-i18n="admin.loginFailed">Anmeldung fehlgeschlagen.</div>
@@ -328,7 +323,7 @@
                 <input name="lng" type="number" min="-180" max="180" step="any" required placeholder="6.7735" />
               </div>
               <div style="grid-column:1/-1;display:flex;gap:8px;align-items:center">
-                <button class="btn" type="button" id="add-brewery-geocode-btn" style="white-space:nowrap" data-i18n="admin.geocodeBtn">📍 Geocodieren</button>
+                <button class="btn" type="button" id="add-brewery-geocode-btn" style="white-space:nowrap" ><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17.5s-5.5-4.9-5.5-9.3a5.5 5.5 0 0 1 11 0c0 4.4-5.5 9.3-5.5 9.3z"/><circle cx="10" cy="8.2" r="2"/></svg><span data-i18n="admin.geocodeBtn">Geocodieren</span></button>
                 <span id="add-brewery-geocode-msg" style="font-size:12px;color:var(--ink-muted)"></span>
               </div>
               <div class="field" style="margin:0">
@@ -1091,8 +1086,8 @@
         <div class="field" style="margin:0;grid-column:1/-1">
           <label data-i18n="admin.ortLogo">Logo</label>
           <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-            <div id="edit-ort-logo-preview" style="flex-shrink:0;width:72px;height:72px;display:flex;align-items:center;justify-content:center;background:var(--copper);border:1px solid var(--rule);border-radius:8px;overflow:hidden;cursor:pointer" title="Klicken zum Hochladen">
-              <span style="color:#fff;font-size:1.3rem;font-weight:600">?</span>
+            <div id="edit-ort-logo-preview" style="flex-shrink:0;width:72px;height:72px;display:flex;align-items:center;justify-content:center;background:transparent;border-radius:50%;overflow:hidden;cursor:pointer" title="Klicken zum Hochladen">
+              <span style="color:var(--ink-muted);font-size:1.3rem;font-weight:600">?</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px">
               <label class="btn" style="cursor:pointer;margin:0">
@@ -1237,7 +1232,7 @@
 
       <!-- Biere am Event -->
       <div style="margin-top:20px;border-top:1px solid var(--rule);padding-top:16px">
-        <div style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px" data-i18n="admin.evBeersLabel">
+        <div style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:11px;letter-spacing:.08em;color:var(--ink-muted);margin-bottom:10px" data-i18n="admin.evBeersLabel">
           Biere (vom Ranking ausgenommen)
         </div>
         <div id="ev-beers-list" style="margin-bottom:12px;font-size:13px"></div>
@@ -2060,7 +2055,7 @@ async function loadBreweriesTable() {
         <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
         <td>${typeLabel(b.type)}</td>
         <td><span class="status-${b.status}">${b.status}</span></td>
-        <td>${b.verified ? "✓" : "—"}</td>
+        <td data-verified="${b.verified ? 1 : 0}">${b.verified ? window.atlasIcon("check", { label: "ja" }) : "—"}</td>
         <td class="actions">
           ${b.status !== "approved" ? `<button class="btn btn-approve" data-act="approve">${t("admin.approve")}</button>` : ""}
           <button class="btn" data-act="edit">${t("admin.actionEdit")}</button>
@@ -2098,17 +2093,19 @@ async function handleBreweryAction(id, act, rowEl) {
       await window.AtlasAPI.admin.updateBrewery(id, { status: "approved", verified: 1 });
       rowEl.dataset.status = "approved";
       rowEl.querySelector("td:nth-child(4)").innerHTML = `<span class="status-approved">approved</span>`;
-      rowEl.querySelector("td:nth-child(5)").textContent = "✓";
+      const vCell = rowEl.querySelector("td:nth-child(5)");
+      vCell.dataset.verified = "1"; vCell.innerHTML = window.atlasIcon("check", { label: "ja" });
       rowEl.querySelector("button[data-act='toggle-verified']").textContent = t("admin.actionUnverify");
       rowEl.querySelector("button[data-act='approve']")?.remove();
       loadDashboard();
     } catch (e) { alert(t("admin.approveError") + e.message); }
   } else if (act === "toggle-verified") {
-    const currentBadge = rowEl.querySelector("td:nth-child(5)").textContent.trim();
-    const nowVerified = currentBadge === "✓" ? 0 : 1;
+    const vCell = rowEl.querySelector("td:nth-child(5)");
+    const nowVerified = vCell.dataset.verified === "1" ? 0 : 1;
     try {
       await window.AtlasAPI.admin.updateBrewery(id, { verified: nowVerified });
-      rowEl.querySelector("td:nth-child(5)").textContent = nowVerified ? "✓" : "—";
+      vCell.dataset.verified = String(nowVerified);
+      vCell.innerHTML = nowVerified ? window.atlasIcon("check", { label: "ja" }) : "—";
       rowEl.querySelector("button[data-act='toggle-verified']").textContent = nowVerified ? t("admin.actionUnverify") : t("admin.actionVerify");
     } catch (e) { alert(t("admin.errorPrefix") + e.message); }
   }
@@ -2248,8 +2245,8 @@ async function openEditDialog(id, rowEl) {
 
   // Logo-Vorschau wie öffentlich: Logo, sonst (oder wenn es nicht lädt) Initialen
   function showOrtLogoInitials() {
-    ortLogoPrev.style.background = "var(--copper)";
-    ortLogoPrev.innerHTML = `<span style="color:#fff;font-size:1.3rem;font-weight:600">${getEditInitials()}</span>`;
+    ortLogoPrev.style.background = "transparent";
+    ortLogoPrev.innerHTML = window.atlasMat(getEditInitials(), 72);
   }
   function showOrtLogo(url) {
     const img = document.createElement("img");
@@ -2298,7 +2295,7 @@ async function openEditDialog(id, rowEl) {
       const res = await window.AtlasAPI.admin.uploadBreweryLogo(pendingEdit.id, file);
       rowEl.dataset.logoKey = res.logoKey;
       showOrtLogo(`${res.logoUrl}?t=${Date.now()}`);
-      ortLogoMsg.textContent = "✓";
+      ortLogoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
       if (!Array.from(ortLogoSelect.options).some((o) => o.value === res.logoKey)) {
         const opt = document.createElement("option");
         opt.value = res.logoKey;
@@ -2320,7 +2317,7 @@ async function openEditDialog(id, rowEl) {
       rowEl.dataset.logoKey = key;
       const url = `/logos/orte/${key}`;
       showOrtLogo(`${url}?t=${Date.now()}`);
-      ortLogoMsg.textContent = "✓";
+      ortLogoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
     } catch (e) {
       ortLogoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
     }
@@ -2352,7 +2349,7 @@ async function openEditDialog(id, rowEl) {
       await window.AtlasAPI.admin.deleteBreweryLogo(pendingEdit.id);
       rowEl.dataset.logoKey = "";
       initOrtLogoPrev("");
-      ortLogoMsg.textContent = "✓";
+      ortLogoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
     } catch (e) {
       ortLogoMsg.textContent = window.t("admin.errorPrefix") + (e.detail?.detail || e.message);
     }
@@ -2366,7 +2363,7 @@ async function openEditDialog(id, rowEl) {
       const res = await window.AtlasAPI.admin.uploadBreweryPhoto(pendingEdit.id, file);
       rowEl.dataset.photoKey = res.photoKey || "";
       initPhotoPrev(res.photoKey);
-      photoMsg.textContent = "✓";
+      photoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
     } catch (e) {
       photoMsg.textContent = window.t("admin.errorPrefix") + e.message;
     }
@@ -2380,7 +2377,7 @@ async function openEditDialog(id, rowEl) {
       await window.AtlasAPI.admin.deleteBreweryPhoto(pendingEdit.id);
       rowEl.dataset.photoKey = "";
       initPhotoPrev("");
-      photoMsg.textContent = "✓";
+      photoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
     } catch (e) {
       photoMsg.textContent = window.t("admin.errorPrefix") + e.message;
     }
@@ -2418,7 +2415,7 @@ document.getElementById("edit-untappd-check").addEventListener("click", async ()
     else {
       const href = ut.slug ? `https://untappd.com/brewery/${encodeURIComponent(ut.slug)}` : `https://untappd.com/brewery/${ut.untappdId}`;
       out.innerHTML = `${esc(t("admin.untappdMatch").replace("{name}", ut.name))} · <a href="${href}" target="_blank" rel="noopener">untappd.com</a> · ID ${esc(ut.untappdId)}`
-        + (ut.rating != null ? ` · ${esc(Number(ut.rating).toFixed(2))} ★` : "");
+        + (ut.rating != null ? ` · ${esc(Number(ut.rating).toFixed(2))} / 5` : "");
     }
   } catch (e) {
     out.textContent = t("admin.errorPrefix") + e.message;
@@ -2749,7 +2746,7 @@ function openStyleEditInline(id, rowEl) {
       rowEl.dataset.logoKey = res.logoKey;
       logoPrev.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
       logoDel.style.display = "block";
-      logoMsg.textContent = "✓";
+      logoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
       cachedStyles = null;
       const logoCell = rowEl.cells[5];
       if (logoCell) logoCell.innerHTML = `<img src="${res.logoUrl}?t=${Date.now()}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px">`;
@@ -2775,7 +2772,7 @@ function openStyleEditInline(id, rowEl) {
       const url = `/logos/${key}`;
       logoPrev.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:contain">`;
       logoDel.style.display = "block";
-      logoMsg.textContent = "✓";
+      logoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
       cachedStyles = null;
       const logoCell = rowEl.cells[5];
       if (logoCell) logoCell.innerHTML = `<img src="${url}?t=${Date.now()}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px">`;
@@ -2817,7 +2814,7 @@ function openStyleEditInline(id, rowEl) {
       rowEl.dataset.logoKey = "";
       logoPrev.innerHTML = '<span style="color:var(--ink-muted);font-size:11px">–</span>';
       logoDel.style.display = "none";
-      logoMsg.textContent = "✓";
+      logoMsg.innerHTML = window.atlasIcon("check", { label: "OK" });
       cachedStyles = null;
       const logoCell = rowEl.cells[5];
       if (logoCell) logoCell.textContent = "—";
@@ -3153,9 +3150,9 @@ async function loadEventBeers(eventId) {
       return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--rule)">
         <span style="flex:1">${name}</span>
         <span style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-muted)">${size}</span>
-        <span style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px;color:var(--copper)">${price}</span>
+        <span style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:13px;color: var(--accent)">${price}</span>
         <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-edit-beer-id="${b.id}" title="${window.t("admin.evEditBeer")}">✎</button>
-        <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}" title="${window.t("admin.evDeleteBeer")}">✕</button>
+        <button class="btn btn-reject" style="font-size:11px;padding:3px 8px" data-beer-id="${b.id}" title="${window.t("admin.evDeleteBeer")}" aria-label="${window.t("admin.evDeleteBeer")}">${window.atlasIcon("cross", { size: 16 })}</button>
       </div>`;
     }).join("");
     list.querySelectorAll("button[data-edit-beer-id]").forEach((btn) => {
@@ -3269,7 +3266,7 @@ async function loadPricesTab() {
         <td>${window.formatDate ? window.formatDate(p.date) : p.date}</td>
         <td>${window.formatSize ? window.formatSize(String(p.size)) : p.size}</td>
         <td>${p.styleName || "—"}</td>
-        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;color:var(--copper)">${window.formatEuro(p.price)}</td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;color: var(--accent)">${window.formatEuro(p.price)}</td>
         <td>${p.source || "—"}</td>
         <td><span class="status-${p.status}">${p.status}</span></td>
         <td class="actions">
@@ -3870,7 +3867,7 @@ async function loadVenueTypesTab() {
         <td style="color:var(--ink-muted)">${vt.nameEn || "—"}</td>
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${vt.headerDe || "—"}</td>
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted)">${vt.headerEn || "—"}</td>
-        <td>${vt.isProducer ? "✓" : "—"}</td>
+        <td>${vt.isProducer ? window.atlasIcon("check", { label: "ja" }) : "—"}</td>
         <td class="actions">
           <button class="btn" data-act="edit-vtype">Bearbeiten</button>
           <button class="btn btn-reject" data-act="delete-vtype">Löschen</button>
@@ -3951,7 +3948,7 @@ function openVtypeEditInline(id, rowEl) {
       rowEl.cells[3].textContent = patch.header_de || "—";
       rowEl.cells[4].textContent = patch.header_en || "—";
       rowEl.dataset.producer = patch.is_producer ? "1" : "";
-      rowEl.cells[5].textContent = patch.is_producer ? "✓" : "—";
+      rowEl.cells[5].innerHTML = patch.is_producer ? window.atlasIcon("check", { label: "ja" }) : "—";
       editRow.remove(); pendingVtypeEdit = null;
       rebuildBreweryTypeSelects();
     } catch (e) {
@@ -4038,7 +4035,7 @@ document.getElementById("add-brewery-geocode-btn").addEventListener("click", asy
     form.elements.lat.value = first.lat.toFixed(6);
     form.elements.lng.value = first.lng.toFixed(6);
     if (!form.elements.city.value.trim() && first.city) form.elements.city.value = first.city;
-    msgEl.textContent = `✓ ${first.name.slice(0, 60)}`;
+    msgEl.textContent = first.name.slice(0, 60);
   } catch { msgEl.textContent = "Geocoding fehlgeschlagen."; }
 });
 

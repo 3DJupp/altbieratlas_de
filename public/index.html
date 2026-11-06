@@ -52,38 +52,14 @@
   <div id="shell-banner" hidden></div>
   <div id="shell-header"></div>
 
-  <!-- ============ HERO + MAP ============ -->
-  <section class="hero-wrap">
-    <div class="hero-overlay">
-      <a class="ticker" href="/ranglisten">
-        <div class="pulse"></div>
-        <div>
-          <div class="ticker-label eyebrow" id="ticker-label">Aktuelles 0,25 l Alt im Schnitt</div>
-          <div class="ticker-value mono" id="avg-price">—</div>
-          <div class="ticker-meta mono">
-            <span id="data-points">—</span> <span data-i18n="hero.dataPoints">Preismeldungen</span>
-            · <span id="brewery-count">—</span> <span data-i18n="hero.breweries">Orte</span>
-          </div>
-          <div class="ticker-cta" data-i18n="hero.toRankings">zu den Ranglisten →</div>
-        </div>
-      </a>
-
-      <div class="hero-copy">
-        <h1 class="hero-title">
-          <span data-i18n="index.heroTitlePart1">Der interaktive</span><br />
-          <span data-i18n="index.heroTitlePart2">Atlas</span> <span data-i18n="index.heroTitlePart3">des Altbiers.</span>
-        </h1>
-        <p class="hero-sub" data-i18n="hero.subtitle">Der Altbieratlas sammelt Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="/beitragen?typ=preis" data-i18n="hero.cta">Preis melden</a>
-          <a class="btn" href="#map-section" data-i18n="hero.ctaSecondary">Karte erkunden</a>
-        </div>
+  <!-- ============ SUCHE + KARTE ============ -->
+  <div class="map-toolbar">
+    <div class="container map-filters">
+      <div class="map-search-wrap">
+        <svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5"/><path d="M12.7 12.7l3.8 3.8"/></svg>
+        <input type="search" id="map-search" class="filter-search" placeholder="Stadt, Brauerei, Ort…" data-i18n-placeholder="map.search" aria-label="Suche" autocomplete="off" />
+        <div class="map-search-suggest" id="map-search-suggest"></div>
       </div>
-    </div>
-
-    <div id="map" class="map-canvas"></div>
-
-    <div class="map-filters">
       <select id="type-filter" class="filter-select" aria-label="Kategorie filtern">
         <option value="all" data-i18n="map.filter.all">Alle</option>
         <option value="brauerei" data-i18n="map.filter.brauerei">Brauereien &amp; Ausschank</option>
@@ -91,48 +67,70 @@
         <option value="handel" data-i18n="map.filter.handel">Handel</option>
         <option value="historisch" data-i18n="map.filter.historisch">Historisch</option>
       </select>
-      <button class="filter-btn filter-near" id="near-me-btn" type="button" title="In meiner Nähe">📍 In meiner Nähe</button>
-      <div class="map-search-wrap">
-        <input type="search" id="map-search" class="filter-search" placeholder="Stadt, Brauerei, Ort…" data-i18n-placeholder="map.search" autocomplete="off" />
-        <div class="map-search-suggest" id="map-search-suggest"></div>
-      </div>
+      <button class="btn filter-near" id="near-me-btn" type="button" aria-label="In meiner Nähe"><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5"/><circle class="fill" cx="10" cy="10" r="1.6"/><path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/></svg><span class="near-label">In meiner Nähe</span></button>
+    </div>
+  </div>
+
+  <section class="hero-wrap">
+    <div id="map" class="map-canvas"></div>
+    <div class="map-legend" aria-hidden="true">
+      <span><i class="legend-dot"></i><span data-i18n="map.legend.price">Ort</span></span>
+      <span><i class="legend-dot partner"></i><span data-i18n="offer.partnerShort">Partner</span></span>
+      <span><i class="legend-dot historical"></i><span data-i18n="map.filter.historisch">Historisch</span></span>
     </div>
   </section>
 
-  <!-- ============ QUICK RANKINGS ============ -->
-  <section id="map-section" class="container" style="padding: 60px 24px 32px">
-    <div class="section-head">
-      <div>
-        <h2 data-i18n="index.pricesAtAGlance">Preise im Überblick</h2>
+  <!-- ============ KENNZAHLEN + INTRO ============ -->
+  <section id="map-section" class="container intro">
+    <div class="intro-copy">
+      <h1 class="hero-title">
+        <span data-i18n="index.heroTitlePart1">Der interaktive</span>
+        <span data-i18n="index.heroTitlePart2">Atlas</span> <span data-i18n="index.heroTitlePart3">des Altbiers.</span>
+      </h1>
+      <p class="stats">
+        <b id="brewery-count">—</b> <span data-i18n="hero.breweries">Orte</span>,
+        <b id="data-points">—</b> <span data-i18n="hero.dataPoints">Preismeldungen</span>,
+        <span id="ticker-label">0,25 l im Schnitt</span> <b id="avg-price">—</b>.
+      </p>
+      <p class="hero-sub" data-i18n="hero.subtitle">Der Altbieratlas sammelt Preise, Brauereien und Wissen rund um das obergärige Bier. Gemeinschaftlich gepflegt.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/beitragen?typ=preis"><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.8 4.2l3 3-8.6 8.6-3.7.7.7-3.7z"/><path d="M11 6l3 3"/></svg><span data-i18n="hero.cta">Preis melden</span></a>
+        <a class="btn" href="/ranglisten" data-i18n="nav.rankings">Ranglisten</a>
       </div>
+    </div>
+    <div class="intro-list">
+      <div class="menu-head"><h2 data-i18n="rank.newest">Neu auf dem Atlas</h2><span class="note" data-i18n="rank.tag30days">30 Tage</span></div>
+      <ol id="rank-newest" class="menu rank-list"></ol>
+    </div>
+  </section>
+
+  <!-- ============ PREISE ============ -->
+  <section class="container" style="padding-bottom: 48px">
+    <div class="section-head">
+      <h2 data-i18n="index.pricesAtAGlance">Preise im Überblick</h2>
       <a class="btn btn-ghost" href="/ranglisten" data-i18n="common.more">Mehr erfahren →</a>
     </div>
-
     <div class="rank-grid">
-      <div class="card rank-card">
-        <div class="rank-head"><h3 data-i18n="rank.cheapest">Günstigstes Alt</h3><span class="tag" id="tag-size-cheapest">0,25 l</span></div>
-        <ol id="rank-cheapest" class="rank-list"></ol>
+      <div class="rank-card">
+        <div class="menu-head"><h3 data-i18n="rank.cheapest">Günstigstes Alt</h3><span class="note" id="tag-size-cheapest">0,25 l</span></div>
+        <ol id="rank-cheapest" class="menu rank-list"></ol>
       </div>
-      <div class="card rank-card">
-        <div class="rank-head"><h3 data-i18n="rank.priciest">Teuerstes Alt</h3><span class="tag" id="tag-size-priciest">0,25 l</span></div>
-        <ol id="rank-priciest" class="rank-list"></ol>
-      </div>
-      <div class="card rank-card">
-        <div class="rank-head"><h3 data-i18n="rank.newest">Neu auf dem Atlas</h3><span class="tag" data-i18n="rank.tag30days">30 Tage</span></div>
-        <ol id="rank-newest" class="rank-list"></ol>
+      <div class="rank-card">
+        <div class="menu-head"><h3 data-i18n="rank.priciest">Teuerstes Alt</h3><span class="note" id="tag-size-priciest">0,25 l</span></div>
+        <ol id="rank-priciest" class="menu rank-list"></ol>
       </div>
     </div>
     <p class="rank-note" id="rank-note" hidden></p>
   </section>
 
   <!-- ============ NEXT EVENTS ============ -->
-  <section class="container" style="padding: 24px 24px 60px">
+  <section class="container" style="padding-bottom: 64px">
     <div class="section-head">
       <div>
         <h2 data-i18n="index.upcomingEvents">Kommende Termine</h2>
       </div>
       <div class="section-head-actions">
-        <a id="ics-all-btn" class="btn btn-ghost" href="/api/events/calendar.ics" rel="nofollow" download="altbieratlas-termine.ics" data-i18n="index.downloadIcs" title="Kalender herunterladen (.ics)">📅 .ics</a>
+        <a id="ics-all-btn" class="btn btn-ghost" href="/api/events/calendar.ics" rel="nofollow" download="altbieratlas-termine.ics" title="Kalender herunterladen (.ics)"><svg class="icon icon-16" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4.5" width="14" height="12.5" rx="1.5"/><path d="M3 8.5h14M7 2.5v4M13 2.5v4"/></svg>.ics</a>
         <a class="btn btn-ghost" href="/beitragen?typ=event" data-i18n="index.reportEventLink">Event melden →</a>
       </div>
     </div>
@@ -144,185 +142,95 @@
 </div>
 
 <style>
-/* ============ Landing-specific ============ */
-.hero-wrap {
-  position: relative;
-  height: calc(100vh - 64px);
-  min-height: 600px;
-  max-height: 880px;
-  width: 100%;
-  overflow: hidden;
-  background: #0d0b09;
+/* ============ Startseite: Karte dominiert, Text darunter ============ */
+.map-toolbar { background: var(--bg); border-bottom: 1px solid var(--rule); }
+.map-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-top: 10px; padding-bottom: 10px; }
+.map-search-wrap {
+  flex: 1 1 320px; display: flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 12px;
+  background: var(--bg-card); border: 1px solid var(--rule-strong); border-radius: var(--radius);
+  color: var(--ink-muted);
 }
-.map-canvas { position: absolute; inset: 0; z-index: 1; }
-
-.hero-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  display: grid;
-  grid-template-columns: minmax(380px, 520px) 1fr auto;
-  grid-template-rows: auto 1fr auto;
-  padding: 28px 28px 120px;
-  gap: 20px;
-}
-.hero-overlay > * { pointer-events: auto; }
-.hero-copy {
-  grid-column: 1; grid-row: 2; align-self: end;
-  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  padding: 32px 34px;
-  max-width: 520px;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.hero-copy.hidden {
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-}
-.hero-title { font-weight: 500; margin: 10px 0 18px; font-size: clamp(2rem, 4vw, 3.25rem); }
-.hero-sub { color: var(--ink-soft); font-size: 16px; line-height: 1.55; margin-bottom: 22px; max-width: 44ch; }
-.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-.ticker {
-  grid-column: 1; grid-row: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 16px;
-  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  padding: 14px 22px 16px;
-  justify-self: start;
-  box-shadow: var(--shadow);
-  text-decoration: none;
-  cursor: pointer;
-  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
-}
-.ticker:hover {
-  border-color: var(--copper);
-  box-shadow: var(--shadow), 0 0 0 3px color-mix(in oklab, var(--copper) 18%, transparent);
-  background: color-mix(in oklab, var(--bg-card) 98%, transparent);
-}
-.ticker-cta { font-size: 11px; color: var(--copper); margin-top: 8px; letter-spacing: 0.04em; }
-.ticker-label { color: var(--ink-muted); }
-.ticker-value {
-  font-family: var(--font-display);
-  font-size: 36px; font-weight: 500;
-  color: var(--copper);
-  letter-spacing: -0.02em;
-  line-height: 1; margin-top: 4px;
-}
-.ticker-meta { font-size: 11px; color: var(--ink-muted); margin-top: 6px; letter-spacing: 0.04em; }
-.pulse {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--copper);
-  box-shadow: 0 0 0 0 rgba(217, 163, 91, 0.6);
-  animation: pulse 2s ease-out infinite;
-  align-self: center; flex-shrink: 0;
-}
-@keyframes pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(217, 163, 91, 0.6); }
-  70%  { box-shadow: 0 0 0 14px rgba(217, 163, 91, 0); }
-  100% { box-shadow: 0 0 0 0   rgba(217, 163, 91, 0); }
-}
-
-.map-filters {
-  position: absolute;
-  left: 28px; bottom: 28px;
-  z-index: 6;
-  display: flex; gap: 6px; padding: 8px;
-  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  box-shadow: var(--shadow);
-  flex-wrap: wrap;
-  align-items: center;
-  max-width: calc(100% - 56px);
-}
-.filter-select {
-  background: transparent; border: none;
-  color: var(--ink); font-family: var(--font-ui); font-size: 13px;
-  padding: 8px 30px 8px 16px; border-radius: 999px;
-  cursor: pointer; outline: none; appearance: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%23a98a63' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat: no-repeat; background-position: right 12px center;
-}
-.filter-select:hover { background-color: var(--bg-elev); }
-.filter-select option { background: var(--bg-card); color: var(--ink); }
-.filter-btn {
-  background: transparent; border: none;
-  color: var(--ink-soft);
-  font-family: var(--font-ui); font-size: 13px;
-  padding: 8px 16px; border-radius: 999px;
-  cursor: pointer;
-  transition: background .15s, color .15s;
-}
-.filter-btn:hover { color: var(--ink); background: var(--bg-elev); }
-.filter-btn.active { background: var(--accent); color: var(--accent-ink); }
-.filter-near { color: var(--copper); font-weight: 600; }
-.filter-near:disabled { opacity: .6; cursor: default; }
+.map-search-wrap:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
 .filter-search {
-  background: transparent; border: none;
-  color: var(--ink);
-  font-family: var(--font-ui); font-size: 13px;
-  padding: 8px 14px;
-  min-width: 220px; outline: none;
-  border-left: 1px solid var(--rule);
-  margin-left: 4px;
+  flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+  color: var(--ink); font: 400 15px/1.2 var(--font-ui); padding: 0;
 }
 .filter-search::placeholder { color: var(--ink-muted); }
-
-.section-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 20px; }
-.rank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.rank-note { font-size: 13px; color: var(--ink-muted); margin: 14px 0 0; }
-.rank-note a { color: inherit; }
-.rank-card { padding: 24px; }
-.rank-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.rank-list { list-style: none; padding: 0; margin: 0; }
-.rank-list li {
-  display: grid;
-  grid-template-columns: 32px 1fr auto;
-  gap: 12px; align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--rule);
+.filter-select {
+  min-height: 44px; padding: 0 34px 0 12px;
+  background-color: var(--bg-card); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: var(--radius);
+  font: 500 15px/1.2 var(--font-ui);
+  cursor: pointer; appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%236a5541' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center;
 }
-.rank-list li:last-child { border-bottom: none; }
-.rank-list .pos { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; color: var(--ink-muted); }
-.rank-list .name a { border: none; font-weight: 500; }
-.rank-list .city { font-size: 12px; color: var(--ink-muted); display: block; }
-.rank-list .price { font-family: var(--font-ui); font-variant-numeric: tabular-nums; color: var(--copper); font-weight: 500; }
+.filter-select option { background: var(--bg-card); color: var(--ink); }
+.filter-near:disabled { opacity: .6; cursor: default; }
+
+.hero-wrap {
+  position: relative;
+  height: calc(100vh - 64px - 66px);
+  min-height: 460px;
+  max-height: 760px;
+  width: 100%;
+  overflow: hidden;
+  background: var(--map-ground);
+}
+.map-canvas { position: absolute; inset: 0; z-index: 1; }
+.map-legend {
+  position: absolute; left: 12px; bottom: 12px; z-index: 5;
+  display: flex; flex-wrap: wrap; gap: 4px 16px;
+  padding: 6px 10px; border-radius: var(--radius);
+  background: rgba(15, 11, 8, 0.78); color: #e6ddce;
+  font-size: 13px; line-height: 18px; pointer-events: none;
+}
+.map-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--pin); border: 2px solid var(--pin-ring); }
+.legend-dot.partner { width: 16px; height: 16px; background: var(--pin-partner); box-shadow: inset 0 0 0 2px var(--pin-partner-ring); }
+.legend-dot.historical { background: transparent; border-color: var(--pin-historic); }
+
+.intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; padding-top: 48px; padding-bottom: 56px; }
+.intro-copy { display: flex; flex-direction: column; gap: 18px; }
+.hero-title { font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.17; }
+.hero-sub { color: var(--ink-soft); font-size: 18px; line-height: 1.55; max-width: 46ch; margin: 0; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+.section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+.rank-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
+.rank-note { font-size: 14px; color: var(--ink-muted); margin: 14px 0 0; }
+.rank-note a { color: inherit; }
 
 .section-head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.event-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.event-card { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
-.event-date { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--copper); }
-.event-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; color: var(--ink); text-decoration: none; }
-.event-title:hover { color: var(--copper); }
-.event-desc { color: var(--ink-soft); font-size: 14px; }
-.event-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
-/* Datum, Titel, Text und Fuß einer Reihe auf gleicher Höhe, auch wenn das Datum umbricht */
-@supports (grid-template-rows: subgrid) {
-  .event-card { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 12px; }
-  .event-card .event-date, .event-card .event-title { align-self: end; }
-  .event-card-foot { align-self: end; }
-}
-.event-loc { font-size: 12px; color: var(--ink-muted); font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
-.event-ics-link { font-size: 11px; font-family: var(--font-ui); font-variant-numeric: tabular-nums; color: var(--copper); white-space: nowrap; border: 1px solid currentColor; border-radius: 4px; padding: 2px 6px; text-decoration: none; flex-shrink: 0; }
-.event-ics-link:hover { background: var(--copper); color: #fff; }
+.event-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.event-card { display: grid; grid-template-columns: 64px 1fr; gap: 16px; padding: 16px; }
+.event-when { text-align: center; border-right: 1px solid var(--rule); padding-right: 16px; }
+.event-day { display: block; font: 600 30px/32px var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); }
+.event-mon { display: block; color: var(--ink-muted); font-size: 13px; font-weight: 600; }
+.event-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.event-title { font-family: var(--font-display); font-size: 18px; line-height: 1.33; font-weight: 600; color: var(--ink); border: none; }
+.event-title:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.event-date, .event-loc { font-size: 14px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.event-desc { color: var(--ink-soft); font-size: 14px; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.event-card-foot { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: auto; padding-top: 4px; }
+.event-ics-link { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; color: var(--accent); border: none; white-space: nowrap; }
 
 @media (max-width: 900px) {
-  .hero-overlay { grid-template-columns: 1fr; padding: 16px 16px 140px; }
-  .hero-copy { padding: 22px; }
-  .hero-title { font-size: clamp(1.8rem, 6vw, 2.6rem); }
-  .ticker-value { font-size: 28px; }
-  .rank-grid, .event-grid { grid-template-columns: 1fr; }
-  .section-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .intro, .rank-grid { grid-template-columns: 1fr; gap: 36px; }
+}
+@media (max-width: 640px) {
+  .map-filters { flex-wrap: nowrap; gap: 8px; }
+  .map-search-wrap { flex: 1 1 auto; min-width: 0; }
+  .filter-select { width: 44px; padding: 0; color: transparent; background-position: center; flex: none; }
+  .filter-near { width: 44px; padding: 0; flex: none; }
+  .filter-near .near-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  /* Karte zuerst: mindestens 60 % der Höhe */
+  .hero-wrap { height: 62vh; min-height: 380px; }
+  .intro { padding-top: 24px; padding-bottom: 32px; gap: 32px; }
+  .stats { font-size: 20px; line-height: 28px; }
+  .hero-sub { font-size: 16px; }
+  .event-grid { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -351,15 +259,18 @@ const map = L.map("map", {
 L.control.zoom({ position: "bottomright" }).addTo(map);
 window.atlasTileLayer(map);
 
+// Pins: ein Kupferton; Partner (bezahlte Platzierung) größer, gold, mit Stern;
+// historische Orte als hohler Ring. Farbe, Größe und Form unterscheiden sich.
 function pinIcon(type, opts = {}) {
   const classes = ["atlas-pin", type];
   if (opts.pending)     classes.push("pending");
   if (opts.historical)  classes.push("historical");
-  if (opts.highlighted) classes.push("highlighted");
-  const size = opts.historical ? 16 : 22;
+  const partner = opts.highlighted && !opts.historical;
+  if (partner) classes.push("highlighted");
+  const size = partner ? 26 : opts.historical ? 14 : 16;
   return L.divIcon({
     className: "",
-    html: `<div class="${classes.join(" ")}"></div>`,
+    html: `<div class="${classes.join(" ")}">${partner ? window.atlasIcon("star") : ""}</div>`,
     iconSize: [size, size], iconAnchor: [size / 2, size / 2],
   });
 }
@@ -415,47 +326,43 @@ function renderMarkers(filter = "all", search = "") {
     }).addTo(map);
     const latest = priceByBrewery.get(b.id);
     const priceText = latest
-      ? `<div class="pop-price">${window.formatEuro(latest.price)} <span style="font-size:11px;opacity:.6">/ ${window.formatSize(latest.size)}</span></div>`
+      ? `<ul class="menu pop-price"><li class="menu-row"><span class="menu-name">Alt</span><span class="menu-leader"></span><span class="menu-size">${window.formatSize(latest.size)}</span><span class="menu-price">${window.formatEuro(latest.price)}</span></li></ul>`
         // Literpreis nur als Zusatzinfo, nie zum Sortieren: größere Gläser sind pro Liter günstiger
         + (normSize(latest.size) > 0 ? `<div class="pop-liter">≈ ${window.formatEuro(latest.price / normSize(latest.size))} / l</div>` : "")
-      : `<div style="font-size:12px;opacity:.6;margin-top:6px">${window.t("brewery.noPrice")}</div>`;
+      : `<div class="pop-meta" style="margin-top:8px">${window.t("brewery.noPrice")}</div>`;
     // Google-Bewertung (Cache ≤ 30 Tage, kommt mit /api/breweries); „Google" bleibt sichtbar
     const g = !b.isHistorical && b.googleRating;
     const googleText = g && g.rating != null
-      ? `<div class="pop-google">${popRating(g.rating)} ★${g.userRatingCount ? ` <span style="opacity:.6">(${Number(g.userRatingCount).toLocaleString(popLocale())})</span>` : ""} <span style="opacity:.6">${window.t("brewery.googleRatingOn")}</span></div>`
+      ? `<div class="pop-google">${window.atlasStars(g.rating)} ${popRating(g.rating)}${g.userRatingCount ? ` <span class="pop-meta">(${Number(g.userRatingCount).toLocaleString(popLocale())})</span>` : ""} <span class="pop-meta">${window.t("brewery.googleRatingOn")}</span></div>`
       : "";
     // Aktion, die gerade läuft oder heute gilt (Berliner Zeit)
     const todaysOffer = (window.atlasOffers.sort(offersByBrewery.get(b.id) || [])
       .find((x) => x.s === "now" || x.s === "today") || {}).o;
     const offerText = todaysOffer && !b.isHistorical
-      ? `<div class="pop-offer"><strong>${window.t("offer.popup")}:</strong> ${String((todaysOffer.title[window.__atlasLang] || todaysOffer.title.de)).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))}${todaysOffer.kind === "coupon" ? ` <span style="opacity:.6">(${window.t("offer.partner")})</span>` : ""}</div>`
+      ? `<div class="pop-offer"><strong>${window.t("offer.popup")}:</strong> ${String((todaysOffer.title[window.__atlasLang] || todaysOffer.title.de)).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))}${todaysOffer.kind === "coupon" ? ` <span class="tag partner">${window.t("offer.partnerShort")}</span>` : ""}</div>`
       : "";
     const historicalBadge = b.isHistorical
-      ? `<div style="font-size:10px;opacity:.55;margin-top:2px">${window.t("brewery.historical") || "Historisch"}</div>`
+      ? `<div style="margin-top:4px"><span class="tag historical">${window.t("brewery.historical") || "Historisch"}</span></div>`
       // Hervorgehobene Orte sind gekennzeichnet (bezahlte Platzierung)
-      : b.highlighted ? `<div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-top:2px">${window.t("offer.partnerShort")}</div>` : "";
-    function popInitials(str) {
-      const w = (str || "").trim().split(/\s+/);
-      return (w.length >= 2 ? w[0][0] + w[1][0] : (str || "?").slice(0, 2)).toUpperCase();
-    }
-    const avatarStyle = "width:36px;height:36px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--copper);display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.1)";
-    // Avatar zeigt nur das Logo; das Foto ist kein Logo
+      : b.highlighted ? `<div style="margin-top:4px"><span class="tag partner">${window.atlasIcon("star")}${window.t("offer.partnerShort")}</span></div>` : "";
+    // Avatar zeigt nur das Logo; ohne Logo der Bierdeckel mit Initialen
+    const matHtml = window.atlasMat(b.short || b.name, 36).replace(/"/g, "&quot;");
     const avatarHtml = b.logoUrl
-      ? `<div style="${avatarStyle};background:var(--bg-card)"><img src="${b.logoUrl}" style="width:100%;height:100%;object-fit:contain;padding:3px" onerror="this.parentNode.style.background='var(--copper)';this.parentNode.innerHTML='<span style=\\'color:#fff;font-size:13px;font-weight:600\\'>${popInitials(b.short || b.name)}</span>'"></div>`
-      : `<div style="${avatarStyle}"><span style="color:#fff;font-size:13px;font-weight:600">${popInitials(b.short || b.name)}</span></div>`;
+      ? `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff7e8;border:1px solid var(--rule)"><img src="${b.logoUrl}" alt="" style="width:100%;height:100%;object-fit:contain;padding:3px" onerror="this.parentNode.outerHTML=this.dataset.mat" data-mat="${matHtml}"></div>`
+      : window.atlasMat(b.short || b.name, 36);
     marker.bindPopup(`
       <div style="display:flex;gap:10px;align-items:flex-start">
         ${avatarHtml}
         <div style="flex:1;min-width:0">
-          <h4 style="margin:0 0 2px">${b.name}</h4>
-          <div style="font-size:12px;opacity:.75">${b.city}${b.founded ? " · " + window.t("rank.sinceYear") + b.founded : ""}</div>
+          <h4>${b.name}</h4>
+          <div class="pop-meta">${window.t("type." + b.type)} · ${b.city}${b.founded ? " · " + window.t("rank.sinceYear") + b.founded : ""}</div>
           ${historicalBadge}
         </div>
       </div>
       ${priceText}
       ${googleText}
       ${offerText}
-      <div style="margin-top:10px"><a href="/ort/${encodeURIComponent(b.id)}">Details →</a></div>
+      <div style="margin-top:10px"><a href="/ort/${encodeURIComponent(b.id)}">${window.t("map.toVenue")}</a></div>
     `);
     marker.bindTooltip(b.short || b.name, { direction: "top", offset: [0, -12], opacity: 0.9, className: "atlas-tooltip" });
     markerMap.set(b.id, marker);
@@ -627,18 +534,8 @@ searchEl.addEventListener("keydown", (e) => {
   }
 });
 
-// Intro-Karte ausblenden, sobald mit der Karte interagiert wird
-function hideHero() { document.querySelector(".hero-copy")?.classList.add("hidden"); }
-
-// "Karte erkunden" + Tippen auf die Karte blenden die Intro-Karte aus
-const exploreBtn = document.querySelector('a[href="#map-section"].btn');
-if (exploreBtn) {
-  exploreBtn.addEventListener("click", function (e) {
-    e.preventDefault();
-    hideHero();
-  });
-}
-map.on("click", hideHero);
+// Kein schwebender Kasten mehr über der Karte: nichts auszublenden.
+function hideHero() {}
 
 // Typ-Filter (Dropdown) — beim Wechsel den Standort-Pin entfernen
 const typeFilter = document.getElementById("type-filter");
@@ -692,9 +589,11 @@ function clearUserMarker() {
 
 const nearMeBtn = document.getElementById("near-me-btn");
 if (nearMeBtn) {
-  const defaultLabel = () => { nearMeBtn.textContent = "📍 " + window.t("map.nearMe"); };
+  const labelEl = nearMeBtn.querySelector(".near-label");
+  const setLabel = (txt) => { labelEl.textContent = txt; nearMeBtn.setAttribute("aria-label", txt); };
+  const defaultLabel = () => setLabel(window.t("map.nearMe"));
   const flash = (msg) => {
-    nearMeBtn.textContent = msg;
+    setLabel(msg);
     nearMeBtn.disabled = false;
     setTimeout(defaultLabel, 4000);
   };
@@ -702,7 +601,7 @@ if (nearMeBtn) {
     hideHero();
     if (!navigator.geolocation) { flash(window.t("map.nearMe.unavailable")); return; }
     nearMeBtn.disabled = true;
-    nearMeBtn.textContent = "⏳ " + window.t("map.nearMe.locating");
+    setLabel(window.t("map.nearMe.locating"));
     atlasTrack("map_near_me", {});
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -799,8 +698,8 @@ function updateTickerLabel() {
   const sizeStr = window.formatSize ? window.formatSize(String(getHighlightedSize())) : "0,25 l";
   const el = document.getElementById("ticker-label");
   if (el) el.textContent = lang === "en"
-    ? `Average ${sizeStr} Altbier`
-    : `Aktuelles ${sizeStr} Alt im Schnitt`;
+    ? `${sizeStr} on average`
+    : `${sizeStr} im Schnitt`;
 }
 updateTickerLabel();
 
@@ -838,17 +737,17 @@ function renderRankings(prices) {
   });
   const uniq = Object.values(uniqueLatest);
 
-  function fill(id, items) {
+  // Getränkekarte: Rang ohne Hintergrund, Name, Stadt, Punktlinie, Preis
+  function fill(id, items, ranked = true) {
     document.getElementById(id).innerHTML = items.map((it, i) => `
-      <li>
-        <span class="pos">${String(i + 1).padStart(2, "0")}</span>
-        <span class="name">
-          <a href="/ort/${encodeURIComponent(it.id)}">${it.short || it.name}</a>
-          <span class="city">${it.city}</span>
-        </span>
-        <span class="price">${it.priceText}</span>
+      <li class="menu-row">
+        ${ranked ? `<span class="menu-rank">${i + 1}</span>` : ""}
+        <a class="menu-name" href="/ort/${encodeURIComponent(it.id)}">${it.short || it.name}</a>
+        <span class="menu-sub">${it.city}</span>
+        <span class="menu-leader"></span>
+        <span class="menu-price">${it.priceText}</span>
       </li>
-    `).join("");
+    `).join("") || `<li class="menu-empty">${window.t("index.noData") || "—"}</li>`;
   }
 
   fill("rank-cheapest",
@@ -879,7 +778,7 @@ function renderRankings(prices) {
       priceText: window.formatDate(entered(p), { day: "2-digit", month: "short" }),
     });
   });
-  fill("rank-newest", newest.slice(0, 5));
+  fill("rank-newest", newest.slice(0, 5), false);
 
   // Ranglisten vergleichen nur die hervorgehobene Größe — offen sagen, wer dadurch fehlt.
   const withHl = new Set(uniq.map((b) => b.id));
@@ -915,17 +814,20 @@ function renderEvents(events) {
       const dateText = window.formatDateLong(ev.date) + (multiDay ? ` – ${window.formatDateLong(ev.endDate)}` : "");
       const timeText = ev.time ? ` · ${ev.time} ${window.t("index.clock")}` : "";
       const locText = b ? "@ " + b.name + " · " + b.city : ev.location ? "@ " + ev.location : "";
-      const urlBtn = window.atlasSafeHref(ev.url) ? `<a class="event-ics-link" href="${window.atlasSafeHref(ev.url)}" target="_blank" rel="noopener" title="${window.t("event.visitPage")}">🔗</a>` : "";
+      const urlBtn = window.atlasSafeHref(ev.url) ? `<a class="event-ics-link" href="${window.atlasSafeHref(ev.url)}" target="_blank" rel="noopener">${window.atlasIcon("external", { size: 16 })}${window.t("event.visitPage")}</a>` : "";
+      const d = new Date(ev.date + "T12:00:00");
+      const mon = d.toLocaleDateString(window.atlasLocale ? window.atlasLocale() : "de-DE", { month: "short" }).replace(".", "");
       return `
         <article class="card event-card">
-          <div class="event-date">${dateText}${timeText}</div>
-          <a class="event-title" href="/event?id=${encodeURIComponent(ev.id)}">${ev.title[lang] || ev.title.de}</a>
-          <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
-          <div class="event-card-foot">
-            <span class="event-loc">${locText}</span>
-            <div style="display:flex;gap:6px;flex-shrink:0">
+          <div class="event-when"><span class="event-day">${d.getDate()}</span><span class="event-mon">${mon}</span></div>
+          <div class="event-body">
+            <a class="event-title" href="/event?id=${encodeURIComponent(ev.id)}">${ev.title[lang] || ev.title.de}</a>
+            <span class="event-date">${window.atlasIcon("calendar", { size: 16 })} ${dateText}${timeText}</span>
+            ${locText ? `<span class="event-loc">${window.atlasIcon("pin", { size: 16 })} ${locText.replace(/^@ /, "")}</span>` : ""}
+            <p class="event-desc">${(ev.description && (ev.description[lang] || ev.description.de)) || ""}</p>
+            <div class="event-card-foot">
+              <a class="event-ics-link" href="/api/events/${ev.id}/calendar.ics?lang=${lang}" rel="nofollow" download="altbieratlas-termin.ics">${window.atlasIcon("calendar", { size: 16 })}${window.t("index.addToCalendar")}</a>
               ${urlBtn}
-              <a class="event-ics-link" href="/api/events/${ev.id}/calendar.ics?lang=${lang}" rel="nofollow" download="altbieratlas-termin.ics" title="${window.t("index.addToCalendar")}">📅 .ics</a>
             </div>
           </div>
         </article>`;

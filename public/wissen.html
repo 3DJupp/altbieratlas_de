@@ -35,9 +35,11 @@
 
 <link rel="stylesheet" href="styles.css" />
 <style>
-.know-hero { padding: 60px 0 40px; border-bottom: 1px solid var(--rule); margin-bottom: 0; }
-.know-hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 500; max-width: 18ch; }
-.know-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 18px; line-height: 1.65; }
+/* Wissen: Textseite (Design System „Altbieratlas“) — Fließtext auf 760 px,
+   Glossar als Zeilen, keine Kacheln und keine Akzentbalken */
+.know-hero { padding: 48px 0 32px; border-bottom: 1px solid var(--rule-strong); margin-bottom: 0; }
+.know-hero h1 { font-size: clamp(2rem, 4.5vw, 2.25rem); font-weight: 600; max-width: 24ch; }
+.know-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 14px; line-height: 1.55; }
 
 .know-nav {
   border-bottom: 1px solid var(--rule);
@@ -79,70 +81,62 @@
 }
 .know-nav .container::-webkit-scrollbar { display: none; }
 .know-nav a {
-  border: none; padding: 14px 18px;
-  color: var(--ink-soft); font-size: 14px;
+  border: none; padding: 14px 14px;
+  color: var(--ink-soft); font-size: 15px; font-weight: 500;
   border-bottom: 2px solid transparent; white-space: nowrap;
   flex: 0 0 auto;
 }
 .know-nav a:hover { color: var(--ink); }
-.know-nav a.active { color: var(--ink); border-bottom-color: var(--copper); }
+.know-nav a.active { color: var(--ink); border-bottom-color: var(--accent); }
 
-.know-section { padding: 60px 0; border-bottom: 1px solid var(--rule); }
-.know-section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 500; max-width: 20ch; margin-bottom: 26px; }
+.know-section { padding: 48px 0; border-bottom: 1px solid var(--rule); }
+.know-section h2 { font-size: 1.625rem; font-weight: 600; max-width: 30ch; margin-bottom: 20px; }
 
 .prose {
-  font-family: var(--font-display);
-  font-size: 19px; line-height: 1.7;
-  color: var(--ink); max-width: 68ch;
+  font-size: 18px; line-height: 1.65;
+  color: var(--ink-soft); max-width: var(--width-text);
 }
-.prose p { margin: 0 0 20px; }
-.prose p:first-letter {
-  font-size: 3.6em; float: left; line-height: 0.85;
-  padding: 6px 10px 0 0; color: var(--copper); font-weight: 500;
-}
-.prose p + p:first-letter { font-size: 1em; float: none; padding: 0; color: inherit; }
+.prose p { margin: 0 0 18px; }
 .prose em { font-style: italic; }
 
-.glossary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
+/* Glossar wie eine Karte: Begriff links, Erklärung rechts, Haarlinien */
+.glossary-grid { display: block; border-top: 1px solid var(--rule-strong); max-width: 960px; }
 .gloss-item {
-  padding: 22px 24px;
-  border-top: 1px solid var(--rule);
-  border-right: 1px solid var(--rule);
+  display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
 }
-.gloss-item:nth-child(2n) { border-right: none; }
-.gloss-item h3 {
-  font-family: var(--font-display); font-size: 1.35rem; font-weight: 500;
-  color: var(--copper); margin-bottom: 8px;
-}
-.gloss-item p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
+.gloss-item h3 { font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--ink); margin: 0; }
+.gloss-item p { color: var(--ink-soft); font-size: 15px; line-height: 1.55; margin: 0; }
 
-.know-nav a.know-nav-ext { color: var(--copper); }
+.know-nav a.know-nav-ext { color: var(--accent); }
 
 .know-teaser { padding: 40px 0; border-bottom: 1px solid var(--rule); }
 .teaser-card {
   display: flex; align-items: center; justify-content: space-between; gap: 28px;
-  background: var(--bg-card); border: 1px solid var(--rule); border-left: 4px solid var(--copper);
-  border-radius: var(--radius-lg); padding: 28px 32px; color: inherit;
-  transition: border-color .15s;
+  background: var(--bg-card); border: 1px solid var(--rule);
+  border-radius: var(--radius); padding: 24px 28px; color: inherit;
 }
-.teaser-card:hover { border-color: var(--copper); }
-.teaser-card h2 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); font-weight: 500; margin: 0 0 8px; }
+.teaser-card:hover { border-color: var(--rule-strong); }
+.teaser-card h2 { font-size: 1.375rem; font-weight: 600; margin: 0 0 6px; }
 .teaser-card p { color: var(--ink-soft); font-size: 15px; line-height: 1.6; margin: 0; max-width: 60ch; }
 .teaser-card .btn { flex-shrink: 0; }
 
+/* Köbes-Regeln: drei Spalten Text, durch Haarlinien getrennt */
 .koebes-cards {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 18px; margin-top: 28px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 24px; border-top: 1px solid var(--rule-strong);
 }
-.koebes-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 24px; }
-.koebes-card .num { font-family: var(--font-display); font-size: 44px; color: var(--copper); font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
-.koebes-card h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; margin: 14px 0 8px; }
-.koebes-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
+.koebes-card { padding: 16px 24px 16px 0; }
+.koebes-card + .koebes-card { border-left: 1px solid var(--rule); padding-left: 24px; }
+.koebes-card .num { font-size: 14px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.koebes-card h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; margin: 4px 0 8px; }
+.koebes-card p { color: var(--ink-soft); font-size: 15px; line-height: 1.55; margin: 0; }
 
 @media (max-width: 800px) {
-  .glossary-grid { grid-template-columns: 1fr; }
-  .gloss-item { border-right: none; }
+  .gloss-item { grid-template-columns: 1fr; gap: 4px; }
   .koebes-cards { grid-template-columns: 1fr; }
+  .koebes-card + .koebes-card { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); }
   .teaser-card { flex-direction: column; align-items: flex-start; padding: 22px; }
 }
 </style>
@@ -200,17 +194,17 @@
 
       <div class="koebes-cards">
         <div class="koebes-card">
-          <div class="num">01</div>
+          <div class="num">1</div>
           <h3 data-i18n="know.koebes1Title">Deckel drauf, dann ist Schluss</h3>
           <p data-i18n="know.koebes1Body">Ist dein Glas leer, steht schon das nächste da. Ungefragt. Willst du nichts mehr, leg den Bierdeckel aufs Glas. Dann kommt kein neues.</p>
         </div>
         <div class="koebes-card">
-          <div class="num">02</div>
+          <div class="num">2</div>
           <h3 data-i18n="know.koebes2Title">Striche auf dem Deckel</h3>
           <p data-i18n="know.koebes2Body">Für jedes Alt macht der Köbes einen Strich auf deinen Deckel. Am Ende wird gezählt, und du zahlst.</p>
         </div>
         <div class="koebes-card">
-          <div class="num">03</div>
+          <div class="num">3</div>
           <h3 data-i18n="know.koebes3Title">Smalltalk? Eher nicht.</h3>
           <p data-i18n="know.koebes3Body">Ein „Hallo“ hörst du selten, einen trockenen Spruch schon eher. Das ist nicht unhöflich, das gehört dazu.</p>
         </div>

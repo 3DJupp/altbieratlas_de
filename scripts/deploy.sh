@@ -8,6 +8,9 @@
 #   database_id    — UUID der D1-Datenbank
 #   database_name  — Name der D1-Datenbank
 #   PRODUCTION_BRANCH (optional) — Branch, der live geht. Standard: main
+#   preview_database_id / preview_database_name (optional) — eigene D1 für
+#                  Branch-Previews. Fehlen sie, nutzt die Preview die
+#                  Produktions-D1 (database_id/database_name).
 #   INDEXNOW_KEY   (optional) — derselbe Schlüssel wie das Worker-Secret.
 #                  Dann meldet das Script nach jedem Production-Deploy alle
 #                  Sitemap-URLs an api.indexnow.org. Fehlt er, nur Warnung.
@@ -19,10 +22,12 @@
 #
 # Schutz vor Branch-Deploys:
 #   Workers Builds setzt WORKERS_CI_BRANCH. Ist das nicht der Production-
-#   Branch, lädt das Script nur eine Version hoch (wrangler versions upload)
-#   und schaltet nichts live, auch kein Seed. So kann ein Build eines
-#   Feature-Branches die Produktion nicht mehr überschreiben, selbst wenn
-#   das Dashboard das Script als Version command für Branch-Builds nutzt.
+#   Branch, erstellt oder aktualisiert das Script nur eine Worker Preview
+#   (wrangler preview, Bindings aus [previews] in wrangler.toml) und schaltet
+#   nichts live, auch kein Seed. So kann ein Build eines Feature-Branches die
+#   Produktion nicht überschreiben. Dafür muss im Dashboard auch der Preview
+#   command `bash scripts/deploy.sh` sein und die Build-Variablen müssen in
+#   den Preview-Einstellungen stehen (die erben die Produktionswerte nicht).
 #   Lokal (ohne WORKERS_CI_BRANCH) wird wie bisher deployt.
 #
 # IndexNow nach dem Deploy:
@@ -53,16 +58,21 @@ for arg in "$@"; do
   esac
 done
 
-# D1-Platzhalter in wrangler.toml ersetzen
+# D1-Platzhalter in wrangler.toml ersetzen (Produktion und [previews])
 sed -i \
   -e "s/REPLACE_WITH_YOUR_D1_ID/${database_id}/g" \
   -e "s/REPLACE_WITH_YOUR_D1_NAME/${database_name}/g" \
+  -e "s/REPLACE_WITH_PREVIEW_D1_ID/${preview_database_id:-$database_id}/g" \
+  -e "s/REPLACE_WITH_PREVIEW_D1_NAME/${preview_database_name:-$database_name}/g" \
   wrangler.toml
 
 PRODUCTION_BRANCH="${PRODUCTION_BRANCH:-main}"
 if [ -n "${WORKERS_CI_BRANCH:-}" ] && [ "$WORKERS_CI_BRANCH" != "$PRODUCTION_BRANCH" ]; then
-  echo "▶ Branch '${WORKERS_CI_BRANCH}' ist nicht '${PRODUCTION_BRANCH}': nur Version hochladen, nicht live schalten"
-  exec npx wrangler versions upload
+  echo "▶ Branch '${WORKERS_CI_BRANCH}' ist nicht '${PRODUCTION_BRANCH}': nur Preview erstellen, nicht live schalten"
+  if [ -z "${preview_database_id:-}" ]; then
+    echo "⚠ Keine preview_database_id: die Preview nutzt die Produktions-D1 (Schreibzugriffe landen live)" >&2
+  fi
+  exec npx wrangler preview
 fi
 
 if [ "$SEED" = true ]; then
