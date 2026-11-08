@@ -557,7 +557,8 @@ window.atlasTrack = function (event, params = {}) {
 // setzt das Widget sofort zurück, damit für den nächsten Versuch ein neues
 // entsteht; send() wiederholt bei timeout-or-duplicate einmal mit frischem Token.
 // Ohne gültigen Site-Key ist alles ein No-op (Token null, der Worker prüft dann auch nicht).
-window.atlasTurnstile = function (host, siteKey) {
+// action muss zur Prüfung im Worker passen (checkTurnstile: "contribute", "contact", "login").
+window.atlasTurnstile = function (host, siteKey, action) {
   const enabled = !!siteKey && !String(siteKey).includes("PLACEHOLDER");
   let id = null, token = null, waiters = [];
   const theme = () => document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
@@ -575,6 +576,7 @@ window.atlasTurnstile = function (host, siteKey) {
     if (id !== null) { try { window.turnstile.remove(id); } catch {} id = null; token = null; }
     id = window.turnstile.render(el, {
       sitekey: siteKey,
+      ...(action ? { action } : {}),
       theme: theme(),
       callback: setToken,
       "expired-callback": () => { token = null; },

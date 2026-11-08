@@ -1371,7 +1371,7 @@ let ts = null;
 function initTurnstile() {
   const cfg = window.ATLAS_CONFIG;
   const siteKey = cfg.turnstileEnabled ? cfg.turnstileSiteKey : null;
-  ts = window.atlasTurnstile("#turnstile-widget", siteKey);
+  ts = window.atlasTurnstile("#turnstile-widget", siteKey, "login");
   if (!ts.enabled) document.getElementById("turnstile-placeholder").style.display = "flex";
 }
 

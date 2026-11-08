@@ -39,20 +39,41 @@ function turnstileSecret(env) {
 }
 const LOCAL_HOST_RE = /^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/;
 
+// Cloudflares Test-Secrets (immer gültig / immer ungültig / doppelt) für .dev.vars.
+// Sie liefern hostname "example.com" und keine Action, deshalb gelten Action- und
+// Hostname-Prüfung mit ihnen nur auf lokalen Hosts als erfüllt.
+const TEST_SECRET_RE = /^[123]x0{31}AA$/;
+
 // Einzige Turnstile-Prüfung für alle Formulare (Beitrag, Kontakt, Login).
 // Beide Schlüssel gesetzt → Token bei Cloudflare prüfen. Keiner gesetzt →
 // nur lokal überspringen (wrangler dev). Alles andere ist eine Fehlkonfiguration
 // und schlägt fehl, statt den Schutz unbemerkt abzuschalten: fehlt etwa nur das
 // Secret, zeigte das Formular sonst ein Widget, dessen Token niemand prüft.
+// action: die data-action des Widgets dieser Seite ("contribute", "contact",
+// "login"); ein Token einer anderen Seite wird abgelehnt. Der Hostname muss der
+// eigene der Anfrage sein (Frontend und API laufen auf demselben Origin), so dass
+// ein Produktions-Worker nie Tokens von localhost oder fremden Domains annimmt.
 // Rückgabe { success, "error-codes" } ohne weitere Felder der Cloudflare-Antwort.
-async function checkTurnstile(req, env, token) {
+async function checkTurnstile(req, env, token, action) {
   const siteKey = turnstileActive(env);
   const secret = turnstileSecret(env);
+  const host = new URL(req.url).hostname;
   if (siteKey && secret) {
     const r = await verifyTurnstile(token, secret, clientIp(req));
-    return { success: !!r.success, "error-codes": r.success ? [] : (r["error-codes"]?.length ? r["error-codes"] : [r.error || "unknown"]) };
+    if (!r.success) {
+      return { success: false, "error-codes": r["error-codes"]?.length ? r["error-codes"] : ["unknown"] };
+    }
+    if (TEST_SECRET_RE.test(secret) && LOCAL_HOST_RE.test(host)) return { success: true, "error-codes": [] };
+    if (r.action !== action) {
+      console.warn(`[turnstile] Action passt nicht: erwartet "${action}", erhalten "${r.action}"`);
+      return { success: false, "error-codes": ["action-mismatch"] };
+    }
+    if (!r.hostname || r.hostname !== host) {
+      console.warn(`[turnstile] Hostname passt nicht: erwartet "${host}", erhalten "${r.hostname}"`);
+      return { success: false, "error-codes": ["hostname-mismatch"] };
+    }
+    return { success: true, "error-codes": [] };
   }
-  const host = new URL(req.url).hostname;
   if (!siteKey && !secret && LOCAL_HOST_RE.test(host)) return { success: true, "error-codes": [], dev: true };
   console.error(`[turnstile] Fehlkonfiguration: TURNSTILE_SITE_KEY ${siteKey ? "gesetzt" : "fehlt"}, TURNSTILE_SECRET_KEY ${secret ? "gesetzt" : "fehlt"} — Anfrage abgelehnt.`);
   return { success: false, "error-codes": ["turnstile-not-configured"] };
@@ -761,7 +782,7 @@ export async function postContribution(req, env, _params, ctx) {
   try { body = await req.json(); }
   catch { return error(400, "invalid-json"); }
 
-  const tsResult = await checkTurnstile(req, env, body.turnstileToken);
+  const tsResult = await checkTurnstile(req, env, body.turnstileToken, "contribute");
   if (!tsResult.success) return error(403, "turnstile-failed", { reason: { "error-codes": tsResult["error-codes"] } });
 
   // Rate-Limit: 20 Einreichungen pro IP pro Stunde
@@ -970,7 +991,7 @@ export async function postRivalVote(req, env) {
 export async function postContact(req, env) {
   const body = await req.json().catch(() => null);
   if (!body) return error(400, "invalid-json");
-  const ts = await checkTurnstile(req, env, body.turnstileToken);
+  const ts = await checkTurnstile(req, env, body.turnstileToken, "contact");
   // reason: nur die Fehlercodes, damit der Client bei timeout-or-duplicate neu versucht
   if (!ts.success) return error(403, "turnstile-failed", { reason: { "error-codes": ts["error-codes"] } });
   let topic, name, email, organisation, message;
@@ -1142,7 +1163,7 @@ export async function adminLogin(req, env) {
 
   const ip = clientIp(req);
 
-  const ts = await checkTurnstile(req, env, body.turnstileToken);
+  const ts = await checkTurnstile(req, env, body.turnstileToken, "login");
   if (!ts.success) return error(403, "turnstile-failed", { reason: { "error-codes": ts["error-codes"] } });
 
   // Rate-Limit Login (5 pro 5 min pro IP)

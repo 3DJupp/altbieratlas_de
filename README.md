@@ -550,7 +550,10 @@ später gelöscht oder ausgeblendet worden (oder die Freigabe widerrufen), melde
 Alle Formulare mit Bot-Prüfung (Beitragen, Kontakt, Admin-Login) laufen über
 `window.atlasTurnstile()` in `shell.js`: jedes Token wird genau einmal gesendet, bei
 `timeout-or-duplicate` einmal automatisch mit frischem Token wiederholt. Serverseitig prüft
-`checkTurnstile()` (`src/routes.js`) jedes Token bei Cloudflare. Ist nur einer der beiden
+`checkTurnstile()` (`src/routes.js`) jedes Token bei Cloudflare und verlangt außerdem die
+Action des Widgets (`contribute`, `contact`, `login`) und den eigenen Hostnamen der Anfrage;
+ein Token von einer anderen Seite oder Domain (auch `localhost`) wird abgelehnt. Netzfehler
+oder ein Timeout bei siteverify (10 s) gelten als fehlgeschlagen. Ist nur einer der beiden
 Schlüssel gesetzt oder fehlen beide außerhalb von `localhost`, lehnt der Server mit
 `turnstile-not-configured` ab, statt die Prüfung still abzuschalten.
 
