@@ -168,12 +168,22 @@ bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
 ```
 
 Live geht nur der Production-Branch. Läuft das Script in einem Build eines
-anderen Branches (Workers Builds setzt `WORKERS_CI_BRANCH`), lädt es nur eine
-Version hoch (`wrangler versions upload`), ohne sie live zu schalten. Das
-schützt die Produktion, falls „Builds for non-production branches“ aktiv ist
-und das Dashboard `deploy.sh` auch als Version command verwendet. Ein anderer
-Production-Branch als `main` wird über die Build-Variable `PRODUCTION_BRANCH`
-gesetzt.
+anderen Branches (Workers Builds setzt `WORKERS_CI_BRANCH`), erstellt es nur
+eine [Worker Preview](https://developers.cloudflare.com/workers/previews/)
+(`wrangler preview --name <branch>`), erreichbar unter
+`https://<branch>.dev.altbieratlas.de`. Das schützt die Produktion, falls
+„Builds for non-production branches“ aktiv ist und das Dashboard `deploy.sh`
+auch als Preview command verwendet. Ein anderer Production-Branch als `main`
+wird über die Build-Variable `PRODUCTION_BRANCH` gesetzt.
+
+Domains stehen in `wrangler.toml` (`routes`, `workers_dev = false`,
+`preview_urls = false`), damit ein Deploy die Dashboard-Einstellungen nicht
+überschreibt: `altbieratlas.de` für Produktion, `dev.altbieratlas.de` nur für
+Previews. Previews erben keine Produktions-Variablen und -Secrets (Block
+`[previews]` in `wrangler.toml`, Secrets per `wrangler preview secret put`);
+alle Preview-Antworten tragen `X-Robots-Tag: noindex, nofollow`. Einmalig im
+Dashboard: *Settings → Builds → Set up Worker Previews* und als Preview command
+`bash scripts/deploy.sh`.
 
 ### 1.3 Build-Variablen setzen
 
@@ -183,6 +193,7 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**):
 |---|---|---|
 | `database_id` | Secret | UUID aus `npx wrangler d1 create` |
 | `database_name` | Secret | Name der D1-DB, z. B. `altbieratlas` |
+| `preview_database_id`, `preview_database_name` | Secret | Optional: eigene D1 für Worker Previews. Fehlen sie, nutzen Previews die Produktions-D1 (Warnung im Build-Log). |
 | `INDEXNOW_KEY` | Secret | Optional, derselbe Wert wie das gleichnamige Runtime-Secret. Dann meldet `deploy.sh` nach jedem Production-Deploy alle Sitemap-URLs an IndexNow ([1.5](#15-indexnow-aktivieren-optional-empfohlen)). Fehlt er, gibt das Build-Log nur eine Warnung aus. |
 
 ### 1.4 Worker-Runtime-Variablen setzen
