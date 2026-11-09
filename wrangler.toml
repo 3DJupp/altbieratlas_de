@@ -15,7 +15,7 @@
 # Abschnitt „Konfiguration".
 # ============================================================
 
-name = "altbieratlas-de"
+name = "altbieratlas"
 main = "src/worker.js"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
