@@ -150,7 +150,7 @@ const user = 'admin', pass = 'DEIN-PASSWORT-HIER', email = 'deine@email.de';
 
 ### 1.2 Workers-Build im Dashboard konfigurieren
 
-Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
+Dashboard → **Workers & Pages → altbieratlas-de → Settings → Build**:
 
 | Feld | Wert |
 |---|---|
@@ -257,7 +257,7 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 # oder: openssl rand -hex 16
 ```
 
-**Schritt 2 — Schlüssel als Secret setzen.** Dashboard → Workers → `altbieratlas`
+**Schritt 2 — Schlüssel als Secret setzen.** Dashboard → Workers → `altbieratlas-de`
 → *Settings → Variables and Secrets* → **Add → Secret**, Name `INDEXNOW_KEY`,
 Wert der Schlüssel. Alternativ per CLI:
 
