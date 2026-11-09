@@ -212,7 +212,7 @@ let ts = window.atlasTurnstile(null, null);
   if (author.beer) links.insertAdjacentHTML("afterbegin", `<a class="btn btn-primary" href="${author.beer}" target="_blank" rel="noopener" data-i18n="footer.beer">${window.t("footer.beer")}</a>`);
 
   // Turnstile nur, wenn ein Site-Key gesetzt ist (sonst prüft der Worker auch nicht)
-  ts = window.atlasTurnstile("#turnstile-widget", cfg?.turnstileSiteKey || window.ATLAS_CONFIG.turnstileSiteKey);
+  ts = window.atlasTurnstile("#turnstile-widget", cfg?.turnstileSiteKey || window.ATLAS_CONFIG.turnstileSiteKey, "contact");
 })();
 
 // ---- Kontaktformular ----

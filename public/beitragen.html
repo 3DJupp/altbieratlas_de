@@ -409,7 +409,7 @@ function pushSubsCookie(entry) {
 function initTurnstile() {
   const siteKey = (remoteCfg && remoteCfg.turnstileSiteKey)
                || window.ATLAS_CONFIG.turnstileSiteKey;
-  ts = window.atlasTurnstile("#turnstile-widget", siteKey);
+  ts = window.atlasTurnstile("#turnstile-widget", siteKey, "contribute");
   if (!ts.enabled) document.getElementById("turnstile-placeholder").style.display = "flex";
 }
 

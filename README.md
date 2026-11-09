@@ -150,7 +150,7 @@ const user = 'admin', pass = 'DEIN-PASSWORT-HIER', email = 'deine@email.de';
 
 ### 1.2 Workers-Build im Dashboard konfigurieren
 
-Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
+Dashboard → **Workers & Pages → altbieratlas-de → Settings → Build**:
 
 | Feld | Wert |
 |---|---|
@@ -257,7 +257,7 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 # oder: openssl rand -hex 16
 ```
 
-**Schritt 2 — Schlüssel als Secret setzen.** Dashboard → Workers → `altbieratlas`
+**Schritt 2 — Schlüssel als Secret setzen.** Dashboard → Workers → `altbieratlas-de`
 → *Settings → Variables and Secrets* → **Add → Secret**, Name `INDEXNOW_KEY`,
 Wert der Schlüssel. Alternativ per CLI:
 
@@ -550,7 +550,10 @@ später gelöscht oder ausgeblendet worden (oder die Freigabe widerrufen), melde
 Alle Formulare mit Bot-Prüfung (Beitragen, Kontakt, Admin-Login) laufen über
 `window.atlasTurnstile()` in `shell.js`: jedes Token wird genau einmal gesendet, bei
 `timeout-or-duplicate` einmal automatisch mit frischem Token wiederholt. Serverseitig prüft
-`checkTurnstile()` (`src/routes.js`) jedes Token bei Cloudflare. Ist nur einer der beiden
+`checkTurnstile()` (`src/routes.js`) jedes Token bei Cloudflare und verlangt außerdem die
+Action des Widgets (`contribute`, `contact`, `login`) und den eigenen Hostnamen der Anfrage;
+ein Token von einer anderen Seite oder Domain (auch `localhost`) wird abgelehnt. Netzfehler
+oder ein Timeout bei siteverify (10 s) gelten als fehlgeschlagen. Ist nur einer der beiden
 Schlüssel gesetzt oder fehlen beide außerhalb von `localhost`, lehnt der Server mit
 `turnstile-not-configured` ab, statt die Prüfung still abzuschalten.
 
