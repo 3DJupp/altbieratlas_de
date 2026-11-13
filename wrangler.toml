@@ -28,6 +28,22 @@ compatibility_flags = ["nodejs_compat"]
 # immer erhalten.
 keep_vars = true
 
+# --- Domains ----------------------------------------------------
+# Hier festgelegt, damit ein Deploy die Dashboard-Einstellungen nicht mehr
+# überschreibt (ohne diese Keys schaltet wrangler workers.dev und die
+# workers.dev-Version-URLs bei jedem Deploy wieder ein).
+#   • altbieratlas.de      — Produktion
+#   • dev.altbieratlas.de  — nur Worker Previews (Branch-Builds über
+#                            `wrangler preview`), keine Produktion. Previews
+#                            erscheinen als <branch>.dev.altbieratlas.de.
+# workers.dev und dessen Preview-/Version-URLs bleiben aus.
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "altbieratlas.de", custom_domain = true },
+  { pattern = "dev.altbieratlas.de", custom_domain = true, previews_enabled = true, enabled = false },
+]
+
 # Binäre Assets: TTF-Font für OG-Image-Generator
 [[rules]]
 type = "Data"
@@ -108,6 +124,33 @@ invocation_logs = true
 enabled = true
 head_sampling_rate = 1
 persist = true
+
+# --- Worker Previews (Branch-Builds) ----------------------------
+# Previews erben KEINE Produktions-Einstellungen: Bindings, Variablen und
+# Secrets müssen hier bzw. per `wrangler preview secret put` eigens gesetzt
+# werden. Dashboard-Variablen (SITE_CONFIG) und Secrets der Produktion fehlen
+# in Previews also, der Worker läuft dort mit seinen Standardwerten
+# (Turnstile-Formulare schlagen ohne Preview-Secrets fail-closed fehl).
+#
+# D1: deploy.sh ersetzt die Platzhalter durch die Build-Variablen
+# preview_database_id / preview_database_name. Fehlen sie, nimmt es die
+# Produktions-D1 (wie früher die Version-URLs) und warnt im Build-Log.
+# ATLAS_PREVIEW = "1" sorgt für noindex auf allen Antworten (worker.js),
+# denn Cloudflare setzt X-Robots-Tag auf Custom-Domain-Previews nicht selbst.
+[previews.vars]
+ATLAS_PREVIEW = "1"
+
+[previews.version_metadata]
+binding = "CF_VERSION_METADATA"
+
+[[previews.d1_databases]]
+binding       = "DB"
+database_name = "REPLACE_WITH_YOUR_PREVIEW_D1_NAME"
+database_id   = "REPLACE_WITH_YOUR_PREVIEW_D1_ID"
+
+[[previews.r2_buckets]]
+binding     = "LOGOS"
+bucket_name = "altbieratlas-logos"
 
 # --- Konfiguration: Dashboard --------------------------------
 #

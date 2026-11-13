@@ -98,26 +98,42 @@ printf '  %s\n' "${urls[@]}"
 
 # 3) In Blöcken senden. IndexNow erlaubt 10 000 URLs pro Request; 1 000
 #    halten die Payload klein und die Fehlersuche übersichtlich.
+#    Die Antwort geht in eine Temp-Datei, nicht nach /dev/stderr: in Workers
+#    Builds ist stderr ein Socket, den curl nicht öffnen kann (Exit 23), und
+#    set -e hätte das Script dann ohne Statuszeile beendet.
+RESP="$(mktemp)"
+trap 'rm -f "$RESP"' EXIT
 BATCH=1000
 total="${#urls[@]}"
+failed=0
 i=0
 while [ "$i" -lt "$total" ]; do
   chunk=("${urls[@]:i:BATCH}")
   list="$(printf '"%s",' "${chunk[@]}")"
   body="{\"host\":\"${HOST}\",\"key\":\"${KEY}\",\"keyLocation\":\"${KEY_URL}\",\"urlList\":[${list%,}]}"
-  code="$(curl -sS -o /dev/stderr -w '%{http_code}' \
+  rc=0
+  code="$(curl -sS --max-time 30 -o "$RESP" -w '%{http_code}' \
     -X POST "https://api.indexnow.org/indexnow" \
     -H 'Content-Type: application/json; charset=utf-8' \
-    --data-raw "$body")"
-  echo "Block $((i / BATCH + 1)): ${#chunk[@]} URL(s) → HTTP $code"
+    --data-binary @- <<<"$body")" || rc=$?
+  echo "Block $((i / BATCH + 1)): ${#chunk[@]} URL(s) → HTTP ${code:-000}"
+  if [ "$rc" != 0 ]; then
+    echo "  curl-Fehler $rc (Netzwerk/Timeout)" >&2
+    failed=1
+  fi
   case "$code" in
     200) : ;;
     202) echo "  202 = angenommen, Schlüssel wird noch geprüft (normal beim ersten Mal)" ;;
-    400) echo "  400 = fehlerhaftes Format" >&2 ;;
-    403) echo "  403 = Schlüssel nicht gültig (Schlüsseldatei prüfen)" >&2 ;;
-    422) echo "  422 = URLs gehören nicht zu $HOST oder Schlüssel passt nicht" >&2 ;;
-    429) echo "  429 = zu viele Anfragen, später erneut versuchen" >&2 ;;
-    *)   echo "  unerwarteter Status" >&2 ;;
+    400) echo "  400 = fehlerhaftes Format" >&2; failed=1 ;;
+    403) echo "  403 = Schlüssel nicht gültig (Schlüsseldatei prüfen)" >&2; failed=1 ;;
+    422) echo "  422 = URLs gehören nicht zu $HOST oder Schlüssel passt nicht" >&2; failed=1 ;;
+    429) echo "  429 = zu viele Anfragen, später erneut versuchen" >&2; failed=1 ;;
+    *)   echo "  unerwarteter Status" >&2; failed=1 ;;
   esac
+  # Antworttext zeigen (gekürzt, Schlüssel unkenntlich), hilft bei 4xx
+  if [ -s "$RESP" ]; then
+    echo "  Antwort: $(head -c 500 "$RESP" | tr -d '\r' | tr '\n' ' ' | sed "s/${KEY}/<key>/g")"
+  fi
   i=$((i + BATCH))
 done
+exit "$failed"

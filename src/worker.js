@@ -225,13 +225,13 @@ const worker = {
     if (request.method !== "GET" && path.startsWith("/api/admin/") && res.ok
         && !path.startsWith("/api/admin/log") && !path.includes("reset")) {
       bumpGeneration(ctx);
-      ctx.waitUntil(SEO.pingIndexNow(env, request));
+      if (!env.ATLAS_PREVIEW) ctx.waitUntil(SEO.pingIndexNow(env, request));
     }
     // Neue Stimme → Abstimmungsstand nicht erst nach Ablauf der TTL zeigen
     if (request.method === "POST" && path === "/api/rivals/vote" && res.ok) {
       ctx.waitUntil(purge(`${url.origin}/api/rivals/votes`, ctx));
     }
-    return withSecurityHeaders(res, path);
+    return withSecurityHeaders(res, path, !!env.ATLAS_PREVIEW);
   },
 };
 export default worker;
@@ -245,10 +245,13 @@ const SECURITY_HEADERS = {
   "referrer-policy": "strict-origin-when-cross-origin",
   "x-frame-options": "SAMEORIGIN",
 };
-function withSecurityHeaders(res, path) {
+// Worker Previews (dev.altbieratlas.de, ATLAS_PREVIEW aus [previews.vars]):
+// Cloudflare setzt dort kein X-Robots-Tag, also hier für jede Antwort.
+function withSecurityHeaders(res, path, preview = false) {
   if (res.status === 101 || res.webSocket) return res;
   const out = new Response(res.body, res);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  if (preview) out.headers.set("x-robots-tag", "noindex, nofollow");
   if (path.startsWith("/photos/") || path.startsWith("/logos/")) {
     out.headers.set("content-security-policy", "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
   } else if (!out.headers.has("content-security-policy")) {
