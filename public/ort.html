@@ -47,10 +47,17 @@
 .breadcrumb a:hover { color: var(--ink); }
 .brewery-head { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
 .brewery-title { font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.07; font-weight: 600; }
-.brewery-meta { display: flex; align-items: center; gap: 6px 14px; margin-top: 12px; color: var(--ink-soft); font-size: 15px; flex-wrap: wrap; }
-.brewery-meta span { display: inline-flex; align-items: center; gap: 6px; }
-.brewery-meta .dot { width: 1px; height: 14px; border-radius: 0; background: var(--rule-strong); }
-.brewery-meta a { display: inline-flex; align-items: center; gap: 4px; }
+/* Meta-Zeile: Trennstriche hängen links an jedem Eintrag. Die Zeile ragt um
+   deren Breite nach links heraus und wird dort beschnitten, so steht nach
+   einem Umbruch nie ein Strich am Zeilenanfang oder -ende. */
+.brewery-meta { --sep: 29px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; margin: 12px 0 0 calc(-1 * var(--sep)); clip-path: inset(-4px -4px -4px var(--sep)); color: var(--ink-soft); font-size: 15px; }
+.brewery-meta > * { position: relative; display: inline-flex; align-items: center; gap: 6px 10px; padding-left: var(--sep); max-width: 100%; white-space: nowrap; }
+.brewery-meta > * + *::before { content: ""; position: absolute; left: calc(var(--sep) / 2); top: 50%; width: 1px; height: 14px; margin-top: -7px; background: var(--rule-strong); }
+.brewery-meta .meta-tags { flex-wrap: wrap; }
+.brewery-meta .meta-tags span { display: inline-flex; align-items: center; gap: 6px; }
+.brewery-meta a { gap: 4px; border-bottom: 0; }
+.brewery-meta a > span { overflow: hidden; text-overflow: ellipsis; border-bottom: 1px solid color-mix(in oklab, var(--accent) 40%, transparent); }
+.brewery-meta a:hover > span { border-color: var(--accent); }
 /* Aktueller Preis: hinter einer Haarlinie statt in einer Karte */
 .price-hero { flex: 0 0 auto; min-width: 220px; padding-left: 24px; border-left: 1px solid var(--rule-strong); margin-top: 30px; }
 .price-hero .label { font-size: 13px; font-weight: 600; color: var(--ink-muted); }
@@ -60,6 +67,7 @@
 
 .ort-photo-wrap { flex: 1 1 520px; min-width: 0; display: flex; align-items: flex-start; gap: 20px; }
 .ort-avatar { width: 88px; height: 88px; flex-shrink: 0; margin-top: 30px; }
+.ort-avatar .mat { width: 100%; height: 100%; }
 .ort-avatar.has-logo { border-radius: 50%; overflow: hidden; background: #fff7e8; border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; }
 .ort-avatar.has-logo img { width: 100%; height: 100%; object-fit: contain; padding: 8px; display: block; }
 .ort-avatar.logo-on-light { background: #fff7e8; }
@@ -125,7 +133,7 @@
 .google-rating-bar .gr-attr, .untappd-bar a { font-size: 14px; color: var(--ink-muted); }
 
 @media (max-width: 900px) {
-  .grid-2col { grid-template-columns: 1fr; gap: 28px; padding-top: 24px; padding-bottom: 32px; }
+  .grid-2col { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 24px; padding-bottom: 32px; }
   .price-hero { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); padding-top: 16px; margin-top: 0; width: 100%; }
   .ort-avatar { width: 56px; height: 56px; margin-top: 0; }
   .ort-photo-wrap { flex-direction: column; gap: 12px; }
@@ -226,7 +234,7 @@ const isSsr = root.dataset.ssr === "1";
   const lang = window.__atlasLang;
   const styleName = (id) => (id && allStyles.find((s) => s.id === id)?.name) || "";
 
-  const SOURCE_KEYS = { "vor Ort": "source.vorOrt", "Beitrag": "source.beitrag" };
+  const SOURCE_KEYS = { "vor Ort": "source.vorOrt", "on-site": "source.vorOrt", "Beitrag": "source.beitrag" };
   function translateSource(src) {
     if (!src) return "";
     const key = SOURCE_KEYS[src];
@@ -339,14 +347,15 @@ const isSsr = root.dataset.ssr === "1";
             <div class="ort-title-wrap">
               <h1 class="brewery-title">${b.name}</h1>
               <div class="brewery-meta">
-                <span id="b-status" class="tag ${b.verified ? 'verified' : 'pending'}">${b.verified ? window.atlasIcon('check') : ''}<span>${b.verified ? window.t('common.verified') : window.t('common.pending')}</span></span>
-                <span id="b-type">${typeLabel}</span>
-                ${b.isHistorical ? `<span class="tag historical" data-i18n="brewery.historical">${window.t('brewery.historical')}</span>` : ''}
-                ${b.highlighted && !b.isHistorical ? `<span class="tag partner" title="${window.t('offer.partnerHint')}">${window.atlasIcon('star')}<span data-i18n="offer.partnerShort">${window.t('offer.partnerShort')}</span></span>` : ''}
-                <span class="dot"></span>
+                <span class="meta-tags">
+                  <span id="b-status" class="tag ${b.verified ? 'verified' : 'pending'}">${b.verified ? window.atlasIcon('check') : ''}<span>${b.verified ? window.t('common.verified') : window.t('common.pending')}</span></span>
+                  <span id="b-type">${typeLabel}</span>
+                  ${b.isHistorical ? `<span class="tag historical" data-i18n="brewery.historical">${window.t('brewery.historical')}</span>` : ''}
+                  ${b.highlighted && !b.isHistorical ? `<span class="tag partner" title="${window.t('offer.partnerHint')}">${window.atlasIcon('star')}<span data-i18n="offer.partnerShort">${window.t('offer.partnerShort')}</span></span>` : ''}
+                </span>
                 <span>${b.city}${b.country && b.country !== 'DE' ? ' · ' + b.country : ''}</span>
-                ${b.founded ? `<span class="dot"></span><span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
-                ${window.atlasSafeHref(b.website) ? `<span class="dot"></span><a href="${window.atlasSafeHref(b.website)}" target="_blank" rel="noopener">${(() => { try { return new URL(window.atlasSafeHref(b.website)).hostname.replace(/^www\./, ''); } catch { return 'Website'; } })()} ${window.atlasIcon('external', { size: 16 })}</a>` : ''}
+                ${b.founded ? `<span id="b-since">${window.t("rank.sinceYear")}${b.founded}</span>` : ''}
+                ${window.atlasSafeHref(b.website) ? `<a href="${window.atlasSafeHref(b.website)}" target="_blank" rel="noopener"><span>${(() => { try { return new URL(window.atlasSafeHref(b.website)).hostname.replace(/^www\./, ''); } catch { return 'Website'; } })()}</span> ${window.atlasIcon('external', { size: 16 })}</a>` : ''}
               </div>
             </div>
           </div>

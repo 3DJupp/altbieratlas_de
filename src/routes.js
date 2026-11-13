@@ -2781,8 +2781,8 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-11-06",
-  "/ranglisten": "2026-11-06",
+  "/":           "2026-11-13",
+  "/ranglisten": "2026-11-13",
   "/wissen":     "2026-11-06",
   "/sorten":     "2026-11-06",
   "/rivalen":    "2026-11-06",
@@ -3175,12 +3175,13 @@ export async function serveOrt(req, env, params = {}) {
             <div class="ort-title-wrap">
               <h1 class="brewery-title">${escHtml(row.name)}</h1>
               <div class="brewery-meta">
-                <span>${escHtml(row.type_label || row.type)}</span>
-                ${!row.is_historical && isHighlighted(row) ? `<span class="tag" style="color:#a0702c;border-color:#d9a35b;font-size:11px">Partner</span>` : ""}
-                <span class="dot"></span>
+                <span class="meta-tags">
+                  <span>${escHtml(row.type_label || row.type)}</span>
+                  ${!row.is_historical && isHighlighted(row) ? `<span class="tag partner">Partner</span>` : ""}
+                </span>
                 <span>${escHtml(row.city)}${row.country && row.country !== "DE" ? " · " + escHtml(row.country) : ""}</span>
-                ${row.founded ? `<span class="dot"></span><span>seit ${escHtml(row.founded)}</span>` : ""}
-                ${safeHref(row.website) ? `<span class="dot"></span><a href="${escHtml(safeHref(row.website))}" target="_blank" rel="noopener">Website →</a>` : ""}
+                ${row.founded ? `<span>seit ${escHtml(row.founded)}</span>` : ""}
+                ${safeHref(row.website) ? `<a href="${escHtml(safeHref(row.website))}" target="_blank" rel="noopener"><span>Website →</span></a>` : ""}
               </div>
             </div>
           </div>
@@ -3254,15 +3255,15 @@ export async function serveOrt(req, env, params = {}) {
     ${venueEvents.length ? `
     <section class="container" style="padding-bottom:24px">
       <h2 data-i18n="brewery.eventsHere">Termine hier</h2>
-      <ul>
-        ${venueEvents.map((e) => `<li><a href="/event?id=${escHtml(encodeURIComponent(e.id))}">${escHtml(e.title_de || e.title_en || "Termin")}</a> · ${escHtml(fmtEventRangeDe(e.date, e.end_date))}${e.time ? `, ${escHtml(String(e.time).slice(0, 5))} Uhr` : ""}</li>`).join("")}
+      <ul class="menu">
+        ${venueEvents.map((e) => `<li class="menu-row"><a class="menu-name" href="/event?id=${escHtml(encodeURIComponent(e.id))}">${escHtml(e.title_de || e.title_en || "Termin")}</a><span class="menu-leader"></span><span class="menu-price">${escHtml(fmtEventRangeDe(e.date, e.end_date))}${e.time ? `, ${escHtml(String(e.time).slice(0, 5))} Uhr` : ""}</span></li>`).join("")}
       </ul>
     </section>` : ""}
     ${nearby.length ? `
     <section class="container" style="padding-bottom:40px">
       <h2 data-i18n="brewery.nearby">Altbier in der Nähe</h2>
-      <ul>
-        ${nearby.map((n) => `<li><a href="/ort/${escHtml(encodeURIComponent(n.id))}">${escHtml(n.name)}</a> · ${escHtml(n.type_label || "")}${n.city !== row.city ? ` in ${escHtml(n.city)}` : ""} · ${escHtml(fmtKm(n.km))}</li>`).join("")}
+      <ul class="menu">
+        ${nearby.map((n) => `<li class="menu-row"><a class="menu-name" href="/ort/${escHtml(encodeURIComponent(n.id))}">${escHtml(n.name)}</a><span class="menu-sub">${escHtml(n.type_label || "")}${n.city !== row.city ? ` in ${escHtml(n.city)}` : ""}</span><span class="menu-leader"></span><span class="menu-price">${escHtml(fmtKm(n.km))}</span></li>`).join("")}
       </ul>
     </section>` : ""}
   </div>` : "";

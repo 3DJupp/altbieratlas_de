@@ -356,10 +356,11 @@ h3 { font-size: 1.25rem; line-height: 1.3; letter-spacing: 0; }
 .menu-name { flex: 0 1 auto; min-width: 0; color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 a.menu-name { border: none; color: var(--ink); }
 a.menu-name:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.menu-sub { flex: none; color: var(--ink-muted); font-size: 14px; }
-.menu-leader { flex: 1 1 24px; min-width: 16px; align-self: flex-end; margin-bottom: 7px; border-bottom: 2px dotted var(--rule-strong); }
+/* Der Zusatz gibt bei Platzmangel zuerst nach, dann erst der Name */
+.menu-sub { flex: 0 1000 auto; min-width: 0; color: var(--ink-muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-leader { flex: 1 1 0; min-width: 0; align-self: flex-end; margin-bottom: 7px; border-bottom: 2px dotted var(--rule-strong); }
 .menu-size { flex: none; color: var(--ink-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
-.menu-price { flex: none; min-width: 4.6em; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
+.menu-price { flex: none; min-width: 4.6em; white-space: nowrap; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
 .menu-row.is-pending .menu-price { color: var(--ink-muted); font-weight: 500; }
 .menu-row.is-today { background: var(--head); margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
 .menu-row.is-today .menu-name, .menu-row.is-today .menu-price { font-weight: 600; }

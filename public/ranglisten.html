@@ -58,9 +58,10 @@
   display: inline-flex; gap: 0;
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius); overflow: hidden;
+  max-width: 100%; overflow-x: auto;
 }
 .pill-toggle button {
-  background: transparent; border: none;
+  background: transparent; border: none; white-space: nowrap; flex: none;
   min-height: 40px; padding: 0 14px; font-family: var(--font-ui); font-variant-numeric: tabular-nums;
   font-size: 14px; color: var(--ink-soft);
   cursor: pointer;
@@ -122,6 +123,10 @@
   .stats-strip { grid-template-columns: 1fr 1fr; }
   .stat:nth-child(odd) { border-left: 0; padding-left: 0; }
   .stat:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .pill-toggle button { padding: 0 10px; }
 }
 </style>
 </head>
