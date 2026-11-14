@@ -2781,8 +2781,8 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-11-13",
-  "/ranglisten": "2026-11-13",
+  "/":           "2026-11-14",
+  "/ranglisten": "2026-11-14",
   "/wissen":     "2026-11-06",
   "/sorten":     "2026-11-06",
   "/rivalen":    "2026-11-06",

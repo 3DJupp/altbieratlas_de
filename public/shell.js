@@ -29,12 +29,20 @@ window.atlasIcon = function (name, opts = {}) {
     : 'aria-hidden="true"';
   return `<svg class="${cls}" viewBox="0 0 20 20" ${a11y}>${body}</svg>`;
 };
-// Sterne für eine Bewertung von 0–5 (halbe Sterne gerundet)
+// Sterne für eine Bewertung von 0–5. Der angebrochene Stern ist sichtbar
+// angeschnitten, damit 4,7 nicht wie 5,0 aussieht: Die Füllung läuft von 35 %
+// (x,1) bis 70 % (x,9) der Sternbreite, denn die schmalen Zacken links und
+// rechts würden einen linearen Schnitt bei 16 px verschlucken.
+// clip-path bezieht sich auf die Box des Sternpfads, nicht auf das 20er-Raster.
 window.atlasStars = function (rating) {
-  const r = Math.round(Number(rating) * 2) / 2;
+  const r = Math.max(0, Math.min(5, Math.round(Number(rating) * 10) / 10)) || 0;
+  const STAR = "M10 2.8l2.2 4.5 5 .7-3.6 3.5.9 4.9L10 14.1l-4.5 2.3.9-4.9L2.8 8l5-.7z";
   let out = "";
   for (let i = 1; i <= 5; i++) {
-    out += window.atlasIcon(r >= i ? "star" : r >= i - 0.5 ? "star-half" : "star-empty", { size: 16 });
+    const part = Math.round((r - (i - 1)) * 10) / 10;
+    if (part >= 1) out += window.atlasIcon("star", { size: 16 });
+    else if (part <= 0) out += window.atlasIcon("star-empty", { size: 16 });
+    else out += `<svg class="icon icon-16" viewBox="0 0 20 20" aria-hidden="true"><path class="fill" style="clip-path:inset(0 ${Math.round(100 - (30 + part * 45))}% 0 0)" d="${STAR}"/><path d="${STAR}"/></svg>`;
   }
   return `<span class="stars" role="img" aria-label="${String(rating)} / 5">${out}</span>`;
 };
