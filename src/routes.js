@@ -3940,7 +3940,8 @@ export async function serveImpressum(req, env) {
   if (v(impr.address)) {
     let addressSvg = "";
     try {
-      addressSvg = await textAsSvgPaths(v(impr.address).split(/,\s*|\r?\n/));
+      // Zeilen trennen sich an Komma, Zeilenumbruch oder einem gespeicherten <br>
+      addressSvg = await textAsSvgPaths(v(impr.address).split(/\s*<br\s*\/?>\s*|,\s*|\r?\n/i));
     } catch (e) {
       console.error("[impressum] address image failed:", e?.message || e);
     }
