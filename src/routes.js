@@ -2806,7 +2806,7 @@ export const PAGE_DATES = {
   "/ranglisten": "2026-11-14",
   "/wissen":     "2026-11-06",
   "/sorten":     "2026-11-06",
-  "/rivalen":    "2026-11-06",
+  "/rivalen":    "2026-11-15",
   "/beitragen":  "2026-11-06",
   "/staedte":    "2026-11-06",
   "/kooperation": "2026-11-06",
