@@ -140,12 +140,13 @@ Jedes Objekt mit Sprachfeldern wird **immer in beiden Sprachen** gepflegt: `brew
 
 ### Versioning
 
-Bei jedem Versions-Bump **alle vier Stellen** gleichzeitig anpassen:
+Bei jedem Versions-Bump **alle fünf Stellen** gleichzeitig anpassen:
 
 | Datei | Was ändern |
 |---|---|
 | `src/utils.js` | `APP_VERSION = "x.y.z"` |
 | `package.json` | `"version": "x.y.z"` |
+| `package-lock.json` | `npm install --package-lock-only` (setzt beide `"version"`-Felder) |
 | `README.md` | Heading `# Altbieratlas · vx.y.z` |
 | `migrations/0002_seed.sql` | Versions-Kommentar in der Kopfzeile |
 

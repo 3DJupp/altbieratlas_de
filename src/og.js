@@ -7,6 +7,7 @@ import yogaWasm from "satori/yoga.wasm";
 import { Resvg, initWasm as resvgInitWasm } from "@resvg/resvg-wasm";
 import resvgWasm from "@resvg/resvg-wasm/index_bg.wasm";
 import fontData from "./assets/PressStart2P.ttf";
+import textFontData from "./assets/PublicSans-Regular.woff";
 import { formatEuro } from "./utils.js";
 
 // Initialisierung einmalig pro Worker-Instanz (Promise-Singleton verhindert Race Conditions)
@@ -290,4 +291,29 @@ export async function generateOgImage({ name, city, type, prices }) {
 
   const resvg = new Resvg(svg, { fitTo: { mode: "width", value: 1200 } });
   return resvg.render().asPng();
+}
+
+// Setzt Textzeilen als SVG aus Glyphen-Umrissen (keine <text>-Elemente, also
+// kein auslesbarer Text im Quelltext). Für die Anschrift im Impressum: sie
+// soll für Menschen lesbar sein, für Adress-Sammler aber nicht als Text
+// vorliegen. Füllfarbe ist currentColor, das SVG wird inline eingebettet und
+// folgt damit hellem wie dunklem Theme.
+export async function textAsSvgPaths(lines, { fontSize = 15, lineHeight = 1.7 } = {}) {
+  await ensureInit();
+  const rows = lines.map((l) => String(l).trim()).filter(Boolean);
+  if (!rows.length) return "";
+  const longest = Math.max(...rows.map((l) => l.length));
+  const width = Math.ceil(longest * fontSize * 0.62) + 4;
+  const height = Math.ceil(rows.length * fontSize * lineHeight);
+  const svg = await satori({
+    type: "div",
+    props: {
+      style: { display: "flex", flexDirection: "column", width: "100%", height: "100%", fontFamily: "Public Sans", fontSize, lineHeight, color: "#010203" },
+      children: rows.map((l) => ({ type: "div", props: { style: { display: "flex" }, children: l } })),
+    },
+  }, {
+    width, height,
+    fonts: [{ name: "Public Sans", data: textFontData, weight: 400, style: "normal" }],
+  });
+  return svg.replace(/#010203/gi, "currentColor").replace(/rgb\(1, ?2, ?3\)/g, "currentColor");
 }

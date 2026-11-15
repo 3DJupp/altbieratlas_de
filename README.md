@@ -1,4 +1,4 @@
-# Altbieratlas · v0.17.0
+# Altbieratlas · v0.18.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -157,6 +157,7 @@ Dashboard → **Workers & Pages → altbieratlas-de → Settings → Build**:
 | Git repository | dein GitHub-Repo |
 | Build command | `npm install` |
 | **Deploy command** | `bash scripts/deploy.sh` |
+| **Preview command** | `bash scripts/deploy.sh` (nicht der Standard `npx wrangler preview`) |
 | Root directory | `/` |
 | Production branch | `main` |
 
@@ -631,6 +632,15 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
 - Dark Mode, PWA-Manifest, Cookie-Banner (DSGVO)
 - Mock-Modus: ohne Backend läuft das UI auf Seed-Daten aus `data.js`
 
+### Gestaltung (Design System „Altbieratlas“)
+
+- Leitbild Getränkekarte, Bierdeckel, Schänke: Header und Footer im dunklen Holzton (`--wood`), hellere Inhaltsfläche, alle Textfarben in beiden Themes mindestens 4,5 : 1.
+- Preis- und Ranglisten als Getränkekarte (`.menu`, `.menu-row`: Name, Punktlinie, Preis in Tabellenziffern), Kennzahlen als Satz (`.stats`) statt Kacheln.
+- Eigene Icon-Reihe statt Emojis: `window.atlasIcon(name)` und `window.atlasStars(rating)` in `shell.js` (Strich 1,5 px, `currentColor`).
+- Platzhalter: `window.atlasMat(name)` (Bierdeckel mit Initialen) für Orte, `window.atlasGlass()` (Altbierglas) für Sorten ohne Logo.
+- Pins: ein Kupferton; Partner größer, gold, mit Stern; historische Orte als hohler Ring.
+- Zwei Inhaltsbreiten: `--width-wide` 1200 px (Listen, Karte), `--width-text` 760 px (Text).
+
 ### SEO & Auffindbarkeit
 - **Kanonische URLs**: `/ort/<slug>` und `/stadt/<slug>`; alle Altformen leiten
   mit genau einem 301 weiter (keine Redirect-Ketten)
@@ -675,6 +685,7 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
   D1-Console gemacht wurden, gibt es `npm run seo:indexnow`
   (→ [1.5 IndexNow aktivieren](#15-indexnow-aktivieren-optional-empfohlen))
 - **Sitemap** ohne `/impressum` (die Seite ist `noindex`)
+- **Anschrift im Impressum als Bild**: der Worker setzt die Anschrift aus `site_settings` als SVG aus Glyphen-Umrissen (`textAsSvgPaths()` in `src/og.js`, Schrift `src/assets/PublicSans-Regular.woff`), im Quelltext steht sie nicht als Text. Schlägt das Rendern fehl, bleibt sie als Text stehen
 - **Eigene 404-Seite** mit Status 404 und `noindex, follow` statt der nackten
   Default-Antwort — auch für unbekannte Orts-Slugs (`/ort/<slug>`, `/ort/<slug>.html`,
   `/ort/a/b`), unbekannte oder fehlende Event-IDs (`/event?id=…`) und unbekannte

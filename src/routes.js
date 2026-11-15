@@ -1,7 +1,7 @@
 // ============================================================
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
-import { generateOgImage } from "./og.js";
+import { generateOgImage, textAsSvgPaths } from "./og.js";
 import {
   searchPlace, mapsLink, refreshRatings, refreshPlace, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
 } from "./googlePlaces.js";
@@ -2802,14 +2802,14 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-11-06",
-  "/ranglisten": "2026-11-06",
-  "/wissen":     "2026-10-30",
-  "/sorten":     "2026-10-30",
-  "/rivalen":    "2026-10-30",
+  "/":           "2026-11-15",
+  "/ranglisten": "2026-11-14",
+  "/wissen":     "2026-11-06",
+  "/sorten":     "2026-11-06",
+  "/rivalen":    "2026-11-15",
   "/beitragen":  "2026-11-06",
   "/staedte":    "2026-11-06",
-  "/kooperation": "2026-10-30",
+  "/kooperation": "2026-11-06",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -3196,12 +3196,13 @@ export async function serveOrt(req, env, params = {}) {
             <div class="ort-title-wrap">
               <h1 class="brewery-title">${escHtml(row.name)}</h1>
               <div class="brewery-meta">
-                <span>${escHtml(row.type_label || row.type)}</span>
-                ${!row.is_historical && isHighlighted(row) ? `<span class="tag" style="color:#a0702c;border-color:#d9a35b;font-size:11px">Partner</span>` : ""}
-                <span class="dot"></span>
+                <span class="meta-tags">
+                  <span>${escHtml(row.type_label || row.type)}</span>
+                  ${!row.is_historical && isHighlighted(row) ? `<span class="tag partner">Partner</span>` : ""}
+                </span>
                 <span>${escHtml(row.city)}${row.country && row.country !== "DE" ? " · " + escHtml(row.country) : ""}</span>
-                ${row.founded ? `<span class="dot"></span><span>seit ${escHtml(row.founded)}</span>` : ""}
-                ${safeHref(row.website) ? `<span class="dot"></span><a href="${escHtml(safeHref(row.website))}" target="_blank" rel="noopener">Website →</a>` : ""}
+                ${row.founded ? `<span>seit ${escHtml(row.founded)}</span>` : ""}
+                ${safeHref(row.website) ? `<a href="${escHtml(safeHref(row.website))}" target="_blank" rel="noopener"><span>Website →</span></a>` : ""}
               </div>
             </div>
           </div>
@@ -3275,15 +3276,15 @@ export async function serveOrt(req, env, params = {}) {
     ${venueEvents.length ? `
     <section class="container" style="padding-bottom:24px">
       <h2 data-i18n="brewery.eventsHere">Termine hier</h2>
-      <ul>
-        ${venueEvents.map((e) => `<li><a href="/event?id=${escHtml(encodeURIComponent(e.id))}">${escHtml(e.title_de || e.title_en || "Termin")}</a> · ${escHtml(fmtEventRangeDe(e.date, e.end_date))}${e.time ? `, ${escHtml(String(e.time).slice(0, 5))} Uhr` : ""}</li>`).join("")}
+      <ul class="menu">
+        ${venueEvents.map((e) => `<li class="menu-row"><a class="menu-name" href="/event?id=${escHtml(encodeURIComponent(e.id))}">${escHtml(e.title_de || e.title_en || "Termin")}</a><span class="menu-leader"></span><span class="menu-price">${escHtml(fmtEventRangeDe(e.date, e.end_date))}${e.time ? `, ${escHtml(String(e.time).slice(0, 5))} Uhr` : ""}</span></li>`).join("")}
       </ul>
     </section>` : ""}
     ${nearby.length ? `
     <section class="container" style="padding-bottom:40px">
       <h2 data-i18n="brewery.nearby">Altbier in der Nähe</h2>
-      <ul>
-        ${nearby.map((n) => `<li><a href="/ort/${escHtml(encodeURIComponent(n.id))}">${escHtml(n.name)}</a> · ${escHtml(n.type_label || "")}${n.city !== row.city ? ` in ${escHtml(n.city)}` : ""} · ${escHtml(fmtKm(n.km))}</li>`).join("")}
+      <ul class="menu">
+        ${nearby.map((n) => `<li class="menu-row"><a class="menu-name" href="/ort/${escHtml(encodeURIComponent(n.id))}">${escHtml(n.name)}</a><span class="menu-sub">${escHtml(n.type_label || "")}${n.city !== row.city ? ` in ${escHtml(n.city)}` : ""}</span><span class="menu-leader"></span><span class="menu-price">${escHtml(fmtKm(n.km))}</span></li>`).join("")}
       </ul>
     </section>` : ""}
   </div>` : "";
@@ -3743,11 +3744,13 @@ export async function serveCity(req, env) {
   const cardHtml = (r) => {
     const p = priceByBrewery.get(r.id);
     const hl = !r.is_historical && isHighlighted(r);
-    return `<a class="city-card${r.is_historical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
-      (hl ? `<span class="cc-partner">Partner</span>` : "") +
-      `<span class="cc-name">${escHtml(r.name)}</span>` +
-      `<span class="cc-type">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
-      (p ? `<span class="cc-price">${escHtml(formatEuro(p.price))} <span style="opacity:.55;font-size:11px">/ ${escHtml(fmtSizeDe(p.size))}</span></span>` : "") +
+    // Getränkekarten-Zeile wie card() in public/stadt.html
+    return `<a class="city-card menu-row${r.is_historical ? " historical" : ""}${hl ? " highlighted" : ""}" href="/ort/${escHtml(encodeURIComponent(r.id))}">` +
+      `<span class="cc-name menu-name">${escHtml(r.name)}</span>` +
+      (hl ? `<span class="tag partner">Partner</span>` : "") +
+      `<span class="cc-type menu-sub">${escHtml(TYPE_DE[r.type] || r.type || "")}</span>` +
+      `<span class="menu-leader"></span>` +
+      (p ? `<span class="menu-size">${escHtml(fmtSizeDe(p.size))}</span><span class="menu-price">${escHtml(formatEuro(p.price))}</span>` : `<span class="menu-size">kein Preis</span>`) +
       `</a>`;
   };
   // Hervorgehobene (gekennzeichnete) Partner zuerst, sonst alphabetisch wie gehabt
@@ -3931,7 +3934,20 @@ export async function serveImpressum(req, env) {
   const emailVal = v(impr.email);
   const parts = [];
   if (v(impr.owner))   parts.push(`i.owner=${JSON.stringify(v(impr.owner))};`);
-  if (v(impr.address)) parts.push(`i.address=${JSON.stringify(v(impr.address))};`);
+  // Die Anschrift steht nicht als Text in der Seite, sondern als Bild aus
+  // Glyphen-Umrissen (Schutz vor Adress-Sammlern). Schlägt das Rendern fehl,
+  // bleibt sie als Text stehen: Die Impressumspflicht geht vor.
+  if (v(impr.address)) {
+    let addressSvg = "";
+    try {
+      // Zeilen trennen sich an Komma, Zeilenumbruch oder einem gespeicherten <br>
+      addressSvg = await textAsSvgPaths(v(impr.address).split(/\s*<br\s*\/?>\s*|,\s*|\r?\n/i));
+    } catch (e) {
+      console.error("[impressum] address image failed:", e?.message || e);
+    }
+    const lit = (x) => JSON.stringify(x).replace(/</g, "\\u003c");
+    parts.push(addressSvg ? `i.addressSvg=${lit(addressSvg)};` : `i.address=${lit(v(impr.address))};`);
+  }
   if (emailVal)        parts.push(`i.email=${JSON.stringify(emailVal)};`);
 
   const html = await assetRes.text();
