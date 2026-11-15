@@ -1,7 +1,7 @@
 // ============================================================
 // Altbieratlas — Routen (öffentliche & Admin-API)
 // ============================================================
-import { generateOgImage } from "./og.js";
+import { generateOgImage, textAsSvgPaths } from "./og.js";
 import {
   searchPlace, mapsLink, refreshRatings, refreshPlace, backfillBatch, haversine, CACHE_MAX_AGE_DAYS, PIN_CHECK_DISTANCE_M,
 } from "./googlePlaces.js";
@@ -2802,7 +2802,7 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-11-14",
+  "/":           "2026-11-15",
   "/ranglisten": "2026-11-14",
   "/wissen":     "2026-11-06",
   "/sorten":     "2026-11-06",
@@ -3934,7 +3934,19 @@ export async function serveImpressum(req, env) {
   const emailVal = v(impr.email);
   const parts = [];
   if (v(impr.owner))   parts.push(`i.owner=${JSON.stringify(v(impr.owner))};`);
-  if (v(impr.address)) parts.push(`i.address=${JSON.stringify(v(impr.address))};`);
+  // Die Anschrift steht nicht als Text in der Seite, sondern als Bild aus
+  // Glyphen-Umrissen (Schutz vor Adress-Sammlern). Schlägt das Rendern fehl,
+  // bleibt sie als Text stehen: Die Impressumspflicht geht vor.
+  if (v(impr.address)) {
+    let addressSvg = "";
+    try {
+      addressSvg = await textAsSvgPaths(v(impr.address).split(/,\s*|\r?\n/));
+    } catch (e) {
+      console.error("[impressum] address image failed:", e?.message || e);
+    }
+    const lit = (x) => JSON.stringify(x).replace(/</g, "\\u003c");
+    parts.push(addressSvg ? `i.addressSvg=${lit(addressSvg)};` : `i.address=${lit(v(impr.address))};`);
+  }
   if (emailVal)        parts.push(`i.email=${JSON.stringify(emailVal)};`);
 
   const html = await assetRes.text();

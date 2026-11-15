@@ -1181,8 +1181,10 @@ html { scroll-behavior: smooth; }
 .city-links a:hover { border-color: var(--accent); color: var(--accent); }
 
 /* --- Kartenkacheln ohne API-Key ----------------------------------- */
-/* OSM-Standardkacheln sind hell. Der Filter liegt nur auf der Kachel-
-   Ebene, nicht auf Markern/Popups, damit die Pins ihre Farbe behalten. */
+/* OSM-Standardkacheln sind hell und bunt. Invertiert und entfärbt kommen sie
+   dem neutralen Dunkelgrau der CARTO-Kacheln nahe (Land fast schwarz, Wasser
+   etwas heller, keine blauen oder grünen Flächen). Der Filter liegt nur auf
+   der Kachel-Ebene, nicht auf Markern/Popups: die Pins behalten ihre Farbe. */
 .tiles-dimmed .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.86) saturate(0.55);
+  filter: invert(1) grayscale(1) contrast(0.85) brightness(0.9);
 }

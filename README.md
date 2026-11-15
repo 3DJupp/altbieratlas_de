@@ -685,6 +685,7 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
   D1-Console gemacht wurden, gibt es `npm run seo:indexnow`
   (→ [1.5 IndexNow aktivieren](#15-indexnow-aktivieren-optional-empfohlen))
 - **Sitemap** ohne `/impressum` (die Seite ist `noindex`)
+- **Anschrift im Impressum als Bild**: der Worker setzt die Anschrift aus `site_settings` als SVG aus Glyphen-Umrissen (`textAsSvgPaths()` in `src/og.js`, Schrift `src/assets/PublicSans-Regular.woff`), im Quelltext steht sie nicht als Text. Schlägt das Rendern fehl, bleibt sie als Text stehen
 - **Eigene 404-Seite** mit Status 404 und `noindex, follow` statt der nackten
   Default-Antwort — auch für unbekannte Orts-Slugs (`/ort/<slug>`, `/ort/<slug>.html`,
   `/ort/a/b`), unbekannte oder fehlende Event-IDs (`/event?id=…`) und unbekannte

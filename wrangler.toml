@@ -47,7 +47,7 @@ routes = [
 # Binäre Assets: TTF-Font für OG-Image-Generator
 [[rules]]
 type = "Data"
-globs = ["**/*.ttf"]
+globs = ["**/*.ttf", "**/*.woff"]
 fallthrough = true
 
 # --- Statische Dateien ----------------------------------------
