@@ -150,7 +150,7 @@ const user = 'admin', pass = 'DEIN-PASSWORT-HIER', email = 'deine@email.de';
 
 ### 1.2 Workers-Build im Dashboard konfigurieren
 
-Dashboard → **Workers & Pages → altbieratlas → Settings → Build**:
+Dashboard → **Workers & Pages → altbieratlas-de → Settings → Build**:
 
 | Feld | Wert |
 |---|---|
@@ -169,27 +169,22 @@ bash scripts/deploy.sh --seed   # Ersteinrichtung: Schema + Seed + Deploy
 ```
 
 Live geht nur der Production-Branch. Läuft das Script in einem Build eines
-anderen Branches (Workers Builds setzt `WORKERS_CI_BRANCH`), erstellt oder
-aktualisiert es nur eine [Worker Preview](https://developers.cloudflare.com/workers/previews/)
-(`wrangler preview`) und schaltet nichts live. Ein anderer Production-Branch
-als `main` wird über die Build-Variable `PRODUCTION_BRANCH` gesetzt.
+anderen Branches (Workers Builds setzt `WORKERS_CI_BRANCH`), erstellt es nur
+eine [Worker Preview](https://developers.cloudflare.com/workers/previews/)
+(`wrangler preview --name <branch>`), erreichbar unter
+`https://<branch>.dev.altbieratlas.de`. Das schützt die Produktion, falls
+„Builds for non-production branches“ aktiv ist und das Dashboard `deploy.sh`
+auch als Preview command verwendet. Ein anderer Production-Branch als `main`
+wird über die Build-Variable `PRODUCTION_BRANCH` gesetzt.
 
-**Previews:** Unter *Settings → Build* „Previews“ bzw. Builds für
-Nicht-Production-Branches einschalten und als Preview command ebenfalls
-`bash scripts/deploy.sh` eintragen, sonst bleiben die D1-Platzhalter in
-`wrangler.toml` stehen. Previews erben keine Produktionseinstellungen:
-
-- Bindings stehen im `[previews]`-Block der `wrangler.toml` (D1, R2, Versions-Metadaten).
-- Die Build-Variablen aus [1.3](#13-build-variablen-setzen) auch in den Preview-Einstellungen des Builds setzen.
-- Ohne `preview_database_id`/`preview_database_name` nutzt eine Preview die
-  Produktions-D1: Sie zeigt echte Daten, Meldungen und Admin-Änderungen dort
-  landen aber live. Für Tests mit Schreibzugriffen eine eigene D1 anlegen
-  (`npx wrangler d1 create altbieratlas-preview`, Schema und Seed einspielen)
-  und die beiden Variablen setzen.
-- Runtime-Secrets und `SITE_CONFIG` im Dashboard unter *Settings → Previews Base*
-  setzen (oder `npx wrangler preview secret put <NAME>`). Ohne Turnstile-Keys
-  lehnen die Formulare in der Preview ab (fail closed), ohne `MAP_TILE_API_KEY`
-  zeigt die Karte abgedunkelte OSM-Kacheln.
+Domains stehen in `wrangler.toml` (`routes`, `workers_dev = false`,
+`preview_urls = false`), damit ein Deploy die Dashboard-Einstellungen nicht
+überschreibt: `altbieratlas.de` für Produktion, `dev.altbieratlas.de` nur für
+Previews. Previews erben keine Produktions-Variablen und -Secrets (Block
+`[previews]` in `wrangler.toml`, Secrets per `wrangler preview secret put`);
+alle Preview-Antworten tragen `X-Robots-Tag: noindex, nofollow`. Einmalig im
+Dashboard: *Settings → Builds → Set up Worker Previews* und als Preview command
+`bash scripts/deploy.sh`.
 
 ### 1.3 Build-Variablen setzen
 
@@ -199,8 +194,7 @@ Unter *Settings → Build → Variables and secrets* (**Build-Sektion**):
 |---|---|---|
 | `database_id` | Secret | UUID aus `npx wrangler d1 create` |
 | `database_name` | Secret | Name der D1-DB, z. B. `altbieratlas` |
-| `preview_database_id` | Secret | Optional, nur für Previews: UUID einer eigenen Preview-D1 |
-| `preview_database_name` | Secret | Optional, nur für Previews: Name der Preview-D1 |
+| `preview_database_id`, `preview_database_name` | Secret | Optional: eigene D1 für Worker Previews. Fehlen sie, nutzen Previews die Produktions-D1 (Warnung im Build-Log). |
 | `INDEXNOW_KEY` | Secret | Optional, derselbe Wert wie das gleichnamige Runtime-Secret. Dann meldet `deploy.sh` nach jedem Production-Deploy alle Sitemap-URLs an IndexNow ([1.5](#15-indexnow-aktivieren-optional-empfohlen)). Fehlt er, gibt das Build-Log nur eine Warnung aus. |
 
 ### 1.4 Worker-Runtime-Variablen setzen
@@ -275,7 +269,7 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 # oder: openssl rand -hex 16
 ```
 
-**Schritt 2 — Schlüssel als Secret setzen.** Dashboard → Workers → `altbieratlas`
+**Schritt 2 — Schlüssel als Secret setzen.** Dashboard → Workers → `altbieratlas-de`
 → *Settings → Variables and Secrets* → **Add → Secret**, Name `INDEXNOW_KEY`,
 Wert der Schlüssel. Alternativ per CLI:
 
@@ -568,7 +562,10 @@ später gelöscht oder ausgeblendet worden (oder die Freigabe widerrufen), melde
 Alle Formulare mit Bot-Prüfung (Beitragen, Kontakt, Admin-Login) laufen über
 `window.atlasTurnstile()` in `shell.js`: jedes Token wird genau einmal gesendet, bei
 `timeout-or-duplicate` einmal automatisch mit frischem Token wiederholt. Serverseitig prüft
-`checkTurnstile()` (`src/routes.js`) jedes Token bei Cloudflare. Ist nur einer der beiden
+`checkTurnstile()` (`src/routes.js`) jedes Token bei Cloudflare und verlangt außerdem die
+Action des Widgets (`contribute`, `contact`, `login`) und den eigenen Hostnamen der Anfrage;
+ein Token von einer anderen Seite oder Domain (auch `localhost`) wird abgelehnt. Netzfehler
+oder ein Timeout bei siteverify (10 s) gelten als fehlgeschlagen. Ist nur einer der beiden
 Schlüssel gesetzt oder fehlen beide außerhalb von `localhost`, lehnt der Server mit
 `turnstile-not-configured` ab, statt die Prüfung still abzuschalten.
 

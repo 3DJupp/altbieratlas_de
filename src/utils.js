@@ -144,25 +144,26 @@ export function randomToken(bytes = 32) {
 }
 
 // ---- Turnstile-Verifikation ----
+// Reiner siteverify-Aufruf; ob Secret/Site-Key gesetzt sind, entscheidet
+// checkTurnstile() (src/routes.js). Fail closed: Netzfehler, Timeout, Nicht-2xx
+// oder kaputtes JSON ergeben success:false.
 export async function verifyTurnstile(token, secret, remoteIp) {
-  if (!secret || secret.includes("PLACEHOLDER") || secret === "TURNSTILE_SECRET_UNSET") {
-    // Dev/PoC-Modus: wenn kein Secret gesetzt ist, Verifikation überspringen
-    console.warn("[turnstile] Kein Secret gesetzt — Verifikation übersprungen.");
-    return { success: true, dev: true };
-  }
-  if (!token) return { success: false, error: "missing-token" };
-  const body = new FormData();
-  body.append("secret", secret);
-  body.append("response", token);
+  if (!secret) return { success: false, "error-codes": ["missing-input-secret"] };
+  if (typeof token !== "string" || token.length === 0) return { success: false, "error-codes": ["missing-input-response"] };
+  if (token.length > 2048) return { success: false, "error-codes": ["invalid-input-response"] };
+  const body = new URLSearchParams({ secret, response: token });
   if (remoteIp) body.append("remoteip", remoteIp);
   try {
     const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST", body,
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      signal: AbortSignal.timeout(10_000),
     });
-    const j = await r.json();
-    return j;
+    if (!r.ok) throw new Error(`siteverify ${r.status}`);
+    return await r.json();
   } catch (e) {
-    return { success: false, error: "fetch-failed" };
+    return { success: false, "error-codes": ["siteverify-unavailable"] };
   }
 }
 

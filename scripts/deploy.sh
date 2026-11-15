@@ -7,10 +7,10 @@
 #
 #   database_id    — UUID der D1-Datenbank
 #   database_name  — Name der D1-Datenbank
+#   preview_database_id / preview_database_name (optional) — D1 für Worker
+#                  Previews (Branch-Builds). Fehlen sie, nutzen Previews die
+#                  Produktions-D1 (mit Warnung im Build-Log).
 #   PRODUCTION_BRANCH (optional) — Branch, der live geht. Standard: main
-#   preview_database_id / preview_database_name (optional) — eigene D1 für
-#                  Branch-Previews. Fehlen sie, nutzt die Preview die
-#                  Produktions-D1 (database_id/database_name).
 #   INDEXNOW_KEY   (optional) — derselbe Schlüssel wie das Worker-Secret.
 #                  Dann meldet das Script nach jedem Production-Deploy alle
 #                  Sitemap-URLs an api.indexnow.org. Fehlt er, nur Warnung.
@@ -22,12 +22,11 @@
 #
 # Schutz vor Branch-Deploys:
 #   Workers Builds setzt WORKERS_CI_BRANCH. Ist das nicht der Production-
-#   Branch, erstellt oder aktualisiert das Script nur eine Worker Preview
-#   (wrangler preview, Bindings aus [previews] in wrangler.toml) und schaltet
-#   nichts live, auch kein Seed. So kann ein Build eines Feature-Branches die
-#   Produktion nicht überschreiben. Dafür muss im Dashboard auch der Preview
-#   command `bash scripts/deploy.sh` sein und die Build-Variablen müssen in
-#   den Preview-Einstellungen stehen (die erben die Produktionswerte nicht).
+#   Branch, erstellt das Script nur eine Worker Preview (wrangler preview,
+#   erreichbar unter <branch>.dev.altbieratlas.de) und schaltet nichts live,
+#   auch kein Seed. So kann ein Build eines Feature-Branches die Produktion
+#   nicht überschreiben, selbst wenn das Dashboard das Script als Preview
+#   command für Branch-Builds nutzt.
 #   Lokal (ohne WORKERS_CI_BRANCH) wird wie bisher deployt.
 #
 # IndexNow nach dem Deploy:
@@ -58,21 +57,33 @@ for arg in "$@"; do
   esac
 done
 
-# D1-Platzhalter in wrangler.toml ersetzen (Produktion und [previews])
+# D1-Platzhalter in wrangler.toml ersetzen (Preview-Platzhalter zuerst, sie
+# enthalten den Produktions-Platzhalter als Teilstring)
+if [ -z "${preview_database_id:-}" ] || [ -z "${preview_database_name:-}" ]; then
+  preview_database_id="$database_id"
+  preview_database_name="$database_name"
+  PREVIEW_ON_PROD_DB=true
+else
+  PREVIEW_ON_PROD_DB=false
+fi
 sed -i \
+  -e "s/REPLACE_WITH_YOUR_PREVIEW_D1_ID/${preview_database_id}/g" \
+  -e "s/REPLACE_WITH_YOUR_PREVIEW_D1_NAME/${preview_database_name}/g" \
   -e "s/REPLACE_WITH_YOUR_D1_ID/${database_id}/g" \
   -e "s/REPLACE_WITH_YOUR_D1_NAME/${database_name}/g" \
-  -e "s/REPLACE_WITH_PREVIEW_D1_ID/${preview_database_id:-$database_id}/g" \
-  -e "s/REPLACE_WITH_PREVIEW_D1_NAME/${preview_database_name:-$database_name}/g" \
   wrangler.toml
 
 PRODUCTION_BRANCH="${PRODUCTION_BRANCH:-main}"
 if [ -n "${WORKERS_CI_BRANCH:-}" ] && [ "$WORKERS_CI_BRANCH" != "$PRODUCTION_BRANCH" ]; then
-  echo "▶ Branch '${WORKERS_CI_BRANCH}' ist nicht '${PRODUCTION_BRANCH}': nur Preview erstellen, nicht live schalten"
-  if [ -z "${preview_database_id:-}" ]; then
-    echo "⚠ Keine preview_database_id: die Preview nutzt die Produktions-D1 (Schreibzugriffe landen live)" >&2
+  # Preview-Name = Branch, als DNS-Label: klein, nur a-z 0-9 -, max. 63 Zeichen
+  preview_name="$(printf '%s' "$WORKERS_CI_BRANCH" | tr '[:upper:]' '[:lower:]' |
+    sed -e 's/[^a-z0-9-]/-/g' -e 's/--*/-/g' -e 's/^-//' -e 's/-$//' | cut -c1-63)"
+  preview_name="${preview_name%-}"
+  echo "▶ Branch '${WORKERS_CI_BRANCH}' ist nicht '${PRODUCTION_BRANCH}': nur Preview '${preview_name}', nichts geht live"
+  if [ "$PREVIEW_ON_PROD_DB" = true ]; then
+    echo "⚠ preview_database_id/preview_database_name fehlen: die Preview schreibt in die Produktions-D1" >&2
   fi
-  exec npx wrangler preview
+  exec npx wrangler preview --name "$preview_name"
 fi
 
 if [ "$SEED" = true ]; then
