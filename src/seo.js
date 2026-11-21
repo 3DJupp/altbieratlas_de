@@ -491,8 +491,8 @@ export async function serveWissen(req, env) {
   }
 
   const wissenDesc = glossary.length
-    ? `Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und ${glossary.length} Begriffe, die du im Brauhaus hörst.`
-    : "Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst.";
+    ? `Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt, wann es Sticke, Latzen- und Weihnachtsbier gibt und ${glossary.length} Begriffe, die du im Brauhaus hörst.`
+    : "Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt, wann es Sticke, Latzen- und Weihnachtsbier gibt und welche Worte du im Brauhaus hörst.";
   html = setMetaDescription(html, wissenDesc);
 
   html = injectLd(html, {
@@ -502,7 +502,7 @@ export async function serveWissen(req, env) {
       {
         "@type": "Article",
         "@id": `${pageUrl}#article`,
-        "headline": "Altbier: Geschichte, Köbes-Kultur und Glossar",
+        "headline": "Altbier: Geschichte, Köbes-Kultur, Jahreslauf und Glossar",
         "description": wissenDesc,
         "url": pageUrl,
         "inLanguage": "de",

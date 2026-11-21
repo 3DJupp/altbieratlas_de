@@ -19,7 +19,7 @@ altbieratlas/
 │   ├── ort.html             # Ort-Detail + Preisverlauf + Untappd + Google-Bewertung
 │   ├── event.html           # Event-Detail
 │   ├── ranglisten.html      # Preis-Ranglisten
-│   ├── wissen.html          # Geschichte, Köbes-Kultur, Glossar
+│   ├── wissen.html          # Geschichte, Köbes-Kultur, Jahreslauf, Glossar
 │   ├── sorten.html          # Alle Altbier-Sorten (ABV, IBU, Geschmack)
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
 │   ├── stadt.html           # Stadt-Landingpage (SSR, Slugs kommen aus D1)
@@ -608,6 +608,8 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
 
 ### Altbier-Wissen
 - Geschichte, drei Köbes-Regeln für den ersten Besuch, Brauhaus-Glossar (aus D1)
+- Jahreslauf: Weihnachtsbier, Alt auf dem Weihnachtsmarkt, Sticke, Latzenbier; darunter die nächsten
+  Brauerei-Termine aus `/api/events` (nur Events mit Brauerei, max. 5)
 - Glossar serverseitig gerendert, Meta-Description mit Zahl der Begriffe; JSON-LD `Article` + `DefinedTermSet`
 - Querverweis auf `/sorten`
 
