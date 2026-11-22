@@ -17,6 +17,7 @@ window.renderShell = function ({ activeNav }) {
           <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
           <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
           <a href="/sorten" class="${activeNav === "styles" ? "active" : ""}" data-i18n="nav.styles">Sorten</a>
+          <a href="/magazin" class="${activeNav === "magazine" ? "active" : ""}" data-i18n="nav.magazine">Magazin</a>
           <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
           <a href="/rivalen" class="${activeNav === "rivals" ? "active" : ""}" data-i18n="nav.rivals">Rivalen</a>
           <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
@@ -33,6 +34,7 @@ window.renderShell = function ({ activeNav }) {
         <a href="/" class="${activeNav === "map" ? "active" : ""}" data-i18n="nav.map">Karte</a>
         <a href="/wissen" class="${activeNav === "knowledge" ? "active" : ""}" data-i18n="nav.knowledge">Wissen</a>
         <a href="/sorten" class="${activeNav === "styles" ? "active" : ""}" data-i18n="nav.styles">Sorten</a>
+        <a href="/magazin" class="${activeNav === "magazine" ? "active" : ""}" data-i18n="nav.magazine">Magazin</a>
         <a href="/ranglisten" class="${activeNav === "rankings" ? "active" : ""}" data-i18n="nav.rankings">Ranglisten</a>
         <a href="/rivalen" class="${activeNav === "rivals" ? "active" : ""}" data-i18n="nav.rivals">Rivalen</a>
         <a href="/beitragen" class="${activeNav === "contribute" ? "active" : ""}" data-i18n="nav.contribute">Beitragen</a>
@@ -138,6 +140,7 @@ window.renderShell = function ({ activeNav }) {
             <ul>
               <li><a href="/wissen" data-i18n="know.title">Altbier-Wissen</a></li>
               <li><a href="/sorten" data-i18n="know.styles">Sorten</a></li>
+              <li><a href="/magazin" data-i18n="nav.magazine">Magazin</a></li>
               <li><a href="/ranglisten" data-i18n="nav.rankings">Ranglisten</a></li>
               <li><a href="/rivalen" data-i18n="nav.rivals">Rivalen</a></li>
               <li><a href="/kooperation" data-i18n="footer.coop">Kooperation & Presse</a></li>
@@ -475,6 +478,26 @@ window.atlasOffers = (() => {
 // Alles andere (javascript:, data: …) ergibt "" → kein Link. Gegenstück zu
 // safeHref() in src/utils.js.
 // atlasSafeUrl() liefert dieselbe URL unescaped (für a.href = … per DOM).
+// „Im Magazin“: Artikel, die diesen Ort oder Termin verlinken. Füllt die Box
+// #mag-related (der Worker hat sie für Crawler schon deutsch gerendert).
+window.atlasPostLinks = function (posts) {
+  const box = document.getElementById("mag-related");
+  if (!box) return;
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const paint = () => {
+    if (!posts || !posts.length) { box.hidden = true; return; }
+    const lang = window.__atlasLang || "de";
+    box.innerHTML = `<h2>${esc(window.t("mag.related"))}</h2><ul>` + posts.map((p) =>
+      `<li><a href="/magazin/${encodeURIComponent(p.id)}">${esc((p.title && (p.title[lang] || p.title.de)) || "")}</a></li>`).join("") + "</ul>";
+    box.hidden = false;
+  };
+  paint();
+  if (!box.dataset.bound) {
+    box.dataset.bound = "1";
+    document.addEventListener("atlas:lang-changed", paint);
+  }
+};
+
 window.atlasSafeUrl = function (v) {
   if (!v) return "";
   let u;

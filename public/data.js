@@ -995,6 +995,24 @@ window.ATLAS_DATA = {
       },
     },
   ],
+
+  // Magazin: ein Beispielartikel für den Mock-Modus (echte Artikel nur in der Live-D1)
+  posts: [
+    {
+      id: "beispiel-artikel",
+      title: { de: "Beispielartikel im Magazin", en: "Sample magazine article" },
+      teaser: {
+        de: "So sieht ein Artikel im Altbier-Magazin aus.",
+        en: "This is what an article in the Altbier magazine looks like.",
+      },
+      body: {
+        de: "Artikel im Magazin erklären Sonderbiere, Saisonthemen und größere Veränderungen.\n\nIm Live-Betrieb schreibt sie der Admin im Admin-Panel.",
+        en: "Magazine articles explain special beers, seasonal topics and bigger changes.\n\nIn production the admin writes them in the admin panel.",
+      },
+      publishedAt: "2026-11-22",
+      updatedAt: "2026-11-22",
+    },
+  ],
 };
 
 // Helpers

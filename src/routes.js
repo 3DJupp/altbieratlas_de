@@ -7,6 +7,7 @@ import {
 } from "./googlePlaces.js";
 import { normalizeHours, schemaOrgHours, hoursLinesDe } from "./hours.js";
 import { normalizeOffer, offerRow, OFFER_PUBLIC_SQL } from "./offers.js";
+import { renameLinkStmts, postsLinking, fillRelatedBox, POST_PUBLIC_SQL } from "./posts.js";
 import {
   APP_VERSION,
   json, error, parseCookies, setCookieHeader,
@@ -80,7 +81,7 @@ async function checkTurnstile(req, env, token, action) {
 }
 
 // ---- Auth-Middleware ----
-async function requireAdmin(req, env) {
+export async function requireAdmin(req, env) {
   const cookies = parseCookies(req);
   const token = cookies["atlas_session"];
   if (!token) return { ok: false, res: error(401, "not-authenticated") };
@@ -288,6 +289,7 @@ export async function getBrewery(req, env, { id }) {
     `SELECT o.* FROM offers o JOIN breweries b ON b.id = o.brewery_id
      WHERE o.brewery_id = ? AND ${OFFER_PUBLIC_SQL} ORDER BY o.kind DESC, o.id`
   ).bind(id).all().catch(() => ({ results: [] }));
+  const posts = await postsLinking(env, "brewery", id).catch(() => []);
   const base = brewRow(row, styles.results.map((s) => s.style_id));
   return json({
     brewery: {
@@ -307,6 +309,7 @@ export async function getBrewery(req, env, { id }) {
       styleId: p.style_id || null,
     })),
     offers: offers.results.map(offerRow),
+    posts,
   });
 }
 
@@ -482,6 +485,7 @@ export async function getEvent(req, env, { id }) {
   const beers = await env.DB.prepare(
     "SELECT id, name_de, name_en, size, price, notes FROM event_beers WHERE event_id = ? ORDER BY id"
   ).bind(id).all();
+  const posts = await postsLinking(env, "event", id).catch(() => []);
   return json({
     event: {
       id: e.id,
@@ -501,6 +505,7 @@ export async function getEvent(req, env, { id }) {
       id: b.id, name: { de: b.name_de, en: b.name_en },
       size: b.size, price: b.price, notes: b.notes,
     })),
+    posts,
   });
 }
 
@@ -1668,6 +1673,8 @@ export async function adminUpdateBrewery(req, env, { id }) {
       ).bind(newId, id),
       // Untappd-Cache hängt an der Orts-ID: alten Eintrag verwerfen, der neue entsteht beim nächsten Abruf
       env.DB.prepare("DELETE FROM untappd_cache WHERE atlas_id = ?").bind(id),
+      // Links in Magazin-Artikeln (/ort/<id>)
+      ...renameLinkStmts(env, "brewery", id, newId),
     ];
     if (styleIds !== null) {
       stmts.push(env.DB.prepare("DELETE FROM brewery_styles WHERE brewery_id = ?").bind(newId));
@@ -2056,7 +2063,19 @@ export async function adminUpdateEvent(req, env, { id }) {
   if (newId) fields.push("id = ?"), values.push(newId);
   if (!fields.length) return error(400, "no-fields");
   values.push(id);
-  await env.DB.prepare(`UPDATE events SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
+  const update = env.DB.prepare(`UPDATE events SET ${fields.join(", ")} WHERE id = ?`).bind(...values);
+  // Neue ID: Event-Biere (FK ohne ON UPDATE) und Links in Magazin-Artikeln
+  // (/event?id=<id>) im selben Batch mitziehen, FK-Prüfung erst am Ende
+  if (newId) {
+    await env.DB.batch([
+      env.DB.prepare("PRAGMA defer_foreign_keys = ON"),
+      update,
+      env.DB.prepare("UPDATE event_beers SET event_id = ? WHERE event_id = ?").bind(newId, id),
+      ...renameLinkStmts(env, "event", id, newId),
+    ]);
+  } else {
+    await update.run();
+  }
   return json({ ok: true, new_id: newId || undefined });
 }
 
@@ -2802,14 +2821,15 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-11-06",
-  "/ranglisten": "2026-11-06",
-  "/wissen":     "2026-10-30",
-  "/sorten":     "2026-10-30",
-  "/rivalen":    "2026-10-30",
-  "/beitragen":  "2026-11-06",
-  "/staedte":    "2026-11-06",
-  "/kooperation": "2026-10-30",
+  "/":           "2026-11-22",
+  "/ranglisten": "2026-11-22",
+  "/wissen":     "2026-11-22",
+  "/sorten":     "2026-11-22",
+  "/rivalen":    "2026-11-22",
+  "/beitragen":  "2026-11-22",
+  "/staedte":    "2026-11-22",
+  "/kooperation": "2026-11-22",
+  "/magazin":    "2026-11-22",
 };
 
 // GET /sitemap.xml — wird direkt vom Worker (nicht unter /api) serviert.
@@ -2821,14 +2841,15 @@ export async function sitemap(req, env) {
                               .replace(/'/g, "&apos;");
   // /impressum fehlt bewusst: die Seite ist noindex, und noindex-URLs in der
   // Sitemap meldet die Search Console als Fehler.
-  const staticPaths = ["/", "/ranglisten", "/wissen", "/sorten", "/rivalen", "/beitragen", "/staedte", "/kooperation"];
+  const staticPaths = ["/", "/ranglisten", "/wissen", "/sorten", "/rivalen", "/beitragen", "/staedte", "/kooperation", "/magazin"];
   let breweryIds = [];
   let eventIds = [];
+  let postIds = [];
   let lastMod = null;
   const today = new Date().toISOString().slice(0, 10);
   const cities = await cityIndex(env);
   try {
-    const [bRes, eRes] = await Promise.all([
+    const [bRes, eRes, pRes] = await Promise.all([
       env.DB.prepare(
         "SELECT id, updated_at FROM breweries WHERE status = 'approved' ORDER BY updated_at DESC LIMIT 5000"
       ).all(),
@@ -2836,7 +2857,14 @@ export async function sitemap(req, env) {
         "SELECT id, created_at FROM events WHERE status = 'approved'" +
         " AND COALESCE(end_date, date) >= ? ORDER BY date ASC LIMIT 500"
       ).bind(today).all(),
+      env.DB.prepare(
+        `SELECT id, published_at, updated_at FROM posts WHERE ${POST_PUBLIC_SQL} ORDER BY published_at DESC LIMIT 500`
+      ).all().catch(() => ({ results: [] })),
     ]);
+    postIds = pRes.results.map((x) => ({
+      id: x.id,
+      lastmod: String(x.updated_at || "").slice(0, 10) > x.published_at ? String(x.updated_at).slice(0, 10) : x.published_at,
+    }));
     breweryIds = bRes.results.map((x) => ({ id: x.id, lastmod: x.updated_at }));
     lastMod = bRes.results[0]?.updated_at || null;
     eventIds = eRes.results.map((x) => ({ id: x.id, lastmod: x.created_at }));
@@ -2847,9 +2875,10 @@ export async function sitemap(req, env) {
       const pageDate = PAGE_DATES[p] || today;
       // Datengetriebene Seiten: aktuelleres von PAGE_DATE und DB-lastMod verwenden
       const dbDate = lastMod ? lastMod.slice(0, 10) : null;
+      const postDate = p === "/magazin" ? postIds.reduce((d, x) => (x.lastmod > d ? x.lastmod : d), "") : "";
       const useDate = (p === "/" || p === "/ranglisten") && dbDate && dbDate > pageDate
         ? dbDate
-        : pageDate;
+        : postDate > pageDate ? postDate : pageDate;
       const priority = p === "/" ? "1.0" : "0.7";
       return `
   <url>
@@ -2871,6 +2900,13 @@ export async function sitemap(req, env) {
     <loc>${esc(base + "/ort/" + encodeURIComponent(b.id))}</loc>
     <lastmod>${(b.lastmod || today).slice(0, 10)}</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`),
+    ...postIds.map((x) => `
+  <url>
+    <loc>${esc(base + "/magazin/" + encodeURIComponent(x.id))}</loc>
+    <lastmod>${x.lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>`),
     ...eventIds.map((e) => `
@@ -3316,6 +3352,8 @@ export async function serveOrt(req, env, params = {}) {
     () => `<main id="brewery-root" data-ssr="1">${bodyHtml}</main>${extraHtml}`,
   );
 
+  html = fillRelatedBox(html, await postsLinking(env, "brewery", row.id).catch(() => []));
+
   // JSON-LD vor </head> einfügen. Keine hreflang-Alternates: ?lang=en ist
   // dasselbe HTML und deshalb noindex (siehe applyLangVariant in seo.js).
   html = html.replace(
@@ -3621,6 +3659,8 @@ export async function serveEvent(req, env) {
   </section>
 <div id="shell-footer"></div>`);
   }
+
+  html = fillRelatedBox(html, await postsLinking(env, "event", row.id).catch(() => []));
 
   const headers = new Headers(assetRes.headers);
   headers.set("content-type", "text/html; charset=utf-8");

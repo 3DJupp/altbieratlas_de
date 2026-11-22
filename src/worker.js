@@ -7,6 +7,7 @@
 
 import * as R from "./routes.js";
 import * as SEO from "./seo.js";
+import * as P from "./posts.js";
 import { error, hashPassword, sendAdminDigest, digestSchedule, configureCurrency } from "./utils.js";
 import { meterEnv } from "./d1meter.js";
 import { refreshRatings } from "./googlePlaces.js";
@@ -97,6 +98,8 @@ const ROUTES = [
   ["GET",    "/api/venue-types",                            R.listVenueTypes],
   ["GET",    "/api/offers",                                R.listOffers],
   ["GET",    "/api/glossary",                              R.listGlossary],
+  ["GET",    "/api/posts",                                 P.listPosts],
+  ["GET",    "/api/posts/:id",                             P.getPost],
   ["GET",    "/api/geocode",                               R.geocode],
   ["POST",   "/api/contact",                               R.postContact],
   ["POST",   "/api/contributions",                         R.postContribution],
@@ -171,6 +174,10 @@ const ROUTES = [
   ["POST",   "/api/admin/glossary",                        R.adminCreateGlossary],
   ["PUT",    "/api/admin/glossary/:term",                  R.adminUpdateGlossary],
   ["DELETE", "/api/admin/glossary/:term",                  R.adminDeleteGlossary],
+  ["GET",    "/api/admin/posts",                           P.adminListPosts],
+  ["POST",   "/api/admin/posts",                           P.adminCreatePost],
+  ["PUT",    "/api/admin/posts/:id",                       P.adminUpdatePost],
+  ["DELETE", "/api/admin/posts/:id",                       P.adminDeletePost],
   ["GET",    "/api/admin/settings",                        R.adminGetSettings],
   ["PUT",    "/api/admin/settings",                        R.adminUpdateSettings],
 ];
@@ -372,7 +379,7 @@ async function handle(request, env, ctx) {
 
   // /<page>.html → /<page>  (301, kanonische Clean URLs)
   // /index.html  → /
-  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "impressum", "admin", "ort", "brauerei", "event", "staedte"];
+  const ALL_PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "impressum", "admin", "ort", "brauerei", "event", "staedte", "magazin"];
   if (request.method === "GET" && url.pathname.endsWith(".html")) {
     const name = url.pathname.slice(1, -5); // strip leading / and trailing .html
     if (name === "index") {
@@ -394,6 +401,13 @@ async function handle(request, env, ctx) {
     if (name === "stadt") {
       const dest = new URL(request.url);
       dest.pathname = "/staedte";
+      dest.search = "";
+      return Response.redirect(dest.toString(), 301);
+    }
+    // artikel.html ist nur die Vorlage der Magazin-Artikel
+    if (name === "artikel") {
+      const dest = new URL(request.url);
+      dest.pathname = "/magazin";
       dest.search = "";
       return Response.redirect(dest.toString(), 301);
     }
@@ -504,6 +518,35 @@ async function handle(request, env, ctx) {
     }
   }
 
+  // /magazin — Artikelliste (SSR, Fallback: statische Datei)
+  if (request.method === "GET" && /^\/magazin\/?$/.test(url.pathname) && env.ASSETS && env.DB) {
+    if (url.pathname.endsWith("/")) {
+      const dest = new URL(request.url);
+      dest.pathname = "/magazin";
+      return Response.redirect(dest.toString(), 301);
+    }
+    try {
+      return await P.serveMagazin(request, env, R.PAGE_DATES["/magazin"]);
+    } catch (e) {
+      console.error("[worker] serveMagazin threw:", e?.stack || e);
+    }
+  }
+
+  // /magazin/<id> — Artikel (SSR); unbekannt oder Entwurf ohne Admin-Sitzung → 404
+  if (request.method === "GET" && url.pathname.startsWith("/magazin/") && env.ASSETS && env.DB) {
+    let slug = null;
+    try { slug = decodeURIComponent(url.pathname.slice(9)).replace(/\/$/, ""); } catch { /* kaputtes %-Escape */ }
+    if (!slug || slug.includes("/")) return notFoundPage(env, request);
+    try {
+      const res = await P.servePost(request, env, { id: slug });
+      if (res.status === 404) return notFoundPage(env, request);
+      return res;
+    } catch (e) {
+      console.error("[worker] servePost threw:", e?.stack || e);
+      return notFoundPage(env, request);
+    }
+  }
+
   // /ranglisten, /wissen und /sorten — SSR: Daten, die sonst erst per JS kommen,
   // stehen für Crawler direkt im HTML (Fallback: statische Datei)
   const SSR_PAGES = { "/ranglisten": SEO.serveRanglisten, "/wissen": SEO.serveWissen, "/sorten": SEO.serveSorten };
@@ -518,7 +561,7 @@ async function handle(request, env, ctx) {
   // Extensionless URL → .html direkt servieren (kein Redirect, vermeidet Loop mit ASSETS)
   // impressum ausgenommen — wird oben mit SSI bedient
   // brauerei ausgenommen — wird oben auf /ort weitergeleitet
-  const PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "admin", "ort", "event", "staedte"];
+  const PAGES = ["ranglisten", "wissen", "sorten", "beitragen", "rivalen", "kooperation", "admin", "ort", "event", "staedte", "magazin"];
   // /presse ist ein sprechender Einstieg in denselben Inhalt
   if (request.method === "GET" && /^\/presse\/?$/.test(url.pathname)) {
     const dest = new URL(request.url);

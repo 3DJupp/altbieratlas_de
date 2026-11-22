@@ -9,12 +9,12 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="theme-color" content="#b57a3a" />
 <title>Was ist Altbier? Geschichte, Köbes &amp; Glossar · Altbieratlas</title>
-<meta name="description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst." />
+<meta name="description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt, wann es Sticke, Latzen- und Weihnachtsbier gibt und welche Worte du im Brauhaus hörst." />
 <link rel="canonical" href="https://altbieratlas.de/wissen" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Altbieratlas" />
 <meta property="og:title" content="Altbier-Wissen · Altbieratlas" />
-<meta property="og:description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst." />
+<meta property="og:description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt, wann es Sticke, Latzen- und Weihnachtsbier gibt und welche Worte du im Brauhaus hörst." />
 <meta property="og:url" content="https://altbieratlas.de/wissen" />
 <meta property="og:image" content="https://altbieratlas.de/og-image.png" />
 <meta property="og:image:width" content="1200" />
@@ -25,7 +25,7 @@
 <meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Altbier-Wissen · Altbieratlas" />
-<meta name="twitter:description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst." />
+<meta name="twitter:description" content="Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt, wann es Sticke, Latzen- und Weihnachtsbier gibt und welche Worte du im Brauhaus hörst." />
 <meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
 <meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
 
@@ -138,6 +138,14 @@
 .koebes-card .num { font-family: var(--font-display); font-size: 44px; color: var(--copper); font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
 .koebes-card h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; margin: 14px 0 8px; }
 .koebes-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0; }
+.season-cards { grid-template-columns: repeat(2, 1fr); }
+.season-card .num { font-size: 15px; font-family: var(--font-body, inherit); letter-spacing: 0.04em; text-transform: uppercase; }
+.season-events { margin-top: 32px; }
+.season-events h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; margin: 0 0 12px; }
+.season-events ul { list-style: none; margin: 0; padding: 0; }
+.season-events li { padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 15px; }
+.season-events li:last-child { border-bottom: none; }
+.season-events .when { color: var(--ink-muted); font-size: 13px; display: block; }
 
 @media (max-width: 800px) {
   .glossary-grid { grid-template-columns: 1fr; }
@@ -163,6 +171,7 @@
     <div class="container">
       <a href="#geschichte" class="active" data-i18n="know.nav.history">Geschichte</a>
       <a href="#koebes" data-i18n="know.nav.koebes">Köbes</a>
+      <a href="#jahreslauf" data-i18n="know.nav.seasons">Jahreslauf</a>
       <a href="#glossar" data-i18n="know.nav.glossary">Glossar</a>
       <a href="/sorten" class="know-nav-ext" data-i18n="know.nav.styles">Sorten →</a>
       <button class="know-nav-top" id="know-nav-top" aria-label="Zum Seitenanfang">↑ Top</button>
@@ -218,6 +227,42 @@
     </div>
   </section>
 
+  <section class="know-section" id="jahreslauf">
+    <div class="container">
+      <h2 data-i18n="know.seasonsTitle">Altbier im Jahreslauf</h2>
+      <p style="color:var(--ink-soft);max-width:60ch" data-i18n="know.seasonsLede">Das normale Alt gibt es das ganze Jahr. Ein paar Biere gibt es nur an bestimmten Tagen oder in einer Jahreszeit, und im Advent wandert das Alt auch auf den Weihnachtsmarkt.</p>
+
+      <div class="koebes-cards season-cards">
+        <div class="koebes-card season-card">
+          <div class="num" data-i18n="know.season1When">Advent</div>
+          <h3 data-i18n="know.season1Title">Weihnachtsbier</h3>
+          <p data-i18n="know.season1Body">Ab Ende November brauen einige Hausbrauereien ein kräftigeres Weihnachtsbier, etwa das Füchschen. Es gibt es nur ein paar Wochen, im Brauhaus und oft auch als Flasche im Handel. Ist es weg, ist es weg bis zum nächsten Jahr.</p>
+        </div>
+        <div class="koebes-card season-card">
+          <div class="num" data-i18n="know.season2When">Dezember</div>
+          <h3 data-i18n="know.season2Title">Alt statt Glühwein</h3>
+          <p data-i18n="know.season2Body">Auf den Weihnachtsmärkten am Rhein gibt es an manchen Ständen Alt vom Fass. Welche Stände das sind, wechselt jedes Jahr. Wer friert, geht ein paar Schritte weiter ins Brauhaus: Dort ist es warm, und der Köbes bringt ungefragt nach.</p>
+        </div>
+        <div class="koebes-card season-card">
+          <div class="num" data-i18n="know.season3When">Januar &amp; Oktober</div>
+          <h3 data-i18n="know.season3Title">Sticke</h3>
+          <p data-i18n="know.season3Body">Das Uerige schenkt seine Sticke nur zweimal im Jahr aus, jeweils am dritten Dienstag im Januar und im Oktober. Sie ist stärker und kräftiger gehopft als das normale Alt. Die Doppelsticke gibt es in der Flasche.</p>
+        </div>
+        <div class="koebes-card season-card">
+          <div class="num" data-i18n="know.season4When">März, September &amp; November</div>
+          <h3 data-i18n="know.season4Title">Latzenbier</h3>
+          <p data-i18n="know.season4Body">Bei Schumacher wird am dritten Donnerstag im März, September und November das Latzenbier angestochen. Der Name kommt der Überlieferung nach von den Latten im Lagerkeller, auf denen früher die besonderen Fässer lagen.</p>
+        </div>
+      </div>
+
+      <div class="season-events" id="season-events" hidden>
+        <h3 data-i18n="know.seasonsUpcoming">Die nächsten Sonderausschänke</h3>
+        <ul id="season-events-list"></ul>
+      </div>
+      <p style="margin-top:18px;color:var(--ink-soft)" data-i18n-html="know.seasonsCtaHtml">Du hast Alt auf einem Weihnachtsmarkt gefunden oder ein Sonderbier gesehen? <a href="/beitragen?typ=event">Termin melden</a></p>
+    </div>
+  </section>
+
   <section class="know-section" id="glossar">
     <div class="container">
       <h2 data-i18n="know.glossaryTitle">Worte, die du im Brauhaus hörst</h2>
@@ -265,10 +310,45 @@ function paintGlossary() {
   }
 })();
 
+// ---- Sonderausschänke (kommende Termine mit Brauerei) ----
+let seasonEvents = null;
+
+function escHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function paintSeasonEvents() {
+  const box = document.getElementById("season-events");
+  if (!seasonEvents || !seasonEvents.length) { box.hidden = true; return; }
+  const lang = window.__atlasLang;
+  document.getElementById("season-events-list").innerHTML = seasonEvents.map((ev) => {
+    const multiDay = ev.endDate && ev.endDate !== ev.date;
+    const when = window.formatDateLong(ev.date) + (multiDay ? " – " + window.formatDateLong(ev.endDate) : "");
+    const title = (ev.title && (ev.title[lang] || ev.title.de)) || "";
+    return `<li><span class="when">${escHtml(when)}</span><a href="/event?id=${encodeURIComponent(ev.id)}">${escHtml(title)}</a></li>`;
+  }).join("");
+  box.hidden = false;
+}
+
+(async () => {
+  try {
+    const res = await window.AtlasAPI.listEvents();
+    const today = window.atlasHours.berlinNow().date;
+    // Nur Brauerei-Termine (Sonderbiere, Anstiche), keine allgemeinen Feste
+    seasonEvents = (res.events || [])
+      .filter((e) => e.breweryId && (e.endDate || e.date) >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 5);
+    paintSeasonEvents();
+  } catch (e) {
+    console.error("[wissen] events", e);
+  }
+})();
+
 // ---- Sticky Sub-Nav ----
 const knowNav  = document.querySelector(".know-nav");
 const knowHero = document.querySelector(".know-hero");
-const sections = ["geschichte", "koebes", "glossar"];
+const sections = ["geschichte", "koebes", "jahreslauf", "glossar"];
 const navLinks = document.querySelectorAll(".know-nav a");
 
 // navPlaceholder hält den Layout-Platz wenn die Nav fixed wird
@@ -347,6 +427,7 @@ navLinks.forEach((link) => {
 
 // Bei Sprachwechsel: nur neu rendern, kein Seiten-Reload!
 document.addEventListener("atlas:lang-changed", paintGlossary);
+document.addEventListener("atlas:lang-changed", paintSeasonEvents);
 </script>
 </body>
 </html>

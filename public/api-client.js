@@ -149,6 +149,16 @@
     },
     async listGlossary() { return { glossary: window.ATLAS_DATA.glossary }; },
     async listOffers() { return { offers: [] }; },
+    // Mock: Text als Absätze (die echte Auszeichnung rendert nur der Worker)
+    async listPosts() { return { posts: (window.ATLAS_DATA.posts || []).map(({ body, ...p }) => p) }; },
+    async getPost(id) {
+      const p = (window.ATLAS_DATA.posts || []).find((x) => x.id === id);
+      if (!p) return { error: "not-found" };
+      const esc = (s) => String(s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const toHtml = (s) => String(s || "").split(/\n\s*\n/).map((b) => `<p>${esc(b)}</p>`).join("");
+      const { body, ...rest } = p;
+      return { post: { ...rest, html: { de: toHtml(body.de), en: toHtml(body.en) }, breweries: [], events: [] } };
+    },
     async geocode(q) {
       if (!q || q.length < 2) return { results: [] };
       try {
@@ -244,6 +254,8 @@
     getEvent:         (id) => req(`/events/${encodeURIComponent(id)}`),
     listGlossary:     () => req("/glossary"),
     listOffers:       () => req("/offers"),
+    listPosts:        () => req("/posts"),
+    getPost:          (id) => req(`/posts/${encodeURIComponent(id)}`),
     geocode:          async (q) => { try { return await req(`/geocode?q=${encodeURIComponent(q)}`); } catch { return { results: [] }; } },
     submitContribution: (body) => req("/contributions", { method: "POST", body }),
     contributionStatus: (ids) => req(`/contributions/status?ids=${encodeURIComponent(ids.join(","))}`),
@@ -284,6 +296,10 @@
       deleteBreweryPhoto:   (id) => req(`/admin/breweries/${encodeURIComponent(id)}/photo`, { method: "DELETE" }),
       requestReset:   (email) => req("/admin/request-reset", { method: "POST", body: { email } }),
       resetPassword:  (token, password) => req("/admin/reset-password", { method: "POST", body: { token, password } }),
+      listPosts:         () => req("/admin/posts"),
+      createPost:        (body) => req("/admin/posts", { method: "POST", body }),
+      updatePost:        (id, patch) => req(`/admin/posts/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
+      deletePost:        (id) => req(`/admin/posts/${encodeURIComponent(id)}`, { method: "DELETE" }),
       listEvents:        () => req("/admin/events"),
       updateEvent:       (id, patch) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "PUT", body: patch }),
       deleteEvent:       (id) => req(`/admin/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
@@ -345,6 +361,8 @@
     getEvent:           (id) => call("getEvent", id),
     listGlossary:       () => call("listGlossary"),
     listOffers:         () => call("listOffers"),
+    listPosts:          () => call("listPosts"),
+    getPost:            (id) => call("getPost", id),
     geocode:            (q) => call("geocode", q),
     submitContribution: (body) => call("submitContribution", body),
     contributionStatus: (ids) => call("contributionStatus", ids),
@@ -397,6 +415,10 @@
       deleteBreweryLogo:      (id) => window.AtlasAPI.admin._gate("deleteBreweryLogo", id),
       listBreweryLogos:       () => window.AtlasAPI.admin._gate("listBreweryLogos"),
       deleteBreweryLogoFile:  (key) => window.AtlasAPI.admin._gate("deleteBreweryLogoFile", key),
+      listPosts:      () => window.AtlasAPI.admin._gate("listPosts"),
+      createPost:     (b) => window.AtlasAPI.admin._gate("createPost", b),
+      updatePost:     (id, p) => window.AtlasAPI.admin._gate("updatePost", id, p),
+      deletePost:     (id) => window.AtlasAPI.admin._gate("deletePost", id),
       listEvents:     () => window.AtlasAPI.admin._gate("listEvents"),
       updateEvent:    (id, p) => window.AtlasAPI.admin._gate("updateEvent", id, p),
       deleteEvent:    (id) => window.AtlasAPI.admin._gate("deleteEvent", id),

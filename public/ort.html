@@ -228,6 +228,7 @@
     </div>
   </main>
 
+  <section id="mag-related" class="container mag-related" hidden></section>
   <div id="shell-footer"></div>
   <div id="shell-cookie"></div>
 </div>
@@ -294,6 +295,7 @@ const isSsr = root.dataset.ssr === "1";
 
   const b = result.brewery;
   const prices = result.prices || [];
+  window.atlasPostLinks(result.posts);
   const allStyles = stylesRes.styles || [];
   const styles = (b.styles || [])
     .map((sid) => allStyles.find((s) => s.id === sid))

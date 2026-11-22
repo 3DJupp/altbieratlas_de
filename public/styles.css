@@ -1118,3 +1118,23 @@ html { scroll-behavior: smooth; }
 .tiles-dimmed .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.86) saturate(0.55);
 }
+
+/* ---- Magazin (magazin.html, artikel.html, Box „Im Magazin“) ---- */
+.mag-list { list-style: none; margin: 0; padding: 0; max-width: 760px; }
+.mag-item { border-bottom: 1px solid var(--rule); }
+.mag-item:last-child { border-bottom: none; }
+.mag-item a { display: flex; flex-direction: column; gap: 4px; padding: 22px 0; border: none; color: var(--ink); }
+.mag-item a:hover .mag-title { color: var(--copper); }
+.mag-date { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.mag-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 500; line-height: 1.3; }
+.mag-teaser { color: var(--ink-soft); font-size: 15px; line-height: 1.6; }
+.art-body { max-width: 68ch; font-size: 17px; line-height: 1.7; color: var(--ink); }
+.art-body h2 { font-size: 1.5rem; font-weight: 500; margin: 36px 0 12px; }
+.art-body h3 { font-size: 1.2rem; font-weight: 500; margin: 28px 0 10px; }
+.art-body p, .art-body ul { margin: 0 0 18px; }
+.art-body ul { padding-left: 1.2em; }
+.art-body li { margin-bottom: 6px; }
+.mag-related { padding: 8px 24px 40px; }
+.mag-related h2 { font-size: 1.3rem; font-weight: 500; margin-bottom: 10px; }
+.mag-related ul { margin: 0; padding-left: 1.2em; }
+.mag-related li { margin-bottom: 6px; }

@@ -13,6 +13,7 @@ import {
   citySlug, cityIndex, PAGE_DATES,
 } from "./routes.js";
 import { siteConfig, STYLE_PUBLIC_SQL, inComparisons, formatEuro } from "./utils.js";
+import { POST_PUBLIC_SQL, plainText } from "./posts.js";
 
 const SITE = "https://altbieratlas.de";
 // Datenlizenz der Preismeldungen — als URL, wie Google sie im Dataset-Feld
@@ -136,11 +137,19 @@ function breadcrumb(items) {
 // GET /llms.txt — kompakter, verlinkter Überblick für Sprachmodelle.
 export async function llmsTxt(req, env) {
   const base = new URL(req.url).origin;
-  let venues = [], priceCount = 0, cities = {};
+  let venues = [], priceCount = 0, cities = {}, posts = [];
   try {
     ({ venues, priceCount } = await loadVenues(env));
     cities = await cityIndex(env);
+    posts = (await env.DB.prepare(
+      `SELECT id, title_de, teaser_de, body_de, published_at FROM posts WHERE ${POST_PUBLIC_SQL}
+       ORDER BY published_at DESC LIMIT 30`
+    ).all().catch(() => ({ results: [] }))).results || [];
   } catch { /* ohne DB: nur statischer Teil */ }
+  const postLines = posts.map((p) => {
+    const t = plainText(p.teaser_de || p.body_de);
+    return `- [${oneLine(p.title_de)}](${base}/magazin/${encodeURIComponent(p.id)}) (${p.published_at}): ${t.length > 200 ? t.slice(0, 200).replace(/\s+\S*$/, "") + "…" : t}`;
+  });
 
   const current = venues.filter((v) => !v.is_historical);
   const avg025 = avg(pricedAt(current).map((x) => x.p.price));
@@ -172,13 +181,14 @@ English: Altbieratlas is a community-maintained map of Altbier, the top-fermente
 - [Sorten](${base}/sorten): Alle Altbier-Sorten mit Alkoholgehalt, Bittere und Geschmack
 - [Alt vs. Kölsch](${base}/rivalen): Das Rheinderby zwischen Düsseldorf und Köln, Fakten und Abstimmung
 - [Städte](${base}/staedte): Übersicht aller Städte mit Altbier-Orten im Atlas
+- [Magazin](${base}/magazin): Artikel zu Saison, Sonderbieren, Veränderungen in der Altbier-Szene und Auswertungen der Preisdaten
 - [Beitragen](${base}/beitragen): Preise melden, Orte eintragen, Korrekturen, Termine und Aktionen einreichen
 - [Kooperation & Presse](${base}/kooperation): Presseanfragen, Kooperationen mit Brauereien und Lokalen, Atlas-Coupons, Unterstützung
 
 ## Altbier nach Stadt
 
 ${cityLines.join("\n") || "- (derzeit nicht verfügbar)"}
-
+${postLines.length ? `\n## Magazin\n\n${postLines.join("\n")}\n` : ""}
 ## Daten
 
 - [Vollständiger Datenauszug](${base}/llms-full.txt): Alle Orte mit Adresse, Sorten und jüngsten Preisen, dazu Sorten, Glossar und Termine als Markdown
@@ -491,8 +501,8 @@ export async function serveWissen(req, env) {
   }
 
   const wissenDesc = glossary.length
-    ? `Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und ${glossary.length} Begriffe, die du im Brauhaus hörst.`
-    : "Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt und welche Worte du im Brauhaus hörst.";
+    ? `Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt, wann es Sticke, Latzen- und Weihnachtsbier gibt und ${glossary.length} Begriffe, die du im Brauhaus hörst.`
+    : "Alles über Altbier: warum es „Alt“ heißt, wie der Köbes ausschenkt, wann es Sticke, Latzen- und Weihnachtsbier gibt und welche Worte du im Brauhaus hörst.";
   html = setMetaDescription(html, wissenDesc);
 
   html = injectLd(html, {
@@ -502,7 +512,7 @@ export async function serveWissen(req, env) {
       {
         "@type": "Article",
         "@id": `${pageUrl}#article`,
-        "headline": "Altbier: Geschichte, Köbes-Kultur und Glossar",
+        "headline": "Altbier: Geschichte, Köbes-Kultur, Jahreslauf und Glossar",
         "description": wissenDesc,
         "url": pageUrl,
         "inLanguage": "de",
@@ -736,7 +746,7 @@ async function submitChanged(env, key, host, since, until = null) {
   const base = `https://${host}`;
   const from = "COALESCE(?1, datetime('now', '-10 minutes'))";
   const to = "COALESCE(?2, datetime('now'))";
-  const [bRes, eRes] = await Promise.all([
+  const [bRes, eRes, pRes] = await Promise.all([
     env.DB.prepare(
       `SELECT DISTINCT b.id, b.city FROM breweries b
        LEFT JOIN prices p ON p.brewery_id = b.id AND p.status = 'approved'
@@ -749,9 +759,16 @@ async function submitChanged(env, key, host, since, until = null) {
       `SELECT id FROM events WHERE status = 'approved'
          AND created_at > ${from} AND created_at <= ${to} LIMIT 50`
     ).bind(since, until).all(),
+    // Magazin: neu oder geändert im Fenster, oder im Fenster öffentlich geworden
+    // (eingeplantes published_at = heute → der erste Lauf des Tages meldet ihn)
+    env.DB.prepare(
+      `SELECT id FROM posts WHERE ${POST_PUBLIC_SQL}
+         AND ((updated_at > ${from} AND updated_at <= ${to})
+              OR (published_at = date(${to}) AND date(${from}) < published_at)) LIMIT 50`
+    ).bind(since, until).all().catch(() => ({ results: [] })),
   ]);
-  const breweries = bRes.results || [], events = eRes.results || [];
-  if (!breweries.length && !events.length) return;
+  const breweries = bRes.results || [], events = eRes.results || [], posts = pRes.results || [];
+  if (!breweries.length && !events.length && !posts.length) return;
   const urls = new Set();
   // Stadtseiten nur, wenn es sie gibt (cityIndex), sonst meldeten wir 404-URLs
   const cities = breweries.length ? await cityIndex(env) : {};
@@ -761,6 +778,7 @@ async function submitChanged(env, key, host, since, until = null) {
     if (slug && cities[slug]) urls.add(`${base}/stadt/${slug}`);
   }
   for (const e of events) urls.add(`${base}/event?id=${encodeURIComponent(e.id)}`);
+  for (const p of posts) urls.add(`${base}/magazin/${encodeURIComponent(p.id)}`);
   // Alle statischen Seiten der Sitemap (PAGE_DATES) zeigen Zahlen, Orte oder
   // Termine aus D1 → bei jeder Änderung mitmelden
   for (const p of Object.keys(PAGE_DATES)) urls.add(`${base}${p}`);
