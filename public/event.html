@@ -148,6 +148,7 @@
   </div>
 </div>
 
+<section id="mag-related" class="container mag-related" hidden></section>
 <div id="shell-footer"></div>
 <div id="shell-cookie"></div>
 
@@ -340,6 +341,7 @@ if (!eventId) {
       if (!data || data.error || !data.event) throw new Error("not-found");
       _evData = data;
       renderEvent();
+      window.atlasPostLinks(data.posts);
       document.addEventListener("atlas:lang-changed", renderEvent);
     } catch (e) {
       const l = currentLang();

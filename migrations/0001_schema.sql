@@ -169,6 +169,24 @@ CREATE TABLE IF NOT EXISTS offers (
 );
 CREATE INDEX IF NOT EXISTS idx_offers_brewery ON offers(brewery_id);
 
+-- Magazin-Artikel (Logik und Text-Format siehe src/posts.js). id = Slug
+-- (/magazin/<id>). Öffentlich ab published_at, nur mit status 'approved';
+-- 'pending' ist ein Entwurf. updated_at = letzte Änderung (für IndexNow, Sitemap).
+CREATE TABLE IF NOT EXISTS posts (
+  id           TEXT PRIMARY KEY,
+  title_de     TEXT NOT NULL,
+  title_en     TEXT,
+  teaser_de    TEXT,
+  teaser_en    TEXT,
+  body_de      TEXT NOT NULL,
+  body_en      TEXT,
+  published_at TEXT NOT NULL,   -- YYYY-MM-DD
+  status       TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_posts_public ON posts(status, published_at);
+
 -- Glossary
 CREATE TABLE IF NOT EXISTS glossary (
   term          TEXT PRIMARY KEY,

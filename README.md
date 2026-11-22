@@ -1,4 +1,4 @@
-# Altbieratlas · v0.17.0
+# Altbieratlas · v0.18.0
 
 Die interaktive Karte des Altbiers — betrieben als **Cloudflare Worker + D1**.
 
@@ -13,6 +13,7 @@ altbieratlas/
 │   ├── googlePlaces.js      # Places API (New): Suche, Bewertungen, Koordinaten, Öffnungszeiten
 │   ├── hours.js             # Öffnungszeiten: Format, Prüfung, Google-Umrechnung, JSON-LD
 │   ├── offers.js            # Aktionen und Coupons: Prüfung und öffentliche Form
+│   ├── posts.js             # Magazin: Text-Auszeichnung, API, SSR für /magazin und /magazin/<slug>
 │   └── utils.js             # PBKDF2, Turnstile, Rate-Limit, E-Mail
 ├── public/
 │   ├── index.html           # Landing + Karte (Leaflet)
@@ -24,6 +25,8 @@ altbieratlas/
 │   ├── rivalen.html         # Alt vs. Kölsch — Das Rheinderby
 │   ├── stadt.html           # Stadt-Landingpage (SSR, Slugs kommen aus D1)
 │   ├── staedte.html         # Übersicht aller Städte (/staedte, SSR-Liste)
+│   ├── magazin.html         # Magazin-Übersicht (/magazin, SSR-Liste)
+│   ├── artikel.html         # Vorlage der Magazin-Artikel (/magazin/<slug>, SSR)
 │   ├── beitragen.html       # Beitrags-Formulare (6 Typen)
 │   ├── kooperation.html     # Kooperation & Presse, Kontaktformular (/kooperation, /presse)
 │   ├── impressum.html       # Impressum & Datenschutz
@@ -621,6 +624,19 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
 - Kurz eingeordnet: obergärig, Hausbrauerei, Alt aus dem Supermarkt
 - Serverseitig gerendert, Meta-Description mit Zahl der Sorten; JSON-LD `CollectionPage` mit `ItemList`
 
+### Magazin (`/magazin`)
+- Redaktionelle Artikel aus der Tabelle `posts` (nur Admin): saisonale Leitfäden,
+  größere Veränderungen, Auswertungen der Preisdaten; Admin-Tab „Magazin“
+- Öffentlich ab `published_at` mit Status `approved` (späteres Datum = eingeplant);
+  `pending` ist ein Entwurf, den nur eine Admin-Sitzung unter seiner Adresse sieht
+  (noindex, `no-store`, am Edge-Cache vorbei)
+- Kein HTML im Text, sondern eine kleine Auszeichnung (Absätze, `##`, `-`, `**fett**`,
+  `[Text](/pfad)` / `[Text](https://…)`), die `renderMarkup()` serverseitig escaped
+- Links auf `/ort/<id>` und `/event?id=<id>` verknüpfen: Ort und Termin zeigen den
+  Artikel unter „Im Magazin“, der Artikel listet sie unter „Im Artikel erwähnt“.
+  Umbenannte Orts- und Event-IDs ziehen diese Links mit
+- SSR mit JSON-LD `Article` bzw. `CollectionPage`, in Sitemap, `llms.txt` und IndexNow
+
 ### Das Rheinderby (`/rivalen`)
 - Alt vs. Kölsch: Versus-Tabelle mit Brautechnik, IBU, Glas, EU-Schutz
 - Hebt überraschende Gemeinsamkeiten hervor (beide obergärig, beide Köbes, beide 0,2 l)
@@ -636,8 +652,8 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
 ### SEO & Auffindbarkeit
 - **Kanonische URLs**: `/ort/<slug>` und `/stadt/<slug>`; alle Altformen leiten
   mit genau einem 301 weiter (keine Redirect-Ketten)
-- **Server-Rendering** auf `/`, `/ranglisten`, `/wissen`, `/sorten`, `/ort/<slug>` und
-  `/stadt/<slug>` — Inhalt steht im HTML, nicht erst nach dem JS-Rendering.
+- **Server-Rendering** auf `/`, `/ranglisten`, `/wissen`, `/sorten`, `/ort/<slug>`,
+  `/stadt/<slug>`, `/magazin` und `/magazin/<slug>` — Inhalt steht im HTML, nicht erst nach dem JS-Rendering.
   Das zählt doppelt, weil die meisten KI-Crawler (GPTBot, ClaudeBot,
   PerplexityBot …) kein JavaScript ausführen
 - **`/llms.txt` und `/llms-full.txt`** ([llmstxt.org](https://llmstxt.org)):
@@ -696,7 +712,7 @@ an der Zahl der Requests, nicht an der Datenmenge. Öffentliche GET-Antworten
 liegen deshalb fertig gerendert im Cloudflare-Cache der jeweiligen Colo
 (`src/cache.js`, TTL `EDGE_CACHE_TTL` = 10 min). Ein Treffer kostet keine
 D1-Abfrage.
-- **Gecacht:** SSR-Seiten (`/`, `/ranglisten`, `/wissen`, `/sorten`, `/ort/*`, `/stadt/*`,
+- **Gecacht:** SSR-Seiten (`/`, `/ranglisten`, `/wissen`, `/sorten`, `/ort/*`, `/stadt/*`, `/magazin`, `/magazin/*`,
   `/event`, `/impressum`), `/sitemap.xml`, `/llms*.txt` und die öffentlichen
   `/api/*`-GETs (config, stats, breweries, styles, prices, events inkl. ICS/Atom,
   venue-types, glossary, rivals/votes, OG-Bild). Cache-Key ist die volle URL
@@ -761,6 +777,8 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | GET | `/api/events/:id/calendar.ics` | Einzelnes Event als ICS |
 | GET | `/api/styles` | Bierstile |
 | GET | `/api/glossary` | Glossar |
+| GET | `/api/posts` | Öffentliche Magazin-Artikel (Titel, Teaser, Datum) |
+| GET | `/api/posts/:id` | Artikel mit gerendertem HTML (DE/EN), erwähnten Orten und Terminen; Entwürfe nur mit Admin-Sitzung |
 | GET | `/api/geocode?q=…` | Nominatim-Proxy |
 | POST | `/api/contributions` | Beitrag einreichen |
 | GET | `/api/contributions/status?ids=` | Status eigener Beiträge (max. 20 IDs, nur ID/Status/Zeitpunkte; `pending`, `approved`, `rejected`, `removed`) |
@@ -768,7 +786,7 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | POST | `/api/rivals/vote` | Stimme abgeben (`alt`, `kolsch`, `neutral`), einmal pro IP und Tag |
 | GET | `/api/untappd/brewery/:id` | Untappd-Bewertung (24h Cache) |
 | GET | `/api/og/ort?id=…` | Dynamisches 1200×630-OG-Bild je Ort (in `robots.txt` freigegeben) |
-| GET | `/sitemap.xml` | Dynamische Sitemap (statische Seiten, Städte, Orte, Events) |
+| GET | `/sitemap.xml` | Dynamische Sitemap (statische Seiten, Städte, Orte, Events, Magazin-Artikel) |
 | GET | `/llms.txt` | Überblick für Sprachmodelle (Markdown, aus D1) |
 | GET | `/llms-full.txt` | Volltext: alle Orte mit Preisen, Sorten, Glossar, Termine |
 
@@ -824,6 +842,10 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | POST | `/api/admin/glossary` | Eintrag anlegen |
 | PUT | `/api/admin/glossary/:term` | Eintrag bearbeiten |
 | DELETE | `/api/admin/glossary/:term` | Eintrag löschen |
+| GET | `/api/admin/posts` | Alle Magazin-Artikel inkl. Entwürfe (Rohtext) |
+| POST | `/api/admin/posts` | Artikel anlegen (`id` als Slug, Standardstatus `pending`) |
+| PUT | `/api/admin/posts/:id` | Artikel bearbeiten, optional `new_id` |
+| DELETE | `/api/admin/posts/:id` | Artikel löschen |
 | GET | `/api/admin/venue-types` | Alle Venue-Typen |
 | POST | `/api/admin/venue-types` | Venue-Typ anlegen |
 | PUT | `/api/admin/venue-types/:id` | Venue-Typ bearbeiten |

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de" data-theme="light" data-i18n-title="title.magazine">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="alternate icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#b57a3a" />
+<title>Altbier-Magazin: Saison, Sonderbiere und Neues · Altbieratlas</title>
+<meta name="description" content="Das Altbier-Magazin: Weihnachtsbier und Sticke, neue und geschlossene Brauhäuser, Auswertungen der Altbier-Preise und alles, was sich in der Altbier-Szene tut." />
+<link rel="canonical" href="https://altbieratlas.de/magazin" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Altbieratlas" />
+<meta property="og:title" content="Altbier-Magazin: Saison, Sonderbiere und Neues · Altbieratlas" />
+<meta property="og:description" content="Das Altbier-Magazin: Weihnachtsbier und Sticke, neue und geschlossene Brauhäuser, Auswertungen der Altbier-Preise und alles, was sich in der Altbier-Szene tut." />
+<meta property="og:url" content="https://altbieratlas.de/magazin" />
+<meta property="og:image" content="https://altbieratlas.de/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+<meta property="og:locale" content="de_DE" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta property="og:logo" content="https://altbieratlas.de/icon-192.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Altbier-Magazin: Saison, Sonderbiere und Neues · Altbieratlas" />
+<meta name="twitter:description" content="Das Altbier-Magazin: Weihnachtsbier und Sticke, neue und geschlossene Brauhäuser, Auswertungen der Altbier-Preise und alles, was sich in der Altbier-Szene tut." />
+<meta name="twitter:image" content="https://altbieratlas.de/og-image.png" />
+<meta name="twitter:image:alt" content="Altbieratlas — interaktive Karte des Altbiers" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/styles.css" />
+<style>
+.mag-hero { padding: 60px 0 32px; border-bottom: 1px solid var(--rule); }
+.mag-hero h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 500; }
+.mag-hero .lede { color: var(--ink-soft); font-size: 18px; max-width: 60ch; margin-top: 14px; line-height: 1.65; }
+.mag-main { padding-top: 24px; padding-bottom: 60px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="shell-banner" hidden></div>
+  <div id="shell-header"></div>
+
+  <section class="mag-hero">
+    <div class="container">
+      <h1 data-i18n="mag.title">Altbier-Magazin</h1>
+      <p class="lede" data-i18n="mag.lede">Was sich in der Altbier-Welt tut: Sonderbiere und Saison, neue und geschlossene Brauhäuser und was die Preisdaten im Atlas verraten.</p>
+    </div>
+  </section>
+
+  <main class="container mag-main">
+    <ul class="mag-list" id="mag-list"></ul>
+    <p id="mag-empty" style="color:var(--ink-muted)" hidden data-i18n="mag.empty">Noch keine Artikel.</p>
+  </main>
+
+  <div id="shell-footer"></div>
+  <div id="shell-cookie"></div>
+</div>
+
+<script src="/config.js"></script>
+<script src="/i18n.js"></script>
+<script src="/data.js"></script>
+<script src="/api-client.js"></script>
+<script src="/shell.js"></script>
+<script>
+renderShell({ activeNav: "magazine" });
+
+let magPosts = null;
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function paintPosts() {
+  if (!magPosts) return;
+  const lang = window.__atlasLang || "de";
+  document.getElementById("mag-list").innerHTML = magPosts.map((p) => `
+    <li class="mag-item"><a href="/magazin/${encodeURIComponent(p.id)}">
+      <span class="mag-date">${esc(window.formatDateLong(p.publishedAt))}</span>
+      <span class="mag-title">${esc(p.title[lang] || p.title.de)}</span>
+      ${(p.teaser[lang] || p.teaser.de) ? `<span class="mag-teaser">${esc(p.teaser[lang] || p.teaser.de)}</span>` : ""}
+    </a></li>`).join("");
+  document.getElementById("mag-empty").hidden = magPosts.length > 0;
+}
+(async () => {
+  try {
+    magPosts = (await window.AtlasAPI.listPosts()).posts || [];
+    paintPosts();
+  } catch (e) {
+    console.error("[magazin]", e);
+  }
+})();
+document.addEventListener("atlas:lang-changed", paintPosts);
+</script>
+</body>
+</html>
