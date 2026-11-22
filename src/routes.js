@@ -2821,14 +2821,14 @@ export async function getUntappdBrewery(req, env, { id }) {
 // Bei jeder inhaltlichen Änderung an einer Seite dieses Datum aktualisieren.
 // / und /ranglisten erhalten zusätzlich das DB-lastMod-Datum, falls neuer.
 export const PAGE_DATES = {
-  "/":           "2026-11-06",
-  "/ranglisten": "2026-11-06",
-  "/wissen":     "2026-11-21",
-  "/sorten":     "2026-10-30",
-  "/rivalen":    "2026-10-30",
-  "/beitragen":  "2026-11-06",
-  "/staedte":    "2026-11-06",
-  "/kooperation": "2026-10-30",
+  "/":           "2026-11-22",
+  "/ranglisten": "2026-11-22",
+  "/wissen":     "2026-11-22",
+  "/sorten":     "2026-11-22",
+  "/rivalen":    "2026-11-22",
+  "/beitragen":  "2026-11-22",
+  "/staedte":    "2026-11-22",
+  "/kooperation": "2026-11-22",
   "/magazin":    "2026-11-22",
 };
 
