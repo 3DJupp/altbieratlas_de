@@ -168,7 +168,7 @@ function pick(obj, lang) {
   return lang === "en" ? (obj.en || obj.de || "") : (obj.de || obj.en || "");
 }
 
-function formatDate(d, lang) {
+function evDate(d, lang) {
   if (!d) return "";
   try {
     return new Date(d + "T00:00:00").toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
@@ -183,7 +183,7 @@ function formatTime(t, lang) {
   return lang === "en" ? hm : hm + " Uhr";
 }
 
-function formatSize(s, lang) {
+function evSize(s, lang) {
   if (!s) return "";
   const n = parseFloat(String(s).replace(",", ".").replace(/\s*l$/i, ""));
   if (isNaN(n)) return s;
@@ -195,7 +195,7 @@ function esc(s) {
   return String(s).replace(/[&<>"]/g, function(c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; });
 }
 
-function formatPrice(p, lang) {
+function evPrice(p, lang) {
   if (p == null) return "—";
   return window.formatEuro(p);
 }
@@ -264,8 +264,8 @@ function renderEvent() {
     : "Event-Preise fließen nicht in die Ranglisten ein.";
 
   // Datum
-  let dateStr = formatDate(ev.date, lang);
-  if (ev.endDate && ev.endDate !== ev.date) dateStr += " – " + formatDate(ev.endDate, lang);
+  let dateStr = evDate(ev.date, lang);
+  if (ev.endDate && ev.endDate !== ev.date) dateStr += " – " + evDate(ev.endDate, lang);
 
   // Hero-Meta
   const heroParts = ["<span>" + esc(dateStr) + "</span>"];
@@ -303,8 +303,8 @@ function renderEvent() {
       const name = pick(b.name, lang) || "—";
       return "<tr>" +
         "<td>" + esc(name) + "</td>" +
-        (has.size ? '<td class="beer-size">' + esc(formatSize(b.size, lang)) + "</td>" : "") +
-        (has.price ? '<td class="beer-price">' + formatPrice(b.price, lang) + "</td>" : "") +
+        (has.size ? '<td class="beer-size">' + esc(evSize(b.size, lang)) + "</td>" : "") +
+        (has.price ? '<td class="beer-price">' + evPrice(b.price, lang) + "</td>" : "") +
         (has.notes ? '<td style="font-size:13px;color:var(--ink-muted)">' + esc(b.notes || "") + "</td>" : "") +
         "</tr>";
     }).join("");
