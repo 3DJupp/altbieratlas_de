@@ -94,6 +94,70 @@ export function linkedRefs(...bodies) {
   return { breweries: [...breweries], events: [...events] };
 }
 
+// Interne Links auf Orte, Termine und andere Artikel, die zum Zeitpunkt
+// publishedAt ins Leere führen würden (Ort/Termin nicht freigegeben oder
+// unbekannt, Artikel nicht freigegeben oder erst später veröffentlicht).
+// Freischalten scheitert daran (dead-links); `npm run check:links` prüft
+// die veröffentlichte Seite, auch nach Schreibzugriffen direkt in die D1.
+export async function deadLinks(env, { id, published_at: publishedAt, body_de, body_en }) {
+  const want = { ort: new Set(), event: new Set(), magazin: new Set() };
+  const dec = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
+  for (const body of [body_de, body_en]) {
+    LINK_RE.lastIndex = 0;
+    let m;
+    while ((m = LINK_RE.exec(String(body || "")))) {
+      const t = m[2];
+      let r;
+      if ((r = /^\/ort\/([^/?#]+)\/?(?:[?#].*)?$/.exec(t))) want.ort.add(dec(r[1]));
+      else if ((r = /^\/event\?(?:[^#]*&)?id=([^&#]+)/.exec(t))) want.event.add(dec(r[1]));
+      else if ((r = /^\/magazin\/([^/?#]+)\/?(?:[?#].*)?$/.exec(t))) want.magazin.add(dec(r[1]));
+    }
+  }
+  const found = async (sql, ids, ...extra) => {
+    if (!ids.length) return new Set();
+    const res = await env.DB.prepare(sql.replace("(?)", `(${ids.map(() => "?").join(",")})`))
+      .bind(...ids, ...extra).all();
+    return new Set((res.results || []).map((r) => r.id));
+  };
+  const ids = { ort: [...want.ort], event: [...want.event], magazin: [...want.magazin].filter((x) => x !== id) };
+  const [ort, event, magazin] = await Promise.all([
+    found("SELECT id FROM breweries WHERE status = 'approved' AND id IN (?)", ids.ort),
+    found("SELECT id FROM events WHERE status = 'approved' AND id IN (?)", ids.event),
+    found("SELECT id FROM posts WHERE status = 'approved' AND id IN (?) AND published_at <= ?", ids.magazin, publishedAt),
+  ]);
+  return [
+    ...ids.ort.filter((x) => !ort.has(x)).map((x) => `/ort/${x}`),
+    ...ids.event.filter((x) => !event.has(x)).map((x) => `/event?id=${x}`),
+    ...ids.magazin.filter((x) => !magazin.has(x)).map((x) => `/magazin/${x}`),
+  ];
+}
+
+// Freigegebene Artikel, die auf /magazin/<id> verlinken und vor `until`
+// erscheinen (until = null: alle). Gegenrichtung zu deadLinks(): Zurückziehen,
+// später Datieren oder Löschen darf deren Links nicht ins Leere laufen lassen.
+async function linkedBy(env, id, until) {
+  const res = await env.DB.prepare(
+    `SELECT id FROM posts WHERE status = 'approved' AND id != ?1
+       AND (instr(body_de, ?2) > 0 OR instr(COALESCE(body_en, ''), ?2) > 0)
+       AND (?3 IS NULL OR published_at < ?3)`
+  ).bind(id, `(/magazin/${id})`, until).all();
+  return (res.results || []).map((r) => r.id);
+}
+
+function linkedByError(ids) {
+  return error(409, "linked-by-posts", {
+    detail: `Diese Artikel verlinken hierher und wären dann ein toter Link: ${ids.join(", ")}`,
+    posts: ids,
+  });
+}
+
+function deadLinksError(links) {
+  return error(400, "dead-links", {
+    detail: `Links führen ins Leere (nicht freigegeben oder erst später öffentlich): ${links.join(", ")}`,
+    links,
+  });
+}
+
 // Links mitziehen, wenn eine Orts- oder Event-ID umbenannt wird
 export function renameLinkStmts(env, kind, oldId, newId) {
   const prefix = kind === "brewery" ? "(/ort/" : "(/event?id=";
@@ -248,6 +312,10 @@ export async function adminCreatePost(req, env) {
     return error(400, "validation-failed", { detail: e.message });
   }
   if (await env.DB.prepare("SELECT id FROM posts WHERE id = ?").bind(id).first()) return error(409, "id-already-exists");
+  if (p.status === "approved") {
+    const dead = await deadLinks(env, { id, ...p });
+    if (dead.length) return deadLinksError(dead);
+  }
   await env.DB.prepare(
     `INSERT INTO posts (id, title_de, title_en, teaser_de, teaser_en, body_de, body_en, published_at, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -278,6 +346,19 @@ export async function adminUpdatePost(req, env, { id }) {
   if (newId && await env.DB.prepare("SELECT id FROM posts WHERE id = ?").bind(newId).first()) {
     return error(409, "id-already-exists");
   }
+  // Freigegeben (bleibt oder wird es): der Stand nach dem Speichern darf auf
+  // nichts verlinken, das zum Veröffentlichungsdatum noch nicht öffentlich ist
+  const cur = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(id).first();
+  if (!cur) return error(404, "not-found");
+  const next = { ...cur, ...p, id: newId || id };
+  if (next.status === "approved") {
+    const dead = await deadLinks(env, next);
+    if (dead.length) return deadLinksError(dead);
+  }
+  if (cur.status === "approved") {
+    const by = await linkedBy(env, id, next.status === "approved" ? next.published_at : null);
+    if (by.length) return linkedByError(by);
+  }
   const fields = Object.keys(p).map((k) => `${k} = ?`);
   const values = Object.values(p);
   // Auch beim Freischalten: IndexNow meldet, was im Fenster geändert wurde.
@@ -285,7 +366,16 @@ export async function adminUpdatePost(req, env, { id }) {
   if (fields.length) fields.push("updated_at = datetime('now')");
   if (newId) { fields.push("id = ?"); values.push(newId); }
   if (!fields.length) return error(400, "no-fields");
-  const res = await env.DB.prepare(`UPDATE posts SET ${fields.join(", ")} WHERE id = ?`).bind(...values, id).run();
+  const stmts = [env.DB.prepare(`UPDATE posts SET ${fields.join(", ")} WHERE id = ?`).bind(...values, id)];
+  // Links anderer Artikel auf diesen mitziehen, sonst führen sie ins Leere
+  if (newId) {
+    const from = `(/magazin/${id})`, to = `(/magazin/${newId})`;
+    stmts.push(env.DB.prepare(
+      `UPDATE posts SET body_de = replace(body_de, ?1, ?2), body_en = replace(COALESCE(body_en, ''), ?1, ?2)
+       WHERE instr(body_de, ?1) > 0 OR instr(COALESCE(body_en, ''), ?1) > 0`
+    ).bind(from, to));
+  }
+  const [res] = await env.DB.batch(stmts);
   if (!res.meta.changes) return error(404, "not-found");
   return json({ ok: true, new_id: newId || undefined });
 }
@@ -294,6 +384,8 @@ export async function adminUpdatePost(req, env, { id }) {
 export async function adminDeletePost(req, env, { id }) {
   const auth = await requireAdmin(req, env);
   if (!auth.ok) return auth.res;
+  const by = await linkedBy(env, id, null);
+  if (by.length) return linkedByError(by);
   const res = await env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id).run();
   if (!res.meta.changes) return error(404, "not-found");
   return json({ ok: true });

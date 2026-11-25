@@ -24,6 +24,12 @@ bash scripts/deploy.sh --seed   # First-time: schema + seed + deploy
 # Admin user
 npm run admin:create -- admin <password> --email=x@example.com --remote
 
+# Tests (node:test, no dependencies; Node >= 22.5 for node:sqlite)
+npm test
+# Dead internal links on the deployed site (prod by default, or a preview URL)
+npm run check:links
+npm run check:links -- https://<branch>.dev.altbieratlas.de
+
 # IndexNow (needs the INDEXNOW_KEY secret; the worker pings automatically after
 # admin mutations and hourly for direct D1 changes — this is for the initial submission and for changes made
 # straight in the D1 console)
@@ -61,7 +67,7 @@ Every GET HTML response passes through `SEO.applyLangVariant()`: `?lang=en` serv
 
 ### Frontend (Vanilla JS, no framework)
 
-Each HTML page is self-contained. Shared infrastructure is loaded via `<script>` tags in this order:
+Each HTML page is self-contained. A page's inline `<script>` must never declare a top-level function or variable with the name of a global from the shared scripts (`window.formatPrice`, `formatDate`, …): it replaces that global for every caller, which once sent `formatEuro()` into endless recursion and broke every event page with a priced beer. Prefix page-local helpers instead (`evPrice`); `test/page-globals.test.mjs` enforces this. Shared infrastructure is loaded via `<script>` tags in this order:
 
 1. `config.js` — sets `window.ATLAS_CONFIG` (mock-mode fallback defaults)
 2. `i18n.js` — DE/EN translation strings
@@ -94,7 +100,7 @@ Key tables: `breweries` (incl. `is_historical` flag, `highlighted` — golden ma
 
 Opening hours: `breweries.opening_hours` (own, format in `src/hours.js`) win; otherwise the venue page shows Google's `regularOpeningHours` from `google_places_cache` labelled „laut Google“ — never copy those into `breweries`, and only own hours go into JSON-LD. „Jetzt geöffnet“ and offer timing always use Europe/Berlin (`window.atlasHours`/`window.atlasOffers` in `shell.js`). `offers` (see `src/offers.js`) holds venue offers and partner coupons; coupons and `highlighted` venues are always visibly labelled „Partner“ (paid placement), and neither may ever influence rankings or price comparisons. `contributions.type` includes `offer`. On approval `contributions.result_ref` records what was created (`prices:<id>`, `breweries:<id>`, `events:<id>`, `offers:<id>`, `styles:<id>`, `brewery_styles:<brewery>/<style>`): `/api/contributions/status` reports an approved contribution whose record is gone or no longer approved as `removed`, and rejecting an approved contribution (revoke) hides that record instead of deleting it. The contact form (`POST /api/contact`, `/kooperation`) only mails `ADMIN_EMAIL` and stores nothing.
 
-Magazine (`posts`, `src/posts.js`): admin-written articles at `/magazin/<slug>`, public only with `status = 'approved'` and `published_at <= today` (`POST_PUBLIC_SQL`); `pending` drafts are visible only to an admin session (noindex, `no-store`). Bodies are never HTML: a small markup rendered and escaped by `renderMarkup()` on the server; the browser only inserts that server HTML. Links to `/ort/<id>` and `/event?id=<id>` are the only relation between an article and a venue/event (box „Im Magazin“ via `postsLinking()`), so every ID rename must run `renameLinkStmts()`. Articles are content: they go into the live D1 only, never into seed or a commit (the mock has one generic example in `data.js`).
+Magazine (`posts`, `src/posts.js`): admin-written articles at `/magazin/<slug>`, public only with `status = 'approved'` and `published_at <= today` (`POST_PUBLIC_SQL`); `pending` drafts are visible only to an admin session (noindex, `no-store`). Bodies are never HTML: a small markup rendered and escaped by `renderMarkup()` on the server; the browser only inserts that server HTML. Links to `/ort/<id>` and `/event?id=<id>` are the only relation between an article and a venue/event (box „Im Magazin“ via `postsLinking()`), so every ID rename must run `renameLinkStmts()` (a renamed article moves `/magazin/<id>` links in other articles itself). Approving never creates a dead end: `deadLinks()` rejects `approved` while a linked venue, event or article isn't public by the article's `published_at` (a scheduled article counts from its date), and `linkedBy()` blocks withdrawing, postponing or deleting an article that approved articles link to. Writes straight into D1 bypass both, so run `npm run check:links` after doing that. Articles are content: they go into the live D1 only, never into seed or a commit (the mock has one generic example in `data.js`).
 
 Pure breweries (venue type `brewery`) don't pour and are left out of every comparison (price rankings, averages, „Preis gesucht“, Google ranking): use `inComparisons()` (`src/utils.js`) on the server and `window.atlasInComparisons()` (`shell.js`) in the browser, never a hand-written type check. Public style lists go through `STYLE_PUBLIC_SQL`, which hides a style until one of its places is approved.
 

@@ -47,10 +47,12 @@ altbieratlas/
 │   └── 0002_seed.sql        # Alle Seed-Daten: Venue-Typen, Stile, Glossar, Brauereien, Preise, Events
 ├── scripts/
 │   ├── backfill-place-ids.mjs # Google Place IDs nachtragen (Dry-Run / --apply)
+│   ├── check-links.mjs      # tote interne Links auf der veröffentlichten Seite (npm run check:links)
 │   ├── create-admin.mjs     # Admin-User anlegen
 │   ├── db-setup.sh          # DB-Setup (Schema + Seed + Upgrade)
 │   ├── deploy.sh            # CI-Deploy (D1-Credentials via Env-Vars ersetzen, danach IndexNow)
 │   └── indexnow.sh          # IndexNow-Submit (Sitemap oder Einzel-URLs)
+├── test/                    # npm test: node:test gegen den Worker-Code (D1 über node:sqlite)
 ├── wrangler.toml
 ├── BACKLOG.md           # offene Punkte (Admin-Lücken u. a.)
 └── package.json
@@ -634,7 +636,13 @@ ergänzt. Dieselbe Regel gilt für Admin-Eingaben und noch einmal bei der Ausgab
   `[Text](/pfad)` / `[Text](https://…)`), die `renderMarkup()` serverseitig escaped
 - Links auf `/ort/<id>` und `/event?id=<id>` verknüpfen: Ort und Termin zeigen den
   Artikel unter „Im Magazin“, der Artikel listet sie unter „Im Artikel erwähnt“.
-  Umbenannte Orts- und Event-IDs ziehen diese Links mit
+  Umbenannte Orts- und Event-IDs ziehen diese Links mit, ebenso umbenannte Artikel
+  (`/magazin/<id>` in anderen Artikeln)
+- Keine toten Links durch Freischalten: Ein Artikel lässt sich nur auf `approved` setzen,
+  wenn jeder Link auf `/ort/…`, `/event?id=…` und `/magazin/…` zu seinem `published_at`
+  öffentlich ist (Fehler `dead-links`, ein eingeplanter Artikel zählt ab seinem Datum).
+  Umgekehrt scheitern Zurückziehen, späteres Datum und Löschen eines Artikels, auf den
+  freigegebene Artikel verlinken (`linked-by-posts`). Entwürfe dürfen tote Links enthalten
 - SSR mit JSON-LD `Article` bzw. `CollectionPage`, in Sitemap, `llms.txt` und IndexNow
 
 ### Das Rheinderby (`/rivalen`)
@@ -755,6 +763,22 @@ Die Site läuft auf `http://localhost:8787`. Turnstile-Verifikation wird übersp
 
 Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser öffnen — `api-client.js` erkennt das fehlende Backend und fällt auf den **Mock-Modus** zurück.
 
+### Tests und Link-Prüfung
+
+```bash
+npm test                 # node:test, ohne Abhängigkeiten (Node ≥ 22.5)
+npm run check:links      # tote interne Links auf altbieratlas.de
+npm run check:links -- https://<branch>.dev.altbieratlas.de   # auf einer Worker Preview
+```
+
+`npm test` läuft gegen den echten Worker-Code: `test/d1.mjs` stellt D1 mit `node:sqlite`
+und dem Schema aus `migrations/0001_schema.sql` nach, `test/loader.mjs` ersetzt nur die
+WASM- und Font-Imports des OG-Bilds. Geprüft werden die Link-Regeln des Magazins und dass
+keine Seite einen globalen Helfer aus `config.js`, `i18n.js`, `shell.js` oder
+`api-client.js` überschreibt. `check:links` lädt alle Seiten der Sitemap und ruft jedes
+interne Linkziel ab; es findet auch tote Links aus Daten, die direkt in die D1 geschrieben
+wurden und damit an der Prüfung der API vorbeigehen.
+
 ---
 
 ## 4 · API-Endpunkte
@@ -843,9 +867,9 @@ Für reines UI-Testen einfach eine beliebige `public/*.html`-Datei im Browser ö
 | PUT | `/api/admin/glossary/:term` | Eintrag bearbeiten |
 | DELETE | `/api/admin/glossary/:term` | Eintrag löschen |
 | GET | `/api/admin/posts` | Alle Magazin-Artikel inkl. Entwürfe (Rohtext) |
-| POST | `/api/admin/posts` | Artikel anlegen (`id` als Slug, Standardstatus `pending`) |
-| PUT | `/api/admin/posts/:id` | Artikel bearbeiten, optional `new_id` |
-| DELETE | `/api/admin/posts/:id` | Artikel löschen |
+| POST | `/api/admin/posts` | Artikel anlegen (`id` als Slug, Standardstatus `pending`); `approved` nur ohne tote Links (`dead-links`) |
+| PUT | `/api/admin/posts/:id` | Artikel bearbeiten, optional `new_id` (zieht Links anderer Artikel mit); scheitert mit `dead-links` bzw. `linked-by-posts` |
+| DELETE | `/api/admin/posts/:id` | Artikel löschen, nicht solange freigegebene Artikel darauf verlinken (`linked-by-posts`) |
 | GET | `/api/admin/venue-types` | Alle Venue-Typen |
 | POST | `/api/admin/venue-types` | Venue-Typ anlegen |
 | PUT | `/api/admin/venue-types/:id` | Venue-Typ bearbeiten |

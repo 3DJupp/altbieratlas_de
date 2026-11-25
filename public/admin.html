@@ -3539,7 +3539,7 @@ async function loadPostsTab() {
         try {
           await window.AtlasAPI.admin.deletePost(id);
           loadPostsTab();
-        } catch (e) { alert(window.t("admin.errorPrefix") + e.message); }
+        } catch (e) { alert(window.t("admin.errorPrefix") + (e.detail?.detail || e.message)); }
       });
     });
   } catch (e) {
