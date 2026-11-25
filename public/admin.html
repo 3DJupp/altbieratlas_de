@@ -693,28 +693,28 @@
 
         <!-- Magazin -->
         <section id="tab-posts">
-          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px">
-            Artikel für <a href="/magazin" target="_blank">/magazin</a>. Öffentlich erst mit Status <b>approved</b> und ab dem Datum;
-            <b>pending</b> ist ein Entwurf, den nur eingeloggte Admins unter seiner Adresse sehen.
+          <p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px" data-i18n-html="admin.postsSub">
+            Artikel für <a href="/magazin" target="_blank">/magazin</a>. Öffentlich erst mit Status <b>Freigegeben</b> und ab dem Datum;
+            <b>In Prüfung</b> ist ein Entwurf, den nur eingeloggte Admins unter seiner Adresse sehen.
           </p>
           <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px">
-            <h3 id="post-form-title" style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px">Neuer Artikel</h3>
+            <h3 id="post-form-title" style="font-family:var(--font-display);font-weight:500;font-size:1.1rem;margin-bottom:16px" data-i18n="admin.postNewTitle">Neuer Artikel</h3>
             <form id="post-form" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:end">
               <input type="hidden" name="orig_id" />
               <div class="field" style="margin:0">
-                <label>ID (Adresse /magazin/…) *</label>
+                <label data-i18n="admin.postId">ID (Adresse /magazin/…) *</label>
                 <input name="id" type="text" maxlength="100" required pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="altbier-im-advent-2026" style="font-family:var(--font-ui);font-size:13px" />
               </div>
               <div class="field" style="margin:0">
-                <label>Datum *</label>
+                <label data-i18n="admin.postDate">Datum *</label>
                 <input name="published_at" type="date" required />
               </div>
               <div class="field" style="margin:0">
-                <label>Status</label>
+                <label data-i18n="admin.colStatus">Status</label>
                 <select name="status">
-                  <option value="pending">pending (Entwurf)</option>
-                  <option value="approved">approved (öffentlich)</option>
-                  <option value="rejected">rejected (verworfen)</option>
+                  <option value="pending" data-i18n="admin.postStatusPending">In Prüfung (Entwurf)</option>
+                  <option value="approved" data-i18n="admin.postStatusApproved">Freigegeben (öffentlich)</option>
+                  <option value="rejected" data-i18n="admin.postStatusRejected">Abgelehnt (verworfen)</option>
                 </select>
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
@@ -726,7 +726,7 @@
                 <input name="title_en" type="text" maxlength="200" />
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
-                <label>Teaser (DE), auch Meta-Description</label>
+                <label data-i18n="admin.postTeaserDe">Teaser (DE), auch Meta-Description</label>
                 <textarea name="teaser_de" rows="2" maxlength="400" style="resize:vertical"></textarea>
               </div>
               <div class="field" style="margin:0;grid-column:1/-1">
@@ -747,9 +747,9 @@
                 Links auf <code>/ort/&lt;id&gt;</code> und <code>/event?id=&lt;id&gt;</code> verknüpfen den Artikel mit dem Ort bzw. Termin (Box „Im Magazin“ dort).
               </p>
               <div style="grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn btn-approve" type="submit">Speichern</button>
-                <button class="btn btn-ghost" type="button" id="post-form-reset">Neu / Abbrechen</button>
-                <a class="btn btn-ghost" id="post-form-preview" href="#" target="_blank" hidden>Vorschau öffnen</a>
+                <button class="btn btn-approve" type="submit" data-i18n="common.save">Speichern</button>
+                <button class="btn btn-ghost" type="button" id="post-form-reset" data-i18n="admin.postReset">Neu / Abbrechen</button>
+                <a class="btn btn-ghost" id="post-form-preview" href="#" target="_blank" hidden data-i18n="admin.postPreview">Vorschau öffnen</a>
               </div>
             </form>
             <div id="post-form-msg" style="display:none;margin-top:10px;font-size:13px"></div>
@@ -757,7 +757,7 @@
 
           <div style="overflow:auto">
             <table class="brewery-table">
-              <thead><tr><th>ID</th><th>Titel</th><th>Datum</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>ID</th><th data-i18n="admin.colTitle">Titel</th><th data-i18n="admin.colDate">Datum</th><th data-i18n="admin.colStatus">Status</th><th></th></tr></thead>
               <tbody id="posts-tbody"></tbody>
             </table>
           </div>
@@ -1344,8 +1344,8 @@
 
       <div class="edit-msg" id="event-edit-msg" style="display:none"></div>
       <div class="edit-actions">
-        <button class="btn btn-ghost" id="event-edit-cancel">Abbrechen</button>
-        <button class="btn btn-approve" id="event-edit-save">Speichern</button>
+        <button class="btn btn-ghost" id="event-edit-cancel" data-i18n="common.cancel">Abbrechen</button>
+        <button class="btn btn-approve" id="event-edit-save" data-i18n="common.save">Speichern</button>
       </div>
     </div>
   </div>
@@ -1415,6 +1415,23 @@ const loginSection = document.getElementById("login-section");
 const adminSection = document.getElementById("admin-section");
 const loginErr = document.getElementById("login-error");
 let me = null;
+
+// Gemeinsame Darstellung für alle Tabs: Escaping, Status-Badge, Datumsbereich
+function admEsc(v) {
+  return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+const ADM_STATUS_KEYS = { approved: "admin.statusApproved", pending: "admin.statusPending", rejected: "admin.statusRejected" };
+function admStatus(status) {
+  const key = ADM_STATUS_KEYS[status];
+  return `<span class="status-${admEsc(status)}">${admEsc(key ? window.t(key) : status)}</span>`;
+}
+// „24.04.2026 18:00 – 26.04.2026“ bzw. „24.04.2026 18:00–22:00“
+function admDateRange(date, time, endDate, endTime) {
+  let out = window.formatDate(date) + (time ? " " + time : "");
+  if (endDate && endDate !== date) out += " – " + window.formatDate(endDate) + (endTime ? " " + endTime : "");
+  else if (endTime) out += "–" + endTime;
+  return out;
+}
 
 // ============ Auth: Initialprüfung ============
 (async () => {
@@ -1913,7 +1930,7 @@ function pcRender() {
       <td><a href="/ort/${encodeURIComponent(r.id)}" target="_blank">${pbEsc(r.name)}</a>${r.shared > 1 ? ` <span style="color:var(--ink-muted)">(${t("admin.pinCheckShared").replace("{n}", r.shared)})</span>` : ""}<div style="color:var(--ink-muted)">${pbEsc(r.address)}</div></td>
       <td>${pbEsc(r.city)}</td>
       <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap" class="${far ? "status-rejected" : ""}">${r.distance} m</td>
-      <td class="status-${pbEsc(r.status)}">${pbEsc(r.status)}</td>
+      <td>${admStatus(r.status)}</td>
       <td style="white-space:nowrap"><a href="${osm}" target="_blank" rel="noopener">${t("admin.pinCheckDbPin")}</a> · <a href="${google}" target="_blank" rel="noopener">Google</a></td>
       <td><button class="btn" type="button" style="font-size:11px;padding:3px 8px" data-pc-edit="${pbEsc(r.id)}">${t("admin.actionEdit")}</button></td>
     </tr>`;
@@ -2130,10 +2147,10 @@ async function loadBreweriesTable() {
           data-successor="${b.successorId || ""}"
           data-photo-key="${b.photoKey || ""}"
           data-logo-key="${b.logoKey || ""}">
-        <td><a href="/ort/${encodeURIComponent(b.id)}" target="_blank">${b.name}</a>${sharedHint(b)}</td>
-        <td>${b.city}${b.country && b.country !== "DE" ? " · " + b.country : ""}</td>
-        <td>${typeLabel(b.type)}</td>
-        <td><span class="status-${b.status}">${b.status}</span></td>
+        <td><a href="/ort/${encodeURIComponent(b.id)}" target="_blank">${admEsc(b.name)}</a>${sharedHint(b)}</td>
+        <td>${admEsc(b.city)}${b.country && b.country !== "DE" ? " · " + admEsc(b.country) : ""}</td>
+        <td>${admEsc(typeLabel(b.type))}</td>
+        <td>${admStatus(b.status)}</td>
         <td>${b.verified ? "✓" : "—"}</td>
         <td class="actions">
           ${b.status !== "approved" ? `<button class="btn btn-approve" data-act="approve">${t("admin.approve")}</button>` : ""}
@@ -2171,7 +2188,7 @@ async function handleBreweryAction(id, act, rowEl) {
     try {
       await window.AtlasAPI.admin.updateBrewery(id, { status: "approved", verified: 1 });
       rowEl.dataset.status = "approved";
-      rowEl.querySelector("td:nth-child(4)").innerHTML = `<span class="status-approved">approved</span>`;
+      rowEl.querySelector("td:nth-child(4)").innerHTML = admStatus("approved");
       rowEl.querySelector("td:nth-child(5)").textContent = "✓";
       rowEl.querySelector("button[data-act='toggle-verified']").textContent = t("admin.actionUnverify");
       rowEl.querySelector("button[data-act='approve']")?.remove();
@@ -2650,7 +2667,7 @@ async function loadStylesTab() {
     cachedStyles = null; // Neulade erzwingen
     const allSty = await ensureStyles();
     if (!allSty.length) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Stile vorhanden.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--ink-muted)">${window.t("admin.noTableEntries")}</td></tr>`;
       return;
     }
     tbody.innerHTML = allSty.map((s) => `
@@ -2673,8 +2690,8 @@ async function loadStylesTab() {
         <td>${s.logoUrl ? `<img src="${s.logoUrl}" alt="" style="width:32px;height:32px;object-fit:contain;border-radius:3px" onerror="this.style.display='none'">` : "—"}</td>
         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.tasting?.de || "—"}</td>
         <td class="actions">
-          <button class="btn" data-act="edit-style">Bearbeiten</button>
-          <button class="btn btn-reject" data-act="delete-style">Löschen</button>
+          <button class="btn" data-act="edit-style">${window.t("admin.actionEdit")}</button>
+          <button class="btn btn-reject" data-act="delete-style">${window.t("admin.actionDelete")}</button>
         </td>
       </tr>
     `).join("");
@@ -3035,11 +3052,11 @@ async function loadEventsTab() {
           data-status="${ev.status || ""}"
           data-desc-de="${(ev.descriptionDe || "").replace(/"/g, "&quot;")}"
           data-desc-en="${(ev.descriptionEn || "").replace(/"/g, "&quot;")}">
-        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:11px">${ev.id}</td>
-        <td>${ev.titleDe}${ev.titleEn && ev.titleEn !== ev.titleDe ? `<br><span style="font-size:11px;color:var(--ink-muted)">${ev.titleEn}</span>` : ""}</td>
-        <td>${ev.breweryName || "—"}</td>
-        <td>${window.formatDate ? window.formatDate(ev.date) : ev.date}${ev.time ? " " + ev.time : ""}</td>
-        <td><span class="status-${ev.status}">${ev.status}</span></td>
+        <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;font-size:11px">${admEsc(ev.id)}</td>
+        <td>${admEsc(ev.titleDe)}${ev.titleEn && ev.titleEn !== ev.titleDe ? `<br><span style="font-size:11px;color:var(--ink-muted)">${admEsc(ev.titleEn)}</span>` : ""}</td>
+        <td>${admEsc(ev.breweryName || "—")}</td>
+        <td style="white-space:nowrap">${admDateRange(ev.date, ev.time, ev.endDate, ev.endTime)}</td>
+        <td>${admStatus(ev.status)}</td>
         <td class="actions">
           <button class="btn" data-act="edit-event">${t("admin.actionEdit")}</button>
           <button class="btn btn-reject" data-act="delete-event">${t("admin.actionDelete")}</button>
@@ -3153,7 +3170,7 @@ document.getElementById("event-edit-save").addEventListener("click", async () =>
     row.dataset.descEn    = patch.description_en || "";
     row.cells[0].textContent = effectiveEventId;
     row.cells[1].innerHTML = patch.title_de + (patch.title_en && patch.title_en !== patch.title_de ? `<br><span style="font-size:11px;color:var(--ink-muted)">${patch.title_en}</span>` : "");
-    row.cells[3].textContent = (window.formatDate ? window.formatDate(patch.date) : patch.date) + (patch.time ? " " + patch.time : "");
+    row.cells[3].textContent = admDateRange(patch.date, patch.time, patch.end_date, patch.end_time);
     const sp = row.cells[4].querySelector("span");
     sp.className = "status-" + patch.status;
     sp.textContent = patch.status;
@@ -3212,12 +3229,12 @@ document.getElementById("eb-cancel").addEventListener("click", resetBeerForm);
 
 async function loadEventBeers(eventId) {
   const list = document.getElementById("ev-beers-list");
-  list.innerHTML = "<em style='color:var(--ink-muted)'>Lade…</em>";
+  list.innerHTML = `<em style='color:var(--ink-muted)'>${window.t("common.loading")}</em>`;
   try {
     const r = await window.AtlasAPI.admin.listEventBeers(eventId);
     const beers = r.beers || [];
     if (!beers.length) {
-      list.innerHTML = "<span style='color:var(--ink-muted)'>Noch keine Biere eingetragen.</span>";
+      list.innerHTML = `<span style='color:var(--ink-muted)'>${window.t("admin.evNoBeers")}</span>`;
       return;
     }
     list.innerHTML = beers.map((b) => {
@@ -3339,13 +3356,13 @@ async function loadPricesTab() {
           data-source="${(p.source || "").replace(/"/g, "&quot;")}"
           data-style-id="${p.styleId || ""}"
           data-status="${p.status || ""}">
-        <td>${p.breweryName || p.breweryId}</td>
-        <td>${window.formatDate ? window.formatDate(p.date) : p.date}</td>
-        <td>${window.formatSize ? window.formatSize(String(p.size)) : p.size}</td>
-        <td>${p.styleName || "—"}</td>
+        <td>${admEsc(p.breweryName || p.breweryId)}</td>
+        <td>${window.formatDate(p.date)}</td>
+        <td>${admEsc(window.formatSize(String(p.size)))}</td>
+        <td>${admEsc(p.styleName || "—")}</td>
         <td style="font-family:var(--font-ui);font-variant-numeric:tabular-nums;color:var(--copper)">${window.formatEuro(p.price)}</td>
-        <td>${p.source || "—"}</td>
-        <td><span class="status-${p.status}">${p.status}</span></td>
+        <td>${admEsc(p.source || "—")}</td>
+        <td>${admStatus(p.status)}</td>
         <td class="actions">
           <button class="btn" data-act="edit-price">${t("admin.actionEdit")}</button>
           <button class="btn btn-reject" data-act="delete-price">${t("admin.actionDelete")}</button>
@@ -3452,7 +3469,7 @@ document.getElementById("price-edit-save").addEventListener("click", async () =>
     row.dataset.styleId   = patch.style_id || "";
     row.dataset.status    = patch.status;
     const styleSel = document.getElementById("pe-style");
-    row.cells[1].textContent = window.formatDate ? window.formatDate(patch.date) : patch.date;
+    row.cells[1].textContent = window.formatDate(patch.date);
     row.cells[2].textContent = window.formatSize ? window.formatSize(String(patch.size)) : patch.size;
     row.cells[3].textContent = patch.style_id ? styleSel.options[styleSel.selectedIndex].textContent : "—";
     row.cells[4].textContent = window.formatEuro(patch.price);
@@ -3516,17 +3533,17 @@ async function loadPostsTab() {
   try {
     cachedPosts = (await window.AtlasAPI.admin.listPosts()).posts || [];
     if (!cachedPosts.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--ink-muted)">Noch keine Artikel.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--ink-muted)">${window.t("admin.noTableEntries")}</td></tr>`;
       return;
     }
     tbody.innerHTML = cachedPosts.map((p) => `
       <tr data-post-id="${postEsc(p.id)}">
         <td style="font-family:var(--font-ui);font-size:11px">${postEsc(p.id)}</td>
         <td>${postEsc(p.titleDe)}${p.titleEn && p.titleEn !== p.titleDe ? `<br><span style="font-size:11px;color:var(--ink-muted)">${postEsc(p.titleEn)}</span>` : ""}</td>
-        <td>${postEsc(p.publishedAt)}</td>
-        <td><span class="status-${postEsc(p.status)}">${postEsc(p.status)}</span></td>
+        <td style="white-space:nowrap">${window.formatDate(p.publishedAt)}</td>
+        <td>${admStatus(p.status)}</td>
         <td class="actions">
-          <a class="btn" href="/magazin/${encodeURIComponent(p.id)}" target="_blank">Ansehen</a>
+          <a class="btn" href="/magazin/${encodeURIComponent(p.id)}" target="_blank">${window.t("admin.postView")}</a>
           <button class="btn" data-act="edit-post">${window.t("admin.actionEdit")}</button>
           <button class="btn btn-reject" data-act="delete-post">${window.t("admin.actionDelete")}</button>
         </td>
@@ -3535,7 +3552,7 @@ async function loadPostsTab() {
       const id = row.dataset.postId;
       row.querySelector("[data-act='edit-post']").addEventListener("click", () => fillPostForm(cachedPosts.find((p) => p.id === id)));
       row.querySelector("[data-act='delete-post']").addEventListener("click", async () => {
-        if (!confirm(`Artikel „${id}“ endgültig löschen?`)) return;
+        if (!confirm(window.t("admin.postConfirmDelete").replace("{id}", id))) return;
         try {
           await window.AtlasAPI.admin.deletePost(id);
           loadPostsTab();
@@ -3552,7 +3569,7 @@ function fillPostForm(p) {
   f.reset();
   f.orig_id.value = p ? p.id : "";
   f.id.value = p ? p.id : "";
-  f.published_at.value = p ? p.publishedAt : new Date().toISOString().slice(0, 10);
+  f.published_at.value = p ? p.publishedAt : window.atlasHours.berlinNow().date;
   f.status.value = p ? p.status : "pending";
   f.title_de.value = p?.titleDe || "";
   f.title_en.value = p?.titleEn || "";
@@ -3560,7 +3577,7 @@ function fillPostForm(p) {
   f.teaser_en.value = p?.teaserEn || "";
   f.body_de.value = p?.bodyDe || "";
   f.body_en.value = p?.bodyEn || "";
-  document.getElementById("post-form-title").textContent = p ? `Artikel bearbeiten: ${p.id}` : "Neuer Artikel";
+  document.getElementById("post-form-title").textContent = p ? window.t("admin.postEditTitle").replace("{id}", p.id) : window.t("admin.postNewTitle");
   const prev = document.getElementById("post-form-preview");
   prev.hidden = !p;
   if (p) prev.href = `/magazin/${encodeURIComponent(p.id)}`;
@@ -3595,11 +3612,11 @@ document.getElementById("post-form").addEventListener("submit", async (e) => {
     }
     msg.style.display = "block";
     msg.style.color = "var(--copper)";
-    msg.textContent = "Gespeichert.";
+    msg.textContent = window.t("admin.evSaved");
     await loadPostsTab();
     fillPostForm(cachedPosts.find((p) => p.id === v("id")) || null);
     msg.style.display = "block";
-    msg.textContent = "Gespeichert.";
+    msg.textContent = window.t("admin.evSaved");
   } catch (err) {
     msg.style.display = "block";
     msg.style.color = "#9b1f1f";
@@ -3615,7 +3632,7 @@ async function loadGlossaryTab() {
     const r = await window.AtlasAPI.admin.listGlossary();
     const items = r.glossary || [];
     if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Einträge.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--ink-muted)">${window.t("admin.noTableEntries")}</td></tr>`;
       return;
     }
     tbody.innerHTML = items.map((g) => `
@@ -3626,8 +3643,8 @@ async function loadGlossaryTab() {
         <td style="font-size:13px;max-width:300px">${g.definition?.de || "—"}</td>
         <td style="font-size:13px;max-width:300px;color:var(--ink-muted)">${g.definition?.en || "—"}</td>
         <td class="actions">
-          <button class="btn" data-act="edit-glossary">Bearbeiten</button>
-          <button class="btn btn-reject" data-act="delete-glossary">Löschen</button>
+          <button class="btn" data-act="edit-glossary">${window.t("admin.actionEdit")}</button>
+          <button class="btn btn-reject" data-act="delete-glossary">${window.t("admin.actionDelete")}</button>
         </td>
       </tr>
     `).join("");
@@ -3753,7 +3770,7 @@ async function loadOffersTab() {
         <td>${o.kind === "coupon" ? `<span class="status-pending" style="font-size:11px">${t("offer.partner")}</span> ` : ""}${offerEsc(o.titleDe)}${o.code ? ` <code>${offerEsc(o.code)}</code>` : ""}</td>
         <td style="white-space:nowrap">${offerEsc(offerWhen(o))}</td>
         <td style="white-space:nowrap${expired ? ";color:#9b1f1f" : ""}">${o.validFrom ? window.formatDate(o.validFrom) : ""}${o.validFrom || o.validUntil ? " – " : "—"}${o.validUntil ? window.formatDate(o.validUntil) : ""}</td>
-        <td><span class="status-${o.status}">${o.status}</span></td>
+        <td>${admStatus(o.status)}</td>
         <td class="actions">
           ${o.status !== "approved" ? `<button class="btn btn-approve" data-offer-approve="${o.id}">${t("admin.approve")}</button>` : ""}
           <button class="btn" data-offer-edit="${o.id}">${t("admin.actionEdit")}</button>
@@ -3866,9 +3883,8 @@ async function loadSystemTab() {
   stats.textContent = t("common.loading");
   try {
     const r = await window.AtlasAPI.admin.rivalVotes();
-    const fmt = (ts) => ts ? new Date(ts.replace(" ", "T") + "Z").toLocaleDateString(window.__atlasLang === "en" ? "en-GB" : "de-DE") : "—";
     stats.innerHTML = `<strong>Alt ${r.alt}</strong> · <strong>Kölsch ${r.kolsch}</strong> · ${t("admin.rivalsNeutral")} ${r.neutral}`
-      + `<div style="color:var(--ink-muted);font-size:12px;margin-top:4px">${fmt(r.first)} – ${fmt(r.last)}</div>`;
+      + `<div style="color:var(--ink-muted);font-size:12px;margin-top:4px">${window.formatDate(r.first)} – ${window.formatDate(r.last)}</div>`;
   } catch (e) { stats.textContent = t("admin.errorPrefix") + e.message; }
   loadUsers();
 }
@@ -4032,7 +4048,7 @@ async function loadVenueTypesTab() {
     const r = await window.AtlasAPI.admin.listVenueTypes();
     const items = r.venueTypes || [];
     if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">Keine Typen vorhanden.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-muted)">${window.t("admin.noTableEntries")}</td></tr>`;
       return;
     }
     tbody.innerHTML = items.map((vt) => `
@@ -4049,8 +4065,8 @@ async function loadVenueTypesTab() {
         <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted)">${vt.headerEn || "—"}</td>
         <td>${vt.isProducer ? "✓" : "—"}</td>
         <td class="actions">
-          <button class="btn" data-act="edit-vtype">Bearbeiten</button>
-          <button class="btn btn-reject" data-act="delete-vtype">Löschen</button>
+          <button class="btn" data-act="edit-vtype">${window.t("admin.actionEdit")}</button>
+          <button class="btn btn-reject" data-act="delete-vtype">${window.t("admin.actionDelete")}</button>
         </td>
       </tr>
     `).join("");
