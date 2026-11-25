@@ -858,6 +858,20 @@ window.ATLAS_I18N = {
     "admin.statusApproved": "Freigegeben",
     "admin.statusPending": "In Prüfung",
     "admin.statusRejected": "Abgelehnt",
+    "admin.evNoBeers": "Noch keine Biere eingetragen.",
+    "admin.postView": "Ansehen",
+    "admin.postsSub": "Artikel für <a href=\"/magazin\" target=\"_blank\">/magazin</a>. Öffentlich erst mit Status <b>Freigegeben</b> und ab dem Datum; <b>In Prüfung</b> ist ein Entwurf, den nur eingeloggte Admins unter seiner Adresse sehen.",
+    "admin.postConfirmDelete": "Artikel „{id}“ endgültig löschen?",
+    "admin.postNewTitle": "Neuer Artikel",
+    "admin.postEditTitle": "Artikel bearbeiten: {id}",
+    "admin.postId": "ID (Adresse /magazin/…) *",
+    "admin.postDate": "Datum *",
+    "admin.postStatusPending": "In Prüfung (Entwurf)",
+    "admin.postStatusApproved": "Freigegeben (öffentlich)",
+    "admin.postStatusRejected": "Abgelehnt (verworfen)",
+    "admin.postTeaserDe": "Teaser (DE), auch Meta-Description",
+    "admin.postReset": "Neu / Abbrechen",
+    "admin.postPreview": "Vorschau öffnen",
     // Rank sub
     "rank.hero.eyebrow": "Ranglisten",
     // Rivalen-Seite
@@ -1792,6 +1806,20 @@ window.ATLAS_I18N = {
     "admin.statusApproved": "Approved",
     "admin.statusPending": "Pending",
     "admin.statusRejected": "Rejected",
+    "admin.evNoBeers": "No beers added yet.",
+    "admin.postView": "View",
+    "admin.postsSub": "Articles for <a href=\"/magazin\" target=\"_blank\">/magazin</a>. Public only with status <b>Approved</b> and from the date on; <b>Pending</b> is a draft that only logged-in admins can see at its address.",
+    "admin.postConfirmDelete": "Delete article “{id}” permanently?",
+    "admin.postNewTitle": "New article",
+    "admin.postEditTitle": "Edit article: {id}",
+    "admin.postId": "ID (address /magazin/…) *",
+    "admin.postDate": "Date *",
+    "admin.postStatusPending": "Pending (draft)",
+    "admin.postStatusApproved": "Approved (public)",
+    "admin.postStatusRejected": "Rejected (discarded)",
+    "admin.postTeaserDe": "Teaser (DE), also meta description",
+    "admin.postReset": "New / cancel",
+    "admin.postPreview": "Open preview",
     // Rank sub
     "rank.hero.eyebrow": "Rankings",
     // Rivals page
@@ -1930,10 +1958,23 @@ window.atlasLocale = function () {
   return window.__atlasLang === "en" ? "en-GB" : "de-DE";
 };
 
+// Datumswerte aus der API: "YYYY-MM-DD" ist ein Kalendertag (als lokaler Tag
+// lesen, nicht als UTC-Mitternacht, sonst rutscht er westlich von UTC einen
+// Tag zurück); "YYYY-MM-DD HH:MM:SS" aus SQLite datetime('now') ist UTC ohne
+// Zonenangabe (Browser würden es als Ortszeit lesen, Safari gar nicht).
+window.atlasParseDate = function (input) {
+  if (input instanceof Date) return input;
+  const s = String(input).trim();
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (day) return new Date(+day[1], +day[2] - 1, +day[3]);
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(s)) return new Date(s.replace(" ", "T") + "Z");
+  return new Date(s);
+};
+
 // Kurzdatum: 24.04.2026 (de) bzw. 24/04/2026 (en-GB)
 window.formatDate = function (input, opts) {
   if (input == null || input === "") return "—";
-  const d = input instanceof Date ? input : new Date(input);
+  const d = window.atlasParseDate(input);
   if (isNaN(d.getTime())) return "—";
   return d.toLocaleDateString(
     window.atlasLocale(),
@@ -1941,12 +1982,15 @@ window.formatDate = function (input, opts) {
   );
 };
 
-// Datum + Uhrzeit
+// Datum + Uhrzeit, Berliner Zeit, ohne Sekunden: 24.04.2026, 18:05
 window.formatDateTime = function (input) {
   if (input == null || input === "") return "—";
-  const d = input instanceof Date ? input : new Date(input);
+  const d = window.atlasParseDate(input);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleString(window.atlasLocale());
+  return d.toLocaleString(window.atlasLocale(), {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
+  });
 };
 
 // Langes Datum (für Eventkarten): „Sa., 24. April 2026" / „Sat, 24 April 2026"
